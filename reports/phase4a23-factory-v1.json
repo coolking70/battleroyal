@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1411019,
+  "tasks": [
+    {
+      "taskId": "zone/factory/background",
+      "hash": "94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

@@ -63,6 +63,24 @@
       "provider": "agnes",
       "approvedAt": "2026-08-08T19:41:37.928Z",
       "publicPath": "/assets/characters/medic/portrait.png"
+    },
+    "item/medkit/icon": {
+      "candidateHash": "56c73dde328a31f004dc449e0d1e1ac4af0d1f0b616de6906eca99757b5f829d",
+      "contentHash": "56c73dde328a31f004dc449e0d1e1ac4af0d1f0b616de6906eca99757b5f829d",
+      "promptHash": "56c73dde328a31f004dc449e0d1e1ac4af0d1f0b616de6906eca99757b5f829d",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T20:02:24.293Z",
+      "publicPath": "/assets/items/medkit/icon.png"
+    },
+    "zone/hospital/background": {
+      "candidateHash": "1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5",
+      "contentHash": "1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5",
+      "promptHash": "1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T20:02:24.294Z",
+      "publicPath": "/assets/zones/hospital/background.png"
     }
   }
 }

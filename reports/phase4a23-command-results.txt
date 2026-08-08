@@ -1,0 +1,75 @@
+Phase 4A-2.3 command evidence
+
+COMMAND: npm run art:approve -- --task zone/hospital/background --candidate 1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5
+EXIT CODE: 0
+SUMMARY: approved Hospital candidate
+
+COMMAND: npm run art:approve -- --task item/medkit/icon --candidate 56c73dde328a31f004dc449e0d1e1ac4af0d1f0b616de6906eca99757b5f829d
+EXIT CODE: 0
+SUMMARY: approved Medkit candidate
+
+COMMAND: npm run art:list
+EXIT CODE: 0
+SUMMARY: 9 approved formal candidates; B2 candidates pending; prior rejected candidates retained for audit history
+
+COMMAND: npm run art:publish
+EXIT CODE: 0
+SUMMARY: publisher reported 9 approved candidates; Hospital and Medkit changed the manifest; official manifest now contains 9 assets
+
+COMMAND: npm run art:validate
+EXIT CODE: 0
+SUMMARY: PASS published manifest
+
+COMMAND: npm run art:publish
+EXIT CODE: 0
+SUMMARY: NO CHANGES
+
+COMMAND: npm run art:prompt-audit -- --task zone/residential/background; ... factory; ... forest; ... lab; ... item/water/icon; ... item/energy_drink/icon; ... world_event/rain/illustration
+EXIT CODE: 0
+SUMMARY: all Phase 4A-2.3 preflight prompt audits passed; forbidden-token count 0
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task world_event/rain/illustration --concurrency 1 --report-name phase4a23-rain-provider-recovery
+EXIT CODE: 1
+SUMMARY: one and only one Rain recovery request; Agnes rejected the prompt before returning an image; no candidate and no retry
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task zone/residential/background --concurrency 1 --report-name phase4a23-residential-v1
+EXIT CODE: 0
+SUMMARY: API calls=1, cache hits=0, validation=passed, review=pending, candidate 9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task zone/factory/background --concurrency 1 --report-name phase4a23-factory-v1
+EXIT CODE: 0
+SUMMARY: API calls=1, cache hits=0, validation=passed, review=pending, candidate 94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task zone/forest/background --concurrency 1 --report-name phase4a23-forest-v1
+EXIT CODE: 0
+SUMMARY: API calls=1, cache hits=0, validation=passed, review=pending, candidate 2126353261005efb99059bd7ab230408ab9aa1b3214732f6b20ebd3715951430
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task zone/lab/background --concurrency 1 --report-name phase4a23-lab-v1
+EXIT CODE: 0
+SUMMARY: API calls=1, cache hits=0, validation=passed, review=pending, candidate 16eb9bc6cff58880933a81eda9a837678201c672e509656f051d67551f97476e
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task item/water/icon --concurrency 1 --report-name phase4a23-water-v1
+EXIT CODE: 0
+SUMMARY: API calls=1, cache hits=0, validation=passed, review=pending, candidate ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task item/energy_drink/icon --concurrency 1 --report-name phase4a23-energy-drink-v1
+EXIT CODE: 0
+SUMMARY: API calls=1, cache hits=0, validation=passed, review=pending, candidate 795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b
+
+API BUDGET: 7 total real requests; Rain=1, B2=6, cache hits=0. No auto approval, publish or force flag used for B2.
+
+COMMAND: npm run art:review-export -- --report reports/phase4a23-round-b2-report.json --output output/art-review/phase4a23-round-b2 --suffix=-b2
+EXIT CODE: 0
+SUMMARY: exported 6 pending validated candidates; Rain has no image to export
+
+COMMAND: npm ci; npm run typecheck; npm test; npm run build
+EXIT CODE: 0
+SUMMARY: dependencies installed; typecheck passed; 810/810 tests passed; production build passed
+
+COMMAND: npm run audit:save; npm run audit:deps; npm run art:doctor -- --offline; npm run art:validate; npm run art:security:browser; npm run art:security:repo; npm audit --omit=dev
+EXIT CODE: 0
+SUMMARY: all audits and scans passed; npm audit --omit=dev reported 0 vulnerabilities
+
+COMMAND: npm run simulate -- --games 500 --seed-prefix PHASE4A23 --regression --output reports/phase4a23-balance.json
+EXIT CODE: 0
+SUMMARY: requested=500 actual=500; engine health PASS; timeout/deadlock/illegal/hard-limit 0; observational role ratio 2.67 remains above 2.5 balance threshold

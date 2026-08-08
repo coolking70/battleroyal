@@ -52,8 +52,13 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
     expect((await taskById(taskId)).promptStrategy).toBe(strategy);
   });
 
-  it.each(RECOVERY_TASKS)('increments %s to revision 2', async (taskId) => {
-    expect((await taskById(taskId)).revision).toBe(2);
+  it('increments Hospital and Medkit to revision 2', async () => {
+    expect((await taskById('zone/hospital/background')).revision).toBe(2);
+    expect((await taskById('item/medkit/icon')).revision).toBe(2);
+  });
+
+  it('increments Rain to revision 3 for provider-safe recovery', async () => {
+    expect((await taskById('world_event/rain/illustration')).revision).toBe(3);
   });
 
   it.each(RECOVERY_TASKS)('keeps %s negativePrompt empty', async (taskId) => {
@@ -74,12 +79,13 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
     expect(built.prompt).toContain('closed reception windows');
   });
 
-  it('makes Rain read through deserted street and weather anchors', async () => {
+  it('makes Rain v3 read through ordinary city and weather anchors', async () => {
     const built = await buildPrompt(process.cwd(), await taskById('world_event/rain/illustration'), 'agnes-image-2.1-flash');
-    expect(built.prompt).toContain('deserted rain-soaked city street');
-    expect(built.prompt).toContain('empty sidewalks');
-    expect(built.prompt).toContain('heavy rainstorm');
+    expect(built.prompt).toContain('quiet city street during heavy summer rain');
+    expect(built.prompt).toContain('sidewalks empty');
+    expect(built.prompt).toContain('heavy summer rainstorm');
     expect(built.prompt).toContain('large puddles');
+    expect(built.prompt).not.toMatch(/abandoned|deserted|disaster|survival|ruins/i);
   });
 
   it('makes Medkit read through a plain off-white and green emergency case', async () => {
@@ -95,8 +101,9 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
     const input = promptHashInput(built);
     expect(input.promptStrategy).toBe(built.task.promptStrategy);
     expect(input.positiveTraits).toEqual(built.task.positiveTraits);
-    expect(input.positiveComposition).toEqual(built.task.positiveComposition);
-    expect(input.revision).toBe(2);
+    if (taskId === 'item/medkit/icon') expect(input.positiveComposition).toBeUndefined();
+    else expect(input.positiveComposition).toEqual(built.task.positiveComposition);
+    expect(input.revision).toBe(taskId === 'world_event/rain/illustration' ? 3 : 2);
     expect(input.styleProfileVersion).toBe(built.styleProfileVersion);
     expect(input.prompt).toBe(built.prompt);
   });
@@ -153,7 +160,7 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
     expect(auditItemProviderPrompt(task, `A case with a ${token}.`).forbiddenTokens).toContain(token);
   });
 
-  it('keeps the formal manifest at seven AI tasks', async () => {
+  it('keeps the formal manifest at nine AI tasks after Hospital/Medkit publication', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as {
       characters: Record<string, Record<string, string | null>>;
       zones: Record<string, Record<string, string | null>>;
@@ -166,7 +173,9 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
       ...Object.values(manifest.items),
       ...Object.values(manifest.worldEvents),
     ].filter(Boolean).length;
-    expect(count).toBe(7);
+    expect(count).toBe(9);
+    expect(manifest.zones.hospital?.background).toBe('/assets/zones/hospital/background.png');
+    expect(manifest.items.medkit).toBe('/assets/items/medkit/icon.png');
   });
 
   it.each([
@@ -193,10 +202,8 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
     expect(manifest.characters[id].portrait).toBe(`/assets/characters/${id}/portrait.png`);
   });
 
-  it('does not formally publish any recovery candidate', async () => {
+  it('does not formally publish Rain without a candidate', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8'));
-    expect(manifest.zones.hospital.background).toBeNull();
-    expect(manifest.items.medkit).toBeUndefined();
     expect(manifest.worldEvents.rain).toBeUndefined();
   });
 });

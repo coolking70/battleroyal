@@ -23,6 +23,12 @@ const OUTPUT_NAMES: Record<string, string> = {
   'zone/hospital/background': 'hospital-background',
   'item/medkit/icon': 'medkit-icon',
   'world_event/rain/illustration': 'rain-illustration',
+  'zone/residential/background': 'residential-background',
+  'zone/factory/background': 'factory-background',
+  'zone/forest/background': 'forest-background',
+  'zone/lab/background': 'lab-background',
+  'item/water/icon': 'water-icon',
+  'item/energy_drink/icon': 'energy-drink-icon',
 };
 
 const REVIEW_REMINDERS: Record<string, string> = {
@@ -36,6 +42,12 @@ const REVIEW_REMINDERS: Record<string, string> = {
   'zone/hospital/background': 'Check that the medical waiting hall reads as completely vacant, all visible chairs are empty, the location identity is clear, and the lower center remains usable for UI.',
   'item/medkit/icon': 'Check for one isolated case with blank surfaces, no red-cross or protected humanitarian marking, no readable text/logo, clear emergency-supply identity, and small-size readability.',
   'world_event/rain/illustration': 'Check that rainfall is immediately recognizable, the street reads as deserted, no people or HUD are visible, and the image remains distinct from Blackout.',
+  'zone/residential/background': 'Check residential identity, no visible people or HUD, usable lower center, and visual distinction from School/Hospital.',
+  'zone/factory/background': 'Check industrial identity, readable machinery/workbench composition, no visible workers or HUD, and preserved UI space.',
+  'zone/forest/background': 'Check woodland identity, no unexpected character or creature focal subject, readable path depth, no HUD, and distinction from urban zones.',
+  'zone/lab/background': 'Check research-lab identity, no visible personnel or HUD, lower-center space, and distinction from Hospital.',
+  'item/water/icon': 'Check exactly one bottle, clear water identity, no brand or readable text, isolated background, and small-size readability.',
+  'item/energy_drink/icon': 'Check exactly one can, generic original beverage design, no real brand or readable text, isolated background, and clear small-size silhouette.',
 };
 const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'character/scout/portrait': [
@@ -50,6 +62,12 @@ const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'zone/hospital/background': ['entire location reads as vacant', 'every visible chair is empty', 'no visible people', 'medical waiting area identity clear', 'lower center usable for UI'],
   'item/medkit/icon': ['exactly one object', 'clean isolated background', 'no red-cross emblem', 'no protected humanitarian marking', 'no readable text/logo', 'medical/emergency supply identity still clear', 'readable at small size'],
   'world_event/rain/illustration': ['rainfall immediately recognizable', 'street reads as deserted', 'no visible people', 'no HUD', 'visually distinct from Blackout'],
+  'zone/residential/background': ['residential identity clear', 'no visible people', 'no HUD', 'lower-center usable for UI', 'visually distinct from School/Hospital'],
+  'zone/factory/background': ['industrial identity clear', 'machinery/workbench composition readable', 'no visible workers', 'no HUD', 'UI space preserved'],
+  'zone/forest/background': ['woodland identity clear', 'no unexpected character/creature focal subject', 'path/readable depth', 'no HUD', 'visually distinct from urban zones'],
+  'zone/lab/background': ['research-lab identity clear', 'no visible personnel', 'no HUD', 'distinct from Hospital', 'lower-center usable'],
+  'item/water/icon': ['exactly one bottle', 'clear water identity', 'no brand/readable text', 'isolated background', 'readable at small size'],
+  'item/energy_drink/icon': ['exactly one can', 'beverage identity clear', 'original generic design', 'no real brand', 'no readable text', 'isolated background'],
 };
 
 export interface ReviewExportOptions {
@@ -146,7 +164,7 @@ async function main(): Promise<void> {
     reportPath,
     outputDir,
     fileSuffix: fileSuffix ?? '',
-    title: fileSuffix === '-positive' ? 'Phase 4A-2.1 Character Positive-only Review Package' : fileSuffix === '-nonchar' ? 'Phase 4A-2.1 Non-character B1 Review Package' : fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : fileSuffix === '-v2' ? 'Phase 4A-2.2 Non-character Positive-only Recovery Review Package' : undefined,
+    title: fileSuffix === '-positive' ? 'Phase 4A-2.1 Character Positive-only Review Package' : fileSuffix === '-nonchar' ? 'Phase 4A-2.1 Non-character B1 Review Package' : fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : fileSuffix === '-v2' ? 'Phase 4A-2.2 Non-character Positive-only Recovery Review Package' : fileSuffix === '-b2' ? 'Phase 4A-2.3 Controlled Production Expansion B2 Review Package' : fileSuffix === '-rain' ? 'Phase 4A-2.3 Rain Provider Recovery Review Package' : undefined,
   } : {};
   const result = await exportRoundAReview(configModule.createArtConfig(), options);
   console.log(`EXPORTED ${result.candidates.length} pending candidates to ${result.outputDir}`);

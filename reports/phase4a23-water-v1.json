@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1220235,
+  "tasks": [
+    {
+      "taskId": "item/water/icon",
+      "hash": "ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

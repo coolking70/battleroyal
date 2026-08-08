@@ -40,6 +40,19 @@ export const FORBIDDEN_ENVIRONMENT_TOKENS = [
   'silhouette',
 ] as const;
 
+export const FORBIDDEN_RAIN_NARRATIVE_TOKENS = [
+  'abandoned',
+  'deserted',
+  'disaster',
+  'survivor',
+  'combat',
+  'war',
+  'danger',
+  'ruins',
+  'destroyed',
+  'collapsed',
+] as const;
+
 export const FORBIDDEN_ITEM_MARKING_TOKENS = [
   'cross',
   'logo',
@@ -47,6 +60,29 @@ export const FORBIDDEN_ITEM_MARKING_TOKENS = [
   'symbol',
   'brand',
   'red cross',
+] as const;
+
+export const FORBIDDEN_ITEM_CATEGORY_TOKENS = [
+  'urban',
+  'ruins',
+  'cityscape',
+  'environment',
+  'scenery',
+  'person',
+  'character',
+  'hand',
+  'interface',
+  'HUD',
+  'frame',
+  'arrows',
+  'buttons',
+  'strategy',
+  'character sheet',
+  'game UI',
+  'logo',
+  'brand',
+  'label',
+  'text',
 ] as const;
 
 function tokenPattern(token: string): RegExp {
@@ -106,6 +142,12 @@ export function auditEnvironmentProviderPrompt(task: ArtTask, providerPrompt: st
   return auditTokenSet(task, providerPrompt, FORBIDDEN_ENVIRONMENT_TOKENS);
 }
 
+export function auditRainProviderPrompt(task: ArtTask, providerPrompt: string): PromptAuditResult {
+  return auditTokenSet(task, providerPrompt, [...FORBIDDEN_ENVIRONMENT_TOKENS, ...FORBIDDEN_RAIN_NARRATIVE_TOKENS]);
+}
+
 export function auditItemProviderPrompt(task: ArtTask, providerPrompt: string): PromptAuditResult {
-  return auditTokenSet(task, providerPrompt, FORBIDDEN_ITEM_MARKING_TOKENS);
+  return auditTokenSet(task, providerPrompt, task.promptStrategy === 'item-positive-only'
+    ? FORBIDDEN_ITEM_CATEGORY_TOKENS
+    : FORBIDDEN_ITEM_MARKING_TOKENS);
 }

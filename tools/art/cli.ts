@@ -8,7 +8,7 @@ import { buildPrompt } from './promptBuilder';
 import { publishApproved, validatePublishedManifest } from './publisher';
 import { listCandidates, reviewCandidate } from './reviewer';
 import { loadTasks, selectTasks, taskForId } from './taskPlanner';
-import { auditCharacterProviderPrompt, auditEnvironmentProviderPrompt, auditItemProviderPrompt } from './promptAudit';
+import { auditCharacterProviderPrompt, auditEnvironmentProviderPrompt, auditItemProviderPrompt, auditRainProviderPrompt } from './promptAudit';
 import { agnesRequestFor } from './providers/agnes';
 import type { ArtConfig, ArtTask } from './types';
 
@@ -122,11 +122,13 @@ async function promptCommand(config: ArtConfig, task: ArtTask): Promise<void> {
 async function promptAuditCommand(config: ArtConfig, task: ArtTask): Promise<number> {
   const built = await buildPrompt(config.rootDir, task, config.model);
   const payload = agnesRequestFor({ model: built.model, prompt: built.prompt, negativePrompt: built.negativePrompt, width: built.width, height: built.height, requestedRatio: built.requestedRatio });
-  const audit = task.promptStrategy === 'character-positive-only'
+  const audit = task.id === 'world_event/rain/illustration'
+    ? auditRainProviderPrompt(task, payload.prompt)
+    : task.promptStrategy === 'character-positive-only'
     ? auditCharacterProviderPrompt(task, payload.prompt)
     : task.promptStrategy === 'environment-positive-only'
       ? auditEnvironmentProviderPrompt(task, payload.prompt)
-      : task.promptStrategy === 'item-positive-only-unmarked'
+      : task.promptStrategy === 'item-positive-only-unmarked' || task.promptStrategy === 'item-positive-only'
         ? auditItemProviderPrompt(task, payload.prompt)
         : auditCharacterProviderPrompt(task, payload.prompt);
   console.log(JSON.stringify({ taskId: task.id, ...audit }, null, 2));

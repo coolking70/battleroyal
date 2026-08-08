@@ -5,7 +5,7 @@ export type ArtTaskStatus = 'planned' | 'generated' | 'approved' | 'rejected';
 export type ValidationStatus = 'passed' | 'failed';
 export type ReviewStatus = 'pending' | 'approved' | 'rejected' | 'superseded';
 export type ProviderName = 'agnes';
-export type PromptStrategy = 'standard' | 'character-positive-only' | 'environment-positive-only' | 'item-positive-only-unmarked';
+export type PromptStrategy = 'standard' | 'character-positive-only' | 'environment-positive-only' | 'item-positive-only-unmarked' | 'item-positive-only';
 
 export interface ProviderCapabilities {
   nativeNegativePrompt: boolean;

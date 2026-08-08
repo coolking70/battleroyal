@@ -183,7 +183,19 @@ export async function writePromptReport(
     'item/medkit/icon',
     'world_event/rain/illustration',
   ]);
-  const targetedVersion = built.task.promptStrategy === 'environment-positive-only' || built.task.promptStrategy === 'item-positive-only-unmarked'
+  const b2TaskIds = new Set([
+    'zone/residential/background',
+    'zone/factory/background',
+    'zone/forest/background',
+    'zone/lab/background',
+    'item/water/icon',
+    'item/energy_drink/icon',
+  ]);
+  const targetedVersion = b2TaskIds.has(built.task.id)
+    ? 'phase4a23-b2'
+    : built.task.id === 'world_event/rain/illustration' && built.task.revision >= 3
+      ? 'phase4a23-rain-recovery'
+      : built.task.promptStrategy === 'environment-positive-only' || built.task.promptStrategy === 'item-positive-only-unmarked' || built.task.promptStrategy === 'item-positive-only'
     ? 'phase4a22-positive-only'
     : built.task.id === 'world_event/blackout/illustration' && built.task.revision >= 4
     ? 'phase4-targeted-v5'

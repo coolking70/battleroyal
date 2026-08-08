@@ -29,7 +29,7 @@
       "restricted": null
     },
     "hospital": {
-      "background": null,
+      "background": "/assets/zones/hospital/background.png",
       "warning": null,
       "restricted": null
     },
@@ -55,7 +55,8 @@
     }
   },
   "items": {
-    "bandage": "/assets/items/bandage/icon.png"
+    "bandage": "/assets/items/bandage/icon.png",
+    "medkit": "/assets/items/medkit/icon.png"
   },
   "worldEvents": {
     "blackout": "/assets/world-events/blackout/illustration.png"

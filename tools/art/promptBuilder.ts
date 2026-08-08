@@ -39,6 +39,8 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
     ? task.category === 'zone'
       ? 'Environmental location illustration with clear architecture, recognizable props, restrained abandonment, open sightlines and a calm lower-center area reserved for later overlay.'
       : 'Environmental event illustration with one clear weather phenomenon as the visual subject, strong mood, readable composition and original visual design.'
+    : task.promptStrategy === 'item-positive-only'
+      ? 'Isolated inventory-object illustration with one complete object centered, crisp contour, high recognition at small size, plain neutral studio backdrop, controlled shadow and original visual design.'
     : await readText(rootDir, `art/style/${STYLE_FILE_BY_PROFILE[category]!}`);
   const positiveOnly = task.promptStrategy !== undefined && task.promptStrategy !== 'standard';
   const genericAvoid = positiveOnly ? '' : await readText(rootDir, 'art/style/negative-prompt.txt');
@@ -61,7 +63,7 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
         'the silhouette behind the person is clean and empty',
         ...(task.positiveComposition ?? []),
       ]
-    : task.promptStrategy === 'environment-positive-only' || task.promptStrategy === 'item-positive-only-unmarked'
+    : task.promptStrategy === 'environment-positive-only' || task.promptStrategy === 'item-positive-only-unmarked' || task.promptStrategy === 'item-positive-only'
       ? [...(task.positiveComposition ?? [])]
     : [
         ...policy.hardConstraints,
@@ -85,7 +87,7 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
     ? `Technical composition: ${task.width}x${task.height}; centered waist-up portrait; clear focal subject; pale neutral studio-like backdrop.`
     : task.promptStrategy === 'environment-positive-only'
       ? `Technical composition: ${task.width}x${task.height}; wide environmental framing; clear location or weather focal subject; calm lower-center space.`
-      : task.promptStrategy === 'item-positive-only-unmarked'
+      : task.promptStrategy === 'item-positive-only-unmarked' || task.promptStrategy === 'item-positive-only'
         ? `Technical composition: ${task.width}x${task.height}; centered single object; clear silhouette; plain dark-gray studio backdrop.`
     : `Technical composition: ${task.width}x${task.height}, clear focal subject, no text, no logo, no watermark.`;
   const prompt = clean([
@@ -133,7 +135,7 @@ export function promptHashInput(built: BuiltPrompt): Record<string, unknown> {
     ...(built.task.promptStrategy && built.task.promptStrategy !== 'standard' ? {
       promptStrategy: built.task.promptStrategy,
       positiveTraits: built.task.positiveTraits ?? [],
-      ...(built.task.promptStrategy === 'character-positive-only' ? {} : { positiveComposition: built.task.positiveComposition ?? [] }),
+      ...(built.task.promptStrategy === 'character-positive-only' || built.task.promptStrategy === 'item-positive-only-unmarked' ? {} : { positiveComposition: built.task.positiveComposition ?? [] }),
     } : {}),
   };
 }
