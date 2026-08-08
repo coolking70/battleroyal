@@ -1,0 +1,58 @@
+# Phase 3A-2 command results (実/真实 output record)
+# Date: 2026-08-08 · working tree based on commit bf6c73fe6bbd65dc84083c6cf9a2595805496315
+
+## npm ci
+command: npm ci
+important stdout: added 161 packages, and audited 162 packages in 3s; 5 vulnerabilities (3 moderate, 1 high, 1 critical)
+exit code: 0
+
+## npm run typecheck
+command: npm run typecheck
+important stdout: tsc -b --force
+exit code: 0
+
+## npm test
+command: npm test -- --reporter=dot
+important stdout: Test Files 41 passed (41); Tests 546 passed (546)
+exit code: 0
+
+## npm run build
+command: npm run build
+important stdout: vite v5.4.21; 112 modules transformed; dist/assets/index-DZcWwNqH.js 310.69 kB; built in 1.56s
+exit code: 0
+
+## npm run audit:save
+command: npm run audit:save
+important stdout: 损坏用例 74 个，拒绝 74 个，通过 74 个，构造失败 0 个; 判定：PASS
+exit code: 0
+
+## npm run audit:deps
+command: npm run audit:deps
+important stdout: 扫描文件数 54; core/data 最大文件 core/types.ts（496 行）; R1=0 R2=0 R3=0 R4=0; 判定：PASS
+exit code: 0
+
+## npm run scripted:playthroughs
+command: npm run scripted:playthroughs
+important stdout: 已完成 16 局脚本化完整对局; 卡死=false、问题=0 for all 16; report phase3a2-scripted-playthroughs.md
+exit code: 0
+
+## npm run simulate -- --games 100 --seed-prefix PHASE3A2-SMOKE --ci
+command: npm run simulate -- --games 100 --seed-prefix PHASE3A2-SMOKE --ci --output reports/phase3a2-smoke.json
+important stdout: requestedTotalGames=100 actualTotalGames=100; 引擎判定 PASS; CI overall PASS; Phase 3A event coverage is not a 100-game gate
+exit code: 0
+
+## npm run simulate -- --games 3000 --seed-prefix PHASE3A2
+command: npm run simulate -- --games 3000 --seed-prefix PHASE3A2 --output reports/phase3a2-final-balance.json
+important stdout: requestedTotalGames=3000 actualTotalGames=3000; 引擎判定 PASS; 角色平衡 PASS; Phase 3A PASS; overall PASS
+exit code: 0
+
+## npm audit --omit=dev
+command: npm audit --omit=dev
+important stdout: found 0 vulnerabilities
+exit code: 0
+
+## npm audit
+command: npm audit
+important stdout: 5 vulnerabilities (3 moderate, 1 high, 1 critical), all in the Vite/esbuild/Vitest development dependency chain; npm recommends a breaking Vite 8 force upgrade
+exit code: 1
+note: recorded honestly; Phase 3A-2 does not upgrade Vite/Vitest/React. Runtime audit remains PASS.

@@ -1,6 +1,6 @@
 # VISUAL_ASSET_SPEC.md — 视觉资产接口规范（Phase 3A Step 11）
 
-> 版本 0.3.1 · 与 `src/ui/visualAssets.ts` + `src/ui/assets/` + `public/assets/manifest.json` 一一对应。
+> 版本 0.3.2 · 与 `src/ui/visualAssets.ts` + `src/ui/assetManifestLoader.ts` + `src/ui/assets/` + `public/assets/manifest.json` 一一对应。
 
 ## 1. 目标
 
@@ -32,6 +32,7 @@ interface VisualSpec {
   emoji: string;      // 图形 emoji（fallback 与无障碍文本）
   color: string;      // 主题色（色块/边框）
   image: string | null; // 相对 src/ui/assets/ 的路径；文件不存在时为 null
+  fallbackImage?: string | null; // 正式图失败时只尝试一次的本地 SVG
   label: string;      // 人类可读名称
 }
 ```
@@ -41,6 +42,7 @@ interface VisualSpec {
 1. `visualFor(kind, key)` 是**唯一**查询入口；未知 key 一律返回 `FALLBACK_VISUAL`（❓ 灰块），**绝不抛异常**。
 2. `image` 字段只在文件登记于 `VISUAL_ASSET_MANIFEST` 时才非 null —— 即使 SVG 文件被删，界面仍正常显示 emoji + 色块。
 3. `FALLBACK_VISUAL.image` 指向 `fallback.svg`（同样受 manifest 约束，缺失则 null）。
+4. `VisualImage` 的浏览器状态机严格按「正式图 → SVG → emoji」单向降级；图片错误不会触发无限重试。
 
 ## 5. 注册表覆盖
 
@@ -68,10 +70,10 @@ worldEventEmoji(eventId)         // 事件 emoji（横幅用）
 
 | 组件 | 使用 |
 | --- | --- |
-| `GameScreen` | 世界事件横幅图标（原本地 `WORLD_EVENT_ICON` 已移除） |
-| `ZoneMap` | 区域 emoji + `--zone-color`（颜色来自注册表，与数据表一致） |
-| `StatusBar` | 角色 emoji |
-| `Inventory` | 物品类别 emoji |
+| `MenuScreen` / `StatusBar` | 角色正式图 / SVG / emoji |
+| `GameScreen` | 当前区域头图、世界事件横幅图标 |
+| `ZoneMap` | 区域图标 + `--zone-color`（颜色来自注册表，与数据表一致） |
+| `Inventory` | 物品正式图（当前提供 bandage 测试资产）或类别 fallback |
 | `EncounterPanel` | （后续扩展） |
 
 ## 8. 测试守护（tests/visualAssets.test.ts）
@@ -82,7 +84,7 @@ worldEventEmoji(eventId)         // 事件 emoji（横幅用）
 - 区域 color/label 与数据表一致（防漂移）；
 - `itemEmoji` 覆盖全部物品类别，未知物品返回 ❓。
 
-## 9. Phase 4 正式资产 Manifest（Phase 3A-1 Step 9 收口）
+## 9. Phase 4 正式资产 Manifest（Phase 3A-2 runtime closure）
 
 ### 9.1 目录与解析顺序
 
@@ -96,7 +98,9 @@ public/assets/
 2. 空 / 缺失 → `src/ui/assets/` 的 SVG（development fallback）；
 3. SVG 不存在 → emoji + color fallback。
 
-任何时候不显示 broken img：`image` 为 null 时组件渲染 emoji/色块。
+游戏启动由 `src/main.tsx` 先执行 `loadAssetManifest()`，成功后再 render App。
+Manifest 404、网络错误、坏 JSON、错误 schema 或危险路径都会清空注册表并继续启动。
+正式图在 `VisualImage` 中失败后只尝试本地 SVG；SVG 也失败则显示 emoji/色块，任何时候不保留 broken img。
 
 ### 9.2 统一接口（React 只能调用这些）
 
@@ -122,7 +126,10 @@ Phase 4 替换资产生成后，只需更新 `public/assets/` 与 manifest.json�
 }
 ```
 
-### 9.4 测试契约（tests/visualAssets.test.ts）
+### 9.4 测试契约（`tests/assetManifestLoader.test.ts`、`tests/visualImage.test.tsx`）
 
 manifest 缺失 → fallback；manifest 为空 → fallback；正式 portrait 存在 → 优先正式图；
 正式图不存在 → SVG fallback；SVG 不存在 → emoji fallback；未知角色/区域 → fallback。
+
+`tests/assetManifestLoader.test.ts` 还验证启动 loader 的 200 / 404 / 网络失败 / 坏 JSON /
+错误版本 / 危险路径；`tests/visualImage.test.tsx` 验证 onError 只沿三级状态机前进。

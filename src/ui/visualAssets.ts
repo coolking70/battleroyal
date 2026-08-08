@@ -31,6 +31,8 @@ export interface VisualSpec {
   color: string;
   /** 可选图片路径（相对 src/ui/assets/），仅当文件存在于 MANIFEST 时非 null */
   image: string | null;
+  /** 主图加载失败时的本地 SVG 路径；VisualImage 只允许单向降级一次 */
+  fallbackImage?: string | null;
   /** 人类可读名称 */
   label: string;
 }
@@ -72,7 +74,13 @@ function spec(
   label: string,
   imagePath: string | null,
 ): VisualSpec {
-  return { emoji, color, label, image: imagePath && hasAsset(imagePath) ? imagePath : null };
+  return {
+    emoji,
+    color,
+    label,
+    image: imagePath && hasAsset(imagePath) ? imagePath : null,
+    fallbackImage: null,
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -85,6 +93,7 @@ export const FALLBACK_VISUAL: VisualSpec = {
   color: '#555555',
   label: '未知',
   image: hasAsset('fallback.svg') ? 'fallback.svg' : null,
+  fallbackImage: null,
 };
 
 /** 区域视觉（颜色与 data/zones.ts 保持一致，防止两处漂移） */
@@ -217,10 +226,10 @@ function officialImage(
   if (!m) return null;
   const entry = m[kind]?.[key];
   if (!entry) return null;
-  if (typeof entry === 'string') return entry as string;
+  if (typeof entry === 'string') return isSafeAssetPath(entry) ? entry : null;
   if (slot && typeof entry === 'object') {
     const v = (entry as Record<string, string | null>)[slot];
-    return typeof v === 'string' ? v : null;
+    return typeof v === 'string' && isSafeAssetPath(v) ? v : null;
   }
   return null;
 }
@@ -235,13 +244,15 @@ function officialImage(
  */
 export function getCharacterVisual(id: string): VisualSpec {
   const img = officialImage('characters', id, 'portrait');
-  if (img) return { ...visualFor('character', id), image: img };
+  const fallback = visualFor('character', id);
+  if (img) return { ...fallback, image: img, fallbackImage: fallback.image };
   return visualFor('character', id);
 }
 
 export function getZoneVisual(id: string): VisualSpec {
   const img = officialImage('zones', id, 'background');
-  if (img) return { ...visualFor('zone', id), image: img };
+  const fallback = visualFor('zone', id);
+  if (img) return { ...fallback, image: img, fallbackImage: fallback.image };
   return visualFor('zone', id);
 }
 
@@ -254,6 +265,7 @@ export function getItemVisual(id: string): VisualSpec {
       color: def ? ITEM_CATEGORY_VISUALS[def.category]?.color ?? FALLBACK_VISUAL.color : FALLBACK_VISUAL.color,
       label: def?.name ?? id,
       image: img,
+      fallbackImage: null,
     };
   }
   const def = tryGetItem(id);
@@ -269,8 +281,16 @@ export function getItemVisual(id: string): VisualSpec {
 
 export function getWorldEventVisual(id: WorldEventId): VisualSpec {
   const img = officialImage('worldEvents', id);
-  if (img) return { ...WORLD_EVENT_VISUALS[id], image: img };
+  const fallback = WORLD_EVENT_VISUALS[id] ?? FALLBACK_VISUAL;
+  if (img) return { ...fallback, image: img, fallbackImage: fallback.image };
   return WORLD_EVENT_VISUALS[id] ?? FALLBACK_VISUAL;
+}
+
+/** Manifest 只允许本地静态资产，避免把图片地址变成脚本或外链注入点。 */
+export function isSafeAssetPath(path: string): boolean {
+  if (!path || /^(?:javascript|data|https?):/i.test(path)) return false;
+  if (path.includes('..') || path.includes('\\')) return false;
+  return path.startsWith('/assets/') || path.startsWith('assets/');
 }
 
 /* ------------------------------------------------------------------ */

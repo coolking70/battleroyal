@@ -4,6 +4,7 @@ import { getEquippedArmor, getEquippedWeapon } from '../../core/inventory';
 import type { Combatant, ItemStack } from '../../core/types';
 import { CATEGORY_LABEL, itemSummary, stackLabel } from '../../utils/format';
 import { getItemVisual } from '../visualAssets';
+import { VisualImage } from './VisualImage';
 
 interface InventoryProps {
   player: Combatant;
@@ -90,9 +91,7 @@ export function Inventory({
             <div className="inv-item" key={stack.uid}>
               <div className="row1">
                 <span className="nm">
-                  <span className="item-emoji" aria-hidden>
-                    {getItemVisual(stack.itemId).emoji}
-                  </span>{' '}
+                  <VisualImage visual={getItemVisual(stack.itemId)} alt={`${def.name}图标`} className="item-visual" />{' '}
                   {stackLabel(stack)}
                 </span>
                 <span className={`tag tag-${def.category}`}>

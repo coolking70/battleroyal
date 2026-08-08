@@ -22,6 +22,18 @@ declare global {
 
 beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  if (typeof localStorage.clear !== 'function') {
+    const values = new Map<string, string>();
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      value: {
+        clear: () => values.clear(),
+        getItem: (key: string) => values.get(key) ?? null,
+        setItem: (key: string, value: string) => values.set(key, String(value)),
+        removeItem: (key: string) => values.delete(key),
+      },
+    });
+  }
   localStorage.clear();
   container = document.createElement('div');
   document.body.appendChild(container);
@@ -136,5 +148,14 @@ describe('界面冒烟', () => {
     expect(text).toContain('事件');
     expect(text).toContain('RNG 状态');
     expect(text).toContain('同种子可完全重放');
+  });
+
+  it('暴露紧凑的 render_game_to_text 状态供自动化试玩读取', () => {
+    render();
+    expect(window.render_game_to_text?.()).toContain('"mode":"menu"');
+    click('开始新对局');
+    const state = JSON.parse(window.render_game_to_text?.() ?? '{}') as { mode: string; player: { zoneId: string } };
+    expect(state.mode).toBe('playing');
+    expect(state.player.zoneId).toBeTruthy();
   });
 });

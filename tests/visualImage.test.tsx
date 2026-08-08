@@ -1,0 +1,64 @@
+/** @vitest-environment jsdom */
+
+import { act } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { afterEach, describe, expect, it } from 'vitest';
+import { VisualImage } from '../src/ui/components/VisualImage';
+import type { VisualSpec } from '../src/ui/visualAssets';
+
+let root: Root;
+let container: HTMLDivElement;
+
+const official: VisualSpec = {
+  emoji: '🔭',
+  color: '#2f6f8f',
+  label: '侦察员',
+  image: '/assets/characters/scout/portrait.webp',
+  fallbackImage: 'characters/scout.svg',
+};
+
+afterEach(() => {
+  act(() => root.unmount());
+  container.remove();
+});
+
+function render(visual: VisualSpec): void {
+  container = document.createElement('div');
+  document.body.appendChild(container);
+  root = createRoot(container);
+  act(() => {
+    root.render(<VisualImage visual={visual} alt="测试视觉" className="visual-test" />);
+  });
+}
+
+describe('VisualImage 三级 fallback', () => {
+  it('正式图片成功时只渲染正式图片', () => {
+    render(official);
+    const image = container.querySelector('img');
+    expect(image?.getAttribute('src')).toBe('/assets/characters/scout/portrait.webp');
+    expect(container.textContent).not.toContain('🔭');
+  });
+
+  it('正式图片失败后只降级到 SVG，不重试正式图', () => {
+    render(official);
+    const first = container.querySelector('img');
+    act(() => first?.dispatchEvent(new Event('error')));
+    const fallback = container.querySelector('img');
+    expect(fallback?.getAttribute('src')).toContain('characters/scout.svg');
+    expect(fallback?.getAttribute('src')).not.toContain('portrait.webp');
+  });
+
+  it('SVG 失败后降级到 emoji，且不再保留 broken img', () => {
+    render(official);
+    act(() => container.querySelector('img')?.dispatchEvent(new Event('error')));
+    act(() => container.querySelector('img')?.dispatchEvent(new Event('error')));
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.textContent).toContain('🔭');
+  });
+
+  it('没有任何图片时直接显示 emoji fallback', () => {
+    render({ emoji: '🧪', color: '#3f8f7a', label: '测试', image: null });
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.textContent).toContain('🧪');
+  });
+});

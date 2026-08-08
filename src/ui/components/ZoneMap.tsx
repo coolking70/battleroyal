@@ -3,6 +3,7 @@ import { noiseLevelOf, NOISE_LABEL } from '../../core/info';
 import { ZONES, areAdjacent } from '../../data/zones';
 import { ZONE_STATUS_LABEL, cx } from '../../utils/format';
 import { getZoneVisual } from '../visualAssets';
+import { VisualImage } from './VisualImage';
 
 interface ZoneMapProps {
   state: GameState;
@@ -63,9 +64,7 @@ export function ZoneMap({
             >
               <span className="row1">
                 <span className="name">
-                  <span className="zone-emoji" aria-hidden>
-                    {zoneVisual.emoji}
-                  </span>{' '}
+                  <VisualImage visual={zoneVisual} alt={`${def.name}图标`} className="zone-visual" />{' '}
                   {def.name}
                 </span>
                 <span className={`tag tag-${status}`}>

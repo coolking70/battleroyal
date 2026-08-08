@@ -8,7 +8,7 @@
  * 世界事件取代动态事件。0.2.0 存档里的 `dash` / `storm` 等字段在新规则下没有对应语义，
  * 强行读入只会得到一个自相矛盾的局面。因此**明确拒绝**旧档，不做迁移。
  */
-export const GAME_VERSION = '0.3.1';
+export const GAME_VERSION = '0.3.2';
 
 /** 默认测试种子 */
 export const DEFAULT_SEED = 'BR-DEMO-001';

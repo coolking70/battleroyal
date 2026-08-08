@@ -1,7 +1,7 @@
 {
   "name": "zone-battle-royale",
   "private": true,
-  "version": "0.3.1",
+  "version": "0.3.2",
   "type": "module",
   "description": "区域式大逃杀网页游戏原型（单人单机 / 确定性种子）",
   "scripts": {

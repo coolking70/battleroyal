@@ -1,6 +1,6 @@
-# ARCHITECTURE_AUDIT.md — 架构审计报告（Phase 3A-1 更名）
+# ARCHITECTURE_AUDIT.md — 架构审计报告（Phase 3A-2）
 
-> 版本 0.3.1 · 审计入口：`npm run audit:deps`（`tools/auditDependencies.ts`）
+> 版本 0.3.2 · 审计入口：`npm run audit:deps`（`tools/auditDependencies.ts`）
 > 本文件只覆盖**代码架构**审计（import 层级 / 循环依赖 / 文件行数 / 模块红线）。
 > npm 供应链审计请见 `SUPPLY_CHAIN_AUDIT.md`，两者刻意分开，避免概念混淆。
 
@@ -13,12 +13,12 @@
 | R3 | 环依赖：`core/` 与 `data/` 内部 import 环 | 只告警（type-only import 可断环） |
 | R4 | 单文件体量：`core/ data/` 每个 .ts ≤ 500 行（Phase 2 不变量 #15） | 违例 → FAIL |
 
-## 2. 当前结果（2026-08-08）
+## 2. 当前结果（2026-08-08，最终命令重新执行）
 
 ```
 [audit:deps] 依赖审计
-  扫描文件数：51
-  core/data 最大文件：core/types.ts（486 行）
+  扫描文件数：54
+  core/data 最大文件：core/types.ts（496 行）
   R1 分层违例：0
   R2 红线隔离违例：0
   R3 环告警：0
@@ -53,7 +53,7 @@ skills.ts ───────┘
 
 ### 3.3 体量复位：`npcDecide.ts`（R4）
 
-Phase 3A Step 4 给 NPC 加入生存技能 / 战斗技能决策后，`npcDecide.ts` 涨到 501 行（> 500）。Step 13 将技能决策整块抽到新模块 `core/npcSkillDecide.ts`（约 120 行），主文件回落至 4xx 行；当前 `core/` + `data/` 最大文件为 `types.ts`（486 行），全部 ≤ 500。
+Phase 3A 的技能决策已抽到 `core/npcSkillDecide.ts`；当前 `combat.ts` 为 398 行、`core/` + `data/` 最大文件为 `types.ts`（496 行），全部 ≤ 500。历史 Phase 3A-1 曾记录 `combat.ts` 515 行，但当前基线已真实恢复 PASS。
 
 ### 3.4 单向依赖示例（关键路径）
 

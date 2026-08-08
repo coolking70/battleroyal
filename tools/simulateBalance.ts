@@ -1228,7 +1228,7 @@ function renderMarkdown(report: BalanceReport): string {
   L.push(`**引擎整体判定：${h.engineHealthy ? 'PASS' : 'FAIL'}**`);
   L.push('');
   L.push('> 说明：timeout 在 Step 13 的 `enforceTimeLimit` 落地后会由 `playing → draw` 收束而归零；');
-  L.push('> illegalState 与 hardLimitReached 必须始终为 0。本报告**不设胜率门槛**——低胜率属结构性。');
+  L.push('> 引擎健康、角色平衡与 Phase 3A 玩法门槛分别验收；总体判定要求三者同时 PASS。');
   L.push('');
 
   // ---- 角色平衡验收（Phase 2A-1） ----

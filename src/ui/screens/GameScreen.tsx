@@ -16,7 +16,7 @@ import type { Combatant, Command, GameState } from '../../core/types';
 import { LOG_DISPLAY_COUNT } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { ZONE_STATUS_LABEL, cx, stackLabel } from '../../utils/format';
-import { getWorldEventVisual } from '../visualAssets';
+import { getWorldEventVisual, getZoneVisual } from '../visualAssets';
 import { ActionBar } from '../components/ActionBar';
 import { CraftPanel } from '../components/CraftPanel';
 import { EncounterPanel } from '../components/EncounterPanel';
@@ -25,6 +25,7 @@ import { Inventory } from '../components/Inventory';
 import { PendingPickupPanel } from '../components/PendingPickupPanel';
 import { StatusBar } from '../components/StatusBar';
 import { ZoneMap } from '../components/ZoneMap';
+import { VisualImage } from '../components/VisualImage';
 
 interface GameScreenProps {
   state: GameState;
@@ -142,6 +143,7 @@ export function GameScreen({
         <div className="col">
           <section className="panel stage scroll">
             <h2>
+              <VisualImage visual={getZoneVisual(player.currentZoneId)} alt={`${zoneDef.name}区域图`} className="stage-zone-visual" />{' '}
               {zoneDef.name}{' '}
               <span className={`tag tag-${zoneState?.status ?? 'safe'}`}>
                 {ZONE_STATUS_LABEL[zoneState?.status ?? 'safe']}
@@ -153,9 +155,11 @@ export function GameScreen({
               <div className="event-banner-wrap">
                 {bannerEvents.map((ev) => (
                   <div className={`event-banner event-${ev.eventId}`} key={ev.id}>
-                    <span className="event-banner-icon" aria-hidden>
-                      {getWorldEventVisual(ev.eventId).emoji}
-                    </span>
+                    <VisualImage
+                      visual={getWorldEventVisual(ev.eventId)}
+                      alt={`${ev.label}事件图标`}
+                      className="event-banner-icon"
+                    />
                     <div className="event-banner-body">
                       <div className="event-banner-title">
                         {ev.label}

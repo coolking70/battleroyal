@@ -6,6 +6,7 @@ import { getCharacterDef } from '../../data/characters';
 import { getZoneDef } from '../../data/zones';
 import { getCharacterVisual } from '../visualAssets';
 import { Bar } from './Bar';
+import { VisualImage } from './VisualImage';
 
 interface StatusBarProps {
   state: GameState;
@@ -78,7 +79,12 @@ export function StatusBar({
 
       <span className="stat faint">
         <span className="badge badge-you">你</span>{' '}
-        {getCharacterVisual(player.characterId).emoji} {getCharacterDef(player.characterId).name}
+        <VisualImage
+          visual={getCharacterVisual(player.characterId)}
+          alt={`${getCharacterDef(player.characterId).name}头像`}
+          className="status-visual"
+        />{' '}
+        {getCharacterDef(player.characterId).name}
         {player.guarding && <span className="tag tag-guard" style={{ marginLeft: 6 }}>防御</span>}
         {hasExposed(player) && (
           <span className="tag tag-exposed" style={{ marginLeft: 6 }}>{EXPOSED_LABEL}</span>

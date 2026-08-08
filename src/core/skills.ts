@@ -12,7 +12,7 @@
  *
  * | 角色 | 技能 | 战略维度 | 核心效果 |
  * | --- | --- | --- | --- |
- * | 侦察员 scout | `scout_recon` 战场侦察 | **信息** | 一次性看穿当前 + 相邻区域的人 |
+ * | 侦察员 scout | `scout_recon` 警觉侦察 | **信息** | 提升噪音信息并在 SEARCH 遭遇中抢占先手 |
  * | 斗士 fighter | `adrenaline` 肾上腺素 | **战斗节奏** | 接下来 3 次攻击省体力，代价是自己更脆 |
  * | 工程师 engineer | `field_craft` 野外工造 | **合成** | 接下来 2 次合成不要体力 |
  * | 医学生 medic | `emergency_treatment` 紧急处置 | **消耗品经济** | 止血，并让治疗品增效 25% |
@@ -229,7 +229,7 @@ export interface SkillResult {
   hpHealed: number;
   /** 实际恢复的体力 */
   staminaRestored: number;
-  /** 战场侦察实际查明的对手数量（其它技能为 0） */
+  /** 保留统计字段兼容性；警觉侦察不提供精确人物揭示，因此运行时保持为 0。 */
   revealed: number;
 }
 

@@ -1,4 +1,7 @@
-# PHASE3A1_REPORT.md — Phase 3A-1 交付报告（规格符合性最终闭环）
+# PHASE3A1_REPORT.md — Historical Phase 3A-1 交付报告
+
+> Historical report. Phase 3A-1 final acceptance later found unresolved closure issues.
+> See `PHASE3A2_REPORT.md` for the current executable evidence and final status.
 
 > 版本 0.3.1 · 日期 2026-08-08 · 基线 `PHASE3A1_BASELINE.md`
 

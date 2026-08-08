@@ -104,10 +104,10 @@ describe('本地存档', () => {
     expect(res.error).toContain('版本');
   });
 
-  it('Phase 3A-1：0.3.0 及更早存档被明确拒绝，不做迁移', () => {
-    // Phase 3A-1 版本 0.3.1（技能/事件数值回归规格）；0.3.0 及更早存档
+  it('Phase 3A-2：0.3.1 及更早存档被明确拒绝，不做迁移', () => {
+    // Phase 3A-2 版本 0.3.2（只修闭环与资产加载，不改变存档结构语义）；0.3.1 及更早存档
     // 里的旧技能语义 / 旧事件字段在新规则下没有对应，宁可拒绝不做迁移。
-    expect(GAME_VERSION).toBe('0.3.1');
+    expect(GAME_VERSION).toBe('0.3.2');
 
     const state = newGame();
     saveGame(state);

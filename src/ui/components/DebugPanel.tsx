@@ -33,6 +33,7 @@ import type { AttackStyle, Combatant, Command, GameState } from '../../core/type
 import { GAME_VERSION } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { ZONE_STATUS_LABEL, personalityLabel } from '../../utils/format';
+import { getAssetManifest, getCharacterVisual, getZoneVisual } from '../visualAssets';
 
 /** 触发一个浏览器下载（非浏览器环境静默忽略） */
 function downloadJson(filename: string, data: unknown): void {
@@ -209,6 +210,16 @@ export function DebugPanel({
           <span>{state.engagedWithPlayer.join(',') || '—'}</span>
           <span>save</span>
           <span>{saveError ? `失败：${saveError}` : '已写入 localStorage'}</span>
+        </div>
+
+        <h5>资产</h5>
+        <div className="debug-kv">
+          <span>Manifest</span>
+          <span>{getAssetManifest() ? `loaded v${getAssetManifest()!.version}` : 'fallback'}</span>
+          <span>character source</span>
+          <span>{getCharacterVisual(player.characterId).image?.startsWith('/assets/') ? 'official' : 'svg/emoji'}</span>
+          <span>zone source</span>
+          <span>{getZoneVisual(player.currentZoneId).image?.startsWith('/assets/') ? 'official' : 'svg/emoji'}</span>
         </div>
 
         <h5>玩家</h5>

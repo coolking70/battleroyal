@@ -145,6 +145,12 @@ export function runNpcTurn(
   // Phase 2A-1：随机型人格在规划时使用种子随机数（与对局同一 RNG 流隔离在调用方）
   planNpcGoal(state, npc, rng);
 
+  // Scout 的 SEARCH 先手只覆盖敌方紧接着的这一次 NPC 行动机会。
+  // 在决策前捕获目标，行动结束后统一消费；这样 attack / guard / heal /
+  // use_skill / flee / rest / craft / search / move 都不会把标记拖成长效状态。
+  const reconResponseEncounter =
+    state.encounter?.reconInitiative === true && state.encounter.enemyId === npc.id;
+
   const decision = decideNpcAction(state, npc, rng);
   npc.lastAction = decision.kind;
   npc.lastActionReason = decision.reason;
@@ -220,13 +226,13 @@ export function runNpcTurn(
       // （只抑制这一次；玩家的正常攻击 / 反击完全不受影响）。
       const enc = state.encounter;
       if (
+        reconResponseEncounter &&
         enc &&
         enc.reconInitiative &&
         enc.enemyId === npc.id &&
         target?.isPlayer &&
         target.alive
       ) {
-        enc.reconInitiative = false;
         enc.log.push(`${npc.name}因你的警觉先手谨慎观望，没有立即出手。`);
         guardActor(state, npc);
         npc.lastAction = 'guard';
@@ -301,6 +307,11 @@ export function runNpcTurn(
   // 就靠自己下一次行动调整过来）在这里结算，与玩家侧 `executeCommand` 的
   // finish 共用同一个函数，保证规则只有一份实现。idle 不算有效行动。
   if (npc.lastAction !== 'idle') noteOwnActionCompleted(state, npc);
+
+  // 必须在整次 NPC 行动机会结束后消费，而不是只在 attack 分支清除。
+  if (reconResponseEncounter && state.encounter?.enemyId === npc.id) {
+    state.encounter.reconInitiative = false;
+  }
 
   return decision;
 }
