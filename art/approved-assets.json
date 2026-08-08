@@ -1,4 +1,32 @@
 {
   "version": 1,
-  "assets": {}
+  "assets": {
+    "character/scout/portrait": {
+      "candidateHash": "2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd",
+      "contentHash": "2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd",
+      "promptHash": "2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T18:28:58.813Z",
+      "publicPath": "/assets/characters/scout/portrait.png"
+    },
+    "item/bandage/icon": {
+      "candidateHash": "3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb",
+      "contentHash": "3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb",
+      "promptHash": "3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T18:28:58.814Z",
+      "publicPath": "/assets/items/bandage/icon.png"
+    },
+    "zone/school/background": {
+      "candidateHash": "c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7",
+      "contentHash": "c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7",
+      "promptHash": "c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T18:28:58.814Z",
+      "publicPath": "/assets/zones/school/background.png"
+    }
+  }
 }

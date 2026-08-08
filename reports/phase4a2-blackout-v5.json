@@ -1,0 +1,31 @@
+{
+  "phase": "4A-2",
+  "track": "B",
+  "taskId": "world_event/blackout/illustration",
+  "revision": 4,
+  "hash": "d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843",
+  "tasks": [{
+    "taskId": "world_event/blackout/illustration",
+    "candidateHash": "d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843",
+    "validation": "passed",
+    "review": "pending"
+  }],
+  "provider": "agnes",
+  "model": "agnes-image-2.1-flash",
+  "requested": 1,
+  "apiCalls": 1,
+  "cacheHits": 0,
+  "retryCount": 0,
+  "validation": "passed",
+  "review": "pending",
+  "publish": "not eligible; human approval required",
+  "visualReview": {
+    "status": "pending",
+    "observations": [
+      "The control-area composition and black displays are present.",
+      "The generated image visibly contains green indicator lights, contrary to the v5 zero-green-light constraint.",
+      "The ceiling is visible, contrary to the v5 ceiling-out-of-frame constraint.",
+      "No automatic approval or rejection was applied; the candidate remains pending for the human review package."
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1539385,
+  "tasks": [
+    {
+      "taskId": "character/engineer/portrait",
+      "hash": "77e02599e4b4798ff6d4668b26423bc37c6b1c7bfe7a2a5def2b48d2cdb52934",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

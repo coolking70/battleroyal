@@ -101,8 +101,8 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
     expect(prompt).toContain('zero people');
     expect(prompt).toContain('zero rain');
     expect(prompt).toContain('powerless');
-    expect(prompt).toContain('emergency lamps');
-    expect(prompt).toContain('only sparse dim red emergency lamps remain active');
+    expect(prompt).toContain('emergency beacon');
+    expect(prompt).toContain('exactly one dim red emergency beacon is illuminated');
   });
 
   it('keeps Event prompts free of Character design source', async () => {
@@ -182,16 +182,16 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
     expect(hard).toContain('simple pale neutral background');
   });
 
-  it('raises Blackout to revision 3 with a windowless underground event brief', async () => {
+  it('raises Blackout to revision 4 with a close underground control-area brief', async () => {
     const { prompts } = await tasksAndPrompts();
-    expect(prompts['world_event/blackout/illustration']!.task.revision).toBe(3);
-    expect(prompts['world_event/blackout/illustration']!.sections.entityBrief).toMatch(/windowless underground commercial corridor|power failure/i);
+    expect(prompts['world_event/blackout/illustration']!.task.revision).toBe(4);
+    expect(prompts['world_event/blackout/illustration']!.sections.entityBrief).toMatch(/electrical control area|powerless|blackout/i);
   });
 
   it('puts Blackout power-loss and isolation constraints in hard constraints', async () => {
     const { prompts } = await tasksAndPrompts();
     const hard = prompts['world_event/blackout/illustration']!.sections.hardConstraints;
-    for (const phrase of ['windowless indoor corridor', 'underground commercial corridor', 'empty corridor', 'ZERO WINDOWS', 'ZERO PEOPLE', 'no weather', 'no exterior view', 'every normal ceiling light is switched off', 'illuminated white ceiling lights', 'screens are completely black', 'escalator indicator lights are off', 'no green indicator lights', 'emergency lamps', 'predominantly dark', 'electrical blackout']) {
+    for (const phrase of ['close or medium-close environmental composition', 'electrical control area inside an underground public facility', 'ceiling is outside the frame', 'ZERO CEILING LAMPS VISIBLE', 'ZERO WINDOWS', 'ZERO PEOPLE', 'no weather', 'ZERO EXTERIOR VIEW', 'every normal ceiling light is switched off', 'illuminated white ceiling lights', 'digital screens are completely black', 'all electrical control panels are dark', 'all indicator arrays are dark', 'escalator indicator lights are off', 'no green indicator lights', 'exactly one dim red emergency beacon is illuminated', 'predominantly dark', 'electrical blackout']) {
       expect(hard.toLowerCase()).toContain(phrase.toLowerCase());
     }
   });
@@ -199,7 +199,7 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
   it('keeps Blackout positive sections indoor and free of weather or characters', async () => {
     const { prompts } = await tasksAndPrompts();
     const positive = `${prompts['world_event/blackout/illustration']!.sections.categoryStyle}\n${prompts['world_event/blackout/illustration']!.sections.entityBrief}`;
-    expect(positive).toMatch(/indoor|corridor|power failure|electrical fixtures/i);
+    expect(positive).toMatch(/underground public facility|powerless|electrical control area/i);
     expect(positive).not.toMatch(/\brain\b|\bweather\b|\bstreet\b|\boutdoor\b|street battle|\bsurvivor\b|\bsoldier\b/i);
   });
 
@@ -217,7 +217,7 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
     expect(await findCacheEntry(config, scoutHash, prompts['character/scout/portrait'])).toBeNull();
     expect(await findCacheEntry(config, blackoutHash, prompts['world_event/blackout/illustration'])).toBeNull();
     expect(scout.revision).toBe(3);
-    expect(blackout.revision).toBe(3);
+    expect(blackout.revision).toBe(4);
   });
 
   it('keeps Scout provider-facing positive sections free of internal task identity', async () => {
@@ -249,11 +249,11 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
   it('locks Blackout light-state facts instead of only using negative wording', async () => {
     const { prompts } = await tasksAndPrompts();
     const entity = prompts['world_event/blackout/illustration']!.sections.entityBrief;
-    expect(entity).toContain('Every normal fluorescent ceiling fixture is completely switched off');
-    expect(entity).toContain('no white ceiling lamp is illuminated');
-    expect(entity).toContain('digital advertising screens are completely black');
-    expect(entity).toContain('Escalator indicators and control lights are off');
-    expect(entity).toContain('Only a few dim red emergency lamps remain powered');
+    expect(entity).toContain('Electrical control panels and indicator arrays are completely dark');
+    expect(entity).toContain('Several large digital displays are completely black');
+    expect(entity).toContain('A nearby advertising screen is black and powerless');
+    expect(entity).toContain('The ceiling is outside the frame');
+    expect(entity).toContain('one dim red emergency beacon');
   });
 
   it('keeps Blackout positive sections free of outdoor and weather semantics', async () => {
@@ -262,7 +262,7 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
       prompts['world_event/blackout/illustration']!.sections.categoryStyle,
       prompts['world_event/blackout/illustration']!.sections.entityBrief,
     ].join('\n');
-    expect(positive).toContain('windowless underground commercial corridor');
+    expect(positive).toContain('underground public facility');
     expect(positive).not.toMatch(/\brain\b|\bweather\b|\bstreet\b|\boutdoor\b/i);
   });
 });

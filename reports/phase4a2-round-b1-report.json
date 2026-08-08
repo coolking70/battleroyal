@@ -1,0 +1,67 @@
+{
+  "phase": "4A-2",
+  "track": "C",
+  "round": "B1",
+  "scope": [
+    "character/fighter/portrait",
+    "character/engineer/portrait",
+    "character/medic/portrait",
+    "zone/hospital/background",
+    "item/medkit/icon",
+    "world_event/rain/illustration"
+  ],
+  "requested": 6,
+  "apiCalls": 3,
+  "cacheHits": 0,
+  "successful": 3,
+  "failed": 0,
+  "retryCount": 0,
+  "stopReason": "Stopped after the first three B1 character generations: all three showed clear gun, rifle, or tactical/military contamination. The >=2 failure threshold was reached, so Hospital, Medkit, and Rain were not called.",
+  "tasks": [
+    {
+      "taskId": "character/fighter/portrait",
+      "candidateHash": "f749da45350da7a2d069cb5b8ffdaab2815268dc558c3e8c43563189912c9b6c",
+      "validation": "passed",
+      "review": "pending",
+      "apiCalls": 1,
+      "visualFinding": "Clear rifle on back, tactical vest/pouches, camouflage, and knife; stop-threshold failure."
+    },
+    {
+      "taskId": "character/engineer/portrait",
+      "candidateHash": "77e02599e4b4798ff6d4668b26423bc37c6b1c7bfe7a2a5def2b48d2cdb52934",
+      "validation": "passed",
+      "review": "pending",
+      "apiCalls": 1,
+      "visualFinding": "Clear rifle on back and military-coded uniform/equipment; stop-threshold failure."
+    },
+    {
+      "taskId": "character/medic/portrait",
+      "candidateHash": "63d01e7c952da6d1bec5d7880afdcd828e7a5cb10acf2defd677e6e4f0f8ea7c",
+      "validation": "passed",
+      "review": "pending",
+      "apiCalls": 1,
+      "visualFinding": "Clear rifle on back and tactical straps/pouches; stop-threshold failure."
+    },
+    {
+      "taskId": "zone/hospital/background",
+      "candidateHash": null,
+      "validation": "not_attempted",
+      "review": "pending",
+      "apiCalls": 0
+    },
+    {
+      "taskId": "item/medkit/icon",
+      "candidateHash": null,
+      "validation": "not_attempted",
+      "review": "pending",
+      "apiCalls": 0
+    },
+    {
+      "taskId": "world_event/rain/illustration",
+      "candidateHash": null,
+      "validation": "not_attempted",
+      "review": "pending",
+      "apiCalls": 0
+    }
+  ]
+}

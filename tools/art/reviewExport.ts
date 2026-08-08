@@ -17,21 +17,39 @@ const OUTPUT_NAMES: Record<string, string> = {
   'zone/school/background': 'school-background',
   'item/bandage/icon': 'bandage-icon',
   'world_event/blackout/illustration': 'blackout-illustration',
+  'character/fighter/portrait': 'fighter-portrait',
+  'character/engineer/portrait': 'engineer-portrait',
+  'character/medic/portrait': 'medic-portrait',
+  'zone/hospital/background': 'hospital-background',
+  'item/medkit/icon': 'medkit-icon',
+  'world_event/rain/illustration': 'rain-illustration',
 };
 
 const REVIEW_REMINDERS: Record<string, string> = {
   'character/scout/portrait': 'Check that binoculars are the only prominent equipment and that hands, back, and shoulders are free of weapons; remember the v1 rifle issue.',
   'zone/school/background': 'Check for zero people, zero human silhouettes, and a calm open lower center; remember the v1 central-person and silhouette issue.',
   'item/bandage/icon': 'Check for exactly one centered isolated object on a neutral backdrop with no scenery, frame, arrows, buttons, or text; remember the v1 ruins/HUD/frame issue.',
-  'world_event/blackout/illustration': 'Check for an environment-only blackout with no people, weapons, or rain, powerless normal lights, and only sparse red emergency lamps; remember the v1 armed-person/rain/HUD issue.',
+  'world_event/blackout/illustration': 'Check the v5 close electrical control-area composition: ceiling out of frame, black displays and controls, zero green/white normal lights, and exactly one dim red emergency beacon.',
+  'character/fighter/portrait': 'Check for a civilian athletic portrait with wraps or sport gloves, no firearm or military/tactical reading, and no injured variant.',
+  'character/engineer/portrait': 'Check for a civilian repair technician with small tools, no firearm or military/tactical reading, and no injured variant.',
+  'character/medic/portrait': 'Check for a civilian emergency medical responder with a compact medical pouch, no firearm or combat reading, and no injured variant.',
+  'zone/hospital/background': 'Check for an environment-only hospital background with zero people or human silhouettes and no character focal subject.',
+  'item/medkit/icon': 'Check for exactly one isolated high-frequency healing consumable object, no bandage-only substitution, scenery, hand, frame, UI, or text.',
+  'world_event/rain/illustration': 'Check for an environment-only rain event illustration with no people, weapons, HUD, or unrelated event motifs.',
 };
 const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'character/scout/portrait': [
     'no firearm of any kind', 'nothing visible behind either shoulder', 'no gun stock/barrel', 'no gun holster', 'no camouflage', 'no tactical/military vest', 'both hands empty', 'binoculars remain clear', 'civilian clothing', 'adult 28–32 appearance',
   ],
   'world_event/blackout/illustration': [
-    'fully indoor', 'no windows', 'no exterior view', 'no people', 'no rain/weather', 'no HUD', 'all white ceiling lamps off', 'all screens black', 'escalator indicators off', 'only dim red emergency lamps active', 'image is predominantly dark', 'immediately reads as blackout',
+    'close or medium-close control area', 'ceiling outside the frame', 'zero ceiling lamps visible', 'no windows', 'no exterior view', 'no people', 'no weather/rain', 'no HUD/interface/text', 'all digital displays black', 'control panels and indicator arrays dark', 'zero green lights', 'zero white normal lights', 'exactly one dim red emergency beacon', 'image is predominantly dark', 'immediately reads as blackout',
   ],
+  'character/fighter/portrait': ['one adult civilian', 'athletic sport-trained stance', 'boxing wraps or sport gloves', 'no firearm or weapon', 'no military/tactical equipment'],
+  'character/engineer/portrait': ['one adult civilian', 'repair technician clothing', 'small tool belt or wrench', 'no firearm or weapon', 'no military/tactical equipment'],
+  'character/medic/portrait': ['one adult civilian', 'civilian medical responder', 'compact first-aid pouch', 'no firearm or weapon', 'no combat armor'],
+  'zone/hospital/background': ['environment only', 'zero people', 'zero human silhouettes', 'no character focal subject', 'lower center remains open'],
+  'item/medkit/icon': ['exactly one centered object', 'healing medical kit is the subject', 'no scenery or environment', 'no hands or UI frame', 'no readable text'],
+  'world_event/rain/illustration': ['environment-only event', 'rain is visually clear', 'zero people', 'zero weapons', 'no HUD or event card frame'],
 };
 
 export interface ReviewExportOptions {
@@ -53,11 +71,12 @@ export function selectPendingReviewCandidates(candidates: CandidateMetadata[], t
 
 export async function selectCandidatesFromReport(config: ArtConfig, reportPath: string): Promise<CandidateMetadata[]> {
   const parsed = JSON.parse(await fs.readFile(path.isAbsolute(reportPath) ? reportPath : path.join(config.rootDir, reportPath), 'utf8')) as {
-    tasks?: Array<{ taskId?: string; candidateHash?: string; validation?: string; review?: string }>;
+    tasks?: Array<{ taskId?: string; candidateHash?: string | null; validation?: string; review?: string }>;
   };
   if (!Array.isArray(parsed.tasks) || parsed.tasks.length === 0) throw new Error('review report has no tasks');
   const candidates = await listCandidates(config);
-  const selected = parsed.tasks.map((entry) => {
+  const attempted = parsed.tasks.filter((entry) => !(entry.validation === 'not_attempted' && entry.candidateHash == null));
+  const selected = attempted.map((entry) => {
     if (!entry.taskId || !entry.candidateHash) throw new Error('review report task is missing taskId or candidateHash');
     const candidate = candidates.find((item) => item.taskId === entry.taskId && item.hash === entry.candidateHash);
     if (!candidate) throw new Error(`review report candidate not found: ${entry.taskId} / ${entry.candidateHash}`);
@@ -127,7 +146,7 @@ async function main(): Promise<void> {
     reportPath,
     outputDir,
     fileSuffix: fileSuffix ?? '',
-    title: fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : undefined,
+    title: fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : undefined,
   } : {};
   const result = await exportRoundAReview(configModule.createArtConfig(), options);
   console.log(`EXPORTED ${result.candidates.length} pending candidates to ${result.outputDir}`);

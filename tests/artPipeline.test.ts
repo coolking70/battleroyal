@@ -358,6 +358,38 @@ describe('Phase 4 review and publish contracts', () => {
     expect(JSON.parse(await fs.readFile(versionPath, 'utf8')).publishedAt).toBe(version.publishedAt);
   });
 
+  it('publishes exactly three approved Round A slots and a second publish is a no-op', async () => {
+    const { root, config } = await fixture();
+    const taskIds = ['character/scout/portrait', 'zone/school/background', 'item/bandage/icon'];
+    for (const taskId of taskIds) {
+      const task = (await loadTasks(root)).find((item) => item.id === taskId)!;
+      const built = await buildPrompt(root, task, config.model);
+      const hash = contentHash(built);
+      await saveCache(config, hash, built, { mimeType: 'image/png', bytes: fakePng(task.width, task.height) });
+      await generateTask(config, task, { retryDelaysMs: [0] });
+      await reviewCandidate(config, task.id, hash, 'approved');
+    }
+    const first = await publishApproved(config);
+    expect(first.published.map((item) => item.taskId).sort()).toEqual(taskIds.sort());
+    expect((await readProvenance(config)).assets).toEqual(expect.objectContaining({
+      'character/scout/portrait': expect.any(Object),
+      'zone/school/background': expect.any(Object),
+      'item/bandage/icon': expect.any(Object),
+    }));
+    const second = await publishApproved(config);
+    expect(second.changed).toBe(false);
+    expect(second.published).toHaveLength(3);
+  });
+
+  it('never publishes a human-rejected Blackout candidate', async () => {
+    const { config, task, hash } = await cachedCandidate('world_event/blackout/illustration');
+    await reviewCandidate(config, task.id, hash, 'rejected', 'human review: blackout composition failed');
+    const result = await publishApproved(config);
+    expect(result.published).toHaveLength(0);
+    const manifest = JSON.parse(await fs.readFile(config.manifestPath, 'utf8')) as { worldEvents: Record<string, string | null> };
+    expect(manifest.worldEvents.blackout).toBeUndefined();
+  });
+
   it('records requested and actual dimensions in candidate metadata', async () => {
     const { config, task, hash } = await cachedCandidate('character/scout/portrait');
     const candidate = (await listCandidates(config)).find((item) => item.hash === hash)!;

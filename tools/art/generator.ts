@@ -175,7 +175,23 @@ export async function writePromptReport(
   built: Awaited<ReturnType<typeof buildPrompt>>,
   hash: string,
 ): Promise<void> {
-  const targetedVersion = built.task.revision >= 3 && (built.task.id === 'character/scout/portrait' || built.task.id === 'world_event/blackout/illustration') ? 'phase4-targeted-v4' : built.task.revision >= 2 && (built.task.id === 'character/scout/portrait' || built.task.id === 'world_event/blackout/illustration') ? 'phase4-targeted-v3' : built.styleProfileVersion.startsWith('phase4-style-v2-') ? 'phase4-style-v2' : 'legacy';
+  const roundB1Tasks = new Set([
+    'character/fighter/portrait',
+    'character/engineer/portrait',
+    'character/medic/portrait',
+    'zone/hospital/background',
+    'item/medkit/icon',
+    'world_event/rain/illustration',
+  ]);
+  const targetedVersion = built.task.id === 'world_event/blackout/illustration' && built.task.revision >= 4
+    ? 'phase4-targeted-v5'
+    : roundB1Tasks.has(built.task.id)
+      ? 'phase4-round-b1'
+      : built.task.revision >= 3 && (built.task.id === 'character/scout/portrait' || built.task.id === 'world_event/blackout/illustration')
+        ? 'phase4-targeted-v4'
+        : built.task.revision >= 2 && (built.task.id === 'character/scout/portrait' || built.task.id === 'world_event/blackout/illustration')
+          ? 'phase4-targeted-v3'
+          : built.styleProfileVersion.startsWith('phase4-style-v2-') ? 'phase4-style-v2' : 'legacy';
   const versionDir = targetedVersion;
   const dir = path.join(rootDir, 'reports', 'phase4-prompts', versionDir);
   await fs.mkdir(dir, { recursive: true });
