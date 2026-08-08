@@ -1,0 +1,41 @@
+{
+  "NON_AUTHORITATIVE": true,
+  "nonAuthoritativeReason": "原模拟器可能在对局仍为 playing 时退出循环，并把生命值最高角色当作胜者；且四种性格共用同一分母、静默丢弃 random 胜局。本报告仅保留为历史证据，不能作为有效平衡结论。权威报告见 reports/phase2a-balance.json。",
+  "supersededBy": "reports/phase2a-balance.json",
+  "markedAt": "2026-08-07",
+  "generatedAt": "2026-08-07T02:28:34.843Z",
+  "totalGames": 1000,
+  "gamesPerPersonality": 250,
+  "version": "0.2.0",
+  "personalities": [
+    {
+      "personality": "aggressive",
+      "games": 787,
+      "wins": 152,
+      "winRate": 0.193138500635324
+    },
+    {
+      "personality": "cautious",
+      "games": 787,
+      "wins": 215,
+      "winRate": 0.2731893265565438
+    },
+    {
+      "personality": "collector",
+      "games": 787,
+      "wins": 249,
+      "winRate": 0.31639135959339265
+    },
+    {
+      "personality": "opportunist",
+      "games": 787,
+      "wins": 171,
+      "winRate": 0.21728081321473952
+    }
+  ],
+  "maxWinRate": 0.31639135959339265,
+  "minWinRate": 0.193138500635324,
+  "balanceRatio": 1.6381578947368423,
+  "threshold": 2.2,
+  "passed": true
+}

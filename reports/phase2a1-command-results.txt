@@ -1,0 +1,74 @@
+# Phase 2A-1 命令结果（真实运行）
+# 生成时间: Fri Aug  7 17:05:08 CST 2026
+
+===== 1/6 npm ci =====
+npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster implementation
+
+added 161 packages, and audited 162 packages in 2s
+
+28 packages are looking for funding
+  run `npm fund` for details
+
+5 vulnerabilities (3 moderate, 1 high, 1 critical)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+EXIT:0
+
+===== 2/6 npm run typecheck =====
+
+> zone-battle-royale@0.2.0 typecheck
+> tsc -b --force
+
+EXIT:0
+
+===== 3/6 npm run test =====
+
+ Test Files  27 passed (27)
+      Tests  358 passed (358)
+   Start at  17:05:14
+   Duration  4.12s (transform 953ms, setup 0ms, collect 4.02s, tests 8.15s, environment 726ms, prepare 4.85s)
+
+EXIT:0
+
+===== 4/6 npm run build =====
+> zone-battle-royale@0.2.0 build
+> tsc -b && vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 82 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.46 kB │ gzip:  0.32 kB
+dist/assets/index-Chjxt7ed.css   18.29 kB │ gzip:  4.29 kB
+dist/assets/index-BT-AicjB.js   262.38 kB │ gzip: 87.93 kB │ map: 803.79 kB
+✓ built in 442ms
+EXIT:0
+
+===== 5/6 npm run audit:save =====
+
+> zone-battle-royale@0.2.0 audit:save
+> tsx tools/auditSaveValidation.ts
+
+[audit:save] 对照 通过 | 损坏用例 60 个，拒绝 60 个，通过 60 个
+[audit:save] 报告已写入：
+  /Users/coolking70/Documents/同步空间/battleroyal/reports/save-validation-audit.json
+  /Users/coolking70/Documents/同步空间/battleroyal/reports/save-validation-audit.md
+[audit:save] 判定：PASS
+EXIT:0
+
+===== 6/6 npm run simulate -- --games 1000 --seed-prefix PHASE2A1 =====
+
+> zone-battle-royale@0.2.0 simulate
+> tsx tools/simulateBalance.ts --games 1000 --seed-prefix PHASE2A1
+
+[phase2a-balance] 运行矩阵：全角色 × 全策略，每格 1000 局…
+[phase2a-balance] 完成：20000 局，胜率 5.4%，可信率 100.0%，引擎判定 PASS，角色平衡 PASS
+[phase2a-balance] 整体判定：PASS
+[phase2a-balance] 报告已写入：
+  /Users/coolking70/Documents/同步空间/battleroyal/reports/phase2a-balance.json
+  /Users/coolking70/Documents/同步空间/battleroyal/reports/phase2a-balance.md
+EXIT:0

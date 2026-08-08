@@ -1,0 +1,34 @@
+{
+  "name": "zone-battle-royale",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "description": "区域式大逃杀网页游戏原型（单人单机 / 确定性种子）",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b --force",
+    "simulate": "tsx tools/simulateBalance.ts",
+    "simulate:balance": "tsx tools/simulateBalance.ts",
+    "audit:save": "tsx tools/auditSaveValidation.ts",
+    "scripted:playthroughs": "tsx tools/scriptedPlaythroughs.ts"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "tsx": "^4.23.9",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,140 @@
+/**
+ * @vitest-environment jsdom
+ *
+ * 界面冒烟测试。
+ * 不依赖任何测试库，直接用 react-dom/client 把 App 挂到 jsdom 上，
+ * 验证「主菜单 -> 开局 -> 行动 -> 存档」这条主链路不会抛错。
+ */
+import { StrictMode, act } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import App from '../src/App';
+import { SAVE_KEY } from '../src/data/gameConfig';
+
+let container: HTMLDivElement;
+let root: Root;
+
+// React 18 的 act 需要这个全局开关
+declare global {
+  // eslint-disable-next-line no-var
+  var IS_REACT_ACT_ENVIRONMENT: boolean | undefined;
+}
+
+beforeEach(() => {
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  localStorage.clear();
+  container = document.createElement('div');
+  document.body.appendChild(container);
+  root = createRoot(container);
+});
+
+afterEach(() => {
+  act(() => root.unmount());
+  container.remove();
+});
+
+function render(): void {
+  act(() => {
+    root.render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+  });
+}
+
+/** 按可见文本找到一个按钮 */
+function findButton(text: string): HTMLButtonElement {
+  const btn = Array.from(container.querySelectorAll('button')).find((b) =>
+    (b.textContent ?? '').includes(text),
+  );
+  if (!btn) throw new Error(`找不到按钮：${text}`);
+  return btn as HTMLButtonElement;
+}
+
+function click(text: string): void {
+  const btn = findButton(text);
+  act(() => {
+    btn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+}
+
+describe('界面冒烟', () => {
+  it('主菜单能渲染标题与 4 名可选角色', () => {
+    render();
+    expect(container.textContent).toContain('区域大逃杀');
+    expect(container.querySelectorAll('.char-card')).toHaveLength(4);
+    expect(findButton('开始新对局').disabled).toBe(false);
+    // 没有存档时「继续」按钮应当是禁用的
+    expect(findButton('没有可继续的存档').disabled).toBe(true);
+  });
+
+  it('开局后进入对局界面，并写入 localStorage 自动存档', () => {
+    render();
+    click('开始新对局');
+
+    expect(container.querySelector('.game')).not.toBeNull();
+    expect(container.textContent).toContain('区域地图');
+    expect(container.textContent).toContain('同区域');
+    expect(localStorage.getItem(SAVE_KEY)).not.toBeNull();
+  });
+
+  it('点击搜索会推进时间单位', () => {
+    render();
+    click('开始新对局');
+
+    const readTime = (): number => {
+      const text = container.querySelector('.topbar')?.textContent ?? '';
+      const m = /时间\s*(\d+)/.exec(text);
+      if (!m) throw new Error(`状态栏里读不到时间：${text}`);
+      return Number(m[1]);
+    };
+
+    expect(readTime()).toBe(0);
+    click('搜索');
+    expect(readTime()).toBe(1);
+  });
+
+  it('切到合成页能看到配方列表', () => {
+    render();
+    click('开始新对局');
+    click('合成');
+    expect(container.querySelectorAll('.recipe').length).toBeGreaterThan(0);
+  });
+
+  it('切到日志页能看到开局事件', () => {
+    render();
+    click('开始新对局');
+    click('日志');
+    expect(container.textContent).toContain('对局开始');
+  });
+
+  it('重新挂载后可以从存档继续', () => {
+    render();
+    click('开始新对局');
+    click('搜索');
+    act(() => root.unmount());
+
+    root = createRoot(container);
+    render();
+    click('继续上次对局');
+    expect(container.querySelector('.game')).not.toBeNull();
+  });
+
+  it('debug=1 时面板展示技能冷却 / 战斗风格概率 / 事件 / RNG 状态', () => {
+    // 模拟 ?debug=1
+    const url = new URL(window.location.href);
+    url.searchParams.set('debug', '1');
+    window.history.replaceState({}, '', url.toString());
+
+    render();
+    click('开始新对局');
+
+    const text = container.querySelector('.debug')?.textContent ?? '';
+    expect(text).toContain('技能冷却');
+    expect(text).toContain('战斗风格概率');
+    expect(text).toContain('事件');
+    expect(text).toContain('RNG 状态');
+    expect(text).toContain('同种子可完全重放');
+  });
+});

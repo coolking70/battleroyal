@@ -1,0 +1,503 @@
+{
+  "meta": {
+    "tool": "audit-save-validation",
+    "version": "0.2.0",
+    "generatedAt": "2026-08-07T17:00:20.632Z",
+    "control": "normal-save-accepted",
+    "totalCases": 60,
+    "passedCases": 60,
+    "failedCases": 0,
+    "constructionFailedCases": 0,
+    "verdict": "PASS"
+  },
+  "control": {
+    "case": "control-valid（正常存档）",
+    "expected": true,
+    "actual": true,
+    "passed": true,
+    "errorMessage": null,
+    "constructionFailed": false
+  },
+  "cases": [
+    {
+      "case": "缺 savedAt",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "savedAt 必须是有限正数（时间戳）",
+      "constructionFailed": false
+    },
+    {
+      "case": "savedAt 为 NaN",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "savedAt 必须是有限正数（时间戳）",
+      "constructionFailed": false
+    },
+    {
+      "case": "savedAt 为负数",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "savedAt 必须是有限正数（时间戳）",
+      "constructionFailed": false
+    },
+    {
+      "case": "顶层 seed 为空串",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "seed 必须是非空字符串",
+      "constructionFailed": false
+    },
+    {
+      "case": "顶层 time 为负数",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "time 必须是非负整数",
+      "constructionFailed": false
+    },
+    {
+      "case": "顶层 time 与 state 不一致",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.time 与顶层 time 不一致",
+      "constructionFailed": false
+    },
+    {
+      "case": "顶层 seed 与 state 不一致",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.seed 与顶层 seed 不一致",
+      "constructionFailed": false
+    },
+    {
+      "case": "顶层 rngState 与 state 不一致",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.rngState 与顶层 rngState 不一致",
+      "constructionFailed": false
+    },
+    {
+      "case": "顶层 rngState 为字符串",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "rngState 必须是合法的有限非负整数",
+      "constructionFailed": false
+    },
+    {
+      "case": "版本不受支持",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "版本不受支持（9.9.9，当前 0.2.0）",
+      "constructionFailed": false
+    },
+    {
+      "case": "背包 9 格（超上限）",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的背包超过 8 格（9 格）",
+      "constructionFailed": false
+    },
+    {
+      "case": "物品 count=0",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 inventory 的物品数量必须为正整数（0）",
+      "constructionFailed": false
+    },
+    {
+      "case": "物品 count 超过 maxStack",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 inventory 的物品数量超过 maxStack（99 > 5）",
+      "constructionFailed": false
+    },
+    {
+      "case": "不可堆叠物品 count=2",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 inventory 的物品数量超过 maxStack（2 > 1）",
+      "constructionFailed": false
+    },
+    {
+      "case": "武器缺少耐久",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 inventory 的武器缺少合法耐久（undefined）",
+      "constructionFailed": false
+    },
+    {
+      "case": "武器耐久越界",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 inventory 的武器耐久越界（999，应在 [0, 20]）",
+      "constructionFailed": false
+    },
+    {
+      "case": "非武器带耐久字段",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 inventory 的非武器物品出现了耐久字段",
+      "constructionFailed": false
+    },
+    {
+      "case": "负 eventSeq",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.eventSeq 必须是非负整数（实际 -1）",
+      "constructionFailed": false
+    },
+    {
+      "case": "负 uidSeq",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.uidSeq 必须是非负整数（实际 -3）",
+      "constructionFailed": false
+    },
+    {
+      "case": "负 nextZoneEventTime",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.nextZoneEventTime 必须是非负整数（实际 -2）",
+      "constructionFailed": false
+    },
+    {
+      "case": "endedAtTime 晚于 state.time",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.endedAtTime（5）晚于 state.time（0）",
+      "constructionFailed": false
+    },
+    {
+      "case": "进行中对局带 endedAtTime",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.endedAtTime（3）晚于 state.time（0）",
+      "constructionFailed": false
+    },
+    {
+      "case": "负 stats.searches",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 stats.searches 必须为非负数（实际 -1）",
+      "constructionFailed": false
+    },
+    {
+      "case": "负 stats.damageDealt",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 stats.damageDealt 必须为非负数（实际 -5.5）",
+      "constructionFailed": false
+    },
+    {
+      "case": "负 kills",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 kills 必须为非负数（实际 -1）",
+      "constructionFailed": false
+    },
+    {
+      "case": "已死亡但 hp>0",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 已死亡但 hp 不为 0（50）",
+      "constructionFailed": false
+    },
+    {
+      "case": "存活却带 diedAtTime",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 存活却带有 diedAtTime",
+      "constructionFailed": false
+    },
+    {
+      "case": "已死亡但缺 diedAtTime",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 已死亡但缺少 diedAtTime",
+      "constructionFailed": false
+    },
+    {
+      "case": "区域 loot count=0",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "区域 school 的物资数量必须为正整数（0）",
+      "constructionFailed": false
+    },
+    {
+      "case": "区域 loot 未知物品",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "区域 school 的物资引用了未知物品（no_such_item）",
+      "constructionFailed": false
+    },
+    {
+      "case": "区域 loot 稀有度非法",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "区域 school 的物资稀有度非法（epic）",
+      "constructionFailed": false
+    },
+    {
+      "case": "remainingLootCount 为负",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "区域 school 的 remainingLootCount（-1）与实际物资清单之和（21）不符",
+      "constructionFailed": false
+    },
+    {
+      "case": "initialLootCount 为负",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "区域 school 的 initialLootCount 为负数",
+      "constructionFailed": false
+    },
+    {
+      "case": "remaining > initial",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "区域 school 的 remainingLootCount（41）与实际物资清单之和（31）不符",
+      "constructionFailed": false
+    },
+    {
+      "case": "supply 与派生比例不符",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "区域 school 的 supply（0.42）与派生比例（1.000000）不符",
+      "constructionFailed": false
+    },
+    {
+      "case": "supply 越界",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "区域 school 的 supply（2.5）与派生比例（1.000000）不符",
+      "constructionFailed": false
+    },
+    {
+      "case": "equippedWeaponId 指向非武器",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 equippedWeaponId 指向的不是武器（cloth_armor）",
+      "constructionFailed": false
+    },
+    {
+      "case": "equipment 出现 material",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 equipment 里出现了不可装备物品（木材）",
+      "constructionFailed": false
+    },
+    {
+      "case": "重复事件 ID",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "事件 id 重复：e0",
+      "constructionFailed": false
+    },
+    {
+      "case": "事件类型非法",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "事件类型非法：HACKED",
+      "constructionFailed": false
+    },
+    {
+      "case": "事件时间晚于当前",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "事件 e0 的时间晚于 state.time",
+      "constructionFailed": false
+    },
+    {
+      "case": "错误事件 actor",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "事件 e0 的 actorId 引用了不存在的角色（ghost）",
+      "constructionFailed": false
+    },
+    {
+      "case": "事件 message 非字符串",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "事件 e0 的 message 必须是字符串",
+      "constructionFailed": false
+    },
+    {
+      "case": "事件 metadata 不可序列化",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "事件 e0 的 metadata.nested 不可 JSON 序列化",
+      "constructionFailed": false
+    },
+    {
+      "case": "NPC 有目标但缺 planCreatedAt",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 有制作目标但 planCreatedAt 非法",
+      "constructionFailed": false
+    },
+    {
+      "case": "NPC 有目标但 planReason 为空",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 有制作目标但 planReason 必须为非空字符串",
+      "constructionFailed": false
+    },
+    {
+      "case": "非法玩家制作目标",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "玩家制作目标指向不存在的配方（recipe_does_not_exist）",
+      "constructionFailed": false
+    },
+    {
+      "case": "craftGoalCompleted=true 但无目标",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "craftGoalCompleted 为 true 但未设定制作目标",
+      "constructionFailed": false
+    },
+    {
+      "case": "未解决遭遇敌人已死亡",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "存在未解决的遭遇，但敌人已死亡",
+      "constructionFailed": false
+    },
+    {
+      "case": "未解决遭遇 zoneId 与玩家区域不符",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "存在未解决的遭遇，但敌人已不在玩家所在区域",
+      "constructionFailed": false
+    },
+    {
+      "case": "对局已结束仍有未解决遭遇",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "存在未解决的遭遇，但敌人已不在玩家所在区域",
+      "constructionFailed": false
+    },
+    {
+      "case": "pendingPickup zoneId 与玩家区域不符",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "pendingPickup.zoneId 与玩家当前区域不一致",
+      "constructionFailed": false
+    },
+    {
+      "case": "pendingPickup source 非法",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "pendingPickup.source 非法（cheat）",
+      "constructionFailed": false
+    },
+    {
+      "case": "全局重复 UID（跨角色）",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "物品 UID「i0」全局重复：角色 p0 的 inventory 与 角色 n1 的 inventory",
+      "constructionFailed": false
+    },
+    {
+      "case": "区域存活名单重复 ID",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "区域 school 的存活名单存在重复 ID",
+      "constructionFailed": false
+    },
+    {
+      "case": "存活角色出现在其他区域名单",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "存活角色 p0 却出现在非所在区域 school 的存活名单中",
+      "constructionFailed": false
+    },
+    {
+      "case": "eventSeq 小于事件 id 最大值",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.eventSeq（1）必须大于现存事件 id 的最大值（1）",
+      "constructionFailed": false
+    },
+    {
+      "case": "eventCounters.total 小于事件数",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "eventCounters.total（1）小于现存事件数（2）",
+      "constructionFailed": false
+    },
+    {
+      "case": "eventCounters.byType 非法 key",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "eventCounters.byType 包含非法事件类型（HACKED）",
+      "constructionFailed": false
+    },
+    {
+      "case": "负 eventCounters.total",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "eventCounters.total 必须为非负数",
+      "constructionFailed": false
+    }
+  ]
+}
