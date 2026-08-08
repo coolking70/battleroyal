@@ -37,4 +37,4 @@ The README leaves `Decision` and `Notes` blank. Automatic validation is intentio
 
 - 500-game Phase 4A-1 regression: requested 500 / actual 500, timeout 0, illegal state 0, hard limit 0, regression exit 0. Character balance is observation only.
 - 625 tests passed; typecheck, build, save audit, dependency audit, offline doctor, manifest validation, browser secret scan, tracked repository secret scan, dry-run, and runtime audit passed.
-- Remote GitHub Actions status will be recorded after push if available; no CI result is assumed or fabricated here.
+- Remote GitHub Actions: **PASS**, run `31265918529`, job `verify`; all configured CI steps completed successfully.

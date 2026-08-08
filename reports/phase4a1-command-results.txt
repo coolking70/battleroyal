@@ -84,3 +84,7 @@ EXIT: 0
 SUMMARY: exported 4 pending candidates to output/art-review/phase4a1-round-a; no review status changed.
 
 Live Scout evidence is preserved in phase4a1-round-a-scout.json and the prior provider confirmation reports. No API key or image base64 is present in reports.
+
+COMMAND: gh run watch 31265918529 --exit-status
+EXIT: 0
+SUMMARY: GitHub Actions verify job PASS; typecheck, 625-test unit suite, build, audits, manifest validation, both secret scans, dry-run, and CI 100-game simulation all succeeded.
