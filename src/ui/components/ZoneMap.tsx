@@ -2,6 +2,7 @@ import type { Combatant, GameState } from '../../core/types';
 import { noiseLevelOf, NOISE_LABEL } from '../../core/info';
 import { ZONES, areAdjacent } from '../../data/zones';
 import { ZONE_STATUS_LABEL, cx } from '../../utils/format';
+import { visualFor } from '../visualAssets';
 
 interface ZoneMapProps {
   state: GameState;
@@ -43,12 +44,13 @@ export function ZoneMap({
           const status = zs?.status ?? 'safe';
           const noise = noiseLevelOf(zs);
           const hasIntel = freshIntelZones?.has(def.id) ?? false;
+          const zoneVisual = visualFor('zone', def.id);
 
           return (
             <button
               key={def.id}
               className={cx('zone-item', isCurrent && 'current')}
-              style={{ ['--zone-color' as string]: def.color }}
+              style={{ ['--zone-color' as string]: zoneVisual.color }}
               disabled={disabled || isCurrent || !adjacent}
               onClick={() => onMove(def.id)}
               title={
@@ -60,7 +62,12 @@ export function ZoneMap({
               }
             >
               <span className="row1">
-                <span className="name">{def.name}</span>
+                <span className="name">
+                  <span className="zone-emoji" aria-hidden>
+                    {zoneVisual.emoji}
+                  </span>{' '}
+                  {def.name}
+                </span>
                 <span className={`tag tag-${status}`}>
                   {ZONE_STATUS_LABEL[status]}
                 </span>

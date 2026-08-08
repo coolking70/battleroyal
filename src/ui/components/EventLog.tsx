@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { GameEvent, GameEventType } from '../../core/types';
 import { cx } from '../../utils/format';
 
@@ -7,7 +7,20 @@ interface EventLogProps {
   playerId: string;
 }
 
-/** 事件类型 -> 着色分类 */
+/** 日志过滤分类 */
+type LogFilter = 'all' | 'combat' | 'item' | 'zone' | 'world' | 'death' | 'other';
+
+const FILTER_LABEL: Record<LogFilter, string> = {
+  all: '全部',
+  combat: '战斗',
+  item: '物品',
+  zone: '环境',
+  world: '世界事件',
+  death: '死亡',
+  other: '行动',
+};
+
+/** 事件类型 -> 着色分类（沿用旧逻辑，扩充世界事件） */
 function kindOf(type: GameEventType): string {
   switch (type) {
     case 'ATTACK_HIT':
@@ -26,35 +39,105 @@ function kindOf(type: GameEventType): string {
     case 'ITEM_USED':
     case 'ITEM_EQUIPPED':
       return 'k-item';
+    case 'WORLD_EVENT':
+    case 'WORLD_EVENT_ENDED':
+      return 'k-world';
     default:
       return '';
   }
 }
 
-/** 右栏日志：自动滚到底部，玩家自身事件高亮 */
+/** 事件类型 -> 过滤分类（Phase 3A Step 12 日志过滤） */
+function filterOf(type: GameEventType): LogFilter {
+  switch (type) {
+    case 'ATTACK_HIT':
+    case 'ATTACK_MISSED':
+    case 'ENCOUNTER_STARTED':
+    case 'CHARACTER_ESCAPED':
+    case 'GUARD':
+    case 'SKILL_USED':
+    case 'STATUS_EXPIRED':
+      return 'combat';
+    case 'ITEM_FOUND':
+    case 'ITEM_CRAFTED':
+    case 'ITEM_PICKED':
+    case 'ITEM_DROPPED':
+    case 'ITEM_USED':
+    case 'ITEM_EQUIPPED':
+      return 'item';
+    case 'ZONE_WARNING':
+    case 'ZONE_RESTRICTED':
+    case 'ZONE_DAMAGE':
+    case 'ZONE_EXHAUSTED':
+    case 'PHASE_CHANGED':
+    case 'FINALE_DECAY':
+      return 'zone';
+    case 'WORLD_EVENT':
+    case 'WORLD_EVENT_ENDED':
+      return 'world';
+    case 'CHARACTER_DIED':
+    case 'GAME_ENDED':
+      return 'death';
+    default:
+      return 'other';
+  }
+}
+
+/** 右栏日志：自动滚到底部，支持分类过滤 + 只看自己（Phase 3A Step 12） */
 export function EventLog({ events, playerId }: EventLogProps): JSX.Element {
   const boxRef = useRef<HTMLDivElement>(null);
+  const [filter, setFilter] = useState<LogFilter>('all');
+  const [selfOnly, setSelfOnly] = useState(false);
 
   useEffect(() => {
     const el = boxRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [events]);
+  }, [events, filter, selfOnly]);
 
-  if (events.length === 0) {
-    return <div className="empty">暂无记录。</div>;
-  }
+  const visible = events.filter((e) => {
+    if (selfOnly && e.actorId !== playerId) return false;
+    if (filter === 'all') return true;
+    return filterOf(e.type) === filter;
+  });
 
   return (
-    <div className="log-list scroll" ref={boxRef}>
-      {events.map((e) => (
-        <div
-          key={e.id}
-          className={cx('log-line', kindOf(e.type), e.actorId === playerId && 'k-self')}
-        >
-          <span className="t">{e.time}</span>
-          <span className="m">{e.message}</span>
+    <div className="log-wrap">
+      <div className="log-filters">
+        {(['all', 'combat', 'item', 'zone', 'world', 'death', 'other'] as LogFilter[]).map(
+          (f) => (
+            <button
+              key={f}
+              className={cx('log-filter', filter === f && 'active')}
+              onClick={() => setFilter(f)}
+            >
+              {FILTER_LABEL[f]}
+            </button>
+          ),
+        )}
+        <label className="log-self-toggle">
+          <input
+            type="checkbox"
+            checked={selfOnly}
+            onChange={(e) => setSelfOnly(e.target.checked)}
+          />
+          只看自己
+        </label>
+      </div>
+      {visible.length === 0 ? (
+        <div className="empty">暂无记录。</div>
+      ) : (
+        <div className="log-list scroll" ref={boxRef}>
+          {visible.map((e) => (
+            <div
+              key={e.id}
+              className={cx('log-line', kindOf(e.type), e.actorId === playerId && 'k-self')}
+            >
+              <span className="t">{e.time}</span>
+              <span className="m">{e.message}</span>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }

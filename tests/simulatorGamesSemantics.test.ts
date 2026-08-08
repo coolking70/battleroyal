@@ -86,6 +86,13 @@ function cell(characterId: string, policy: AutoPlayerPolicy, games: number): Cel
     avgEventCount: zero,
     avgSteps: zero,
     totalSteps: 0,
+    attackStyleCounts: {},
+    exposedApplied: 0,
+    exposedConsumed: 0,
+    guardResolves: 0,
+    skillUseCounts: {},
+    worldEventCounts: {},
+    commandCounts: {},
   };
 }
 

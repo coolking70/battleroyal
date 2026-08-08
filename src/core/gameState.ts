@@ -154,8 +154,9 @@ export function createGame(options: CreateGameOptions): GameState {
     pendingPickup: null,
     engagedWithPlayer: [],
     nextZoneEventTime: GAME_CONFIG.firstZoneEventTime,
-    nextDynamicEventTime: GAME_CONFIG.firstDynamicEventTime,
-    activeEvents: [],
+    nextWorldEventTime: GAME_CONFIG.firstWorldEventTime,
+    activeWorldEvents: [],
+    worldEventHistory: [],
     deathOrder: [],
     stats: {
       searches: 0,

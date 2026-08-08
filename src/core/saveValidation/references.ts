@@ -145,6 +145,7 @@ export function validateReferences(ctx: ValidationContext): void {
       if (typeof planReason !== 'string' || planReason.length === 0) {
         fail(`角色 ${id} 有制作目标但 planReason 必须为非空字符串`);
       }
+
     }
   }
 
@@ -219,34 +220,94 @@ export function validateReferences(ctx: ValidationContext): void {
     }
   }
 
-  /* --- 动态事件（Phase 3 Step 4） --- */
-  const DYNAMIC_EVENT_TYPES = new Set(['storm', 'supply_drop', 'ambush']);
-  if (!Array.isArray(state.activeEvents)) {
-    fail('state.activeEvents 必须是数组');
+  /* --- 世界事件（Phase 3A Step 6） --- */
+  const WORLD_EVENT_IDS = new Set([
+    'blackout',
+    'rain',
+    'emergency_broadcast',
+    'medical_alert',
+    'research_anomaly',
+    'citywide_unrest',
+  ]);
+  const WORLD_EVENT_SCOPES = new Set(['global', 'zone']);
+
+  if (!Array.isArray(state.activeWorldEvents)) {
+    fail('state.activeWorldEvents 必须是数组');
   } else {
-    for (const raw of state.activeEvents as unknown[]) {
+    const seenIds = new Set<string>();
+    const seenEventIds = new Set<string>();
+    for (const raw of state.activeWorldEvents as unknown[]) {
       if (!isRecord(raw)) {
-        fail('activeEvents 中存在结构损坏的事件');
+        fail('activeWorldEvents 中存在结构损坏的事件');
         continue;
       }
       if (typeof raw.id !== 'string' || raw.id.length === 0) {
-        fail('activeEvents 中存在缺少 id 的条目');
+        fail('activeWorldEvents 中存在缺少 id 的条目');
+      } else if (seenIds.has(raw.id)) {
+        fail(`activeWorldEvents 存在重复实例 id（${raw.id}）`);
+      } else {
+        seenIds.add(raw.id);
       }
-      if (typeof raw.type !== 'string' || !DYNAMIC_EVENT_TYPES.has(raw.type)) {
-        fail(`activeEvents 类型非法：${String(raw.type)}`);
+      if (typeof raw.eventId !== 'string' || !WORLD_EVENT_IDS.has(raw.eventId)) {
+        fail(`activeWorldEvents 事件 id 非法：${String(raw.eventId)}`);
+      } else if (seenEventIds.has(raw.eventId)) {
+        // 同一种世界事件不允许同时生效两份，否则修正值会被重复相乘
+        fail(`activeWorldEvents 中同种事件重复生效（${raw.eventId}）`);
+      } else {
+        seenEventIds.add(raw.eventId);
       }
-      if (typeof raw.zoneId !== 'string' || !zoneIds.has(raw.zoneId)) {
-        fail(`activeEvents 引用了不存在的区域（${String(raw.zoneId)}）`);
+      if (typeof raw.scope !== 'string' || !WORLD_EVENT_SCOPES.has(raw.scope)) {
+        fail(`activeWorldEvents 的 scope 非法：${String(raw.scope)}`);
+      }
+      // scope 与 zoneId 必须自洽：全局事件不得带区域，区域事件必须指向存在的区域
+      if (raw.scope === 'global') {
+        if (raw.zoneId !== null) {
+          fail(`全局世界事件的 zoneId 必须为 null（${String(raw.zoneId)}）`);
+        }
+      } else if (typeof raw.zoneId !== 'string' || !zoneIds.has(raw.zoneId)) {
+        fail(`activeWorldEvents 引用了不存在的区域（${String(raw.zoneId)}）`);
       }
       if (
         !isFiniteNumber(raw.remaining) ||
         !Number.isInteger(raw.remaining) ||
-        (raw.remaining as number) < 0
+        (raw.remaining as number) <= 0
       ) {
-        fail(`activeEvents 的 remaining 非法（${String(raw.remaining)}）`);
+        // 已归零的事件应当已被移入 history，出现在 active 里即为损坏
+        fail(`activeWorldEvents 的 remaining 非法（${String(raw.remaining)}）`);
+      }
+      if (
+        !isFiniteNumber(raw.startedAtTime) ||
+        !Number.isInteger(raw.startedAtTime) ||
+        (raw.startedAtTime as number) < 0
+      ) {
+        fail(`activeWorldEvents 的 startedAtTime 非法（${String(raw.startedAtTime)}）`);
       }
       if (typeof raw.label !== 'string' || typeof raw.description !== 'string') {
-        fail('activeEvents 的 label / description 必须是字符串');
+        fail('activeWorldEvents 的 label / description 必须是字符串');
+      }
+    }
+  }
+
+  if (!Array.isArray(state.worldEventHistory)) {
+    fail('state.worldEventHistory 必须是数组');
+  } else {
+    for (const raw of state.worldEventHistory as unknown[]) {
+      if (!isRecord(raw)) {
+        fail('worldEventHistory 中存在结构损坏的记录');
+        continue;
+      }
+      if (typeof raw.eventId !== 'string' || !WORLD_EVENT_IDS.has(raw.eventId)) {
+        fail(`worldEventHistory 事件 id 非法：${String(raw.eventId)}`);
+      }
+      if (raw.zoneId !== null && (typeof raw.zoneId !== 'string' || !zoneIds.has(raw.zoneId))) {
+        fail(`worldEventHistory 引用了不存在的区域（${String(raw.zoneId)}）`);
+      }
+      if (
+        !isFiniteNumber(raw.startedAtTime) ||
+        !isFiniteNumber(raw.endedAtTime) ||
+        (raw.endedAtTime as number) < (raw.startedAtTime as number)
+      ) {
+        fail('worldEventHistory 的时间区间非法（结束早于开始）');
       }
     }
   }

@@ -1,10 +1,10 @@
 # 存档独立验收报告（Phase 3）
 
-- 版本：0.2.0
-- 生成时间：2026-08-07T17:00:20.632Z
+- 版本：0.3.0
+- 生成时间：2026-08-08T04:19:11.701Z
 - 对照组：1 个正常存档
-- 损坏用例：60 个
-- 通过：60 / 60
+- 损坏用例：74 个
+- 通过：74 / 74
 - 构造失败：0 个（P3-P2：任意一个即整轮 FAIL）
 
 - 正常存档被接受：PASS
@@ -22,7 +22,7 @@
 | 7 | 顶层 seed 与 state 不一致 | 拒绝 | 拒绝 | ✓ | state.seed 与顶层 seed 不一致 |
 | 8 | 顶层 rngState 与 state 不一致 | 拒绝 | 拒绝 | ✓ | state.rngState 与顶层 rngState 不一致 |
 | 9 | 顶层 rngState 为字符串 | 拒绝 | 拒绝 | ✓ | rngState 必须是合法的有限非负整数 |
-| 10 | 版本不受支持 | 拒绝 | 拒绝 | ✓ | 版本不受支持（9.9.9，当前 0.2.0） |
+| 10 | 版本不受支持 | 拒绝 | 拒绝 | ✓ | 版本不受支持（9.9.9，当前 0.3.0） |
 | 11 | 背包 9 格（超上限） | 拒绝 | 拒绝 | ✓ | 角色 p0 的背包超过 8 格（9 格） |
 | 12 | 物品 count=0 | 拒绝 | 拒绝 | ✓ | 角色 p0 的 inventory 的物品数量必须为正整数（0） |
 | 13 | 物品 count 超过 maxStack | 拒绝 | 拒绝 | ✓ | 角色 p0 的 inventory 的物品数量超过 maxStack（99 > 5） |
@@ -73,6 +73,20 @@
 | 58 | eventCounters.total 小于事件数 | 拒绝 | 拒绝 | ✓ | eventCounters.total（1）小于现存事件数（2） |
 | 59 | eventCounters.byType 非法 key | 拒绝 | 拒绝 | ✓ | eventCounters.byType 包含非法事件类型（HACKED） |
 | 60 | 负 eventCounters.total | 拒绝 | 拒绝 | ✓ | eventCounters.total 必须为非负数 |
+| 61 | nextWorldEventTime 为负 | 拒绝 | 拒绝 | ✓ | state.nextWorldEventTime 不得为负（-3） |
+| 62 | activeWorldEvents 非数组 | 拒绝 | 拒绝 | ✓ | state.activeWorldEvents 必须是数组 |
+| 63 | activeWorldEvents 含非法 eventId | 拒绝 | 拒绝 | ✓ | activeWorldEvents 事件 id 非法：quake |
+| 64 | 全局世界事件带 zoneId | 拒绝 | 拒绝 | ✓ | 全局世界事件的 zoneId 必须为 null（school） |
+| 65 | 区域世界事件指向非法区域 | 拒绝 | 拒绝 | ✓ | activeWorldEvents 引用了不存在的区域（no_such_zone） |
+| 66 | activeWorldEvents remaining=0 | 拒绝 | 拒绝 | ✓ | activeWorldEvents 的 remaining 非法（0） |
+| 67 | 同一种世界事件重复生效 | 拒绝 | 拒绝 | ✓ | activeWorldEvents 中同种事件重复生效（rain） |
+| 68 | worldEventHistory 结束早于开始 | 拒绝 | 拒绝 | ✓ | worldEventHistory 的时间区间非法（结束早于开始） |
+| 69 | statusEffects 含未知状态 id | 拒绝 | 拒绝 | ✓ | 角色 p0 的 statusEffects 含有未知状态（panic） |
+| 70 | EXPOSED 带 hpPerTick 伤害（红线） | 拒绝 | 拒绝 | ✓ | 角色 p0 的 EXPOSED 不应带 hpPerTick 伤害（-3） |
+| 71 | EXPOSED damageTakenMult 与配置不符 | 拒绝 | 拒绝 | ✓ | 角色 p0 的 EXPOSED damageTakenMult 应为 1.2 |
+| 72 | statusEffects 重复 EXPOSED | 拒绝 | 拒绝 | ✓ | 角色 p0 的 EXPOSED damageTakenMult 应为 1.2 |
+| 73 | skillCooldowns 含未知技能 | 拒绝 | 拒绝 | ✓ | 角色 p0 的 skillCooldowns 含有未知技能（fake_skill） |
+| 74 | skillCooldowns 负值 | 拒绝 | 拒绝 | ✓ | 角色 p0 的技能冷却 adrenaline 非法（-1） |
 
 **结论：PASS（全部损坏存档均被拒绝，且无用例构造失败）**
 

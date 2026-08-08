@@ -322,6 +322,72 @@ const CASES: AuditCase[] = [
   { case: '负 eventCounters.total', expected: false, mutate: (s) => {
     s.state.eventCounters.total = -4;
   } },
+
+  /* ---- 世界事件（Phase 3A Step 6 / Step 8） ---- */
+  { case: 'nextWorldEventTime 为负', expected: false, mutate: (s) => { s.state.nextWorldEventTime = -3; } },
+  { case: 'activeWorldEvents 非数组', expected: false, mutate: (s) => { (s.state as unknown as Mutable).activeWorldEvents = 'oops'; } },
+  { case: 'activeWorldEvents 含非法 eventId', expected: false, mutate: (s) => {
+    // 故意塞入非法 eventId，需绕开类型系统以构造损坏存档
+    s.state.activeWorldEvents = [
+      { id: 'we1', eventId: 'quake', scope: 'global', zoneId: null, startedAtTime: 0, remaining: 3, label: 'X', description: 'X' },
+    ] as unknown as typeof s.state.activeWorldEvents;
+  } },
+  { case: '全局世界事件带 zoneId', expected: false, mutate: (s) => {
+    const zid = Object.keys(s.state.zones)[0]!;
+    s.state.activeWorldEvents = [
+      { id: 'we1', eventId: 'rain', scope: 'global', zoneId: zid, startedAtTime: 0, remaining: 3, label: '雨', description: '雨' },
+    ];
+  } },
+  { case: '区域世界事件指向非法区域', expected: false, mutate: (s) => {
+    s.state.activeWorldEvents = [
+      { id: 'we1', eventId: 'blackout', scope: 'zone', zoneId: 'no_such_zone', startedAtTime: 0, remaining: 3, label: '停电', description: '停电' },
+    ];
+  } },
+  { case: 'activeWorldEvents remaining=0', expected: false, mutate: (s) => {
+    s.state.activeWorldEvents = [
+      { id: 'we1', eventId: 'rain', scope: 'global', zoneId: null, startedAtTime: 0, remaining: 0, label: '雨', description: '雨' },
+    ];
+  } },
+  { case: '同一种世界事件重复生效', expected: false, mutate: (s) => {
+    s.state.activeWorldEvents = [
+      { id: 'we1', eventId: 'rain', scope: 'global', zoneId: null, startedAtTime: 0, remaining: 3, label: '雨', description: '雨' },
+      { id: 'we2', eventId: 'rain', scope: 'global', zoneId: null, startedAtTime: 0, remaining: 3, label: '雨', description: '雨' },
+    ];
+  } },
+  { case: 'worldEventHistory 结束早于开始', expected: false, mutate: (s) => {
+    s.state.worldEventHistory = [
+      { id: 'we1', eventId: 'rain', zoneId: null, startedAtTime: 10, endedAtTime: 5 },
+    ];
+  } },
+
+  /* ---- 状态效果 / EXPOSED 红线（Phase 3A Step 8） ---- */
+  { case: 'statusEffects 含未知状态 id', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [...p.statusEffects, { id: 'panic', remaining: 3, hpPerTick: 0, label: '慌乱' }] as never;
+  } },
+  { case: 'EXPOSED 带 hpPerTick 伤害（红线）', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [...p.statusEffects, { id: 'exposed', remaining: 3, hpPerTick: -3, label: '露出破绽', damageTakenMult: 1.2 }] as never;
+  } },
+  { case: 'EXPOSED damageTakenMult 与配置不符', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [...p.statusEffects, { id: 'exposed', remaining: 3, hpPerTick: 0, label: '露出破绽', damageTakenMult: 9.9 }] as never;
+  } },
+  { case: 'statusEffects 重复 EXPOSED', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [...p.statusEffects, { id: 'exposed', remaining: 3, hpPerTick: 0, label: '露出破绽' }] as never;
+    p.statusEffects = [...p.statusEffects, { id: 'exposed', remaining: 2, hpPerTick: 0, label: '露出破绽' }] as never;
+  } },
+
+  /* ---- 技能冷却（Phase 3A Step 8） ---- */
+  { case: 'skillCooldowns 含未知技能', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.skillCooldowns = { ...p.skillCooldowns, fake_skill: 2 };
+  } },
+  { case: 'skillCooldowns 负值', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.skillCooldowns = { ...p.skillCooldowns, adrenaline: -1 };
+  } },
 ];
 
 /* ------------------------------------------------------------------ */

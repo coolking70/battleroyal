@@ -11,6 +11,7 @@ import {
   hasIngredients,
   missingIngredients,
 } from './inventory';
+import { consumeFieldCraftCharge } from './skills';
 import type { Combatant, GameState, Recipe, RecipeIngredient } from './types';
 
 export interface RecipeView {
@@ -133,6 +134,9 @@ export function performCraft(
 
   consumeIngredients(actor, recipe.ingredients);
   payActionCost(actor, 'CRAFT');
+  // Phase 3A：野外工造的充能**只在合成真的成功之后**扣。
+  // 前面任何一个 return 都意味着这次合成没做成，白扣充能是纯粹的坑。
+  consumeFieldCraftCharge(state, actor);
 
   const stack = createStack(state, recipe.outputItemId, recipe.outputCount);
   const added = addItem(actor, stack);

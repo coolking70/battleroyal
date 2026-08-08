@@ -15,26 +15,61 @@ import type { GameState } from './types';
 export type AttackStyle = 'quick' | 'normal' | 'heavy';
 
 /* ------------------------------------------------------------------ */
-/* 动态事件（Phase 3 Step 4）                                            */
+/* 世界事件（Phase 3A Step 6，取代 Phase 3 的动态事件）                    */
 /* ------------------------------------------------------------------ */
 
-/** 动态事件类型：风暴 / 空投 / 伏击 */
-export type DynamicEventType = 'storm' | 'supply_drop' | 'ambush';
+/**
+ * 世界事件 id（6 种，全部为「环境修正型」，不直接造成伤害）。
+ *
+ * Phase 3A 红线（相对 Phase 3 的 storm / supply_drop / ambush）：
+ * - **不修改隐藏库存**：不再有 supply_drop 那种直接往 zoneLoot 里塞东西的写法，
+ *   要影响产出只能改「搜索权重」，玩家仍须付出搜索行动才拿得到；
+ * - **不瞬移角色**：不再有 ambush 那种把 NPC 直接挪到玩家区域的写法；
+ * - **不绕过 applyDamage**：6 种事件均不直接扣血，因此结构上不可能绕过伤害管线。
+ *
+ * - `blackout`            大停电（区域）：命中↓、搜索↓、屏蔽情报
+ * - `rain`                连绵阴雨（全局）：命中↓、逃跑↑
+ * - `emergency_broadcast` 紧急广播（全局）：公开全部存活者位置
+ * - `medical_alert`       医疗管制（全局）：治疗品效果↓、医疗物资更易搜到
+ * - `research_anomaly`    研究异常（区域）：材料更易搜到、装备耐久损耗↑
+ * - `citywide_unrest`     全城骚动（全局）：NPC 更具攻击性、遭遇率↑
+ */
+export type WorldEventId =
+  | 'blackout'
+  | 'rain'
+  | 'emergency_broadcast'
+  | 'medical_alert'
+  | 'research_anomaly'
+  | 'citywide_unrest';
+
+/** 世界事件作用范围：`global` 覆盖全图，`zone` 只作用于 `zoneId` 指向的区域 */
+export type WorldEventScope = 'global' | 'zone';
 
 /**
- * 当前生效中的动态事件（用于 UI 横幅展示与确定性回放）。
- * 瞬时型事件（空投 / 伏击）remaining 为 1，仅作一回合播报；
- * 持续型（风暴）remaining = 持续回合，期间对区域内角色持续生效。
+ * 当前生效中的世界事件实例（用于 UI 横幅展示与确定性回放）。
+ * 全部事件都是持续型：`remaining` 为剩余时间单位，衰减到 0 时移除并广播结束。
  */
-export interface ActiveEvent {
+export interface WorldEventState {
+  /** 实例 id（`we{seq}`），同一种事件多次触发也各自唯一 */
   id: string;
-  type: DynamicEventType;
-  zoneId: string;
+  eventId: WorldEventId;
+  scope: WorldEventScope;
+  /** `scope === 'zone'` 时为目标区域；全局事件恒为 null */
+  zoneId: string | null;
   startedAtTime: number;
-  /** 剩余生效回合（<=0 移除） */
+  /** 剩余生效时间单位（<=0 移除） */
   remaining: number;
   label: string;
   description: string;
+}
+
+/** 已结束事件的归档记录（供模拟统计「6 种事件各 ≥ 50 次」验收） */
+export interface WorldEventRecord {
+  id: string;
+  eventId: WorldEventId;
+  zoneId: string | null;
+  startedAtTime: number;
+  endedAtTime: number;
 }
 
 export type Command =

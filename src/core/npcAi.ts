@@ -12,6 +12,7 @@ import {
   useSkillActor,
 } from './actorActions';
 import { pushEvent } from './events';
+import { noteOwnActionCompleted } from './exposed';
 import type { SkillId } from './skills';
 import {
   addItem,
@@ -278,6 +279,11 @@ export function runNpcTurn(
     message: `${npc.name}（${npc.lastAction}）：${npc.lastActionReason}`,
     metadata: { kind: npc.lastAction, reason: npc.lastActionReason },
   });
+
+  // Phase 3A：NPC 侧的「有效行动完成」收口点。EXPOSED 条件B（一直没挨打，
+  // 就靠自己下一次行动调整过来）在这里结算，与玩家侧 `executeCommand` 的
+  // finish 共用同一个函数，保证规则只有一份实现。idle 不算有效行动。
+  if (npc.lastAction !== 'idle') noteOwnActionCompleted(state, npc);
 
   return decision;
 }

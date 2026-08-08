@@ -89,6 +89,23 @@ export interface StatusEffect {
   defenseBonus?: number;
   /** 受击方闪避倍率（<1 降低被命中概率） */
   evasionHitMult?: number;
+  /** Phase 3A：受击方所受「攻击类战斗伤害」的倍率（EXPOSED 用，>1 为额外吃伤） */
+  damageTakenMult?: number;
+  /**
+   * Phase 3A：跳过一次「自身行动完成即清除」的判定。
+   * EXPOSED 在角色自己行动的中途产生，若不跳过就会被同一次行动立刻清掉。
+   */
+  skipOwnActionClearOnce?: boolean;
+  /** Phase 3A：剩余可生效的攻击次数（肾上腺素用；不设置表示不按次数计） */
+  remainingAttacks?: number;
+  /** Phase 3A：攻击体力折扣（肾上腺素 -1，最低仍受 minAttackStamina 约束） */
+  attackStaminaDelta?: number;
+  /** Phase 3A：自身承受战斗伤害的倍率（肾上腺素换来的自伤代价） */
+  selfDamageTakenMult?: number;
+  /** Phase 3A：剩余免费合成次数（工程师野外工造） */
+  remainingCrafts?: number;
+  /** Phase 3A：治疗物品效果倍率（医学生 MEDICAL_FOCUS +25%） */
+  consumableHealMult?: number;
 }
 
 export interface CombatantStats {
@@ -291,7 +308,12 @@ export type GameEventType =
   | 'REST'
   | 'GUARD'
   | 'SKILL_USED'
-  | 'DYNAMIC_EVENT'
+  /** Phase 3A：状态失效（目前用于 EXPOSED 的条件B 解除） */
+  | 'STATUS_EXPIRED'
+  /** Phase 3A：世界事件开始（取代已删除的 DYNAMIC_EVENT） */
+  | 'WORLD_EVENT'
+  /** Phase 3A：世界事件结束 */
+  | 'WORLD_EVENT_ENDED'
   | 'GAME_ENDED';
 
 /**
@@ -404,8 +426,10 @@ export interface GameState {
   uidSeq: number;
   encounter: EncounterState | null;
   pendingPickup: PendingPickup | null;
-  /** 当前生效中的动态事件（Phase 3 Step 4） */
-  activeEvents: ActiveEvent[];
+  /** 当前生效中的世界事件（Phase 3A Step 6，取代 Phase 3 的 activeEvents） */
+  activeWorldEvents: WorldEventState[];
+  /** 已结束的世界事件归档，供模拟统计事件覆盖率 */
+  worldEventHistory: WorldEventRecord[];
   /**
    * 本时间单位内已经在「玩家行动阶段」与玩家交过手的 NPC。
    * 这些 NPC 在随后的 NPC 行动阶段不会再对玩家出手，
@@ -414,8 +438,8 @@ export interface GameState {
   engagedWithPlayer: string[];
   /** 下一次禁区公布的时间单位 */
   nextZoneEventTime: number;
-  /** 下一次动态事件触发的时间单位（Phase 3 Step 4） */
-  nextDynamicEventTime: number;
+  /** 下一次世界事件触发的时间单位（Phase 3A Step 6） */
+  nextWorldEventTime: number;
   /** 死亡顺序（先死在前），用于结算排名 */
   deathOrder: string[];
   stats: GameGlobalStats;
@@ -445,15 +469,17 @@ export interface GameState {
 
 
 /* ------------------------------------------------------------------ */
-/* 命令 / 动态事件（Phase 3 Step 10 已拆至 commandTypes.ts，此处保留出口） */
+/* 命令 / 世界事件（Phase 3 Step 10 已拆至 commandTypes.ts，此处保留出口） */
 /* ------------------------------------------------------------------ */
 
-import type { ActiveEvent } from './commandTypes';
+import type { WorldEventRecord, WorldEventState } from './commandTypes';
 
 export type {
-  ActiveEvent,
   AttackStyle,
   Command,
   CommandResult,
-  DynamicEventType,
+  WorldEventId,
+  WorldEventRecord,
+  WorldEventScope,
+  WorldEventState,
 } from './commandTypes';

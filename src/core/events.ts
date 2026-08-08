@@ -54,7 +54,14 @@ const DEFAULT_IMPORTANCE: Record<GameEventType, EventImportance> = {
   REST: 'minor',
   GUARD: 'minor',
   SKILL_USED: 'minor',
-  DYNAMIC_EVENT: 'major',
+
+  /* Phase 3A */
+  // 状态解除属于战斗噪音，长局里量大，归 minor 以免挤占存档额度
+  STATUS_EXPIRED: 'minor',
+  // 世界事件会改变全场规则，玩家必须看得见 —— 与禁区同级
+  WORLD_EVENT: 'major',
+  // 事件结束同样影响决策（「雨停了，可以放心重击了」），但重要性略低于开始
+  WORLD_EVENT_ENDED: 'minor',
 };
 
 /**

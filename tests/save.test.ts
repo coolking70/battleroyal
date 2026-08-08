@@ -11,7 +11,7 @@ import {
   setStorage,
   type StorageLike,
 } from '../src/core/saveLoad';
-import { SAVE_KEY } from '../src/data/gameConfig';
+import { GAME_VERSION, SAVE_KEY } from '../src/data/gameConfig';
 import { newGame, player } from './helpers';
 
 let storage: StorageLike;
@@ -102,6 +102,25 @@ describe('本地存档', () => {
     const res = loadGame();
     expect(res.ok).toBe(false);
     expect(res.error).toContain('版本');
+  });
+
+  it('Phase 3A：0.2.0 旧存档被明确拒绝，不做迁移', () => {
+    // Phase 3A 改了三处不可兼容的结构：EXPOSED 状态、技能 id 全换、
+    // 世界事件取代动态事件。0.2.0 存档里的 `dash` / `storm` 在新规则下
+    // 没有对应语义，硬读进来只会得到一个自相矛盾的局面 —— 宁可拒绝。
+    expect(GAME_VERSION).toBe('0.3.0');
+
+    const state = newGame();
+    saveGame(state);
+    const raw = JSON.parse(storage.getItem(SAVE_KEY)!) as Record<string, unknown>;
+    raw.version = '0.2.0';
+    storage.setItem(SAVE_KEY, JSON.stringify(raw));
+
+    const res = loadGame();
+    expect(res.ok).toBe(false);
+    expect(res.error).toContain('版本');
+    // 拒绝 ≠ 静默清档：原始数据仍在，用户可以自己导出备份
+    expect(storage.getItem(SAVE_KEY)).toBeTruthy();
   });
 
   it('可以删除存档', () => {

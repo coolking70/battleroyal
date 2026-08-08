@@ -1549,3 +1549,72 @@ input {
   background: linear-gradient(180deg, #2a1a1a, #161b22);
 }
 .event-ambush .event-banner-title { color: var(--danger); }
+
+/* Phase 3A Step 11 · 视觉资产 emoji 内嵌样式（不随字号跳动） */
+.zone-emoji,
+.item-emoji {
+  display: inline-block;
+  font-size: 1.05em;
+  line-height: 1;
+  margin-right: 2px;
+  vertical-align: -0.08em;
+}
+
+/* Phase 3A Step 12 · EXPOSED / Heavy 风险视觉 */
+.tag-exposed {
+  background: #7a2f2f;
+  color: #ffd9a0;
+  border: 1px solid #ff9d5c;
+}
+.attack-styles .btn-danger-heavy {
+  background: #8a2f2f;
+  border-color: #ff9d5c;
+}
+.heavy-risk {
+  display: block;
+  font-size: 10px;
+  font-weight: normal;
+  color: #ffcf9a;
+  line-height: 1.2;
+}
+
+/* Phase 3A Step 12 · 日志过滤条 */
+.log-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+.log-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border, rgba(128,128,128,0.25));
+}
+.log-filter {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.log-filter.active {
+  opacity: 1;
+  border-color: currentColor;
+  font-weight: 600;
+}
+.log-self-toggle {
+  margin-left: auto;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  opacity: 0.85;
+}
+.log-line.k-world {
+  color: #ffd27a;
+}

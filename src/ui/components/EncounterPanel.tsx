@@ -1,5 +1,6 @@
 import { getActionStaminaCost, getAttackStyleStaminaCost } from '../../core/actionCosts';
-import { ATTACK_STYLE_LABEL, fleeChanceOf, hitChanceOf } from '../../core/combat';
+import { ATTACK_STYLE_LABEL, fleeChanceIn, hitChanceIn } from '../../core/combat';
+import { hasExposed, EXPOSED_LABEL } from '../../core/exposed';
 import { getEquippedWeapon, totalAttack, totalDefense } from '../../core/inventory';
 import {
   SKILLS,
@@ -8,13 +9,14 @@ import {
   isSkillReady,
   type SkillId,
 } from '../../core/skills';
-import type { AttackStyle, Combatant, EncounterState } from '../../core/types';
+import type { AttackStyle, Combatant, EncounterState, GameState } from '../../core/types';
 import { getCharacterDef } from '../../data/characters';
 import { getItem } from '../../data/items';
-import { hpDescriptor } from '../../utils/format';
+import { cx, hpDescriptor } from '../../utils/format';
 import { Bar } from './Bar';
 
 interface EncounterPanelProps {
+  state: GameState;
   encounter: EncounterState;
   player: Combatant;
   enemy: Combatant;
@@ -27,11 +29,14 @@ interface EncounterPanelProps {
 
 /**
  * 遭遇战面板。
- * 命中率 / 逃跑率直接调用 core 的同一套函数计算，保证提示与实际结算一致。
+ * 命中率 / 逃跑率直接调用 core 的同一套函数（`hitChanceIn` / `fleeChanceIn`），
+ * 与世界事件修正同源，保证提示与实际结算一致（Phase 3A 不变量）。
  * 攻击提供 quick / normal / heavy 三种风格（Phase 3 Step 1），各自命中率与体力成本不同；
  * 防御姿态可减免下一击伤害，但本回合放弃进攻。
+ * EXPOSED（露出破绽）与防御姿态一样在面板上直接可见。
  */
 export function EncounterPanel({
+  state,
   encounter,
   player,
   enemy,
@@ -42,10 +47,12 @@ export function EncounterPanel({
   onClose,
 }: EncounterPanelProps): JSX.Element {
   const resolved = encounter.resolved || !enemy.alive;
-  const flee = Math.round(fleeChanceOf(player, enemy) * 100);
+  const flee = Math.round(fleeChanceIn(state, player, enemy) * 100);
   const weapon = getEquippedWeapon(enemy);
   const fleeCost = getActionStaminaCost(player, 'FLEE');
   const guardCost = getActionStaminaCost(player, 'GUARD');
+  const playerExposed = hasExposed(player);
+  const enemyExposed = hasExposed(enemy);
 
   const ATTACK_STYLES: AttackStyle[] = ['quick', 'normal', 'heavy'];
 
@@ -61,6 +68,7 @@ export function EncounterPanel({
       <h4>
         {resolved ? '遭遇结束' : '遭遇战'}
         {player.guarding && <span className="tag tag-guard" style={{ marginLeft: 8 }}>防御中</span>}
+        {playerExposed && <span className="tag tag-exposed" style={{ marginLeft: 8 }}>{EXPOSED_LABEL}</span>}
       </h4>
 
       <div className="encounter-body">
@@ -68,6 +76,9 @@ export function EncounterPanel({
           <div className="nm">
             <span className="badge badge-enemy">敌</span>
             {enemy.name}
+            {enemyExposed && (
+              <span className="tag tag-exposed" style={{ marginLeft: 6 }}>{EXPOSED_LABEL}</span>
+            )}
           </div>
           <div className="faint mono" style={{ fontSize: 11, marginBottom: 6 }}>
             {getCharacterDef(enemy.characterId).name} · {hpDescriptor(enemy)}
@@ -105,17 +116,20 @@ export function EncounterPanel({
             <div className="attack-styles">
               {ATTACK_STYLES.map((style) => {
                 const cost = getAttackStyleStaminaCost(style);
-                const hit = Math.round(hitChanceOf(player, enemy, style) * 100);
+                // Phase 3A 不变量：UI 展示的命中率必须与核心结算同源（含世界事件修正）
+                const hit = Math.round(hitChanceIn(state, player, enemy, style) * 100);
                 const disabled = player.stamina < cost;
+                const isHeavy = style === 'heavy';
                 return (
                   <button
                     key={style}
-                    className="btn btn-danger"
+                    className={cx('btn', isHeavy && 'btn-danger-heavy')}
                     disabled={disabled}
-                    title={`${ATTACK_STYLE_LABEL[style]}：命中 ${hit}%，消耗 ${cost} 点体力`}
+                    title={`${ATTACK_STYLE_LABEL[style]}：命中 ${hit}%，消耗 ${cost} 点体力${isHeavy ? '；挥空会露出破绽' : ''}`}
                     onClick={() => onAttack(style)}
                   >
                     {ATTACK_STYLE_LABEL[style]}（命中 {hit}% · 体力 {cost}）
+                    {isHeavy && <span className="heavy-risk">挥空破绽</span>}
                   </button>
                 );
               })}

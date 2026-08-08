@@ -10,41 +10,59 @@
  */
 
 import { ZONE_IDS } from '../../data/zones';
+import type { GameEventType } from '../types';
 
 export interface ValidationReport {
   ok: boolean;
   errors: string[];
 }
 
-/** 合法事件类型全集（Phase 2A-1：事件必须落在枚举内） */
-export const EVENT_TYPE_SET = new Set<string>([
-  'GAME_STARTED',
-  'CHARACTER_MOVED',
-  'SEARCH_STARTED',
-  'ITEM_FOUND',
-  'ITEM_PICKED',
-  'ITEM_DROPPED',
-  'ITEM_USED',
-  'ITEM_CRAFTED',
-  'ITEM_EQUIPPED',
-  'ENCOUNTER_STARTED',
-  'ATTACK_HIT',
-  'ATTACK_MISSED',
-  'CHARACTER_ESCAPED',
-  'CHARACTER_DIED',
-  'ZONE_WARNING',
-  'ZONE_RESTRICTED',
-  'ZONE_DAMAGE',
-  'ZONE_EXHAUSTED',
-  'PHASE_CHANGED',
-  'FINALE_DECAY',
-  'CRAFT_GOAL_SET',
-  'NPC_ACTION',
-  'REST',
-  'GAME_ENDED',
-  'SKILL_USED',
-  'DYNAMIC_EVENT',
-]);
+/**
+ * 合法事件类型全集（Phase 2A-1：事件必须落在枚举内）。
+ *
+ * ── Phase 3A 审计修复 ──────────────────────────────────────────────
+ * 这里原本是一份**手写的字符串数组**，与 `GameEventType` 联合类型各写一份。
+ * 结果 Phase 3 Step 1 加入 `GUARD` 事件时漏了同步这份名单 —— 任何包含
+ * 防御动作的存档在 `validateSave` 里都会被判「事件类型非法」而拒载，
+ * 而单测恰好没覆盖到「先 GUARD 再存档」的顺序，于是一直没暴露。
+ *
+ * 现在改为先声明一个 `Record<GameEventType, true>`：**少一个键就编译不过**，
+ * 从结构上杜绝名单与联合类型再次漂移。新增事件类型时 TS 会直接报错提醒。
+ * ──────────────────────────────────────────────────────────────────
+ */
+const EVENT_TYPE_TABLE: Record<GameEventType, true> = {
+  GAME_STARTED: true,
+  CHARACTER_MOVED: true,
+  SEARCH_STARTED: true,
+  ITEM_FOUND: true,
+  ITEM_PICKED: true,
+  ITEM_DROPPED: true,
+  ITEM_USED: true,
+  ITEM_CRAFTED: true,
+  ITEM_EQUIPPED: true,
+  ENCOUNTER_STARTED: true,
+  ATTACK_HIT: true,
+  ATTACK_MISSED: true,
+  CHARACTER_ESCAPED: true,
+  CHARACTER_DIED: true,
+  ZONE_WARNING: true,
+  ZONE_RESTRICTED: true,
+  ZONE_DAMAGE: true,
+  ZONE_EXHAUSTED: true,
+  PHASE_CHANGED: true,
+  FINALE_DECAY: true,
+  CRAFT_GOAL_SET: true,
+  NPC_ACTION: true,
+  REST: true,
+  GUARD: true,
+  SKILL_USED: true,
+  STATUS_EXPIRED: true,
+  WORLD_EVENT: true,
+  WORLD_EVENT_ENDED: true,
+  GAME_ENDED: true,
+};
+
+export const EVENT_TYPE_SET = new Set<string>(Object.keys(EVENT_TYPE_TABLE));
 
 /** 合法事件重要度 */
 export const EVENT_IMPORTANCE_SET = new Set<string>(['critical', 'major', 'minor']);

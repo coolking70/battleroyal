@@ -78,6 +78,22 @@ function makeCell(
     avgEventCount: zero(),
     avgSteps: zero(),
     totalSteps: 0,
+    // Phase 3A：给夹具最小的达标使用率（quick/heavy/guard ≥2%、事件各 ≥50），
+    // 让这些旧用例的断言只受「角色平衡」影响，与 Step 9 新契约保持一致。
+    attackStyleCounts: { quick: 30, normal: 30, heavy: 30 },
+    exposedApplied: 0,
+    exposedConsumed: 0,
+    guardResolves: 0,
+    skillUseCounts: {},
+    worldEventCounts: {
+      blackout: 60,
+      rain: 60,
+      emergency_broadcast: 60,
+      medical_alert: 60,
+      research_anomaly: 60,
+      citywide_unrest: 60,
+    },
+    commandCounts: { GUARD: 50, ATTACK: 60, MOVE: 100, SEARCH: 100 },
   };
 }
 
@@ -135,6 +151,21 @@ describe('[Phase 2A-1] 平衡报告验收字段', () => {
     cells[0]!.timeoutRate = 0.05;
     const report = buildReport(OPTS, cells);
     expect(report.meta.health.timeout.flagged).toBe(true);
+    expect(report.meta.overallPassed).toBe(false);
+  });
+
+  it('Phase 3A 玩法使用率不足时参与整体判定（usage 空 → FAIL）', () => {
+    const cells = cellsFor({ scout: 0.04, fighter: 0.08 });
+    // 清空玩法使用率：quick/heavy/guard 全 0%，事件覆盖 0
+    for (const c of cells) {
+      c.attackStyleCounts = {};
+      c.commandCounts = {};
+      c.worldEventCounts = {};
+    }
+    const report = buildReport(OPTS, cells);
+    // 角色平衡本身仍然通过（胜率比 < 2.5），但整体判定被 Phase 3A 门槛拉成 FAIL
+    expect(report.meta.characterBalance.passed).toBe(true);
+    expect(report.meta.phase3a.passed).toBe(false);
     expect(report.meta.overallPassed).toBe(false);
   });
 });

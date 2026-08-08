@@ -13,6 +13,7 @@
  */
 
 import { GAME_CONFIG } from '../data/gameConfig';
+import { adrenalineStaminaDelta, hasFieldCraftCharge } from './statusIds';
 import type { AttackStyle, Combatant } from './types';
 
 /** 所有会消耗体力的行动 */
@@ -44,10 +45,15 @@ export function getActionStaminaCost(actor: Combatant, action: CostedAction): nu
       // Phase 2A：脱离是免费行动（成本 0），保证遭遇战中永远存在
       // 一个可执行、且能推进时间的出口，从根上消灭零体力死锁。
       return GAME_CONFIG.fleeStaminaCost;
-    case 'CRAFT':
+    case 'CRAFT': {
+      // Phase 3A：工程师「野外工造」期间合成完全免体力。
+      // 折扣写在这里而不是 crafting.ts —— 闸门、扣费、UI 预估三处读的是同一个数，
+      // 才不会出现「界面说要 1 点、实际扣了 2 点」这种分叉。
+      if (hasFieldCraftCharge(actor)) return 0;
       return actor.passiveId === 'tinkerer'
         ? GAME_CONFIG.craftStaminaCostEngineer
         : GAME_CONFIG.craftStaminaCost;
+    }
     case 'GUARD':
       // 防御姿态需要付出体力，但比一次 heavy 攻击便宜
       return GAME_CONFIG.guardStaminaCost;
@@ -56,9 +62,22 @@ export function getActionStaminaCost(actor: Combatant, action: CostedAction): nu
   }
 }
 
-/** 取某个攻击风格的体力成本（Phase 3 Step 1，供 UI 显示） */
+/** 取某个攻击风格的**基础**体力成本（不含角色状态修正，供配置表与文档引用） */
 export function getAttackStyleStaminaCost(style: AttackStyle): number {
   return GAME_CONFIG.attackStyleStaminaCost[style];
+}
+
+/**
+ * 取某个角色打出某种风格所需的**实际**体力（Phase 3A）。
+ *
+ * 肾上腺素在这里生效。UI 的攻击按钮、legalActions 的可行性判断、
+ * combat 的实际扣费三处都必须调这一个函数，否则又会出现
+ * BUG-01 那种「界面一个数、核心另一个数」的分叉。
+ * 成本有下限 1：技能可以让攻击变便宜，但不能变成完全免费。
+ */
+export function attackStaminaCostFor(actor: Combatant, style: AttackStyle): number {
+  const base = GAME_CONFIG.attackStyleStaminaCost[style];
+  return Math.max(1, base + adrenalineStaminaDelta(actor));
 }
 
 export interface CostCheck {

@@ -1,11 +1,11 @@
 {
   "meta": {
     "tool": "audit-save-validation",
-    "version": "0.2.0",
-    "generatedAt": "2026-08-07T17:00:20.632Z",
+    "version": "0.3.0",
+    "generatedAt": "2026-08-08T04:19:11.700Z",
     "control": "normal-save-accepted",
-    "totalCases": 60,
-    "passedCases": 60,
+    "totalCases": 74,
+    "passedCases": 74,
     "failedCases": 0,
     "constructionFailedCases": 0,
     "verdict": "PASS"
@@ -96,7 +96,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "版本不受支持（9.9.9，当前 0.2.0）",
+      "errorMessage": "版本不受支持（9.9.9，当前 0.3.0）",
       "constructionFailed": false
     },
     {
@@ -497,6 +497,118 @@
       "actual": false,
       "passed": true,
       "errorMessage": "eventCounters.total 必须为非负数",
+      "constructionFailed": false
+    },
+    {
+      "case": "nextWorldEventTime 为负",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.nextWorldEventTime 不得为负（-3）",
+      "constructionFailed": false
+    },
+    {
+      "case": "activeWorldEvents 非数组",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.activeWorldEvents 必须是数组",
+      "constructionFailed": false
+    },
+    {
+      "case": "activeWorldEvents 含非法 eventId",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "activeWorldEvents 事件 id 非法：quake",
+      "constructionFailed": false
+    },
+    {
+      "case": "全局世界事件带 zoneId",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "全局世界事件的 zoneId 必须为 null（school）",
+      "constructionFailed": false
+    },
+    {
+      "case": "区域世界事件指向非法区域",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "activeWorldEvents 引用了不存在的区域（no_such_zone）",
+      "constructionFailed": false
+    },
+    {
+      "case": "activeWorldEvents remaining=0",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "activeWorldEvents 的 remaining 非法（0）",
+      "constructionFailed": false
+    },
+    {
+      "case": "同一种世界事件重复生效",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "activeWorldEvents 中同种事件重复生效（rain）",
+      "constructionFailed": false
+    },
+    {
+      "case": "worldEventHistory 结束早于开始",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "worldEventHistory 的时间区间非法（结束早于开始）",
+      "constructionFailed": false
+    },
+    {
+      "case": "statusEffects 含未知状态 id",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 statusEffects 含有未知状态（panic）",
+      "constructionFailed": false
+    },
+    {
+      "case": "EXPOSED 带 hpPerTick 伤害（红线）",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 EXPOSED 不应带 hpPerTick 伤害（-3）",
+      "constructionFailed": false
+    },
+    {
+      "case": "EXPOSED damageTakenMult 与配置不符",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 EXPOSED damageTakenMult 应为 1.2",
+      "constructionFailed": false
+    },
+    {
+      "case": "statusEffects 重复 EXPOSED",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 EXPOSED damageTakenMult 应为 1.2",
+      "constructionFailed": false
+    },
+    {
+      "case": "skillCooldowns 含未知技能",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的 skillCooldowns 含有未知技能（fake_skill）",
+      "constructionFailed": false
+    },
+    {
+      "case": "skillCooldowns 负值",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0 的技能冷却 adrenaline 非法（-1）",
       "constructionFailed": false
     }
   ]

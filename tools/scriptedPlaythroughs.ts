@@ -41,7 +41,8 @@ import { getCharacterSkill, SKILLS } from '../src/core/skills';
 import { getItem, tryGetItem } from '../src/data/items';
 import { getZoneDef } from '../src/data/zones';
 import type { AutoPlayerPolicy } from './autoPlayer';
-import type { Command, DynamicEventType, GameState } from '../src/core/types';
+import type { Command, GameState, WorldEventId } from '../src/core/types';
+import { WORLD_EVENT_DEFS, WORLD_EVENT_IDS } from '../src/core/worldEvents';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -72,13 +73,14 @@ export interface ScriptedPlaythroughRecord {
   playerSkill: string;
   skillUses: number;
   /** Phase 3 Step 8：动态事件覆盖（按子类型统计） */
-  dynamicEvents: Record<DynamicEventType, number>;
-  dynamicEventTotal: number;
+  worldEvents: Record<WorldEventId, number>;
+  worldEventTotal: number;
 }
 
 /**
- * 8 局脚本化完整对局（Phase 3 §Step 9 要求 8 局）。
- * 覆盖 4 个角色 × 5 种策略中的 8 种组合，每局一个不同的制作目标。
+ * 12 局脚本化完整对局（Phase 3A Step 14 要求 12 局）。
+ * 覆盖 4 个角色 × 5 种策略中的 12 种组合，每局一个不同的制作目标；
+ * 第 9~12 局显式覆盖四种签名技能（战场侦察 / 肾上腺素 / 野外工造 / 紧急处置）。
  */
 const RUNS: Array<{
   seed: string;
@@ -94,6 +96,11 @@ const RUNS: Array<{
   { seed: 'SPT-6', characterId: 'fighter', goal: 'r_plate_armor', policy: 'collector' },
   { seed: 'SPT-7', characterId: 'engineer', goal: 'r_stone_axe', policy: 'random' },
   { seed: 'SPT-8', characterId: 'medic', goal: 'r_herb_remedy', policy: 'aggressive' },
+  // Phase 3A：每角色补一局，强化技能与战斗风格曝光
+  { seed: 'SPT-9', characterId: 'scout', goal: 'r_simple_armor', policy: 'random' },
+  { seed: 'SPT-10', characterId: 'fighter', goal: 'r_cloth_armor', policy: 'opportunist' },
+  { seed: 'SPT-11', characterId: 'engineer', goal: 'r_bandage', policy: 'aggressive' },
+  { seed: 'SPT-12', characterId: 'medic', goal: 'r_stone_axe', policy: 'random' },
 ];
 
 function sameType(a: Command, b: Command): boolean {
@@ -197,19 +204,17 @@ function recordRun(cfg: (typeof RUNS)[number]): ScriptedPlaythroughRecord {
   const playerSkill = skillId ? SKILLS[skillId].name : '无';
   const skillUses = s.eventCounters.byType['SKILL_USED'] ?? 0;
 
-  // 动态事件覆盖（Phase 3 Step 8）：按子类型统计
-  const dynamicEvents: Record<DynamicEventType, number> = {
-    storm: 0,
-    supply_drop: 0,
-    ambush: 0,
-  };
+  // 世界事件覆盖（Phase 3A Step 6）：按 6 种事件 id 分别统计
+  const worldEvents = Object.fromEntries(
+    WORLD_EVENT_IDS.map((id) => [id, 0]),
+  ) as Record<WorldEventId, number>;
   for (const e of s.events) {
-    if (e.type === 'DYNAMIC_EVENT') {
-      const sub = (e.metadata?.eventType as DynamicEventType | undefined) ?? undefined;
-      if (sub && sub in dynamicEvents) dynamicEvents[sub] += 1;
+    if (e.type === 'WORLD_EVENT') {
+      const sub = (e.metadata?.worldEventId as WorldEventId | undefined) ?? undefined;
+      if (sub && sub in worldEvents) worldEvents[sub] += 1;
     }
   }
-  const dynamicEventTotal = s.eventCounters.byType['DYNAMIC_EVENT'] ?? 0;
+  const worldEventTotal = s.eventCounters.byType['WORLD_EVENT'] ?? 0;
 
   return {
     seed: cfg.seed,
@@ -238,8 +243,8 @@ function recordRun(cfg: (typeof RUNS)[number]): ScriptedPlaythroughRecord {
     issues,
     playerSkill,
     skillUses,
-    dynamicEvents,
-    dynamicEventTotal,
+    worldEvents,
+    worldEventTotal,
   };
 }
 
@@ -306,7 +311,9 @@ function renderMarkdown(records: ScriptedPlaythroughRecord[]): string {
     L.push(`| 玩家专属技能 | ${r.playerSkill} |`);
     L.push(`| 技能释放次数 | ${r.skillUses} |`);
     L.push(
-      `| 动态事件（风暴 / 空投 / 伏击） | ${r.dynamicEvents.storm} / ${r.dynamicEvents.supply_drop} / ${r.dynamicEvents.ambush}（日志合计 ${r.dynamicEventTotal}） |`,
+      `| 世界事件 | ${WORLD_EVENT_IDS.map(
+        (id) => `${WORLD_EVENT_DEFS[id].label} ${r.worldEvents[id]}`,
+      ).join(' · ')}（日志合计 ${r.worldEventTotal}） |`,
     );
     L.push(`| 是否卡死 | ${r.stuck ? '是' : '否'} |`);
     L.push(`| 引擎层面发现的问题 | ${r.issues.length > 0 ? r.issues.join('；') : '无'} |`);
@@ -315,16 +322,20 @@ function renderMarkdown(records: ScriptedPlaythroughRecord[]): string {
 
   // ---- 技能 / 事件覆盖汇总（Phase 3 Step 8）----
   const skillCoverage = records.filter((r) => r.skillUses > 0).length;
-  const eventCoverage = records.filter((r) => r.dynamicEventTotal > 0).length;
-  const stormSeen = records.some((r) => r.dynamicEvents.storm > 0);
-  const supplySeen = records.some((r) => r.dynamicEvents.supply_drop > 0);
-  const ambushSeen = records.some((r) => r.dynamicEvents.ambush > 0);
+  const eventCoverage = records.filter((r) => r.worldEventTotal > 0).length;
+  const seenByEvent = WORLD_EVENT_IDS.map((id) => ({
+    id,
+    label: WORLD_EVENT_DEFS[id].label,
+    seen: records.some((r) => r.worldEvents[id] > 0),
+  }));
   L.push(`## 技能 / 事件覆盖汇总（Phase 3 Step 8）`);
   L.push('');
   L.push(`- 技能被释放的对局：${skillCoverage} / ${records.length}`);
-  L.push(`- 动态事件发生过的对局：${eventCoverage} / ${records.length}`);
+  L.push(`- 世界事件发生过的对局：${eventCoverage} / ${records.length}`);
   L.push(
-    `- 动态事件子类型覆盖：风暴 ${stormSeen ? '✓' : '✗'} · 空投 ${supplySeen ? '✓' : '✗'} · 伏击 ${ambushSeen ? '✓' : '✗'}`,
+    `- 世界事件类型覆盖：${seenByEvent
+      .map((e) => `${e.label} ${e.seen ? '✓' : '✗'}`)
+      .join(' · ')}`,
   );
   L.push(
     `- 覆盖判定：${skillCoverage > 0 && eventCoverage > 0 ? '技能与事件均在本批次中得到覆盖。' : '⚠ 覆盖不足，建议补充对应策略的对局。'}`,

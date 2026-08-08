@@ -1,7 +1,14 @@
 /**
  * 全局游戏配置。所有魔法数字集中在这里，方便平衡调整与测试。
  */
-export const GAME_VERSION = '0.2.0';
+/**
+ * 存档版本。
+ *
+ * Phase 3A 改了三处**不可向后兼容**的状态结构：EXPOSED 状态、四角色技能全部换 id、
+ * 世界事件取代动态事件。0.2.0 存档里的 `dash` / `storm` 等字段在新规则下没有对应语义，
+ * 强行读入只会得到一个自相矛盾的局面。因此**明确拒绝**旧档，不做迁移。
+ */
+export const GAME_VERSION = '0.3.0';
 
 /** 默认测试种子 */
 export const DEFAULT_SEED = 'BR-DEMO-001';
@@ -93,27 +100,56 @@ export const GAME_CONFIG = {
   /** 防御姿态对下一次所受伤害的减免比例 */
   guardDamageReduction: 0.5,
 
-  /* --- 四角色技能（Phase 3 Step 3） --- */
+  /* --- EXPOSED 露出破绽（Phase 3A Step 3） --- */
+  /** 处于破绽时，受到的攻击类战斗伤害倍率（1.2 = +20%） */
+  exposedDamageMult: 1.2,
+  /**
+   * 破绽的兜底存续时间单位。
+   * 正常情况下破绽由「挨打」或「自己下次行动」清除，
+   * 这个值只防止极端情况（既不行动也不挨打）导致状态永久残留。
+   */
+  exposedMaxDuration: 6,
+
+  /* --- 四角色技能（Phase 3A Step 4 重定义） ---
+   *
+   * Phase 3 的四个技能全是纯战斗数值增益（回血、加伤、加闪避），
+   * 谁拿到都一样好用，角色之间只剩数字大小的差别。
+   * Phase 3A 把它们重写为**战略身份技能**：每个技能强化的是该角色
+   * 在「信息 / 战斗节奏 / 合成 / 消耗品经济」四条线里的看家本事。
+   */
   /** 技能冷却时间单位（使用后置为 cooldown，每时间单位 -1） */
-  skillCooldown: 5,
-  /** 医学生「急救」：恢复最大生命的比例（Step 9 调优：略降以收敛角色胜率比） */
-  skillFirstAidHealRatio: 0.3,
-  /** 工程师「应急修理」：恢复体力的比例（额外修复装备耐久） */
-  skillRepairStaminaRatio: 1.0,
-  /** 工程师「应急修理」：装备武器耐久修复量（不超过物品上限） */
-  skillRepairDurability: 25,
-  /** 工程师「应急修理」：额外恢复生命的比例（Step 9 调优：让修理也提供续航，抬升工程师胜率） */
-  skillRepairHealRatio: 0.2,
-  /** 斗士「破甲」增益持续回合 */
-  skillSunderDuration: 3,
-  /** 斗士「破甲」命中倍率 */
-  skillSunderHitMult: 1.12,
-  /** 斗士「破甲」伤害倍率 */
-  skillSunderDamageMult: 1.6,
-  /** 侦察「疾影」增益持续回合（Step 9 调优：延长闪避覆盖以抬升侦察员胜率） */
-  skillDashDuration: 2,
-  /** 侦察「疾影」闪避倍率（<1 降低被命中） */
-  skillDashEvasionMult: 0.5,
+  skillCooldown: 6,
+
+  /* 侦察员 · 战场侦察（信息） */
+  /** 侦察半径：0 = 仅当前区域，1 = 当前 + 相邻区域 */
+  skillReconRadius: 1,
+  /** 侦察得到的情报视为「新鲜」的时长（写入 playerIntel 后自然老化） */
+  skillReconStaminaCost: 2,
+
+  /* 斗士 · 肾上腺素（战斗节奏，收益与代价并存） */
+  /** 生效的攻击次数（用完即失效） */
+  skillAdrenalineAttacks: 3,
+  /** 每次攻击的体力折扣（实际成本下限 1） */
+  skillAdrenalineStaminaDelta: -1,
+  /** 代价：状态期间自身受到的伤害倍率 */
+  skillAdrenalineSelfDamageMult: 1.25,
+  skillAdrenalineStaminaCost: 3,
+
+  /* 工程师 · 野外工造（合成） */
+  /** 生效的合成次数（期间合成体力成本为 0） */
+  skillFieldCraftCharges: 2,
+  /** 兜底存续时间单位（防止拿到手却一直不合成，状态永久挂着） */
+  skillFieldCraftDuration: 8,
+  skillFieldCraftStaminaCost: 2,
+
+  /* 医学生 · 紧急处置（消耗品经济） */
+  /** 状态持续时间单位 */
+  skillTreatmentDuration: 5,
+  /** 状态期间治疗类消耗品的效果倍率 */
+  skillTreatmentConsumableMult: 1.25,
+  /** 施放瞬间的止血量（按最大生命比例，同时清除持续掉血类状态） */
+  skillTreatmentInstantHealRatio: 0.12,
+  skillTreatmentStaminaCost: 3,
 
   /* --- 禁区 --- */
   /** 第一次公布禁区的时间单位 */
@@ -199,31 +235,78 @@ export const GAME_CONFIG = {
   /** 巧手：材料类物品搜索权重（Phase 2A-1 从 1.6 加强到 2.2） */
   tinkererMaterialBias: 2.2,
 
-  /* --- 动态事件（Phase 3 Step 4） --- */
-  /** 是否启用区域内动态事件 */
-  dynamicEventsEnabled: true,
-  /** 首个动态事件最早出现的时间单位 */
-  firstDynamicEventTime: 12,
-  /** 两次动态事件之间的最小间隔 */
-  dynamicEventIntervalMin: 9,
-  /** 两次动态事件之间的最大间隔 */
-  dynamicEventIntervalMax: 15,
-  /** 各事件相对权重（用于加权随机） */
-  stormWeight: 1,
-  supplyDropWeight: 1,
-  ambushWeight: 1,
-  /** 风暴持续回合 */
-  stormDuration: 3,
-  /** 风暴每回合对区域内角色造成的伤害 */
-  stormDamagePerTick: 5,
-  /** 空投投放的物品 id 池 */
-  supplyDropItems: ['medkit', 'energy_drink', 'scrap'],
-  /** 空投每次投放的件数 */
-  supplyDropCount: 3,
-  /** 空投优先投放到预警/安全区域（false 则全区域随机） */
-  supplyDropPreferSafe: true,
-  /** 伏击造成的即时伤害 */
-  ambushDamage: 8,
+  /* --- 世界事件（Phase 3A Step 6，取代 Phase 3 的动态事件） --- */
+  /**
+   * 是否启用世界事件。
+   *
+   * 6 种事件全部是**环境修正型**：只改判定用的乘数/加成，不直接扣血、
+   * 不写隐藏库存、不瞬移角色 —— 因此结构上不可能绕过 `applyDamage`。
+   */
+  worldEventsEnabled: true,
+  /** 首个世界事件最早出现的时间单位 */
+  firstWorldEventTime: 10,
+  /** 两次世界事件之间的最小间隔 */
+  worldEventIntervalMin: 8,
+  /** 两次世界事件之间的最大间隔 */
+  worldEventIntervalMax: 14,
+  /**
+   * 同时生效的世界事件上限。
+   * 超过上限时新事件不会触发（调度仍然推进），避免修正叠乘到失控。
+   */
+  maxConcurrentWorldEvents: 2,
+  /** 同一种事件在生效期间不会重复触发（去重靠 eventId） */
+
+  /* blackout 大停电（区域级） */
+  blackoutDuration: 4,
+  /** 停电区域内命中率乘数（看不清） */
+  blackoutHitMult: 0.85,
+  /** 停电区域内搜索「找到东西」权重乘数 */
+  blackoutSearchMult: 0.7,
+
+  /* rain 连绵阴雨（全局） */
+  rainDuration: 6,
+  /** 雨天全局命中率乘数 */
+  rainHitMult: 0.9,
+  /** 雨天逃跑成功率加成（湿滑难追） */
+  rainFleeBonus: 0.1,
+
+  /* emergency_broadcast 紧急广播（全局） */
+  broadcastDuration: 3,
+
+  /* medical_alert 医疗管制（全局） */
+  medicalAlertDuration: 5,
+  /** 管制期间治疗类消耗品效果乘数 */
+  medicalAlertHealMult: 0.75,
+  /** 管制期间医疗物资搜索权重加成（物资被翻出来了） */
+  medicalAlertMedicalFindBonus: 0.35,
+
+  /* research_anomaly 研究异常（区域级） */
+  researchAnomalyDuration: 5,
+  /** 异常区域内材料类物品搜索权重加成 */
+  researchAnomalyMaterialFindBonus: 0.6,
+  /** 异常区域内装备每次判定的额外耐久损耗 */
+  researchAnomalyDurabilityLoss: 1,
+
+  /* citywide_unrest 全城骚动（全局） */
+  unrestDuration: 5,
+  /** 骚动期间 NPC 进攻倾向加成 */
+  unrestAggressionBonus: 0.25,
+  /** 骚动期间搜索遭遇敌人的权重乘数 */
+  unrestEncounterMult: 1.3,
+
+  /**
+   * 6 种事件的相对权重。
+   * 全部设为 1（等概率），以保证「3000 局中 6 种事件各 ≥ 50 次」的验收门槛
+   * 有充足余量：期望每种约占总触发数的 1/6。
+   */
+  worldEventWeights: {
+    blackout: 1,
+    rain: 1,
+    emergency_broadcast: 1,
+    medical_alert: 1,
+    research_anomaly: 1,
+    citywide_unrest: 1,
+  },
 } as const;
 
 /** 事件日志在界面上默认展示的条数 */

@@ -4,7 +4,7 @@ import { listRecipes } from '../../core/crafting';
 import { recentEvents } from '../../core/events';
 import { listIntel, PRESENCE_TEXT, zonePresence } from '../../core/info';
 import { aliveCharacters } from '../../core/gameState';
-import { activeBannerEvents } from '../../core/dynamicEvents';
+import { activeWorldEvents } from '../../core/worldEvents';
 import { canPayActionCost } from '../../core/actionCosts';
 import {
   SKILLS,
@@ -16,6 +16,7 @@ import type { Combatant, Command, GameState } from '../../core/types';
 import { LOG_DISPLAY_COUNT } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { ZONE_STATUS_LABEL, cx, stackLabel } from '../../utils/format';
+import { WORLD_EVENT_VISUALS } from '../visualAssets';
 import { ActionBar } from '../components/ActionBar';
 import { CraftPanel } from '../components/CraftPanel';
 import { EncounterPanel } from '../components/EncounterPanel';
@@ -33,6 +34,12 @@ interface GameScreenProps {
 }
 
 type Tab = 'inventory' | 'craft' | 'log';
+
+/**
+ * 世界事件横幅（Phase 3A Step 6）。
+ * 图标统一取自 visualAssets 注册表（Step 11）：有图走图，没图回退 emoji。
+ * `Record<WorldEventId, ...>` 保证新增事件类型时 TypeScript 强制补齐。
+ */
 
 /** 对局主界面：上状态栏 / 左地图 / 中舞台 / 右面板 / 下行动条 */
 export function GameScreen({
@@ -62,8 +69,8 @@ export function GameScreen({
   const inActiveEncounter = Boolean(encounter && !encounter.resolved && enemy?.alive);
   const pending = state.pendingPickup;
 
-  // 动态事件横幅（Phase 3 Step 4）：展示当前生效中的事件
-  const bannerEvents = activeBannerEvents(state);
+  // 世界事件横幅（Phase 3A Step 6）：展示当前生效中的事件
+  const bannerEvents = activeWorldEvents(state);
 
   // 有待处理拾取时锁定一切；遭遇战中只锁定通用行动
   const lockedAll = Boolean(pending);
@@ -145,15 +152,17 @@ export function GameScreen({
             {bannerEvents.length > 0 && (
               <div className="event-banner-wrap">
                 {bannerEvents.map((ev) => (
-                  <div className={`event-banner event-${ev.type}`} key={ev.id}>
+                  <div className={`event-banner event-${ev.eventId}`} key={ev.id}>
                     <span className="event-banner-icon" aria-hidden>
-                      {ev.type === 'storm' ? '🌩' : ev.type === 'supply_drop' ? '📦' : '⚠'}
+                      {WORLD_EVENT_VISUALS[ev.eventId]?.emoji ?? '⚠'}
                     </span>
                     <div className="event-banner-body">
                       <div className="event-banner-title">
                         {ev.label}
-                        {ev.remaining > 1 ? `（持续 ${ev.remaining} 回合）` : '（即时）'}
-                        {state.zones[ev.zoneId] ? ` · ${getZoneDef(ev.zoneId).name}` : ''}
+                        {`（剩余 ${ev.remaining} 回合）`}
+                        {ev.zoneId
+                          ? ` · ${getZoneDef(ev.zoneId).name}`
+                          : ' · 全城'}
                       </div>
                       <div className="event-banner-desc">{ev.description}</div>
                     </div>
@@ -174,6 +183,7 @@ export function GameScreen({
 
             {encounter && enemy && (
               <EncounterPanel
+                state={state}
                 encounter={encounter}
                 player={player}
                 enemy={enemy}

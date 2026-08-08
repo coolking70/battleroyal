@@ -13,6 +13,7 @@
 import { describe, expect, it } from 'vitest';
 import { newGame } from './helpers';
 import { validateSaveData } from '../src/core/saveLoad';
+import { GAME_CONFIG } from '../src/data/gameConfig';
 import type { GameState } from '../src/core/types';
 
 /** 生成一份合法存档的深层克隆，便于定向损坏 */
@@ -343,23 +344,43 @@ describe('[saveValidation] 一致性层损坏', () => {
 });
 
 describe('[saveValidation] Phase 3 · 新增字段校验（Step 4/5）', () => {
-  it('守卫：含防御姿态 / 技能冷却 / 动态事件的合法存档通过', () => {
+  it('守卫：含防御姿态 / 技能冷却 / 世界事件的合法存档通过', () => {
     const state = newGame('BR-s5');
     const p = state.characters[state.playerId]!;
     p.guarding = true;
-    p.skillCooldowns = { first_aid: 2 };
-    state.activeEvents = [
+    p.skillCooldowns = { emergency_treatment: 2 };
+    state.activeWorldEvents = [
       {
-        id: 'de1',
-        type: 'storm',
+        id: 'we1',
+        eventId: 'blackout',
+        scope: 'zone',
         zoneId: p.currentZoneId,
         startedAtTime: 0,
         remaining: 2,
-        label: '风暴',
+        label: '大停电',
+        description: '测试',
+      },
+      {
+        id: 'we2',
+        eventId: 'rain',
+        scope: 'global',
+        zoneId: null,
+        startedAtTime: 0,
+        remaining: 3,
+        label: '连绵阴雨',
         description: '测试',
       },
     ];
-    state.nextDynamicEventTime = 12;
+    state.worldEventHistory = [
+      {
+        id: 'we0',
+        eventId: 'citywide_unrest',
+        zoneId: null,
+        startedAtTime: 0,
+        endedAtTime: 5,
+      },
+    ];
+    state.nextWorldEventTime = 12;
     expect(validateSaveData(makeSave(state)).ok).toBe(true);
   });
 
@@ -384,40 +405,193 @@ describe('[saveValidation] Phase 3 · 新增字段校验（Step 4/5）', () => {
     });
   });
 
-  it('拒绝：nextDynamicEventTime 为负数', () => {
+  it('拒绝：nextWorldEventTime 为负数', () => {
     expectRejected((s) => {
-      (s as unknown as { nextDynamicEventTime: number }).nextDynamicEventTime = -5;
+      (s as unknown as { nextWorldEventTime: number }).nextWorldEventTime = -5;
     });
   });
 
-  it('拒绝：activeEvents 不是数组', () => {
+  it('拒绝：activeWorldEvents 不是数组', () => {
     expectRejected((s) => {
-      (s as unknown as { activeEvents: number }).activeEvents = 1;
+      (s as unknown as { activeWorldEvents: number }).activeWorldEvents = 1;
     });
   });
 
-  it('拒绝：activeEvents 条目类型非法', () => {
+  it('拒绝：activeWorldEvents 事件 id 非法', () => {
     expectRejected((s) => {
-      (s as unknown as { activeEvents: unknown[] }).activeEvents = [
-        { id: 'de1', type: 'meteor', zoneId: s.playerId, remaining: 1, label: 'x', description: 'y' },
+      (s as unknown as { activeWorldEvents: unknown[] }).activeWorldEvents = [
+        {
+          id: 'we1',
+          eventId: 'meteor',
+          scope: 'global',
+          zoneId: null,
+          startedAtTime: 0,
+          remaining: 1,
+          label: 'x',
+          description: 'y',
+        },
       ];
     });
   });
 
-  it('拒绝：activeEvents 引用不存在的区域', () => {
+  it('拒绝：区域型世界事件引用不存在的区域', () => {
     expectRejected((s) => {
-      (s as unknown as { activeEvents: unknown[] }).activeEvents = [
-        { id: 'de1', type: 'storm', zoneId: 'nowhere', remaining: 1, label: 'x', description: 'y' },
+      (s as unknown as { activeWorldEvents: unknown[] }).activeWorldEvents = [
+        {
+          id: 'we1',
+          eventId: 'blackout',
+          scope: 'zone',
+          zoneId: 'nowhere',
+          startedAtTime: 0,
+          remaining: 1,
+          label: 'x',
+          description: 'y',
+        },
       ];
     });
   });
 
-  it('拒绝：activeEvents remaining 为负数', () => {
+  it('拒绝：全局型世界事件却带了 zoneId', () => {
     expectRejected((s) => {
       const p = s.characters[s.playerId]!;
-      (s as unknown as { activeEvents: unknown[] }).activeEvents = [
-        { id: 'de1', type: 'storm', zoneId: p.currentZoneId, remaining: -2, label: 'x', description: 'y' },
+      (s as unknown as { activeWorldEvents: unknown[] }).activeWorldEvents = [
+        {
+          id: 'we1',
+          eventId: 'rain',
+          scope: 'global',
+          zoneId: p.currentZoneId,
+          startedAtTime: 0,
+          remaining: 1,
+          label: 'x',
+          description: 'y',
+        },
       ];
     });
+  });
+
+  it('拒绝：activeWorldEvents remaining 非正数（归零的事件必须已进 history）', () => {
+    expectRejected((s) => {
+      const p = s.characters[s.playerId]!;
+      (s as unknown as { activeWorldEvents: unknown[] }).activeWorldEvents = [
+        {
+          id: 'we1',
+          eventId: 'blackout',
+          scope: 'zone',
+          zoneId: p.currentZoneId,
+          startedAtTime: 0,
+          remaining: 0,
+          label: 'x',
+          description: 'y',
+        },
+      ];
+    });
+  });
+
+  it('拒绝：同一种世界事件同时生效两份（修正值会被重复相乘）', () => {
+    expectRejected((s) => {
+      (s as unknown as { activeWorldEvents: unknown[] }).activeWorldEvents = [
+        {
+          id: 'we1',
+          eventId: 'rain',
+          scope: 'global',
+          zoneId: null,
+          startedAtTime: 0,
+          remaining: 3,
+          label: '连绵阴雨',
+          description: 'y',
+        },
+        {
+          id: 'we2',
+          eventId: 'rain',
+          scope: 'global',
+          zoneId: null,
+          startedAtTime: 1,
+          remaining: 4,
+          label: '连绵阴雨',
+          description: 'y',
+        },
+      ];
+    });
+  });
+
+  it('拒绝：worldEventHistory 结束时间早于开始时间', () => {
+    expectRejected((s) => {
+      (s as unknown as { worldEventHistory: unknown[] }).worldEventHistory = [
+        { id: 'we0', eventId: 'rain', zoneId: null, startedAtTime: 9, endedAtTime: 3 },
+      ];
+    });
+  });
+});
+
+describe('[saveValidation] 状态效果 / EXPOSED 红线（Phase 3A Step 8）', () => {
+  it('拒绝：statusEffects 含未知状态 id', () => {
+    expectRejected((s) => {
+      const p = s.characters[s.playerId]!;
+      p.statusEffects = [...p.statusEffects, { id: 'panic', remaining: 3, hpPerTick: 0, label: '慌乱' } as never];
+    });
+  });
+  it('拒绝：EXPOSED 带 hpPerTick 伤害（红线）', () => {
+    expectRejected((s) => {
+      const p = s.characters[s.playerId]!;
+      p.statusEffects = [
+        ...p.statusEffects,
+        { id: 'exposed', remaining: 3, hpPerTick: -3, label: '露出破绽', damageTakenMult: 1.2 } as never,
+      ];
+    });
+  });
+  it('拒绝：EXPOSED damageTakenMult 与配置不符', () => {
+    expectRejected((s) => {
+      const p = s.characters[s.playerId]!;
+      p.statusEffects = [
+        ...p.statusEffects,
+        { id: 'exposed', remaining: 3, hpPerTick: 0, label: '露出破绽', damageTakenMult: 9.9 } as never,
+      ];
+    });
+  });
+  it('拒绝：statusEffects 重复 EXPOSED（不可叠加）', () => {
+    expectRejected((s) => {
+      const p = s.characters[s.playerId]!;
+      p.statusEffects = [
+        ...p.statusEffects,
+        { id: 'exposed', remaining: 3, hpPerTick: 0, label: '露出破绽' } as never,
+        { id: 'exposed', remaining: 2, hpPerTick: 0, label: '露出破绽' } as never,
+      ];
+    });
+  });
+  it('接受：合法 EXPOSED 状态', () => {
+    const state = newGame();
+    const p = state.characters[state.playerId]!;
+    p.statusEffects = [
+      ...p.statusEffects,
+      {
+        id: 'exposed',
+        remaining: 3,
+        hpPerTick: 0,
+        label: '露出破绽',
+        damageTakenMult: GAME_CONFIG.exposedDamageMult,
+      } as never,
+    ];
+    expect(validateSaveData(makeSave(state)).ok).toBe(true);
+  });
+});
+
+describe('[saveValidation] 技能冷却（Phase 3A Step 8）', () => {
+  it('拒绝：skillCooldowns 含未知技能', () => {
+    expectRejected((s) => {
+      const p = s.characters[s.playerId]!;
+      p.skillCooldowns = { ...p.skillCooldowns, fake_skill: 2 };
+    });
+  });
+  it('拒绝：skillCooldowns 负值', () => {
+    expectRejected((s) => {
+      const p = s.characters[s.playerId]!;
+      p.skillCooldowns = { ...p.skillCooldowns, adrenaline: -1 };
+    });
+  });
+  it('接受：合法技能冷却（自身技能，非负整数）', () => {
+    const state = newGame();
+    const p = state.characters[state.playerId]!;
+    p.skillCooldowns = { ...p.skillCooldowns, adrenaline: 2 };
+    expect(validateSaveData(makeSave(state)).ok).toBe(true);
   });
 });

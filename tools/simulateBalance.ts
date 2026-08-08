@@ -47,6 +47,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { GAME_CONFIG, GAME_VERSION } from '../src/data/gameConfig';
 import { CHARACTERS } from '../src/data/characters';
+import { WORLD_EVENT_IDS } from '../src/core/worldEvents';
 
 import {
   AUTO_PLAYER_POLICIES,
@@ -339,6 +340,16 @@ interface CellStats {
 
   avgSteps: number;
   totalSteps: number;
+
+  /* --- Phase 3A 玩法统计（事件扫描聚合） --- */
+  attackStyleCounts: Record<string, number>;
+  exposedApplied: number;
+  exposedConsumed: number;
+  guardResolves: number;
+  skillUseCounts: Record<string, number>;
+  worldEventCounts: Record<string, number>;
+  /** 全部命令类型计数（GUARD 使用率的分母） */
+  commandCounts: Record<string, number>;
 }
 
 function aggregateCell(
@@ -422,7 +433,30 @@ function aggregateCell(
 
     avgSteps: n > 0 ? sum((r) => r.steps) / n : 0,
     totalSteps: sum((r) => r.steps),
+
+    /* --- Phase 3A 玩法统计聚合 --- */
+    attackStyleCounts: mergeCounts((r) => r.attackStyleCounts, results),
+    exposedApplied: sum((r) => r.exposedApplied),
+    exposedConsumed: sum((r) => r.exposedConsumed),
+    guardResolves: sum((r) => r.guardResolves),
+    skillUseCounts: mergeCounts((r) => r.skillUseCounts, results),
+    worldEventCounts: mergeCounts((r) => r.worldEventCounts, results),
+    commandCounts: mergeCounts((r) => r.commandCounts, results),
   };
+}
+
+/** 把多局结果的 { key: count } 字典按 key 累加 */
+function mergeCounts(
+  pick: (r: AutoGameResult) => Record<string, number>,
+  results: AutoGameResult[],
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const r of results) {
+    for (const [k, v] of Object.entries(pick(r))) {
+      out[k] = (out[k] ?? 0) + v;
+    }
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------ */
@@ -491,7 +525,28 @@ interface BalanceReport {
       zeroWinCharacters: string[];
       passed: boolean;
     };
-    /** 整体判定 = 引擎健康 && 角色平衡（规格 §六） */
+    /** Phase 3A 玩法使用率与事件覆盖验收（Step 9/10/14） */
+    phase3a: {
+      attackStyleCounts: Record<string, number>;
+      attackTotal: number;
+      styleUsageRate: Record<string, number>;
+      quickPassed: boolean;
+      heavyPassed: boolean;
+      guardCommandCount: number;
+      totalCommands: number;
+      guardUsageRate: number;
+      guardPassed: boolean;
+      guardResolves: number;
+      exposedApplied: number;
+      exposedConsumed: number;
+      skillUseCounts: Record<string, number>;
+      worldEventCounts: Record<string, number>;
+      worldEventTarget: number;
+      worldEventCoveragePassed: boolean;
+      threshold: number;
+      passed: boolean;
+    };
+    /** 整体判定 = 引擎健康 && 角色平衡 && Phase 3A 玩法验收（规格 §六） */
     overallPassed: boolean;
     summary: GlobalSummary;
   };
@@ -578,7 +633,29 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
 
       avgSteps: w((c) => c.avgSteps),
       totalSteps: sum((c) => c.totalSteps),
+
+      /* --- Phase 3A 玩法统计聚合（计数直接求和） --- */
+      attackStyleCounts: mergeSummaryCounts(subset, (c) => c.attackStyleCounts),
+      exposedApplied: sum((c) => c.exposedApplied),
+      exposedConsumed: sum((c) => c.exposedConsumed),
+      guardResolves: sum((c) => c.guardResolves),
+      skillUseCounts: mergeSummaryCounts(subset, (c) => c.skillUseCounts),
+      worldEventCounts: mergeSummaryCounts(subset, (c) => c.worldEventCounts),
+      commandCounts: mergeSummaryCounts(subset, (c) => c.commandCounts),
     };
+  };
+
+  const mergeSummaryCounts = (
+    subset: CellStats[],
+    pick: (c: CellStats) => Record<string, number>,
+  ): Record<string, number> => {
+    const out: Record<string, number> = {};
+    for (const c of subset) {
+      for (const [k, v] of Object.entries(pick(c))) {
+        out[k] = (out[k] ?? 0) + v;
+      }
+    }
+    return out;
   };
 
   const characterIds = [...new Set(cells.map((c) => c.characterId))];
@@ -620,6 +697,33 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
   const characterBalancePassed =
     zeroWinCharacters.length === 0 && ratio < BALANCE_THRESHOLD;
 
+  /* --- Phase 3A 玩法使用率与事件覆盖验收（Step 9/10/14） --- */
+  const all = makeSummary(cells);
+  const attackStyleCounts = all.attackStyleCounts;
+  const attackTotal =
+    (attackStyleCounts.quick ?? 0) +
+    (attackStyleCounts.normal ?? 0) +
+    (attackStyleCounts.heavy ?? 0);
+  const styleUsageRate: Record<string, number> = {};
+  for (const [k, v] of Object.entries(attackStyleCounts)) {
+    styleUsageRate[k] = attackTotal > 0 ? v / attackTotal : 0;
+  }
+  const totalCommands = Object.values(all.commandCounts).reduce((a, b) => a + b, 0);
+  const guardCommandCount = all.commandCounts.GUARD ?? 0;
+  const guardUsageRate = totalCommands > 0 ? guardCommandCount / totalCommands : 0;
+  const PHASE3A_THRESHOLD = 0.02; // quick / heavy / guard 各 ≥ 2%
+  const quickPassed = (styleUsageRate.quick ?? 0) >= PHASE3A_THRESHOLD;
+  const heavyPassed = (styleUsageRate.heavy ?? 0) >= PHASE3A_THRESHOLD;
+  const guardPassed = guardUsageRate >= PHASE3A_THRESHOLD;
+  // 世界事件覆盖：6 种事件在正式 3000 局规模下各 ≥ 50 次
+  const WORLD_EVENT_TARGET = 50;
+  const worldEventCounts = all.worldEventCounts;
+  const worldEventCoveragePassed = WORLD_EVENT_IDS.every(
+    (id) => (worldEventCounts[id] ?? 0) >= WORLD_EVENT_TARGET,
+  );
+  const phase3aPassed =
+    quickPassed && heavyPassed && guardPassed && worldEventCoveragePassed;
+
   const engineHealthy = timeoutCount === 0 && illegalCount === 0 && hardLimitCount === 0;
 
   const dist = distributionFromCells(opts, cells);
@@ -659,7 +763,27 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
         zeroWinCharacters,
         passed: characterBalancePassed,
       },
-      overallPassed: engineHealthy && characterBalancePassed,
+      phase3a: {
+        attackStyleCounts,
+        attackTotal,
+        styleUsageRate,
+        quickPassed,
+        heavyPassed,
+        guardCommandCount,
+        totalCommands,
+        guardUsageRate,
+        guardPassed,
+        guardResolves: all.guardResolves,
+        exposedApplied: all.exposedApplied,
+        exposedConsumed: all.exposedConsumed,
+        skillUseCounts: all.skillUseCounts,
+        worldEventCounts,
+        worldEventTarget: WORLD_EVENT_TARGET,
+        worldEventCoveragePassed,
+        threshold: PHASE3A_THRESHOLD,
+        passed: phase3aPassed,
+      },
+      overallPassed: engineHealthy && characterBalancePassed && phase3aPassed,
       summary: global,
     },
     characterSummary,
@@ -826,7 +950,65 @@ function renderMarkdown(report: BalanceReport): string {
   L.push(`| 0 胜率角色 | ${cb.zeroWinCharacters.length === 0 ? '无' : cb.zeroWinCharacters.join('、')} |`);
   L.push(`| 判定 | ${cb.passed ? '**PASS**' : '**FAIL**'} |`);
   L.push('');
-  L.push(`**整体判定：${meta.overallPassed ? 'PASS' : 'FAIL'}**（= 引擎健康 ${h.engineHealthy ? '✓' : '✗'} && 角色平衡 ${cb.passed ? '✓' : '✗'}）`);
+  const p3 = meta.phase3a;
+  L.push(`**整体判定：${meta.overallPassed ? 'PASS' : 'FAIL'}**（= 引擎健康 ${h.engineHealthy ? '✓' : '✗'} && 角色平衡 ${cb.passed ? '✓' : '✗'} && Phase 3A 玩法 ${p3.passed ? '✓' : '✗'}）`);
+  L.push('');
+
+  // ---- Phase 3A 玩法使用率与事件覆盖（Step 9/10/14） ----
+  L.push('## Phase 3A 玩法使用率与事件覆盖验收');
+  L.push('');
+  L.push('### 攻击风格（玩家侧全部攻击动作）');
+  L.push('');
+  L.push('| 风格 | 次数 | 占比 | 门槛（≥2%） | 判定 |');
+  L.push('| --- | ---: | ---: | --- | --- |');
+  L.push(
+    `| quick | ${p3.attackStyleCounts.quick ?? 0} | ${fmtPct(p3.styleUsageRate.quick ?? 0)} | ${fmtPct(p3.threshold)} | ${p3.quickPassed ? '**PASS**' : '**FAIL**'} |`,
+  );
+  L.push(
+    `| normal | ${p3.attackStyleCounts.normal ?? 0} | ${fmtPct(p3.styleUsageRate.normal ?? 0)} | - | - |`,
+  );
+  L.push(
+    `| heavy | ${p3.attackStyleCounts.heavy ?? 0} | ${fmtPct(p3.styleUsageRate.heavy ?? 0)} | ${fmtPct(p3.threshold)} | ${p3.heavyPassed ? '**PASS**' : '**FAIL**'} |`,
+  );
+  L.push(`| 合计 | ${p3.attackTotal} | 100% | - | - |`);
+  L.push('');
+  L.push('### 防御姿态与 Heavy 风险');
+  L.push('');
+  L.push('| 指标 | 值 | 门槛 | 判定 |');
+  L.push('| --- | ---: | --- | --- |');
+  L.push(
+    `| GUARD 命令次数 | ${p3.guardCommandCount} | - | - |`,
+  );
+  L.push(
+    `| GUARD 使用率（占全部命令） | ${fmtPct(p3.guardUsageRate)} | ${fmtPct(p3.threshold)} | ${p3.guardPassed ? '**PASS**' : '**FAIL**'} |`,
+  );
+  L.push(`| 防御成功减免次数 | ${p3.guardResolves} | - | - |`);
+  L.push(`| EXPOSED 施加（重击挥空） | ${p3.exposedApplied} | - | - |`);
+  L.push(`| EXPOSED 兑现（破绽被击中） | ${p3.exposedConsumed} | - | - |`);
+  L.push('');
+  L.push('### 技能使用（按技能）');
+  L.push('');
+  L.push('| 技能 | 使用次数 |');
+  L.push('| --- | ---: |');
+  const skillEntries = Object.entries(p3.skillUseCounts).sort((a, b) => b[1] - a[1]);
+  if (skillEntries.length === 0) {
+    L.push('| （无技能被使用） | 0 |');
+  } else {
+    for (const [sid, n] of skillEntries) L.push(`| ${sid} | ${n} |`);
+  }
+  L.push('');
+  L.push('### 世界事件触发覆盖（正式规模下各 ≥ 50 次）');
+  L.push('');
+  L.push('| 事件 | 触发次数 | 门槛 | 判定 |');
+  L.push('| --- | ---: | ---: | --- |');
+  for (const id of WORLD_EVENT_IDS) {
+    const n = p3.worldEventCounts[id] ?? 0;
+    L.push(`| ${id} | ${n} | ${p3.worldEventTarget} | ${n >= p3.worldEventTarget ? '✓' : '**FAIL**'} |`);
+  }
+  L.push('');
+  L.push(
+    `**Phase 3A 玩法整体判定：${p3.passed ? 'PASS' : 'FAIL'}**（quick ${p3.quickPassed ? '✓' : '✗'} / heavy ${p3.heavyPassed ? '✓' : '✗'} / guard ${p3.guardPassed ? '✓' : '✗'} / 事件覆盖 ${p3.worldEventCoveragePassed ? '✓' : '✗'}）`,
+  );
   L.push('');
 
   // ---- 全局摘要 ----
@@ -972,6 +1154,7 @@ function main(): void {
 
   const h = report.meta.health;
   const cb = report.meta.characterBalance;
+  const p3 = report.meta.phase3a;
   // eslint-disable-next-line no-console
   console.log(
     `[phase3-balance] 完成：requestedTotalGames=${report.meta.config.requestedTotalGames} ` +
@@ -983,7 +1166,11 @@ function main(): void {
       `引擎判定 ${h.engineHealthy ? 'PASS' : 'FAIL'}` +
       (h.engineHealthy ? '' : `（timeout=${h.timeout.count} illegal=${h.illegalState.count} hardLimit=${h.hardLimitReached.count}）`) +
       `，角色平衡 ${cb.passed ? 'PASS' : 'FAIL'}` +
-      (cb.passed ? '' : `（ratio=${cb.ratio === Infinity ? '∞' : cb.ratio.toFixed(2)}，0胜率=${cb.zeroWinCharacters.join('、') || '无'}）`),
+      (cb.passed ? '' : `（ratio=${cb.ratio === Infinity ? '∞' : cb.ratio.toFixed(2)}，0胜率=${cb.zeroWinCharacters.join('、') || '无'}）`) +
+      `，Phase 3A ${p3.passed ? 'PASS' : 'FAIL'}` +
+      (p3.passed
+        ? ''
+        : `（quick=${p3.quickPassed ? '✓' : '✗'} heavy=${p3.heavyPassed ? '✓' : '✗'} guard=${p3.guardPassed ? '✓' : '✗'} 事件覆盖=${p3.worldEventCoveragePassed ? '✓' : '✗'}）`),
   );
   // eslint-disable-next-line no-console
   console.log(`[phase3-balance] 整体判定：${report.meta.overallPassed ? 'PASS' : 'FAIL'}`);

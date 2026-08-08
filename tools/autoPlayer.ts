@@ -153,6 +153,20 @@ export interface AutoGameResult {
   fallbackSteps: number;
   commandCounts: Record<string, number>;
 
+  /* --- Phase 3A 玩法统计（由对局事件扫描得出，与 UI/核心同源） --- */
+  /** 攻击风格使用次数：quick / normal / heavy */
+  attackStyleCounts: Record<string, number>;
+  /** 重击挥空挂上 EXPOSED 的次数（Heavy 风险） */
+  exposedApplied: number;
+  /** EXPOSED 被成功战斗伤害兑现的次数 */
+  exposedConsumed: number;
+  /** 防御姿态成功减免伤害的次数 */
+  guardResolves: number;
+  /** 技能使用次数：skillId -> count */
+  skillUseCounts: Record<string, number>;
+  /** 世界事件触发次数：eventId -> count */
+  worldEventCounts: Record<string, number>;
+
   /** 仅在 keepFinalState 为 true 时存在 */
   finalState?: GameState;
 }
@@ -575,10 +589,65 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
     resolutionSteps: ctx.resolutionSteps,
     fallbackSteps: ctx.fallbackSteps,
     commandCounts: ctx.commandCounts,
+
+    ...scanPhase3aCounters(s),
   };
 
   if (ctx.keepFinalState) result.finalState = s;
   return result;
+}
+
+/**
+ * 扫描对局事件，统计 Phase 3A 玩法指标。
+ *
+ * 数据源是 `state.events` —— 与 UI 展示、存档完全同源，不存在「模拟器自己
+ * 另算一套」的风险。口径：
+ *  - 攻击风格：ATTACK_HIT / ATTACK_MISSED 的 `metadata.style`；
+ *  - EXPOSED：重击挥空 `metadata.exposed === true`（施加），
+ *    ATTACK_HIT `metadata.exposedConsumed === true`（兑现）；
+ *  - 防御姿态：ATTACK_HIT `metadata.guarded === true`（成功减免次数）；
+ *  - 技能：SKILL_USED 的 `metadata.skillId`；
+ *  - 世界事件：WORLD_EVENT 的 `metadata.worldEventId`。
+ */
+function scanPhase3aCounters(s: GameState): {
+  attackStyleCounts: Record<string, number>;
+  exposedApplied: number;
+  exposedConsumed: number;
+  guardResolves: number;
+  skillUseCounts: Record<string, number>;
+  worldEventCounts: Record<string, number>;
+} {
+  const attackStyleCounts: Record<string, number> = {};
+  const skillUseCounts: Record<string, number> = {};
+  const worldEventCounts: Record<string, number> = {};
+  let exposedApplied = 0;
+  let exposedConsumed = 0;
+  let guardResolves = 0;
+
+  for (const e of s.events) {
+    const m = e.metadata ?? {};
+    if (e.type === 'ATTACK_HIT' || e.type === 'ATTACK_MISSED') {
+      const style = m.style as string | undefined;
+      if (style) attackStyleCounts[style] = (attackStyleCounts[style] ?? 0) + 1;
+      if (m.exposed === true) exposedApplied += 1;
+      if (e.type === 'ATTACK_HIT' && m.exposedConsumed === true) exposedConsumed += 1;
+      if (e.type === 'ATTACK_HIT' && m.guarded === true) guardResolves += 1;
+    } else if (e.type === 'SKILL_USED') {
+      const sid = m.skillId as string | undefined;
+      if (sid) skillUseCounts[sid] = (skillUseCounts[sid] ?? 0) + 1;
+    } else if (e.type === 'WORLD_EVENT') {
+      const wid = m.worldEventId as string | undefined;
+      if (wid) worldEventCounts[wid] = (worldEventCounts[wid] ?? 0) + 1;
+    }
+  }
+  return {
+    attackStyleCounts,
+    exposedApplied,
+    exposedConsumed,
+    guardResolves,
+    skillUseCounts,
+    worldEventCounts,
+  };
 }
 
 /** 批量跑同一配置的多局，种子按 `${seedPrefix}-${i}` 生成，便于复现单局 */

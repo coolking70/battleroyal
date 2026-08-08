@@ -10,6 +10,7 @@ import { useConsumable } from './consumables';
 import { performCraft } from './crafting';
 import { describeError, isExpectedError } from './errors';
 import { pushEvent } from './events';
+import { noteOwnActionCompleted } from './exposed';
 import {
   aliveCharacters,
   cloneState,
@@ -31,7 +32,7 @@ import {
 import { runNpcTurn } from './npcAi';
 import { SeededRandom } from './random';
 import { announceWarning, updateRestrictedZones } from './restrictedZones';
-import { runDynamicEvents } from './dynamicEvents';
+import { runWorldEvents } from './worldEvents';
 import {
   handleAttack,
   handleAttackNearby,
@@ -157,7 +158,7 @@ export function advanceTime(state: GameState, rng: SeededRandom): void {
   updateStatusEffects(state);
   updateRestrictedZones(state, rng);
   applyFinaleDecay(state);
-  runDynamicEvents(state, rng);
+  runWorldEvents(state, rng);
   decayNoise(state);
   refreshZoneOccupants(state);
   refreshPlayerSight(state);
@@ -259,6 +260,14 @@ function executeCommandInner(state: GameState, command: Command): CommandResult 
   checkGameEnd(draft);
 
   const finish = (outcome: HandlerOutcome): CommandResult => {
+    // Phase 3A：玩家侧「有效行动完成」收口点。
+    // EXPOSED 的条件B（没挨打就靠自己下一次行动调整过来）在这里结算，
+    // 与 NPC 侧 `runNpcTurn` 共用同一个函数，规则只有一份实现。
+    // 放在 advanceTime **之前**：产生破绽的那次行动只消费掉「跳过一次」标记，
+    // 破绽会完整覆盖紧随其后的这一轮 NPC 行动，然后在玩家下一次行动收尾时消失。
+    if (outcome.ok && advancesTime(command)) {
+      noteOwnActionCompleted(draft, getPlayer(draft));
+    }
     if (outcome.ok && !outcome.skipTime && advancesTime(command)) {
       advanceTime(draft, rng);
     } else {

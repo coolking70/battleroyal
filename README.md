@@ -2,7 +2,7 @@
 
 一个**纯前端、零后端**的回合制「区域式大逃杀」网页游戏。1 名玩家对阵 5 名 AI 参赛者，在 6 个相互连通的区域中搜索物资、合成装备、遭遇并战斗，同时躲避不断收缩的「禁区」。第一目标是交付一个**可运行、可测试、确定性可复现**的垂直切片（vertical slice），核心逻辑与界面严格分离。
 
-> 项目代号：`zone-battle-royale` · 版本 `0.2.0`（第三阶段 / Phase 3）
+> 项目代号：`zone-battle-royale` · 版本 `0.3.0`（Phase 3A）
 
 ---
 
@@ -87,6 +87,23 @@ npm run simulate
 - **调试增强**：`?debug=1` 面板新增「技能冷却 / 战斗风格命中与逃跑概率 / 当前生效事件 / RNG 状态（种子 + 可重放说明）」四个分区。
 - **脚本化对局验证**：`reports/phase3-scripted-playthroughs.md` 记录 8 局全自动对局，全部正常收束、无卡死，且技能释放与三类动态事件覆盖率均为 8/8。
 - **平衡收敛**：`npm run simulate -- --games 2000` 的最高/最低非零胜率比由基线 **5.88** 收敛至 **2.20**，并在 4 个独立种子（BAL / VERIFY / CHECK / FINAL）上全部通过 `< 2.5` 红线，无 0 胜率角色，引擎健康指标（超时 / 非法状态 / 触顶）全为 0。调优明细见 `BALANCE_CHANGELOG.md`。
+
+---
+
+## 3.3 Phase 3A 要点（版本 0.3.0）
+
+在 Phase 3 之上继续做「战斗正确性 + 角色特色 + 世界事件 + 视觉资产接口」闭环，**不推倒 Phase 2/3 已验收的底层**，并新增 5 条红线（见 `PHASE3A_BASELINE.md`）：
+
+- **EXPOSED（露出破绽）**：重击挥空 → 自己破绽，下一次受到**攻击类战斗伤害** +20%；只由 heavy miss 产生、只作用于 `resolveAttack` 路径、不可叠加。修复了 Phase 3 的 BUG-01（攻击风格漏传导致 UI 命中率与核心概率不一致）。
+- **四角色签名技能重做**：侦察员「战场侦察」（信息）/ 斗士「肾上腺素」（战斗节奏，唯一带负面代价）/ 工程师「野外工造」（合成）/ 医学生「紧急处置」（消耗品经济），触发条件贴着各自战略维度。
+- **世界事件（取代 storm/supply_drop/ambush）**：6 种环境修正型事件（大停电 / 连绵阴雨 / 紧急广播 / 医疗管制 / 研究异常 / 全城骚动），一律不写实体状态，只提供修正值由各系统查询 —— 编译期杜绝塞物资 / 瞬移 / 直接扣血。
+- **命中率同源不变量**：UI 展示的命中率必须 === core 实际掷骰概率（`hitChanceIn` / `fleeChanceIn` 为唯一入口，含世界事件修正）。
+- **视觉资产接口**：`visualAssets.ts` 统一注册表 + `assets/` SVG 目录 + fallback（缺图自动退回 emoji + 色块）。
+- **模拟统计升级**：`simulateBalance` 新增攻击风格使用率 / Heavy 风险 / 防御 / 技能 / 世界事件覆盖统计与验收门槛（quick·heavy·guard ≥2%，6 事件各 ≥50 次 @3000 局）。
+- **存档校验升级**：世界事件（active/history 自洽、同事件不叠加、并发上限）+ EXPOSED 红线（hpPerTick=0、damageTakenMult 一致、不可叠加）+ 技能冷却（合法 id、非负）。
+- **依赖审计**：`npm run audit:deps` 静态扫描分层方向 / 红线隔离 / 环依赖 / 单文件体量（core/data ≤ 500 行）。
+
+设计文档：`COMBAT_DESIGN.md` / `SKILL_DESIGN.md` / `WORLD_EVENT_DESIGN.md` / `VISUAL_ASSET_SPEC.md` / `DEPENDENCY_AUDIT.md`。
 
 ---
 
@@ -181,20 +198,24 @@ src/
 │   ├── gameState.ts         # 状态创建 / 查询 / 胜负
 │   ├── commands.ts          # 命令合法性校验
 │   ├── events.ts / random.ts / saveLoad.ts / types.ts
-│   ├── skills.ts / dynamicEvents.ts          # Phase 3：角色技能 / 动态事件
-│   ├── npcGoalPlan.ts                        # 自 npcDecide 拆出：NPC 长期制作目标规划
-│   ├── legalActionBuilders.ts                # 自 legalActions 拆出：合法动作子集枚举
+│   ├── skills.ts / exposed.ts / statusIds.ts     # Phase 3A：角色技能 / EXPOSED / 状态 id 常量
+│   ├── worldEvents.ts / worldEventAudit.ts       # Phase 3A：世界事件（环境修正型）/ 不变量审计
+│   ├── npcSkillDecide.ts                         # 自 npcDecide 拆出：NPC 技能决策
+│   ├── npcGoalPlan.ts                            # 自 npcDecide 拆出：NPC 长期制作目标规划
+│   ├── legalActionBuilders.ts                    # 自 legalActions 拆出：合法动作子集枚举
 │   ├── actorActionBase.ts / actorCombatActions.ts  # 自 actorActions 拆出：公共基座 / 战斗行动
-│   ├── commandTypes.ts                       # 自 types 拆出：命令与动态事件类型
-│   └── （所有 core 单文件均 < 500 行，最大 npcDecide.ts 466）
+│   ├── commandTypes.ts                           # 自 types 拆出：命令与事件类型
+│   └── （所有 core 单文件均 < 500 行，最大 types.ts 486）
 ├── data/                # 静态配置：characters / items / recipes / zones / gameConfig
 ├── ui/                  # React 表现层
 │   ├── screens/         # MenuScreen / GameScreen / ResultScreen
 │   ├── components/      # StatusBar / ZoneMap / Inventory / CraftPanel / EncounterPanel ...
+│   ├── assets/          # Phase 3A：SVG 视觉资产（zones/ characters/ events/ + fallback + manifest）
+│   ├── visualAssets.ts  # Phase 3A：视觉注册表（emoji + 色块 + 图片路径 + fallback）
 │   └── styles.css
 ├── utils/              # format.ts（展示辅助）+ useGame.ts（核心↔React 唯一粘合层）
 ├── App.tsx / main.tsx
-tests/                   # Vitest：random / zones / movement / combat / search / crafting / npc / save / victory / ui（共 10 个文件）
+tests/                   # Vitest：random / zones / movement / combat / search / crafting / npc / save / victory / ui / 世界事件不变量 / 视觉资产 / 存档校验（共 35 个文件）
 ```
 
 **粘合层**：`src/utils/useGame.ts` 是唯一接触 React 状态的核心调用方——`dispatch(command)` 内部调用 `executeCommand`，拿到新状态后 `setState`，并触发 localStorage 自动存档与 toast 反馈。
@@ -212,9 +233,9 @@ tests/                   # Vitest：random / zones / movement / combat / search 
 ## 11. 测试
 
 - 框架：**Vitest**，`globals: true`，默认 node 环境；UI 冒烟测试用 `@vitest-environment jsdom` 单独覆盖。
-- 当前 **424 个测试，全部通过**，分布在 32 个文件（第一阶段 71 → 第二阶段 128 → 第三阶段 424）。
+- 当前 **491 个测试，全部通过**，分布在 35 个文件（第一阶段 71 → 第二阶段 128 → 第三阶段 424 → Phase 3A 491）。
 - 下表为第一阶段的 10 个基础文件，后续阶段在此之上新增了硬化 / 死锁 / 物品守恒 /
-  技能 / 动态事件 / 平衡验收等专项用例：
+  技能 / 动态事件 / 世界事件不变量 / 视觉资产 / 存档校验 / 平衡验收等专项用例：
 
 | 测试文件 | 覆盖点 |
 | --- | --- |

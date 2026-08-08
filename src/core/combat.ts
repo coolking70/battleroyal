@@ -1,8 +1,14 @@
 import { GAME_CONFIG } from '../data/gameConfig';
 import { getItem } from '../data/items';
 import { getZoneDef } from '../data/zones';
-import { spendStamina, type CostCheck } from './actionCosts';
+import { attackStaminaCostFor, spendStamina, type CostCheck } from './actionCosts';
 import { pushEvent } from './events';
+import {
+  EXPOSED_LABEL,
+  applyExposed,
+  consumeExposedOnDamage,
+  exposedDamageMultiplier,
+} from './exposed';
 import { addNoise } from './info';
 import {
   armorDefenseOf,
@@ -13,7 +19,10 @@ import {
   weaponAttackOf,
 } from './inventory';
 import { refreshZoneOccupants } from './gameState';
+import { consumeAdrenalineCharge } from './skills';
+import { selfDamageTakenMultiplier } from './statusIds';
 import { applyDamage } from './vitals';
+import { worldModifiersAt } from './worldEvents';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState } from './types';
 
@@ -64,6 +73,29 @@ export function hitChanceOf(
   return Math.min(
     GAME_CONFIG.maxHitChance,
     Math.max(GAME_CONFIG.minHitChance, chance),
+  );
+}
+
+/**
+ * 带世界事件修正的命中率（Phase 3A Step 6）。
+ *
+ * **这是 UI 与 core 唯一共用的命中率入口。**
+ * 不变量「UI 显示的命中率 === core 实际掷骰用的概率」由此保证：
+ * `resolveAttack` 掷骰用它、`EncounterPanel` / `DebugPanel` 显示也用它。
+ * 直接调用 {@link hitChanceOf} 只会得到**不含天气/停电修正**的裸概率，
+ * 除单元测试外不应在任何判定或展示路径中使用。
+ */
+export function hitChanceIn(
+  state: GameState,
+  attacker: Combatant,
+  defender: Combatant,
+  style: AttackStyle = 'normal',
+): number {
+  const base = hitChanceOf(attacker, defender, style);
+  const mods = worldModifiersAt(state, attacker.currentZoneId);
+  return Math.min(
+    GAME_CONFIG.maxHitChance,
+    Math.max(GAME_CONFIG.minHitChance, base * mods.hitMultiplier),
   );
 }
 
@@ -151,7 +183,11 @@ export function resolveAttack(
 ): AttackResult {
   attacker.stats.attacks += 1;
   state.stats.attacks += 1;
-  spendStamina(attacker, GAME_CONFIG.attackStyleStaminaCost[style]);
+  // Phase 3A：体力成本走 attackStaminaCostFor，肾上腺素的折扣才会真的落地，
+  // 且与 UI / legalActions 读的是同一个函数（不重蹈 BUG-01 的覆辙）。
+  spendStamina(attacker, attackStaminaCostFor(attacker, style));
+  // 肾上腺素按「攻击次数」计费：无论命中与否，这一拳都算用掉一次
+  consumeAdrenalineCharge(state, attacker);
   // 出手即解除自身防御姿态（防御只能挡下一次攻击）
   attacker.guarding = false;
 
@@ -166,14 +202,22 @@ export function resolveAttack(
     defender.knownEnemies.push(attacker.id);
   }
 
-  const chance = hitChanceOf(attacker, defender);
+  // Phase 3A BUG-01：这里过去漏传了 style，导致 UI 显示的是带风格的概率、
+  // 而核心实际按 'normal' 掷骰 —— 三种风格的命中差异在真实战斗中完全不存在。
+  // style 必须传入，UI 概率与核心概率才是同一个数。
+  const chance = hitChanceIn(state, attacker, defender, style);
   const hit = rng.chance(chance);
+  /** 写进事件 metadata 的命中率百分数：UI 与模拟统计都以此为准，必须与掷骰同源 */
+  const chancePct = Math.round(chance * 100);
 
-  // 武器耐久：无论命中与否都会磨损
+  // 武器耐久：无论命中与否都会磨损。
+  // 「研究异常」世界事件会让该区域内的装备额外多掉一点耐久（Phase 3A Step 6）。
   let weaponBroke = false;
   const weapon = getEquippedWeapon(attacker);
   if (weapon && typeof weapon.durability === 'number') {
-    weapon.durability -= 1;
+    const wear =
+      1 + worldModifiersAt(state, attacker.currentZoneId).durabilityLossBonus;
+    weapon.durability -= wear;
     if (weapon.durability <= 0) {
       destroyEquippedWeapon(attacker);
       weaponBroke = true;
@@ -181,42 +225,90 @@ export function resolveAttack(
   }
 
   if (!hit) {
-    const msg = `${attacker.name} 攻击 ${defender.name}，被闪开了。`;
+    // Phase 3A：重击挥空 = 把破绽卖给对手。这是 heavy 高伤的代价，
+    // 只有 heavy 会触发，quick / normal 落空不产生任何额外风险。
+    const exposedApplied = style === 'heavy' ? applyExposed(state, attacker) : false;
+    const msg =
+      `${attacker.name} 攻击 ${defender.name}，被闪开了。` +
+      (exposedApplied ? `（重击落空，${EXPOSED_LABEL}）` : '');
     pushEvent(state, {
       type: 'ATTACK_MISSED',
       actorId: attacker.id,
       targetId: defender.id,
       zoneId: attacker.currentZoneId,
       message: msg,
-      metadata: { chance: Math.round(chance * 100) },
+      metadata: { style, chance: chancePct, exposed: exposedApplied },
     });
     return { hit: false, damage: 0, targetDied: false, weaponBroke, message: msg };
   }
 
   let damage = computeDamage(attacker, defender, rng, style);
+  const baseDamage = damage;
+
   // 防御姿态：减免本次伤害后解除
   let guarded = false;
+  let guardPrevented = 0;
   if (defender.guarding) {
     guarded = true;
-    damage = Math.max(
+    const reduced = Math.max(
       GAME_CONFIG.minDamage,
       Math.round(damage * (1 - GAME_CONFIG.guardDamageReduction)),
     );
+    guardPrevented = damage - reduced;
+    damage = reduced;
     defender.guarding = false;
   }
+
+  // Phase 3A：EXPOSED 只在这里生效 —— 也就是「攻击类战斗伤害」这一条路径上。
+  // 禁区侵蚀 / 世界事件 / 持续伤害 / 终局衰竭都直接走 applyDamage，不经过此处，
+  // 因此天然吃不到这 20%，符合设计红线。
+  const exposedMult = exposedDamageMultiplier(defender);
+  let exposedBonus = 0;
+  if (exposedMult !== 1) {
+    const boosted = Math.max(GAME_CONFIG.minDamage, Math.round(damage * exposedMult));
+    exposedBonus = boosted - damage;
+    damage = boosted;
+  }
+
+  // Phase 3A：肾上腺素的代价。斗士为了省体力换来的是「这段时间自己更脆」，
+  // 和 EXPOSED 一样只作用在攻击类战斗伤害上（禁区 / 世界事件不吃这一刀）。
+  const frenzyMult = selfDamageTakenMultiplier(defender);
+  let frenzyBonus = 0;
+  if (frenzyMult !== 1) {
+    const boosted = Math.max(GAME_CONFIG.minDamage, Math.round(damage * frenzyMult));
+    frenzyBonus = boosted - damage;
+    damage = boosted;
+  }
+
   attacker.stats.damageDealt += damage;
   const res = applyDamage(state, defender, damage, attacker.id, '战斗');
 
+  // 条件A：受到成功的战斗伤害后，破绽立刻被兑现掉
+  const exposedConsumed = res.damage > 0 && consumeExposedOnDamage(state, defender);
+
   const msg =
     `${attacker.name} 命中 ${defender.name}，造成 ${damage} 点伤害` +
-    (guarded ? '（防御姿态减免）。' : '。');
+    (guarded ? '（防御姿态减免）' : '') +
+    (exposedBonus > 0 ? `（击中破绽 +${exposedBonus}）` : '') +
+    '。';
   pushEvent(state, {
     type: 'ATTACK_HIT',
     actorId: attacker.id,
     targetId: defender.id,
     zoneId: attacker.currentZoneId,
     message: msg,
-    metadata: { damage, remainingHp: defender.hp },
+    metadata: {
+      style,
+      chance: chancePct,
+      damage,
+      baseDamage,
+      remainingHp: defender.hp,
+      guarded,
+      guardPrevented,
+      exposedBonus,
+      exposedConsumed,
+      frenzyBonus,
+    },
   });
 
   if (weaponBroke) {
@@ -287,6 +379,20 @@ export function fleeChanceOf(actor: Combatant, enemy: Combatant): number {
   return Math.min(0.9, Math.max(0.1, p));
 }
 
+/**
+ * 带世界事件修正的逃跑成功率（Phase 3A Step 6）。
+ * 与 {@link hitChanceIn} 同理：判定与展示都走这里，避免两套数字。
+ */
+export function fleeChanceIn(
+  state: GameState,
+  actor: Combatant,
+  enemy: Combatant,
+): number {
+  const base = fleeChanceOf(actor, enemy);
+  const mods = worldModifiersAt(state, actor.currentZoneId);
+  return Math.min(0.9, Math.max(0.1, base + mods.fleeBonus));
+}
+
 /** 逃跑可以去的相邻区域（排除正式禁区，优先安全区） */
 export function fleeDestinations(state: GameState, actor: Combatant): string[] {
   const def = getZoneDef(actor.currentZoneId);
@@ -317,7 +423,7 @@ export function attemptFlee(
     return { ok: false, toZoneId: null, message: msg };
   }
 
-  const chance = fleeChanceOf(actor, enemy);
+  const chance = fleeChanceIn(state, actor, enemy);
   if (!rng.chance(chance)) {
     const msg = `${actor.name} 试图脱离，但被 ${enemy.name} 缠住了。`;
     pushEvent(state, {

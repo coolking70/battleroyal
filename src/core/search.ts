@@ -7,6 +7,7 @@ import { addNoise } from './info';
 import { addItem, canAccept, createStack } from './inventory';
 import { charactersInZone } from './gameState';
 import { isZoneExhausted, takeLootItem } from './zoneLoot';
+import { worldModifiersAt } from './worldEvents';
 import type { SeededRandom } from './random';
 import type { Combatant, GameState, ItemStack, LootRarity } from './types';
 
@@ -97,6 +98,13 @@ export function computeSearchWeights(
     nothing += GAME_CONFIG.emptyZoneNothingBonus;
   }
 
+  // 世界事件修正（Phase 3A Step 6）：
+  // 大停电压低「找到东西」的权重，全城骚动抬高「撞上敌人」的权重。
+  // 注意这里改的是**概率权重**而非区域库存 —— 世界事件永远不写隐藏库存。
+  const mods = worldModifiersAt(state, zone.id);
+  find *= mods.searchFindMultiplier;
+  if (enemy > 0) enemy *= mods.encounterMultiplier;
+
   return { find, enemy, nothing };
 }
 
@@ -113,10 +121,14 @@ export function rollItemId(
   if (!zone) return null;
 
   const preferRare = rng.chance(GAME_CONFIG.rareChance);
+  // 世界事件只改「取出偏好」，不改库存总量（Phase 3A Step 6）
+  const mods = worldModifiersAt(state, zone.id);
   const materialBias =
-    actor.passiveId === 'tinkerer' ? GAME_CONFIG.tinkererMaterialBias : 1;
+    (actor.passiveId === 'tinkerer' ? GAME_CONFIG.tinkererMaterialBias : 1) *
+    (1 + mods.materialFindBonus);
+  const consumableBias = 1 + mods.medicalFindBonus;
 
-  return takeLootItem(zone, rng, preferRare, materialBias);
+  return takeLootItem(zone, rng, preferRare, materialBias, consumableBias);
 }
 
 /**

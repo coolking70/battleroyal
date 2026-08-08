@@ -12,6 +12,8 @@
  */
 
 import { GAME_CONFIG } from '../data/gameConfig';
+import { aliveCharacters } from './gameState';
+import { worldModifiersAt } from './worldEvents';
 import type {
   GameState,
   IntelEntry,
@@ -66,7 +68,13 @@ export const NOISE_LABEL: Record<NoiseLevel, string> = {
 /** 情报保鲜期：超过这个时长的"最后已知位置"会被标记为陈旧 */
 export const INTEL_FRESH_WINDOW = 6;
 
-/** 记录一条玩家情报 */
+/**
+ * 记录一条玩家情报。
+ *
+ * Phase 3A Step 6：`sight` 来源的情报会被「大停电」屏蔽 —— 漆黑的区域里
+ * 你根本看不清对面是谁。`encounter` / `broadcast` 不受影响：
+ * 前者是真刀真枪打过照面，后者是全城广播，都不依赖视线。
+ */
 export function recordIntel(
   state: GameState,
   targetId: string,
@@ -74,6 +82,7 @@ export function recordIntel(
   source: IntelEntry['source'],
 ): void {
   if (targetId === state.playerId) return;
+  if (source === 'sight' && worldModifiersAt(state, zoneId).intelBlocked) return;
   state.playerIntel[targetId] = { zoneId, atTime: state.time, source };
 }
 
@@ -83,10 +92,22 @@ export function recordIntel(
  * 信息隐藏（2A-E）：只有「正在与玩家遭遇」的对手才会被识别并记录情报。
  * 仅仅是同区域共处不会泄露身份——否则玩家只要走进一个有人区域就自动拿到
  * 对方全部档案，等于变相上帝视角。身份只能靠真正交手去换取。
+ *
+ * Phase 3A Step 6 例外：「紧急广播」生效期间全场位置公开，
+ * 这是**双向**的（NPC 决策同样读得到玩家位置），不是单方面送情报。
  */
 export function refreshPlayerSight(state: GameState): void {
   const player = state.characters[state.playerId];
   if (!player || !player.alive) return;
+
+  // 紧急广播：公开所有存活者的所在区域
+  if (worldModifiersAt(state, player.currentZoneId).revealAll) {
+    for (const c of aliveCharacters(state)) {
+      if (c.id === player.id) continue;
+      recordIntel(state, c.id, c.currentZoneId, 'broadcast');
+    }
+  }
+
   const encounterId = state.encounter?.enemyId ?? null;
   if (!encounterId) return;
   const zone = state.zones[player.currentZoneId];

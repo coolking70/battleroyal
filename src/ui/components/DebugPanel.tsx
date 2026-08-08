@@ -236,19 +236,25 @@ export function DebugPanel({
         <div className="debug-kv">
           <span>events</span>
           <span>{state.events.length}</span>
-          <span>activeEvents</span>
-          <span>{state.activeEvents.length}</span>
+          <span>activeWorldEvents</span>
+          <span>{state.activeWorldEvents.length}</span>
+          <span>worldEventHistory</span>
+          <span>{state.worldEventHistory.length}</span>
+          <span>nextWorldEventTime</span>
+          <span>{state.nextWorldEventTime}</span>
         </div>
-        {state.activeEvents.length > 0 && (
+        {state.activeWorldEvents.length > 0 && (
           <div style={{ marginTop: 4 }}>
-            {state.activeEvents.map((ev) => (
+            {state.activeWorldEvents.map((ev) => (
               <div
                 key={ev.id}
                 className="faint"
                 style={{ fontSize: 11, lineHeight: 1.5 }}
               >
-                [{ev.type}] {ev.label} · 剩余 {ev.remaining} ·{' '}
-                {state.zones[ev.zoneId] ? getZoneDef(ev.zoneId).name : ev.zoneId}
+                [{ev.eventId}] {ev.label} · 剩余 {ev.remaining} ·{' '}
+                {ev.zoneId
+                  ? (state.zones[ev.zoneId] ? getZoneDef(ev.zoneId).name : ev.zoneId)
+                  : '全局'}
               </div>
             ))}
           </div>

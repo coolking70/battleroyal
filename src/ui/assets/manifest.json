@@ -1,0 +1,19 @@
+[
+  "characters/engineer.svg",
+  "characters/fighter.svg",
+  "characters/medic.svg",
+  "characters/scout.svg",
+  "events/blackout.svg",
+  "events/citywide_unrest.svg",
+  "events/emergency_broadcast.svg",
+  "events/medical_alert.svg",
+  "events/rain.svg",
+  "events/research_anomaly.svg",
+  "fallback.svg",
+  "zones/factory.svg",
+  "zones/forest.svg",
+  "zones/hospital.svg",
+  "zones/lab.svg",
+  "zones/residential.svg",
+  "zones/school.svg"
+]

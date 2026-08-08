@@ -13,6 +13,8 @@
 
 import { GAME_CONFIG } from '../../data/gameConfig';
 import { tryGetItem } from '../../data/items';
+import { SKILLS } from '../skills';
+import { ADRENALINE_ID, FIELD_CRAFT_ID, MEDICAL_FOCUS_ID, EXPOSED_ID } from '../statusIds';
 import { isFiniteNumber, isRecord, type ValidationContext } from './types';
 
 const INVENTORY_SLOTS = GAME_CONFIG.inventorySlots;
@@ -89,11 +91,11 @@ export function validateNumbers(ctx: ValidationContext): void {
       fail(`state.${f} 必须是非负整数（实际 ${String(v)}）`);
     }
   }
-  // nextDynamicEventTime 同样要求非负整数（Phase 3 Step 4 动态事件调度）
-  if (!isFiniteNumber(state.nextDynamicEventTime) || !Number.isInteger(state.nextDynamicEventTime)) {
-    fail(`state.nextDynamicEventTime 必须是有限整数（实际 ${String(state.nextDynamicEventTime)}）`);
-  } else if ((state.nextDynamicEventTime as number) < 0) {
-    fail(`state.nextDynamicEventTime 不得为负（${state.nextDynamicEventTime}）`);
+  // nextWorldEventTime 同样要求非负整数（Phase 3A Step 6 世界事件调度）
+  if (!isFiniteNumber(state.nextWorldEventTime) || !Number.isInteger(state.nextWorldEventTime)) {
+    fail(`state.nextWorldEventTime 必须是有限整数（实际 ${String(state.nextWorldEventTime)}）`);
+  } else if ((state.nextWorldEventTime as number) < 0) {
+    fail(`state.nextWorldEventTime 不得为负（${state.nextWorldEventTime}）`);
   }
   // nextZoneEventTime 允许 Number.MAX_SAFE_INTEGER（禁区已封锁完的哨兵值），
   // 否则不得明显超过硬上限 + 间隔。
@@ -167,8 +169,55 @@ export function validateNumbers(ctx: ValidationContext): void {
       fail(`角色 ${id} 的 skillCooldowns 必须是对象`);
     } else {
       for (const [sid, left] of Object.entries(c.skillCooldowns as Record<string, unknown>)) {
+        if (!(sid in SKILLS)) {
+          fail(`角色 ${id} 的 skillCooldowns 含有未知技能（${sid}）`);
+        }
         if (!isFiniteNumber(left) || !Number.isInteger(left) || (left as number) < 0) {
           fail(`角色 ${id} 的技能冷却 ${sid} 非法（${String(left)}）`);
+        }
+      }
+    }
+
+    /* --- Phase 3A Step 8：状态效果（含 EXPOSED 红线）--- */
+    const STATUS_EFFECT_IDS = new Set([
+      ADRENALINE_ID,
+      FIELD_CRAFT_ID,
+      MEDICAL_FOCUS_ID,
+      EXPOSED_ID,
+    ]);
+    if (!Array.isArray(c.statusEffects)) {
+      fail(`角色 ${id} 的 statusEffects 类型错误`);
+    } else {
+      const seenStatusIds = new Set<string>();
+      for (const e of c.statusEffects.filter(isRecord)) {
+        const eid = e.id;
+        if (typeof eid !== 'string' || !STATUS_EFFECT_IDS.has(eid)) {
+          fail(`角色 ${id} 的 statusEffects 含有未知状态（${String(eid)}）`);
+          continue;
+        }
+        if (seenStatusIds.has(eid)) {
+          // EXPOSED 明确不可叠加；其它签名技能状态也不应重复挂在同一个人身上
+          fail(`角色 ${id} 的状态效果重复生效（${eid}）`);
+        } else {
+          seenStatusIds.add(eid);
+        }
+        if (!isFiniteNumber(e.remaining) || !Number.isInteger(e.remaining) || (e.remaining as number) <= 0) {
+          fail(`角色 ${id} 的状态效果 ${eid} 的 remaining 非法（${String(e.remaining)}）`);
+        }
+        if (!isFiniteNumber(e.hpPerTick)) {
+          fail(`角色 ${id} 的状态效果 ${eid} 的 hpPerTick 非法`);
+        }
+        if (eid === EXPOSED_ID) {
+          // EXPOSED 红线：只作用在攻击类战斗伤害上，绝不通过 hpPerTick 直接扣血
+          if ((e.hpPerTick as number) !== 0) {
+            fail(`角色 ${id} 的 EXPOSED 不应带 hpPerTick 伤害（${String(e.hpPerTick)}）`);
+          }
+          if (!isFiniteNumber(e.damageTakenMult) || (e.damageTakenMult as number) !== GAME_CONFIG.exposedDamageMult) {
+            fail(`角色 ${id} 的 EXPOSED damageTakenMult 应为 ${GAME_CONFIG.exposedDamageMult}`);
+          }
+          if ((e.remaining as number) > GAME_CONFIG.exposedMaxDuration) {
+            fail(`角色 ${id} 的 EXPOSED remaining 超过兜底上限 ${GAME_CONFIG.exposedMaxDuration}`);
+          }
         }
       }
     }

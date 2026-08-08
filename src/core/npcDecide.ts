@@ -3,8 +3,7 @@ import { getItem } from '../data/items';
 import { tryGetRecipe } from '../data/recipes';
 import { getZoneDef } from '../data/zones';
 import { canPayActionCost } from './actionCosts';
-import { getEquippedWeapon } from './inventory';
-import { SKILLS, getCharacterSkill, isSkillReady, type SkillId } from './skills';
+import { SKILLS } from './skills';
 import { estimatePower } from './combat';
 import { isZoneExhausted } from './zoneLoot';
 import { findBestHealItem, findBestStaminaItem } from './consumables';
@@ -16,6 +15,8 @@ import {
 } from './crafting';
 import { enemiesInZone } from './gameState';
 import { armorDefenseOf, hasIngredients, weaponAttackOf } from './inventory';
+import { npcCombatSkill, npcSurvivalSkill } from './npcSkillDecide';
+import { worldModifiersAt } from './worldEvents';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, Personality } from './types';
 
@@ -179,53 +180,6 @@ function chooseAttackStyle(
   }
 }
 
-/**
- * 选择 NPC 的生存技能（Phase 3 Step 3）。
- * - 医学生「急救」：生命偏低时自我治疗；
- * - 工程师「应急修理」：体力吃紧或武器耐久受损时恢复 + 修理。
- */
-function hasDamagedWeapon(npc: Combatant): boolean {
-  const w = getEquippedWeapon(npc);
-  if (!w || typeof w.durability !== 'number') return false;
-  const cap = getItem(w.itemId).durability;
-  return cap != null && w.durability < cap;
-}
-
-function npcSurvivalSkill(npc: Combatant): SkillId | null {
-  const skillId = getCharacterSkill(npc.characterId);
-  if (!skillId || !isSkillReady(npc, skillId)) return null;
-  if (npc.stamina < SKILLS[skillId].staminaCost) return null;
-  const hpRatio = npc.hp / npc.maxHp;
-  switch (skillId) {
-    case 'first_aid':
-      return hpRatio < 0.55 ? skillId : null;
-    case 'field_repair':
-      return npc.stamina < npc.maxStamina * 0.5 || hasDamagedWeapon(npc) ? skillId : null;
-    default:
-      return null;
-  }
-}
-
-/**
- * 选择 NPC 的战斗增益技能（Phase 3 Step 3）。
- * - 斗士「破甲」：占优且健康时开打前蓄力；
- * - 侦察「疾影」：残血时提升闪避以保命。
- */
-function npcCombatSkill(npc: Combatant): SkillId | null {
-  const skillId = getCharacterSkill(npc.characterId);
-  if (!skillId || !isSkillReady(npc, skillId)) return null;
-  if (npc.stamina < SKILLS[skillId].staminaCost) return null;
-  const hpRatio = npc.hp / npc.maxHp;
-  switch (skillId) {
-    case 'sunder':
-      return hpRatio > 0.6 ? skillId : null;
-    case 'dash':
-      return hpRatio < 0.5 ? skillId : null;
-    default:
-      return null;
-  }
-}
-
 /** 选择移动目的地：优先安全区，人格影响是否靠近战斗区域 */
 function chooseMoveTarget(
   state: GameState,
@@ -336,8 +290,8 @@ export function decideNpcAction(
     return { kind: 'rest', reason: '体力不足，原地休整' };
   }
 
-  // 4.5 生存技能：低生命用急救、体力 / 装备吃紧用应急修理（Phase 3 Step 3）
-  const survivalSkill = npcSurvivalSkill(npc);
+  // 4.5 战略技能：处置 / 工造 / 侦察（Phase 3A Step 4，触发条件贴各自维度）
+  const survivalSkill = npcSurvivalSkill(state, npc);
   if (survivalSkill) {
     return {
       kind: 'use_skill',
@@ -395,6 +349,8 @@ export function decideNpcAction(
       if (!healthOk) fightScore -= 0.45;
       if (target.hp / target.maxHp < 0.4) fightScore += 0.25;
       if (npc.personality === 'random') fightScore = 0.5;
+      // 「全城骚动」世界事件：所有对手都更愿意动手（Phase 3A Step 6）
+      fightScore += worldModifiersAt(state, npc.currentZoneId).npcAggressionBonus;
 
       if (rng.chance(Math.min(0.95, Math.max(0.05, fightScore)))) {
         return {

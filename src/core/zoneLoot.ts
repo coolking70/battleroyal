@@ -117,14 +117,19 @@ export function addLootItem(zone: ZoneState, itemId: string, count: number): voi
  * 从区域库存中取走一件物品。
  *
  * @param preferRare 是否优先尝试稀有池（由调用方按概率决定）
- * @param materialBias 工程师被动：材料类物品的额外权重
+ * @param materialBias 材料类物品的额外权重（工程师被动 × 研究异常世界事件）
+ * @param consumableBias 消耗品类物品的额外权重（医疗管制世界事件）
  * @returns 取到的 itemId；库存为空时返回 null
+ *
+ * 说明：世界事件只能通过这两个 bias **改变取出的偏好**，
+ * 无法增加库存总量 —— 对应红线「世界事件不修改隐藏库存」。
  */
 export function takeLootItem(
   zone: ZoneState,
   rng: SeededRandom,
   preferRare: boolean,
   materialBias = 1,
+  consumableBias = 1,
 ): { itemId: string; rarity: ZoneLootEntry['rarity'] } | null {
   if (isZoneExhausted(zone)) return null;
 
@@ -138,8 +143,12 @@ export function takeLootItem(
   const entry = rng.pickWeighted(
     pool.map((e) => {
       let weight = e.count;
-      if (materialBias !== 1 && getItem(e.itemId).category === 'material') {
+      const category = getItem(e.itemId).category;
+      if (materialBias !== 1 && category === 'material') {
         weight *= materialBias;
+      }
+      if (consumableBias !== 1 && category === 'consumable') {
+        weight *= consumableBias;
       }
       return { value: e, weight };
     }),

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="#a04030"/>
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>
+  <text x="32" y="40" font-size="30" text-anchor="middle" dominant-baseline="middle">⚔️</text>
+  <text x="32" y="59" font-size="9" text-anchor="middle" fill="rgba(255,255,255,0.92)">斗士</text>
+</svg>
