@@ -15,7 +15,18 @@
     "simulate:balance": "tsx tools/simulateBalance.ts",
     "audit:save": "tsx tools/auditSaveValidation.ts",
     "scripted:playthroughs": "tsx tools/scriptedPlaythroughs.ts",
-    "audit:deps": "tsx tools/auditDependencies.ts"
+    "audit:deps": "tsx tools/auditDependencies.ts",
+    "art:doctor": "tsx tools/art/cli.ts doctor",
+    "art:prompt": "tsx tools/art/cli.ts prompt",
+    "art:generate": "tsx tools/art/cli.ts generate",
+    "art:list": "tsx tools/art/cli.ts list",
+    "art:approve": "tsx tools/art/cli.ts approve",
+    "art:reject": "tsx tools/art/cli.ts reject",
+    "art:publish": "tsx tools/art/cli.ts publish",
+    "art:validate": "tsx tools/art/cli.ts validate",
+    "art:api-check": "tsx tools/art/cli.ts api-check",
+    "art:smoke": "tsx tools/art/cli.ts smoke",
+    "art:security": "tsx tools/art/securityAudit.ts"
   },
   "dependencies": {
     "react": "^18.3.1",

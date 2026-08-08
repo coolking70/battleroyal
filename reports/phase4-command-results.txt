@@ -1,0 +1,33 @@
+Phase 4 offline command evidence
+===============================
+
+The commands below are the required pre-generation checks. Real provider generation is intentionally not part of CI.
+
+npm run typecheck
+PASS
+
+npm test -- --run tests/artPipeline.test.ts tests/visualImage.test.tsx tests/phase3a2Closure.test.ts
+PASS: 23 tests
+
+npm run art:doctor -- --offline
+PASS: 32 task definitions, all style files, manifest, candidate directory, offline API check
+
+npm run art:generate -- --dry-run
+PASS: 32 tasks planned, 0 API calls, 0 cache hits
+
+npm run art:validate
+PASS: published manifest
+
+npm run art:security
+PASS: browser secret scan
+
+Round A generation and human review are separate from these offline checks. Until a human explicitly approves a candidate, formal assets remain unchanged.
+
+Round A provider attempt
+========================
+
+art:api-check
+PASS configuration was read without printing the key.
+
+art:generate --task character/scout/portrait
+BLOCKED: provider returned HTTP 401 / invalid token. The error was classified as auth/retryable=false; no further Round A requests were made. Candidates=0, approvals=0, published assets=0.

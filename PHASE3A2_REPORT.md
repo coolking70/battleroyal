@@ -1,6 +1,6 @@
 # PHASE3A2_REPORT.md — Phase 3A-2 Pre-Phase4 Final Closure
 
-版本 `0.3.2`。工作树基于 `bf6c73fe6bbd65dc84083c6cf9a2595805496315`；本轮未创建新 commit。
+版本 `0.3.2`。最终提交为 `9dbdc85c0fbef3ee66250860f836c0ac94abca28`，由基线 `bf6c73fe6bbd65dc84083c6cf9a2595805496315` 快进而来。
 
 ## Engine
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { VisualSpec } from '../visualAssets';
 
 interface VisualImageProps {
@@ -23,6 +23,11 @@ const localAssetUrls = import.meta.glob('../assets/**/*.svg', {
 export function VisualImage({ visual, alt, className, role }: VisualImageProps): JSX.Element {
   const [stage, setStage] = useState<ImageStage>(visual.image ? 'primary' : 'emoji');
   const fallback = visual.fallbackImage ?? null;
+
+  useEffect(() => {
+    setStage(visual.image ? 'primary' : 'emoji');
+  }, [visual.image, visual.fallbackImage, visual.emoji]);
+
   const image = stage === 'fallback' ? fallback : stage === 'primary' ? visual.image : null;
 
   if (!image) {

@@ -25,3 +25,10 @@ npm-debug.log*
 .env
 .env.local
 .env.*.local
+
+# Phase 4 local AI art production state (never commit generated candidates/cache)
+.art-cache/
+art/candidates/**
+art/archive/
+art/reviews.json
+output/

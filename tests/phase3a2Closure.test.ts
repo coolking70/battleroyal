@@ -80,6 +80,45 @@ describe('Phase 3A-2 NPC field_craft closure', () => {
   });
 });
 
+describe('Phase 4 preflight: Medic NPC emergency_treatment trigger', () => {
+  function medicSetup() {
+    const state = newGame('PHASE4-MEDIC-TRIGGER');
+    const npc = configureCharacter(npcs(state)[0]!, 'medic');
+    clearInventory(npc);
+    give(state, npc, 'bandage');
+    return { state, npc };
+  }
+
+  it('满血 + bleeding 不会仅因 DoT 释放应急处理', () => {
+    const { state, npc } = medicSetup();
+    npc.statusEffects = [{ id: 'test_bleeding', remaining: 3, hpPerTick: -2, label: '流血' }];
+    expect(decideNpcAction(state, npc, SeededRandom.fromState(state.rngState))).not.toMatchObject({
+      kind: 'use_skill',
+      skillId: 'emergency_treatment',
+    });
+  });
+
+  it('低血量且有治疗品时可以释放应急处理', () => {
+    const { state, npc } = medicSetup();
+    npc.hp = Math.floor(npc.maxHp * 0.5);
+    expect(decideNpcAction(state, npc, SeededRandom.fromState(state.rngState))).toMatchObject({
+      kind: 'use_skill',
+      skillId: 'emergency_treatment',
+    });
+  });
+
+  it('低血量但没有治疗品时不会为了 DoT 单独释放应急处理', () => {
+    const { state, npc } = medicSetup();
+    clearInventory(npc);
+    npc.hp = Math.floor(npc.maxHp * 0.5);
+    npc.statusEffects = [{ id: 'test_bleeding', remaining: 3, hpPerTick: -2, label: '流血' }];
+    expect(decideNpcAction(state, npc, SeededRandom.fromState(state.rngState))).not.toMatchObject({
+      kind: 'use_skill',
+      skillId: 'emergency_treatment',
+    });
+  });
+});
+
 function encounterSetup(characterId: string): { state: ReturnType<typeof newGame>; npc: ReturnType<typeof npcs>[number] } {
   const state = newGame(`PHASE3A2-RECON-${characterId}`, 'scout');
   const p = player(state);

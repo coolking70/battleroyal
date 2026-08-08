@@ -80,7 +80,7 @@ export function StatusBar({
       <span className="stat faint">
         <span className="badge badge-you">你</span>{' '}
         <VisualImage
-          visual={getCharacterVisual(player.characterId)}
+          visual={getCharacterVisual(player.characterId, player.hp <= player.maxHp * 0.35 ? 'injured' : 'portrait')}
           alt={`${getCharacterDef(player.characterId).name}头像`}
           className="status-visual"
         />{' '}

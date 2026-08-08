@@ -1,4 +1,4 @@
-import { isSafeAssetPath, setAssetManifest, type AssetManifest } from './visualAssets';
+import { isSafeAssetPath, setAssetManifest, setAssetManifestHash, type AssetManifest } from './visualAssets';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -31,12 +31,22 @@ export function parseAssetManifest(value: unknown): AssetManifest | null {
 /** 启动时加载正式资产；404、网络错误、坏 JSON、坏 schema 均安全降级。 */
 export async function loadAssetManifest(): Promise<AssetManifest | null> {
   setAssetManifest(null);
+  setAssetManifestHash(null);
   try {
     const response = await fetch('/assets/manifest.json');
     if (!response.ok) return null;
     const parsed = parseAssetManifest(await response.json());
     if (!parsed) return null;
     setAssetManifest(parsed);
+    try {
+      const versionResponse = await fetch('/assets/art-version.json');
+      if (versionResponse.ok) {
+        const version = await versionResponse.json() as { manifestHash?: unknown };
+        if (typeof version.manifestHash === 'string') setAssetManifestHash(version.manifestHash);
+      }
+    } catch {
+      // art-version is optional for the runtime fallback path.
+    }
     return parsed;
   } catch {
     return null;

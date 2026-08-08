@@ -1,0 +1,178 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { generateImage } from './apiClient';
+import { findCacheEntry, contentHash, extensionForMime, saveCache } from './cache';
+import { buildPrompt } from './promptBuilder';
+import { validateImageBytes } from './validator';
+import type { ArtConfig, ArtTask, CandidateMetadata, GenerationError, ImageGenerationResult } from './types';
+import { ArtPipelineError } from './types';
+
+export interface GenerationReport {
+  requested: number;
+  cacheHits: number;
+  apiCalls: number;
+  successful: number;
+  failed: number;
+  retryCount: number;
+  totalBytes: number;
+  tasks: Array<{ taskId: string; hash: string; source: 'api' | 'cache' | 'dry-run'; status: string; errors?: string[] }>;
+}
+
+function categoryDirectory(task: ArtTask): string {
+  return task.category === 'world_event' ? 'world-events' : `${task.category}s`;
+}
+
+function extensionForResult(mimeType: string): string {
+  return extensionForMime(mimeType);
+}
+
+export function publicAssetPath(task: ArtTask, mimeType: string): string {
+  return `/assets/${categoryDirectory(task)}/${task.entityId}/${task.variant}.${extensionForResult(mimeType)}`;
+}
+
+function candidateDirectory(config: ArtConfig, task: ArtTask, hash: string): string {
+  return path.join(config.candidateDir, categoryDirectory(task), task.entityId, task.variant, hash);
+}
+
+async function retryableError(error: unknown): Promise<GenerationError> {
+  if (error instanceof ArtPipelineError) return error.details;
+  return { category: 'provider', retryable: false, message: error instanceof Error ? error.message : 'unknown generation error' };
+}
+
+async function generateWithRetry(
+  config: ArtConfig,
+  built: Awaited<ReturnType<typeof buildPrompt>>,
+  report: GenerationReport,
+  delaysMs: number[],
+): Promise<ImageGenerationResult> {
+  for (let attempt = 0; attempt <= delaysMs.length; attempt += 1) {
+    try {
+      report.apiCalls += 1;
+      return await generateImage(config, {
+        model: built.model,
+        prompt: built.prompt,
+        negativePrompt: built.negativePrompt,
+        width: built.width,
+        height: built.height,
+      });
+    } catch (error) {
+      const details = await retryableError(error);
+      const hasNextAttempt = attempt < delaysMs.length && details.retryable;
+      if (!hasNextAttempt) throw new ArtPipelineError(details);
+      report.retryCount += 1;
+      const delay = delaysMs[attempt] ?? 0;
+      if (delay > 0) await new Promise<void>((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  throw new Error('unreachable retry state');
+}
+
+async function writeCandidate(
+  config: ArtConfig,
+  task: ArtTask,
+  built: Awaited<ReturnType<typeof buildPrompt>>,
+  contentHashValue: string,
+  candidateHash: string,
+  result: ImageGenerationResult,
+  source: 'api' | 'cache',
+): Promise<CandidateMetadata> {
+  const validation = validateImageBytes(result.bytes, task);
+  const dir = candidateDirectory(config, task, candidateHash);
+  await fs.mkdir(dir, { recursive: true });
+  const imageName = `${candidateHash}.${extensionForResult(result.mimeType)}`;
+  const imagePath = path.join(dir, imageName);
+  await fs.writeFile(imagePath, result.bytes);
+  const metadata: CandidateMetadata = {
+    taskId: task.id,
+    hash: candidateHash,
+    contentHash: contentHashValue,
+    model: built.model,
+    generatedAt: new Date().toISOString(),
+    width: built.width,
+    height: built.height,
+    prompt: built.prompt,
+    negativePrompt: built.negativePrompt,
+    styleProfileVersion: built.styleProfileVersion,
+    mimeType: result.mimeType,
+    bytes: result.bytes.byteLength,
+    imagePath: path.relative(config.rootDir, imagePath),
+    publicPath: publicAssetPath(task, result.mimeType),
+    validationStatus: validation.status,
+    validationErrors: validation.errors,
+    reviewStatus: 'pending',
+    providerRequestId: result.providerRequestId,
+    revisedPrompt: result.revisedPrompt,
+    source,
+  };
+  await fs.writeFile(path.join(dir, `${candidateHash}.json`), JSON.stringify(metadata, null, 2));
+  return metadata;
+}
+
+async function candidateHashFor(config: ArtConfig, task: ArtTask, hash: string): Promise<string> {
+  let candidateHash = hash;
+  let suffix = 0;
+  while (true) {
+    try {
+      await fs.access(candidateDirectory(config, task, candidateHash));
+      suffix += 1;
+      candidateHash = `${hash}-${Date.now()}${suffix > 1 ? `-${suffix}` : ''}`;
+    } catch {
+      return candidateHash;
+    }
+  }
+}
+
+export async function generateTask(
+  config: ArtConfig,
+  task: ArtTask,
+  options: { force?: boolean; dryRun?: boolean; retryDelaysMs?: number[] } = {},
+  report: GenerationReport = emptyReport(),
+): Promise<CandidateMetadata | null> {
+  const built = await buildPrompt(config.rootDir, task, config.model);
+  const hash = contentHash(built);
+  const cache = await findCacheEntry(config, hash);
+  const cacheHit = !options.force && cache !== null;
+  if (options.dryRun) {
+    report.requested += 1;
+    report.tasks.push({ taskId: task.id, hash, source: 'dry-run', status: cacheHit ? 'CACHE HIT' : 'API REQUIRED' });
+    return null;
+  }
+
+  let result: ImageGenerationResult;
+  let source: 'api' | 'cache';
+  if (cacheHit && cache) {
+    result = { mimeType: cache.mimeType, bytes: await fs.readFile(cache.imagePath) };
+    source = 'cache';
+    report.cacheHits += 1;
+  } else {
+    result = await generateWithRetry(config, built, report, options.retryDelaysMs ?? [2000, 5000, 12000]);
+    source = 'api';
+    await saveCache(config, hash, built, result);
+  }
+  const candidateHash = await candidateHashFor(config, task, hash);
+  const metadata = await writeCandidate(config, task, built, hash, candidateHash, result, source);
+  report.requested += 1;
+  report.totalBytes += result.bytes.byteLength;
+  if (metadata.validationStatus === 'passed') report.successful += 1;
+  else report.failed += 1;
+  report.tasks.push({ taskId: task.id, hash, source, status: metadata.validationStatus, errors: metadata.validationErrors });
+  return metadata;
+}
+
+export async function writePromptReport(
+  rootDir: string,
+  built: Awaited<ReturnType<typeof buildPrompt>>,
+  hash: string,
+): Promise<void> {
+  const dir = path.join(rootDir, 'reports', 'phase4-prompts');
+  await fs.mkdir(dir, { recursive: true });
+  const filename = `${built.task.id.replaceAll('/', '__')}.md`;
+  await fs.writeFile(
+    path.join(dir, filename),
+    `# ${built.task.id}\n\n- Hash: \`${hash}\`\n- Model: \`${built.model}\`\n- Size: ${built.width}x${built.height}\n- Revision: ${built.task.revision}\n- Style profile version: \`${built.styleProfileVersion}\`\n\n## Prompt\n\n${built.prompt}\n\n## Negative prompt\n\n${built.negativePrompt}\n`,
+  );
+}
+
+export function emptyReport(): GenerationReport {
+  return { requested: 0, cacheHits: 0, apiCalls: 0, successful: 0, failed: 0, retryCount: 0, totalBytes: 0, tasks: [] };
+}

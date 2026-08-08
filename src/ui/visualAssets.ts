@@ -23,6 +23,7 @@ import type { ItemCategory, WorldEventId } from '../core/types';
 /* ------------------------------------------------------------------ */
 
 export type VisualKind = 'zone' | 'character' | 'worldEvent' | 'itemCategory';
+export type VisualSource = 'official' | 'svg' | 'emoji';
 
 export interface VisualSpec {
   /** 图形 emoji（fallback 与无障碍文本都靠它） */
@@ -35,6 +36,8 @@ export interface VisualSpec {
   fallbackImage?: string | null;
   /** 人类可读名称 */
   label: string;
+  /** Debug-only provenance for the currently selected visual source. */
+  source: VisualSource;
 }
 
 /* ------------------------------------------------------------------ */
@@ -80,6 +83,7 @@ function spec(
     label,
     image: imagePath && hasAsset(imagePath) ? imagePath : null,
     fallbackImage: null,
+    source: imagePath && hasAsset(imagePath) ? 'svg' : 'emoji',
   };
 }
 
@@ -94,6 +98,7 @@ export const FALLBACK_VISUAL: VisualSpec = {
   label: '未知',
   image: hasAsset('fallback.svg') ? 'fallback.svg' : null,
   fallbackImage: null,
+  source: 'emoji',
 };
 
 /** 区域视觉（颜色与 data/zones.ts 保持一致，防止两处漂移） */
@@ -205,15 +210,24 @@ export interface AssetManifest {
 
 /** 当前加载的正式资产清单；未加载（null）时一律走 SVG/emoji fallback */
 let currentManifest: AssetManifest | null = null;
+let currentManifestHash: string | null = null;
 
 /** 注入正式资产清单（Phase 4 接入点；测试用） */
 export function setAssetManifest(m: AssetManifest | null): void {
   currentManifest = m;
 }
 
+export function setAssetManifestHash(hash: string | null): void {
+  currentManifestHash = hash;
+}
+
 /** 读取当前正式资产清单（测试 / 调试用） */
 export function getAssetManifest(): AssetManifest | null {
   return currentManifest;
+}
+
+export function getAssetManifestHash(): string | null {
+  return currentManifestHash;
 }
 
 /** 从 manifest 取某槽位的正式图片路径（无则 null） */
@@ -242,17 +256,17 @@ function officialImage(
  *          → SVG 不存在 → emoji + color fallback
  * 任何时候不显示 broken img（image 为 null 时组件渲染 emoji/色块）。
  */
-export function getCharacterVisual(id: string): VisualSpec {
-  const img = officialImage('characters', id, 'portrait');
+export function getCharacterVisual(id: string, slot: 'portrait' | 'injured' | 'combat' = 'portrait'): VisualSpec {
+  const img = officialImage('characters', id, slot);
   const fallback = visualFor('character', id);
-  if (img) return { ...fallback, image: img, fallbackImage: fallback.image };
+  if (img) return { ...fallback, image: img, fallbackImage: fallback.image, source: 'official' };
   return visualFor('character', id);
 }
 
 export function getZoneVisual(id: string): VisualSpec {
   const img = officialImage('zones', id, 'background');
   const fallback = visualFor('zone', id);
-  if (img) return { ...fallback, image: img, fallbackImage: fallback.image };
+  if (img) return { ...fallback, image: img, fallbackImage: fallback.image, source: 'official' };
   return visualFor('zone', id);
 }
 
@@ -266,6 +280,7 @@ export function getItemVisual(id: string): VisualSpec {
       label: def?.name ?? id,
       image: img,
       fallbackImage: null,
+      source: 'official',
     };
   }
   const def = tryGetItem(id);
@@ -275,6 +290,7 @@ export function getItemVisual(id: string): VisualSpec {
         color: ITEM_CATEGORY_VISUALS[def.category]?.color ?? FALLBACK_VISUAL.color,
         label: def.name,
         image: null,
+        source: 'emoji',
       }
     : FALLBACK_VISUAL;
 }
@@ -282,7 +298,7 @@ export function getItemVisual(id: string): VisualSpec {
 export function getWorldEventVisual(id: WorldEventId): VisualSpec {
   const img = officialImage('worldEvents', id);
   const fallback = WORLD_EVENT_VISUALS[id] ?? FALLBACK_VISUAL;
-  if (img) return { ...fallback, image: img, fallbackImage: fallback.image };
+  if (img) return { ...fallback, image: img, fallbackImage: fallback.image, source: 'official' };
   return WORLD_EVENT_VISUALS[id] ?? FALLBACK_VISUAL;
 }
 

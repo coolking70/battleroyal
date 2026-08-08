@@ -21,3 +21,18 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 
 - Remote GitHub Actions green status was not independently available; workflow configuration is recorded in the final report.
 - Phase 4 AI art generation and asset production remain intentionally out of scope.
+
+## Phase 4 progress (2026-08-08)
+
+- Original Phase 4 prompt: build a secure, repeatable AI art task → prompt → hash → cache → candidate → validation → human review → publish → manifest pipeline, without exposing the provider key to the browser.
+- Phase 3A-2 was fast-forwarded into local `main`; branch `agent/phase4-art-pipeline` was created from `9dbdc85c0fbef3ee66250860f836c0ac94abca28`.
+- Fixed Medic stale DoT trigger, VisualImage cross-resource stage reset, and Phase 3A-2 report commit wording.
+- Added 32 task definitions, style profiles, four character design sheets, API adapter, structured retry/error handling, SHA-256 cache, candidate validator, review CLI, atomic approved-only publisher, art-version metadata, doctor/list/prompt/generate/validate/security commands, CI offline checks, and runtime source/hash debug information.
+- Added Phase 4 tests; current full suite is 42 files / 584 tests.
+- Round A real generation was attempted once for `character/scout/portrait` with the locally injected user-provided credential. The provider returned HTTP 401 invalid token; the remaining three calls were intentionally not made. Candidates and approvals remain 0.
+
+### Phase 4 handoff
+
+- Provide a valid/active provider credential before rerunning Round A. Do not commit it; run the four tasks individually through `npm run art:generate -- --task ...`.
+- Review each generated candidate manually. Only then run `art:approve` and `art:publish`.
+- Keep `generated != approved`; technical pipeline PASS and art-production PASS are separate states.

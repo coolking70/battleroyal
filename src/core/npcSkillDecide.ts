@@ -46,8 +46,9 @@ export function npcSurvivalSkill(state: GameState, npc: Combatant): SkillId | nu
 
   switch (skillId) {
     case 'emergency_treatment': {
-      const bleeding = npc.statusEffects.some((e) => (e.hpPerTick ?? 0) < 0);
-      if (bleeding) return skillId;
+      // emergency_treatment does not clear DoT; bleeding alone is not a valid
+      // trigger. The skill is useful when the NPC is actually low on HP and
+      // has a healing consumable to amplify afterward.
       return hpRatio < 0.6 && hasHealingConsumable(npc) ? skillId : null;
     }
 

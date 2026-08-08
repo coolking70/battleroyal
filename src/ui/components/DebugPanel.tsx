@@ -33,7 +33,7 @@ import type { AttackStyle, Combatant, Command, GameState } from '../../core/type
 import { GAME_VERSION } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { ZONE_STATUS_LABEL, personalityLabel } from '../../utils/format';
-import { getAssetManifest, getCharacterVisual, getZoneVisual } from '../visualAssets';
+import { getAssetManifest, getAssetManifestHash, getCharacterVisual, getZoneVisual } from '../visualAssets';
 
 /** 触发一个浏览器下载（非浏览器环境静默忽略） */
 function downloadJson(filename: string, data: unknown): void {
@@ -216,10 +216,12 @@ export function DebugPanel({
         <div className="debug-kv">
           <span>Manifest</span>
           <span>{getAssetManifest() ? `loaded v${getAssetManifest()!.version}` : 'fallback'}</span>
+          <span>Manifest hash</span>
+          <span>{getAssetManifestHash() ?? '—'}</span>
           <span>character source</span>
-          <span>{getCharacterVisual(player.characterId).image?.startsWith('/assets/') ? 'official' : 'svg/emoji'}</span>
+          <span>{getCharacterVisual(player.characterId, player.hp <= player.maxHp * 0.35 ? 'injured' : 'portrait').source}</span>
           <span>zone source</span>
-          <span>{getZoneVisual(player.currentZoneId).image?.startsWith('/assets/') ? 'official' : 'svg/emoji'}</span>
+          <span>{getZoneVisual(player.currentZoneId).source}</span>
         </div>
 
         <h5>玩家</h5>

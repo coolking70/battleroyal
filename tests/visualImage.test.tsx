@@ -15,6 +15,7 @@ const official: VisualSpec = {
   label: '侦察员',
   image: '/assets/characters/scout/portrait.webp',
   fallbackImage: 'characters/scout.svg',
+  source: 'official',
 };
 
 afterEach(() => {
@@ -26,6 +27,12 @@ function render(visual: VisualSpec): void {
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
+  act(() => {
+    root.render(<VisualImage visual={visual} alt="测试视觉" className="visual-test" />);
+  });
+}
+
+function update(visual: VisualSpec): void {
   act(() => {
     root.render(<VisualImage visual={visual} alt="测试视觉" className="visual-test" />);
   });
@@ -57,8 +64,48 @@ describe('VisualImage 三级 fallback', () => {
   });
 
   it('没有任何图片时直接显示 emoji fallback', () => {
-    render({ emoji: '🧪', color: '#3f8f7a', label: '测试', image: null });
+    render({ emoji: '🧪', color: '#3f8f7a', label: '测试', image: null, source: 'emoji' });
     expect(container.querySelector('img')).toBeNull();
     expect(container.textContent).toContain('🧪');
+  });
+
+  it('official 失败后切换到新资源时会重新尝试新资源的 official 图片', async () => {
+    render(official);
+    act(() => container.querySelector('img')?.dispatchEvent(new Event('error')));
+    expect(container.querySelector('img')?.getAttribute('src')).toContain('characters/scout.svg');
+
+    const next: VisualSpec = {
+      emoji: '🧪',
+      color: '#3f8f7a',
+      label: '研究所',
+      image: '/assets/zones/lab/background.webp',
+      fallbackImage: 'zones/lab.svg',
+      source: 'official',
+    };
+    update(next);
+    await act(async () => Promise.resolve());
+    expect(container.querySelector('img')?.getAttribute('src')).toBe(
+      '/assets/zones/lab/background.webp',
+    );
+  });
+
+  it('emoji 阶段切换到带 official 图片的新资源时会恢复图片阶段', async () => {
+    render(official);
+    act(() => container.querySelector('img')?.dispatchEvent(new Event('error')));
+    act(() => container.querySelector('img')?.dispatchEvent(new Event('error')));
+    expect(container.querySelector('img')).toBeNull();
+
+    update({
+      emoji: '🧪',
+      color: '#3f8f7a',
+      label: '研究所',
+      image: '/assets/zones/lab/background.webp',
+      fallbackImage: 'zones/lab.svg',
+      source: 'official',
+    });
+    await act(async () => Promise.resolve());
+    expect(container.querySelector('img')?.getAttribute('src')).toBe(
+      '/assets/zones/lab/background.webp',
+    );
   });
 });
