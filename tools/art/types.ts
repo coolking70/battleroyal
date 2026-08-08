@@ -22,6 +22,7 @@ export interface ArtTask {
   width: number;
   height: number;
   promptTemplate: string;
+  providerDescriptor?: string;
   styleProfile: string;
   revision: number;
   status: ArtTaskStatus;

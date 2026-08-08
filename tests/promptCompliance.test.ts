@@ -46,7 +46,7 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
     const { prompts } = await tasksAndPrompts();
     const prompt = prompts['character/scout/portrait']!.prompt;
     expect(prompt).toContain('HARD COMPOSITION CONSTRAINTS');
-    expect(prompt).toContain('binoculars are the only prominent equipment');
+    expect(prompt).toContain('binoculars are the only visible professional equipment');
     expect(prompt).toContain('no firearm');
     expect(prompt).toContain('no rifle');
     expect(prompt).toContain('approximately 28-32');
@@ -145,16 +145,16 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
     expect(await findCacheEntry(config, newHash, prompts['character/scout/portrait'])).toBeNull();
   });
 
-  it('raises Scout to revision 2 without changing the global v2 style architecture', async () => {
+  it('raises Scout to revision 3 without changing the global v2 style architecture', async () => {
     const { prompts } = await tasksAndPrompts();
-    expect(prompts['character/scout/portrait']!.task.revision).toBe(2);
+    expect(prompts['character/scout/portrait']!.task.revision).toBe(3);
     expect(prompts['character/scout/portrait']!.styleProfileVersion).toMatch(/^phase4-style-v2-/);
   });
 
-  it('puts Scout weapon-free positive composition in hard constraints', async () => {
+  it('puts Scout v4 weapon-free positive composition in hard constraints', async () => {
     const { prompts } = await tasksAndPrompts();
     const hard = prompts['character/scout/portrait']!.sections.hardConstraints;
-    for (const phrase of ['UNARMED', 'civilian', 'both hands are fully visible and empty', 'upper-back silhouette is visibly empty', 'no gun holster', 'no plate carrier', 'no camouflage pattern', 'binoculars']) {
+    for (const phrase of ['waist-up portrait', 'civilian urban observer', 'both empty hands are visible', 'upper back is completely empty', 'nothing extends above either shoulder', 'no gun holster', 'no plate carrier', 'no camouflage', 'binoculars']) {
       expect(hard).toContain(phrase);
     }
   });
@@ -162,7 +162,7 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
   it('keeps Scout positive semantic sections civilian and non-military', async () => {
     const { prompts } = await tasksAndPrompts();
     const positive = `${prompts['character/scout/portrait']!.sections.categoryStyle}\n${prompts['character/scout/portrait']!.sections.entityBrief}`;
-    expect(positive).not.toMatch(/\bmilitary scout\b|\btactical operator\b|\barmed\b|\bsniper\b|\bcombat loadout\b/i);
+    expect(positive).not.toMatch(/\bscout\b|\brecon\b|\breconnaissance\b|\btactical\b|\bmilitary\b|\bsoldier\b|\bsniper\b|\bcombat\b|\bsurvivor\b|\bfield operator\b/i);
     expect(positive).toMatch(/civilian|unarmed|empty hands|empty|binoculars/i);
   });
 
@@ -171,27 +171,27 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
     const positive = prompts['character/scout/portrait']!.sections.entityBrief;
     expect(positive).toMatch(/civilian urban observer/i);
     expect(positive).toMatch(/simple neck strap|civilian outdoor clothing|shoulder pouch/i);
-    expect(positive).not.toMatch(/rifle|gun|plate carrier|camouflage/i);
+    expect(positive).not.toMatch(/rifle|gun|plate carrier|camouflage|backpack|utility trousers|field jacket/i);
   });
 
-  it('makes Scout v3 visibly weapon-free in the composition constraints', async () => {
+  it('makes Scout v4 visibly weapon-free in the composition constraints', async () => {
     const { prompts } = await tasksAndPrompts();
     const hard = prompts['character/scout/portrait']!.sections.hardConstraints;
     expect(hard).toContain('both shoulders are clearly visible');
-    expect(hard).toContain('no object extends above either shoulder');
-    expect(hard).toContain('simple unobtrusive background');
+    expect(hard).toContain('nothing extends above either shoulder');
+    expect(hard).toContain('simple pale neutral background');
   });
 
-  it('raises Blackout to revision 2 with an indoor event brief', async () => {
+  it('raises Blackout to revision 3 with a windowless underground event brief', async () => {
     const { prompts } = await tasksAndPrompts();
-    expect(prompts['world_event/blackout/illustration']!.task.revision).toBe(2);
-    expect(prompts['world_event/blackout/illustration']!.sections.entityBrief).toMatch(/indoor commercial corridor|power failure/i);
+    expect(prompts['world_event/blackout/illustration']!.task.revision).toBe(3);
+    expect(prompts['world_event/blackout/illustration']!.sections.entityBrief).toMatch(/windowless underground commercial corridor|power failure/i);
   });
 
   it('puts Blackout power-loss and isolation constraints in hard constraints', async () => {
     const { prompts } = await tasksAndPrompts();
     const hard = prompts['world_event/blackout/illustration']!.sections.hardConstraints;
-    for (const phrase of ['FULLY INDOOR', 'empty corridor', 'ZERO PEOPLE', 'ZERO RAIN', 'no weather', 'no exterior street', 'normal lights are visibly switched off', 'screens are completely black', 'emergency lamps', 'power failure']) {
+    for (const phrase of ['windowless indoor corridor', 'underground commercial corridor', 'empty corridor', 'ZERO WINDOWS', 'ZERO PEOPLE', 'no weather', 'no exterior view', 'every normal ceiling light is switched off', 'illuminated white ceiling lights', 'screens are completely black', 'escalator indicator lights are off', 'no green indicator lights', 'emergency lamps', 'predominantly dark', 'electrical blackout']) {
       expect(hard.toLowerCase()).toContain(phrase.toLowerCase());
     }
   });
@@ -200,7 +200,7 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
     const { prompts } = await tasksAndPrompts();
     const positive = `${prompts['world_event/blackout/illustration']!.sections.categoryStyle}\n${prompts['world_event/blackout/illustration']!.sections.entityBrief}`;
     expect(positive).toMatch(/indoor|corridor|power failure|electrical fixtures/i);
-    expect(positive).not.toMatch(/\brain\b|street battle|\bsurvivor\b|\bsoldier\b/i);
+    expect(positive).not.toMatch(/\brain\b|\bweather\b|\bstreet\b|\boutdoor\b|street battle|\bsurvivor\b|\bsoldier\b/i);
   });
 
   it('changes both targeted hashes and avoids the v2 cache entries', async () => {
@@ -209,14 +209,60 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
     const blackout = (await loadTasks(root)).find((task) => task.id === 'world_event/blackout/illustration')!;
     const scoutHash = contentHash(prompts['character/scout/portrait']!);
     const blackoutHash = contentHash(prompts['world_event/blackout/illustration']!);
-    expect(scoutHash).not.toBe('d47e96af060e6357e8d513ee79056b3b7f701c8add0332f8ae9d3b61bdaaee0a');
-    expect(blackoutHash).not.toBe('48af21a453ef44f2103779f634851607eb3be1377d96b11bf5619043c97b664d');
+    expect(scoutHash).not.toBe('1d3efddc1e422e9e5ba4fcb0353ffb6853aa6b9a6a094436b15d802ddbdeb19f');
+    expect(blackoutHash).not.toBe('0e1536f4df281f25ba3d36648aff049bab3d51ed71607f80eb18a31ef82b690b');
     const cacheRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'battleroyal-prompt-v3-cache-'));
     roots.push(cacheRoot);
     const config = createArtConfig(cacheRoot);
     expect(await findCacheEntry(config, scoutHash, prompts['character/scout/portrait'])).toBeNull();
     expect(await findCacheEntry(config, blackoutHash, prompts['world_event/blackout/illustration'])).toBeNull();
-    expect(scout.revision).toBe(2);
-    expect(blackout.revision).toBe(2);
+    expect(scout.revision).toBe(3);
+    expect(blackout.revision).toBe(3);
+  });
+
+  it('keeps Scout provider-facing positive sections free of internal task identity', async () => {
+    const { prompts } = await tasksAndPrompts();
+    const positive = [
+      prompts['character/scout/portrait']!.sections.categoryStyle,
+      prompts['character/scout/portrait']!.sections.entityBrief,
+      prompts['character/scout/portrait']!.sections.variant,
+    ].join('\n');
+    expect(positive).not.toMatch(/\bscout\b|character\/scout\/portrait/i);
+    expect(positive).toContain('civilian urban observer');
+    expect(positive).toContain('empty hands');
+    expect(positive).toContain('plain slate-blue outdoor jacket');
+  });
+
+  it('strips the internal design-sheet heading from the provider prompt', async () => {
+    const { prompts } = await tasksAndPrompts();
+    const entityBrief = prompts['character/scout/portrait']!.sections.entityBrief;
+    expect(entityBrief).not.toContain('# Scout design sheet');
+    expect(entityBrief).not.toMatch(/\bScout design sheet\b/i);
+  });
+
+  it('does not inject the internal Scout task id into the final provider prompt', async () => {
+    const { prompts } = await tasksAndPrompts();
+    expect(prompts['character/scout/portrait']!.prompt).not.toContain('character/scout/portrait');
+    expect(prompts['character/scout/portrait']!.prompt).toContain('civilian urban observer');
+  });
+
+  it('locks Blackout light-state facts instead of only using negative wording', async () => {
+    const { prompts } = await tasksAndPrompts();
+    const entity = prompts['world_event/blackout/illustration']!.sections.entityBrief;
+    expect(entity).toContain('Every normal fluorescent ceiling fixture is completely switched off');
+    expect(entity).toContain('no white ceiling lamp is illuminated');
+    expect(entity).toContain('digital advertising screens are completely black');
+    expect(entity).toContain('Escalator indicators and control lights are off');
+    expect(entity).toContain('Only a few dim red emergency lamps remain powered');
+  });
+
+  it('keeps Blackout positive sections free of outdoor and weather semantics', async () => {
+    const { prompts } = await tasksAndPrompts();
+    const positive = [
+      prompts['world_event/blackout/illustration']!.sections.categoryStyle,
+      prompts['world_event/blackout/illustration']!.sections.entityBrief,
+    ].join('\n');
+    expect(positive).toContain('windowless underground commercial corridor');
+    expect(positive).not.toMatch(/\brain\b|\bweather\b|\bstreet\b|\boutdoor\b/i);
   });
 });

@@ -28,6 +28,10 @@ function designSheetPath(task: ArtTask): string | null {
   return task.category === 'character' ? `art/characters/${task.entityId}.md` : null;
 }
 
+function providerDesignSheet(value: string): string {
+  return value.replace(/^#[^\n]*\n+/, '').trim();
+}
+
 export async function buildPrompt(rootDir: string, task: ArtTask, model: string): Promise<BuiltPrompt> {
   const renderStyle = await readText(rootDir, 'art/style/render-style.md');
   const category = categoryStyleName(task);
@@ -35,8 +39,9 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
   const genericAvoid = await readText(rootDir, 'art/style/negative-prompt.txt');
   const policy = promptPolicyFor(task);
   const sheetPath = designSheetPath(task);
-  const designSheet = sheetPath ? await readText(rootDir, sheetPath) : '';
+  const designSheet = sheetPath ? providerDesignSheet(await readText(rootDir, sheetPath)) : '';
   const entityBrief = [
+    task.providerDescriptor ? `Provider-facing visual identity: ${task.providerDescriptor}` : '',
     designSheet ? `Character design source of truth:\n${designSheet}` : '',
     `Asset brief:\n${task.promptTemplate}`,
   ].filter(Boolean).join('\n\n');

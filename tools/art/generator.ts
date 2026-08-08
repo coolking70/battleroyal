@@ -175,8 +175,8 @@ export async function writePromptReport(
   built: Awaited<ReturnType<typeof buildPrompt>>,
   hash: string,
 ): Promise<void> {
-  const targetedV3 = built.task.revision >= 2 && (built.task.id === 'character/scout/portrait' || built.task.id === 'world_event/blackout/illustration');
-  const versionDir = targetedV3 ? 'phase4-targeted-v3' : built.styleProfileVersion.startsWith('phase4-style-v2-') ? 'phase4-style-v2' : 'legacy';
+  const targetedVersion = built.task.revision >= 3 && (built.task.id === 'character/scout/portrait' || built.task.id === 'world_event/blackout/illustration') ? 'phase4-targeted-v4' : built.task.revision >= 2 && (built.task.id === 'character/scout/portrait' || built.task.id === 'world_event/blackout/illustration') ? 'phase4-targeted-v3' : built.styleProfileVersion.startsWith('phase4-style-v2-') ? 'phase4-style-v2' : 'legacy';
+  const versionDir = targetedVersion;
   const dir = path.join(rootDir, 'reports', 'phase4-prompts', versionDir);
   await fs.mkdir(dir, { recursive: true });
   const filename = `${built.task.id.replaceAll('/', '__')}.md`;

@@ -71,3 +71,11 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Strict Round A3 completed in order with exactly two API calls: Scout v3 then Blackout v3. Both are new hashes, `source=api`, `apiCalls=1`, `cacheHits=0`, automatic validation PASS, review pending.
 - Exported `output/art-review/phase4a12-round-a3/` with exact report-selected candidates, `-v3` filenames, human checklists, and blank Decision/Notes. Bandage/School, Round B, approval, publish, and Manifest changes were not performed.
 - Final implementation commit `add4b83` was pushed and GitHub Actions run `31268805389` completed with `verify` PASS; the Draft PR remains open.
+
+## Phase 4A-1.3 progress (2026-08-09)
+
+- Frozen Prompt Architecture v2 and reframed only the provider-facing Scout identity as `civilian urban observer`; internal task ID remains unchanged and is excluded from the provider prompt body.
+- Locked Blackout to a windowless underground commercial corridor with explicit dark-light, black-screen, off-indicator, no-window, and sparse-red-emergency-lamp constraints.
+- Added A4 semantic/provider-prompt tests; full suite reached 657 tests PASS. Bandage and School remained frozen.
+- Strict Round A4 completed Scout v4 then Blackout v4 with exactly two API calls. Both are new hashes, `source=api`, `apiCalls=1`, `cacheHits=0`, automatic validation PASS, review pending.
+- Exported `output/art-review/phase4a13-round-a4/` with exact report-selected candidates, `-v4` filenames, human checklists, and blank Decision/Notes. Round B, approval, publish, and Manifest changes were not performed.

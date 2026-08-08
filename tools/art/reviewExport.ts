@@ -27,10 +27,10 @@ const REVIEW_REMINDERS: Record<string, string> = {
 };
 const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'character/scout/portrait': [
-    'no firearm', 'no rifle', 'no weapon on back', 'no holster', 'no camouflage/tactical loadout', 'binocular identity clear', 'adult appearance',
+    'no firearm of any kind', 'nothing visible behind either shoulder', 'no gun stock/barrel', 'no gun holster', 'no camouflage', 'no tactical/military vest', 'both hands empty', 'binoculars remain clear', 'civilian clothing', 'adult 28–32 appearance',
   ],
   'world_event/blackout/illustration': [
-    'fully indoor', 'zero people', 'zero human silhouettes', 'zero rain', 'no HUD', 'most lights visibly off', 'dark electronic displays', 'sparse emergency lamps', 'immediately reads as power outage',
+    'fully indoor', 'no windows', 'no exterior view', 'no people', 'no rain/weather', 'no HUD', 'all white ceiling lamps off', 'all screens black', 'escalator indicators off', 'only dim red emergency lamps active', 'image is predominantly dark', 'immediately reads as blackout',
   ],
 };
 
@@ -127,7 +127,7 @@ async function main(): Promise<void> {
     reportPath,
     outputDir,
     fileSuffix: fileSuffix ?? '',
-    title: fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : undefined,
+    title: fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : undefined,
   } : {};
   const result = await exportRoundAReview(configModule.createArtConfig(), options);
   console.log(`EXPORTED ${result.candidates.length} pending candidates to ${result.outputDir}`);

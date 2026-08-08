@@ -113,7 +113,8 @@ describe('Phase 4 task and prompt contracts', () => {
     const tasks = await loadTasks(root);
     const characterPrompt = await buildPrompt(root, tasks.find((task) => task.id === 'character/scout/portrait')!, 'test-model');
     const zonePrompt = await buildPrompt(root, tasks.find((task) => task.id === 'zone/school/background')!, 'test-model');
-    expect(characterPrompt.prompt).toContain('Scout design sheet');
+    expect(characterPrompt.prompt).toContain('Character design source of truth');
+    expect(characterPrompt.prompt).not.toContain('# Scout design sheet');
     expect(zonePrompt.prompt).not.toContain('design sheet');
   });
 });
