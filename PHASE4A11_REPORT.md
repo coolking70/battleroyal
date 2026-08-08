@@ -23,4 +23,4 @@ The exact run data is in `reports/phase4a11-round-a2-report.json`. The review pa
 
 ## Verification
 
-The local full suite is 643 tests passing. Typecheck, build, offline art doctor, published Manifest validation, repository/browser secret scans, 500-game regression, and runtime npm audit all pass. The final CI run is recorded after push in the command-results report.
+The local full suite is 643 tests passing. Typecheck, build, offline art doctor, published Manifest validation, repository/browser secret scans, 500-game regression, and runtime npm audit all pass. GitHub Actions run `31267622557` completed with the `verify` job PASS.
