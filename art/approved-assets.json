@@ -36,6 +36,33 @@
       "provider": "agnes",
       "approvedAt": "2026-08-08T19:15:46.605Z",
       "publicPath": "/assets/world-events/blackout/illustration.png"
+    },
+    "character/engineer/portrait": {
+      "candidateHash": "12989865f752e70e7716b2881c3bfa5dbe5546a9c0ec7694705b38be30101979",
+      "contentHash": "12989865f752e70e7716b2881c3bfa5dbe5546a9c0ec7694705b38be30101979",
+      "promptHash": "12989865f752e70e7716b2881c3bfa5dbe5546a9c0ec7694705b38be30101979",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T19:41:37.927Z",
+      "publicPath": "/assets/characters/engineer/portrait.png"
+    },
+    "character/fighter/portrait": {
+      "candidateHash": "33b377a42b0a9a827fed7d3c8701dbe40e70893bc517a6500090a0e1febf8218",
+      "contentHash": "33b377a42b0a9a827fed7d3c8701dbe40e70893bc517a6500090a0e1febf8218",
+      "promptHash": "33b377a42b0a9a827fed7d3c8701dbe40e70893bc517a6500090a0e1febf8218",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T19:41:37.928Z",
+      "publicPath": "/assets/characters/fighter/portrait.png"
+    },
+    "character/medic/portrait": {
+      "candidateHash": "6a1d891c1597e51d3ea26cab3c63a514994a4ed3d026f3f5f5e675a47eb8ec59",
+      "contentHash": "6a1d891c1597e51d3ea26cab3c63a514994a4ed3d026f3f5f5e675a47eb8ec59",
+      "promptHash": "6a1d891c1597e51d3ea26cab3c63a514994a4ed3d026f3f5f5e675a47eb8ec59",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T19:41:37.928Z",
+      "publicPath": "/assets/characters/medic/portrait.png"
     }
   }
 }

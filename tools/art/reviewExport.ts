@@ -33,9 +33,9 @@ const REVIEW_REMINDERS: Record<string, string> = {
   'character/fighter/portrait': 'Positive-only review: check occupational identity, clean shoulder/back silhouette, sport wraps/gloves, and no injured variant.',
   'character/engineer/portrait': 'Positive-only review: check workshop repair identity, short wrench/tool belt, clean shoulder/back silhouette, and no injured variant.',
   'character/medic/portrait': 'Positive-only review: check community first-aid identity, compact pouch, clean shoulder/back silhouette, and no injured variant.',
-  'zone/hospital/background': 'Check for an environment-only hospital background with zero people or human silhouettes and no character focal subject.',
-  'item/medkit/icon': 'Check for exactly one isolated high-frequency healing consumable object, no bandage-only substitution, scenery, hand, frame, UI, or text.',
-  'world_event/rain/illustration': 'Check for an environment-only rain event illustration with no people, weapons, HUD, or unrelated event motifs.',
+  'zone/hospital/background': 'Check that the medical waiting hall reads as completely vacant, all visible chairs are empty, the location identity is clear, and the lower center remains usable for UI.',
+  'item/medkit/icon': 'Check for one isolated case with blank surfaces, no red-cross or protected humanitarian marking, no readable text/logo, clear emergency-supply identity, and small-size readability.',
+  'world_event/rain/illustration': 'Check that rainfall is immediately recognizable, the street reads as deserted, no people or HUD are visible, and the image remains distinct from Blackout.',
 };
 const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'character/scout/portrait': [
@@ -47,9 +47,9 @@ const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'character/fighter/portrait': ['no unexpected long object behind shoulders', 'ordinary occupational identity reads clearly', 'no obvious militarized appearance', 'profession prop is clear', 'character style consistent with Scout'],
   'character/engineer/portrait': ['no unexpected long object behind shoulders', 'ordinary occupational identity reads clearly', 'no obvious militarized appearance', 'profession prop is clear', 'character style consistent with Scout'],
   'character/medic/portrait': ['no unexpected long object behind shoulders', 'ordinary occupational identity reads clearly', 'no obvious militarized appearance', 'profession prop is clear', 'character style consistent with Scout'],
-  'zone/hospital/background': ['environment only', 'zero people', 'zero human silhouettes', 'no character focal subject', 'lower center remains open'],
-  'item/medkit/icon': ['exactly one centered object', 'healing medical kit is the subject', 'no scenery or environment', 'no hands or UI frame', 'no readable text'],
-  'world_event/rain/illustration': ['environment-only event', 'rain is visually clear', 'zero people', 'zero weapons', 'no HUD or event card frame'],
+  'zone/hospital/background': ['entire location reads as vacant', 'every visible chair is empty', 'no visible people', 'medical waiting area identity clear', 'lower center usable for UI'],
+  'item/medkit/icon': ['exactly one object', 'clean isolated background', 'no red-cross emblem', 'no protected humanitarian marking', 'no readable text/logo', 'medical/emergency supply identity still clear', 'readable at small size'],
+  'world_event/rain/illustration': ['rainfall immediately recognizable', 'street reads as deserted', 'no visible people', 'no HUD', 'visually distinct from Blackout'],
 };
 
 export interface ReviewExportOptions {
@@ -75,7 +75,7 @@ export async function selectCandidatesFromReport(config: ArtConfig, reportPath: 
   };
   if (!Array.isArray(parsed.tasks) || parsed.tasks.length === 0) throw new Error('review report has no tasks');
   const candidates = await listCandidates(config);
-  const attempted = parsed.tasks.filter((entry) => !(entry.validation === 'not_attempted' && entry.candidateHash == null));
+  const attempted = parsed.tasks.filter((entry) => !(entry.candidateHash == null && (entry.validation === 'not_attempted' || entry.validation === 'failed')));
   const selected = attempted.map((entry) => {
     if (!entry.taskId || !entry.candidateHash) throw new Error('review report task is missing taskId or candidateHash');
     const candidate = candidates.find((item) => item.taskId === entry.taskId && item.hash === entry.candidateHash);
@@ -146,7 +146,7 @@ async function main(): Promise<void> {
     reportPath,
     outputDir,
     fileSuffix: fileSuffix ?? '',
-    title: fileSuffix === '-positive' ? 'Phase 4A-2.1 Character Positive-only Review Package' : fileSuffix === '-nonchar' ? 'Phase 4A-2.1 Non-character B1 Review Package' : fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : undefined,
+    title: fileSuffix === '-positive' ? 'Phase 4A-2.1 Character Positive-only Review Package' : fileSuffix === '-nonchar' ? 'Phase 4A-2.1 Non-character B1 Review Package' : fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : fileSuffix === '-v2' ? 'Phase 4A-2.2 Non-character Positive-only Recovery Review Package' : undefined,
   } : {};
   const result = await exportRoundAReview(configModule.createArtConfig(), options);
   console.log(`EXPORTED ${result.candidates.length} pending candidates to ${result.outputDir}`);

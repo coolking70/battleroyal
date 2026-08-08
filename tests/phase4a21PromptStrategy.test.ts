@@ -24,9 +24,9 @@ describe('Phase 4A-2.1 character-positive-only strategy', () => {
     const tasks = await loadTasks(process.cwd());
     expect(tasks.filter((task) => task.promptStrategy === 'character-positive-only').map((task) => task.id).sort()).toEqual([...CHARACTER_TASKS].sort());
     expect(tasks.find((task) => task.id === 'character/scout/portrait')?.promptStrategy).not.toBe('character-positive-only');
-    expect(tasks.find((task) => task.id === 'zone/hospital/background')?.promptStrategy).toBeUndefined();
-    expect(tasks.find((task) => task.id === 'item/medkit/icon')?.promptStrategy).toBeUndefined();
-    expect(tasks.find((task) => task.id === 'world_event/rain/illustration')?.promptStrategy).toBeUndefined();
+    expect(tasks.find((task) => task.id === 'zone/hospital/background')?.promptStrategy).toBe('environment-positive-only');
+    expect(tasks.find((task) => task.id === 'item/medkit/icon')?.promptStrategy).toBe('item-positive-only-unmarked');
+    expect(tasks.find((task) => task.id === 'world_event/rain/illustration')?.promptStrategy).toBe('environment-positive-only');
   });
 
   it.each(CHARACTER_TASKS)('builds %s without a negative prompt or design-sheet source', async (taskId) => {
@@ -63,26 +63,15 @@ describe('Phase 4A-2.1 character-positive-only strategy', () => {
     expect((await import('../tools/art/cache')).contentHash(built)).not.toBe('77e02599e4b4798ff6d4668b26423bc37c6b1c7bfe7a2a5def2b48d2cdb52934');
   });
 
-  it('keeps standard Zone, Item and Event prompts on the existing negative-policy path', async () => {
+  it('assigns the new positive-only recovery strategies only to Hospital, Medkit and Rain', async () => {
     const tasks = await tasksById();
+    expect(tasks.get('zone/hospital/background')?.promptStrategy).toBe('environment-positive-only');
+    expect(tasks.get('item/medkit/icon')?.promptStrategy).toBe('item-positive-only-unmarked');
+    expect(tasks.get('world_event/rain/illustration')?.promptStrategy).toBe('environment-positive-only');
     for (const taskId of ['zone/hospital/background', 'item/medkit/icon', 'world_event/rain/illustration']) {
       const built = await buildPrompt(process.cwd(), tasks.get(taskId)!, 'agnes-image-2.1-flash');
-      expect(built.task.promptStrategy).toBeUndefined();
-      expect(built.negativePrompt.length).toBeGreaterThan(0);
-      expect(built.sections.avoid).toContain('AVOID:');
-    }
-  });
-
-  it('preserves the existing standard prompt hashes for the recovered non-character tasks', async () => {
-    const tasks = await tasksById();
-    const expected = {
-      'zone/hospital/background': '353318f2797b0593a8bec11680868fde783f8e89a7c7b6836dc775f79a6efd06',
-      'item/medkit/icon': '84113d1cd4fe9f11cb1ab27adb529fca4c32fbf57532588384235824b59c5fbd',
-      'world_event/rain/illustration': '734d1a097d3a94f9c624e469b0601a4c2a2ffb87c406edc656159ab57ff82254',
-    } as const;
-    const { contentHash } = await import('../tools/art/cache');
-    for (const [taskId, hash] of Object.entries(expected)) {
-      expect(contentHash(await buildPrompt(process.cwd(), tasks.get(taskId)!, 'agnes-image-2.1-flash'))).toBe(hash);
+      expect(built.negativePrompt).toBe('');
+      expect(built.sections.avoid).toBe('');
     }
   });
 

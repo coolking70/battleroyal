@@ -24,37 +24,49 @@ const B1_TASKS = [
 
 afterEach(() => setAssetManifest(null));
 
-describe('Phase 4A-2 formal Round A closure', () => {
-  it('publishes exactly four AI slots after Blackout approval', async () => {
+describe('Phase 4A-2.2 formalization closure', () => {
+  it('publishes exactly seven AI slots after character formalization', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
     expect(manifest.characters.scout?.portrait).toBe('/assets/characters/scout/portrait.png');
+    expect(manifest.characters.fighter?.portrait).toBe('/assets/characters/fighter/portrait.png');
+    expect(manifest.characters.engineer?.portrait).toBe('/assets/characters/engineer/portrait.png');
+    expect(manifest.characters.medic?.portrait).toBe('/assets/characters/medic/portrait.png');
     expect(manifest.zones.school?.background).toBe('/assets/zones/school/background.png');
     expect(manifest.items.bandage).toBe('/assets/items/bandage/icon.png');
     expect(manifest.worldEvents.blackout).toBe('/assets/world-events/blackout/illustration.png');
-    expect(Object.values(manifest.characters).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(1);
+    expect(Object.values(manifest.characters).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(4);
     expect(Object.values(manifest.zones).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(1);
     expect(Object.values(manifest.items).filter(Boolean)).toHaveLength(1);
     expect(Object.values(manifest.worldEvents).filter(Boolean)).toHaveLength(1);
   });
 
-  it('keeps provenance limited to the approved Round A tasks', async () => {
+  it('keeps provenance limited to the seven approved formal AI tasks', async () => {
     const provenance = JSON.parse(await fs.readFile(path.join(process.cwd(), 'art/approved-assets.json'), 'utf8')) as { assets: Record<string, { candidateHash: string }> };
     expect(Object.keys(provenance.assets).sort()).toEqual([
+      'character/engineer/portrait',
+      'character/fighter/portrait',
+      'character/medic/portrait',
       'character/scout/portrait',
       'item/bandage/icon',
       'world_event/blackout/illustration',
       'zone/school/background',
     ]);
     expect(provenance.assets['character/scout/portrait']?.candidateHash).toBe('2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd');
+    expect(provenance.assets['character/fighter/portrait']?.candidateHash).toBe('33b377a42b0a9a827fed7d3c8701dbe40e70893bc517a6500090a0e1febf8218');
+    expect(provenance.assets['character/engineer/portrait']?.candidateHash).toBe('12989865f752e70e7716b2881c3bfa5dbe5546a9c0ec7694705b38be30101979');
+    expect(provenance.assets['character/medic/portrait']?.candidateHash).toBe('6a1d891c1597e51d3ea26cab3c63a514994a4ed3d026f3f5f5e675a47eb8ec59');
     expect(provenance.assets['zone/school/background']?.candidateHash).toBe('c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7');
     expect(provenance.assets['item/bandage/icon']?.candidateHash).toBe('3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb');
     expect(provenance.assets['world_event/blackout/illustration']?.candidateHash).toBe('d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843');
   });
 
-  it('selects all four published visuals officially', async () => {
+  it('selects all four published character visuals officially', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
     setAssetManifest(manifest);
     expect(getCharacterVisual('scout').source).toBe('official');
+    expect(getCharacterVisual('fighter').source).toBe('official');
+    expect(getCharacterVisual('engineer').source).toBe('official');
+    expect(getCharacterVisual('medic').source).toBe('official');
     expect(getZoneVisual('school').source).toBe('official');
     expect(getItemVisual('bandage').source).toBe('official');
     expect(getWorldEventVisual('blackout').source).toBe('official');
@@ -88,28 +100,28 @@ describe('Phase 4A-2 controlled Round B1 and Blackout v5 prompts', () => {
     expect(built.sections.entityBrief).not.toMatch(/military|soldier|tactical|combat armor/i);
   });
 
-  it('keeps Hospital environment-only with zero humans and no character focal subject', async () => {
+  it('keeps Hospital on the Phase 4A-2.2 environment-positive-only strategy', async () => {
     const task = (await loadTasks(process.cwd())).find((item) => item.id === 'zone/hospital/background')!;
-    const policy = promptPolicyFor(task);
-    expect(policy.allowPeople).toBe(false);
-    expect(policy.hardConstraints).toEqual(expect.arrayContaining(['ENVIRONMENT ONLY', 'ZERO HUMANS', 'ZERO HUMAN SILHOUETTES']));
+    expect(task.promptStrategy).toBe('environment-positive-only');
+    expect(promptPolicyFor(task).allowPeople).toBe(false);
   });
 
-  it('keeps Medkit isolated as the selected healing consumable, separate from Bandage', async () => {
+  it('keeps Medkit on the Phase 4A-2.2 item-positive-only-unmarked strategy', async () => {
     const task = (await loadTasks(process.cwd())).find((item) => item.id === 'item/medkit/icon')!;
     const built = await buildPrompt(process.cwd(), task, 'agnes-image-2.1-flash');
     expect(task.entityId).toBe('medkit');
-    expect(built.sections.hardConstraints).toContain('ISOLATED INVENTORY OBJECT');
-    expect(built.sections.entityBrief).toContain('field medical kit');
+    expect(task.promptStrategy).toBe('item-positive-only-unmarked');
+    expect(built.sections.hardConstraints).toContain('single isolated object centered in frame');
+    expect(built.sections.entityBrief).toContain('portable emergency supply case');
     expect(built.sections.entityBrief).not.toContain('bandage');
   });
 
-  it('allows Rain as the one event-specific weather task while retaining event isolation', async () => {
+  it('keeps Rain on the Phase 4A-2.2 environment-positive-only strategy', async () => {
     const task = (await loadTasks(process.cwd())).find((item) => item.id === 'world_event/rain/illustration')!;
     const built = await buildPrompt(process.cwd(), task, 'agnes-image-2.1-flash');
-    expect(built.sections.entityBrief).toMatch(/rain/i);
-    expect(built.sections.hardConstraints).toContain('ZERO PEOPLE');
-    expect(built.sections.hardConstraints).toContain('ZERO WEAPONS');
+    expect(task.promptStrategy).toBe('environment-positive-only');
+    expect(built.sections.entityBrief).toContain('deserted rain-soaked city street');
+    expect(built.sections.hardConstraints).toContain('visible rainfall is the dominant visual texture');
   });
 
   it('locks Blackout v5 to one dim red beacon and a ceiling-free control-area composition', async () => {

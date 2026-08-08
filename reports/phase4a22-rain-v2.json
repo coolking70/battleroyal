@@ -1,0 +1,22 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 0,
+  "failed": 1,
+  "retryCount": 0,
+  "totalBytes": 0,
+  "tasks": [
+    {
+      "taskId": "world_event/rain/illustration",
+      "hash": "871d1b146011fb7747ca52665d9a152992c87d1a343f23d21807259b506ae95c",
+      "source": "api",
+      "status": "failed",
+      "errors": [
+        "Unable to generate this content. Please modify your prompt and try again."
+      ]
+    }
+  ]
+}

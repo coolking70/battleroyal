@@ -1,0 +1,125 @@
+Phase 4A-2.2 command evidence
+
+COMMAND: npm run art:reject -- --task zone/hospital/background --candidate 80d603bfd8124a44919ffc590313448511686c51f2648850527c71e8268e9354 --reason "Human review: multiple visible people violate the empty environment requirement."
+EXIT CODE: 0
+SUMMARY: rejected old Hospital candidate
+
+COMMAND: npm run art:reject -- --task item/medkit/icon --candidate c52f6ec3dd935448b766a090fe32513d6c6b5a9bde3710dee101edb087e09108 --reason "Human review: prominent protected medical-cross markings make the asset unsuitable for formal publication."
+EXIT CODE: 0
+SUMMARY: rejected old Medkit candidate
+
+COMMAND: npm run art:reject -- --task world_event/rain/illustration --candidate 5804105a6f017924222fa112126db9fc8d482dd0707ef0141c0ea09da0f83313 --reason "Human review: a prominent visible person violates the environment-only event composition."
+EXIT CODE: 0
+SUMMARY: rejected old Rain candidate
+
+COMMAND: npm run art:approve -- --task character/engineer/portrait --candidate 12989865f752e70e7716b2881c3bfa5dbe5546a9c0ec7694705b38be30101979
+EXIT CODE: 0
+SUMMARY: approved Engineer positive-only candidate
+
+COMMAND: npm run art:approve -- --task character/fighter/portrait --candidate 33b377a42b0a9a827fed7d3c8701dbe40e70893bc517a6500090a0e1febf8218
+EXIT CODE: 0
+SUMMARY: approved Fighter positive-only candidate
+
+COMMAND: npm run art:approve -- --task character/medic/portrait --candidate 6a1d891c1597e51d3ea26cab3c63a514994a4ed3d026f3f5f5e675a47eb8ec59
+EXIT CODE: 0
+SUMMARY: approved Medic positive-only candidate
+
+COMMAND: npm run art:list
+EXIT CODE: 0
+SUMMARY: three character candidates approved; old Hospital/Medkit/Rain candidates rejected; formal four-asset baseline preserved before publish
+
+COMMAND: npm run art:publish
+EXIT CODE: 0
+SUMMARY: PUBLISHED 7 approved candidates; Manifest hash bc5f1d2fe6051d977a58df971bf41976f0a0e5db91b507aa5c8cdc0a7159ca3a
+
+COMMAND: npm run art:validate
+EXIT CODE: 0
+SUMMARY: PASS published manifest
+
+COMMAND: npm run art:publish (second publish)
+EXIT CODE: 0
+SUMMARY: NO CHANGES
+
+COMMAND: runtime character tests via npm test / Phase 4A-2.2 closure suite
+EXIT CODE: 0
+SUMMARY: four character official selections and fallback chain pass
+
+COMMAND: npm run art:prompt-audit -- --task zone/hospital/background; npm run art:prompt-audit -- --task item/medkit/icon; npm run art:prompt-audit -- --task world_event/rain/illustration
+EXIT CODE: 0
+SUMMARY: all three prompt audits passed; forbidden token count 0
+
+COMMAND: npm run art:prompt -- --task zone/hospital/background
+EXIT CODE: 0
+SUMMARY: preflight hash 1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5
+
+COMMAND: npm run art:prompt -- --task item/medkit/icon
+EXIT CODE: 0
+SUMMARY: preflight hash 56c73dde328a31f004dc449e0d1e1ac4af0d1f0b616de6906eca99757b5f829d
+
+COMMAND: npm run art:prompt -- --task world_event/rain/illustration
+EXIT CODE: 0
+SUMMARY: preflight hash 871d1b146011fb7747ca52665d9a152992c87d1a343f23d21807259b506ae95c
+
+COMMAND: npm ci
+EXIT CODE: 0
+SUMMARY: dependencies installed; npm reported dev-dependency advisories, checked separately below
+
+COMMAND: npm run typecheck
+EXIT CODE: 0
+SUMMARY: PASS
+
+COMMAND: npm test
+EXIT CODE: 0
+SUMMARY: 742/742 tests passed
+
+COMMAND: npm run build
+EXIT CODE: 0
+SUMMARY: Vite production build passed
+
+COMMAND: npm run audit:save
+EXIT CODE: 0
+SUMMARY: PASS; 74 malformed saves rejected and 74 valid saves accepted
+
+COMMAND: npm run audit:deps
+EXIT CODE: 0
+SUMMARY: PASS; R1/R2/R3/R4 violations 0
+
+COMMAND: npm run art:doctor -- --offline
+EXIT CODE: 0
+SUMMARY: PASS; 32 task definitions and required files present
+
+COMMAND: npm run art:validate
+EXIT CODE: 0
+SUMMARY: PASS published manifest
+
+COMMAND: npm run art:security:browser
+EXIT CODE: 0
+SUMMARY: PASS browser secret boundary scan
+
+COMMAND: npm run art:security:repo
+EXIT CODE: 0
+SUMMARY: PASS tracked repository secret scan
+
+COMMAND: npm run simulate -- --games 500 --seed-prefix PHASE4A22 --regression --output reports/phase4a22-balance.json
+EXIT CODE: 0
+SUMMARY: requested=500 actual=500; engine health PASS; timeout/deadlock/illegal/hardlimit 0
+
+COMMAND: npm audit --omit=dev
+EXIT CODE: 0
+SUMMARY: found 0 vulnerabilities
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task zone/hospital/background --concurrency 1 --report-name phase4a22-hospital-v2
+EXIT CODE: 0
+SUMMARY: API calls=1 cache hits=0 validation=passed review=pending; candidate 1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task item/medkit/icon --concurrency 1 --report-name phase4a22-medkit-v2
+EXIT CODE: 0
+SUMMARY: API calls=1 cache hits=0 validation=passed review=pending; candidate 56c73dde328a31f004dc449e0d1e1ac4af0d1f0b616de6906eca99757b5f829d
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task world_event/rain/illustration --concurrency 1 --report-name phase4a22-rain-v2
+EXIT CODE: 1
+SUMMARY: API calls=1 cache hits=0; Agnes rejected the request before returning an image; no candidate and no reroll
+
+COMMAND: npm run art:review-export -- --report reports/phase4a22-noncharacter-recovery.json --output output/art-review/phase4a22-noncharacter-recovery --suffix=-v2
+EXIT CODE: 0
+SUMMARY: exported 2 pending candidates; Rain has no image to export

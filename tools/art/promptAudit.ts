@@ -26,6 +26,29 @@ export const FORBIDDEN_CHARACTER_TOKENS = [
   'combat athlete',
 ] as const;
 
+export const FORBIDDEN_ENVIRONMENT_TOKENS = [
+  'person',
+  'people',
+  'human',
+  'character',
+  'survivor',
+  'patient',
+  'doctor',
+  'nurse',
+  'pedestrian',
+  'crowd',
+  'silhouette',
+] as const;
+
+export const FORBIDDEN_ITEM_MARKING_TOKENS = [
+  'cross',
+  'logo',
+  'emblem',
+  'symbol',
+  'brand',
+  'red cross',
+] as const;
+
 function tokenPattern(token: string): RegExp {
   return new RegExp(`\\b${token.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'i');
 }
@@ -62,4 +85,27 @@ export function auditCharacterProviderPrompt(task: ArtTask, providerPrompt: stri
     designSheetHeading,
     failures,
   };
+}
+
+function auditTokenSet(task: ArtTask, providerPrompt: string, tokens: readonly string[]): PromptAuditResult {
+  const forbiddenTokens = tokens.filter((token) => tokenPattern(token).test(providerPrompt));
+  const failures = forbiddenTokens.map((token) => `forbidden token: ${token}`);
+  return {
+    strategy: task.promptStrategy ?? 'standard',
+    passed: failures.length === 0,
+    forbiddenTokenCount: forbiddenTokens.length,
+    forbiddenTokens,
+    internalTaskId: false,
+    internalEntityId: false,
+    designSheetHeading: false,
+    failures,
+  };
+}
+
+export function auditEnvironmentProviderPrompt(task: ArtTask, providerPrompt: string): PromptAuditResult {
+  return auditTokenSet(task, providerPrompt, FORBIDDEN_ENVIRONMENT_TOKENS);
+}
+
+export function auditItemProviderPrompt(task: ArtTask, providerPrompt: string): PromptAuditResult {
+  return auditTokenSet(task, providerPrompt, FORBIDDEN_ITEM_MARKING_TOKENS);
 }

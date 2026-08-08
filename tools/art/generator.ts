@@ -183,7 +183,9 @@ export async function writePromptReport(
     'item/medkit/icon',
     'world_event/rain/illustration',
   ]);
-  const targetedVersion = built.task.id === 'world_event/blackout/illustration' && built.task.revision >= 4
+  const targetedVersion = built.task.promptStrategy === 'environment-positive-only' || built.task.promptStrategy === 'item-positive-only-unmarked'
+    ? 'phase4a22-positive-only'
+    : built.task.id === 'world_event/blackout/illustration' && built.task.revision >= 4
     ? 'phase4-targeted-v5'
     : built.task.promptStrategy === 'character-positive-only'
       ? 'phase4a21-character-positive-only'

@@ -7,17 +7,17 @@
       "combat": null
     },
     "fighter": {
-      "portrait": null,
+      "portrait": "/assets/characters/fighter/portrait.png",
       "injured": null,
       "combat": null
     },
     "engineer": {
-      "portrait": null,
+      "portrait": "/assets/characters/engineer/portrait.png",
       "injured": null,
       "combat": null
     },
     "medic": {
-      "portrait": null,
+      "portrait": "/assets/characters/medic/portrait.png",
       "injured": null,
       "combat": null
     }

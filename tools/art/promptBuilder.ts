@@ -35,20 +35,24 @@ function providerDesignSheet(value: string): string {
 export async function buildPrompt(rootDir: string, task: ArtTask, model: string): Promise<BuiltPrompt> {
   const renderStyle = await readText(rootDir, 'art/style/render-style.md');
   const category = categoryStyleName(task);
-  const categoryStyle = await readText(rootDir, `art/style/${STYLE_FILE_BY_PROFILE[category]!}`);
-  const positiveOnly = task.promptStrategy === 'character-positive-only';
+  const categoryStyle = task.promptStrategy === 'environment-positive-only'
+    ? task.category === 'zone'
+      ? 'Environmental location illustration with clear architecture, recognizable props, restrained abandonment, open sightlines and a calm lower-center area reserved for later overlay.'
+      : 'Environmental event illustration with one clear weather phenomenon as the visual subject, strong mood, readable composition and original visual design.'
+    : await readText(rootDir, `art/style/${STYLE_FILE_BY_PROFILE[category]!}`);
+  const positiveOnly = task.promptStrategy !== undefined && task.promptStrategy !== 'standard';
   const genericAvoid = positiveOnly ? '' : await readText(rootDir, 'art/style/negative-prompt.txt');
   const policy = promptPolicyFor(task);
   const sheetPath = designSheetPath(task);
   const designSheet = !positiveOnly && sheetPath ? providerDesignSheet(await readText(rootDir, sheetPath)) : '';
   const entityBrief = [
     task.providerDescriptor ? `Provider-facing visual identity: ${task.providerDescriptor}` : '',
-    positiveOnly && task.positiveTraits?.length ? `Positive appearance traits:\n${task.positiveTraits.map((item) => `- ${item}`).join('\n')}` : '',
+    task.positiveTraits?.length ? `${task.promptStrategy === 'character-positive-only' ? 'Positive appearance traits' : 'Positive visual traits'}:\n${task.positiveTraits.map((item) => `- ${item}`).join('\n')}` : '',
     designSheet ? `Character design source of truth:\n${designSheet}` : '',
     `Asset brief:\n${task.promptTemplate}`,
   ].filter(Boolean).join('\n\n');
   const variant = `Variant: ${task.variant}. Keep the entity identity stable across variants.`;
-  const hardConstraints = positiveOnly
+  const hardConstraints = task.promptStrategy === 'character-positive-only'
     ? [
         'single adult portrait',
         'waist-up portrait',
@@ -57,6 +61,8 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
         'the silhouette behind the person is clean and empty',
         ...(task.positiveComposition ?? []),
       ]
+    : task.promptStrategy === 'environment-positive-only' || task.promptStrategy === 'item-positive-only-unmarked'
+      ? [...(task.positiveComposition ?? [])]
     : [
         ...policy.hardConstraints,
         ...(task.hardConstraints ?? []),
@@ -75,8 +81,12 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
     hardConstraints: `${positiveOnly ? 'POSITIVE COMPOSITION REQUIREMENTS' : 'HARD COMPOSITION CONSTRAINTS'}:\n${hardConstraints.map((item) => `- ${item}`).join('\n')}`,
     avoid: avoid ? `AVOID:\n${avoid}` : '',
   };
-  const technicalComposition = positiveOnly
+  const technicalComposition = task.promptStrategy === 'character-positive-only'
     ? `Technical composition: ${task.width}x${task.height}; centered waist-up portrait; clear focal subject; pale neutral studio-like backdrop.`
+    : task.promptStrategy === 'environment-positive-only'
+      ? `Technical composition: ${task.width}x${task.height}; wide environmental framing; clear location or weather focal subject; calm lower-center space.`
+      : task.promptStrategy === 'item-positive-only-unmarked'
+        ? `Technical composition: ${task.width}x${task.height}; centered single object; clear silhouette; plain dark-gray studio backdrop.`
     : `Technical composition: ${task.width}x${task.height}, clear focal subject, no text, no logo, no watermark.`;
   const prompt = clean([
     sections.renderStyle,
@@ -110,7 +120,6 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
 }
 
 export function promptHashInput(built: BuiltPrompt): Record<string, unknown> {
-  const positiveOnly = built.task.promptStrategy === 'character-positive-only';
   return {
     taskId: built.task.id,
     prompt: built.prompt,
@@ -121,9 +130,10 @@ export function promptHashInput(built: BuiltPrompt): Record<string, unknown> {
     requestedRatio: built.requestedRatio,
     revision: built.task.revision,
     styleProfileVersion: built.styleProfileVersion,
-    ...(positiveOnly ? {
+    ...(built.task.promptStrategy && built.task.promptStrategy !== 'standard' ? {
       promptStrategy: built.task.promptStrategy,
       positiveTraits: built.task.positiveTraits ?? [],
+      ...(built.task.promptStrategy === 'character-positive-only' ? {} : { positiveComposition: built.task.positiveComposition ?? [] }),
     } : {}),
   };
 }
