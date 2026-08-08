@@ -55,6 +55,11 @@ function stringField(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
+export function redactProviderMessage(message: string, apiKey: string | null): string {
+  if (!apiKey) return message.slice(0, 300);
+  return message.replaceAll(apiKey, '[REDACTED]').slice(0, 300);
+}
+
 function errorForStatus(status: number, message: string) {
   if (status === 401 || status === 403) return { category: 'auth' as const, retryable: false, status, message };
   if (status === 429) return { category: 'rate_limit' as const, retryable: true, status, message };
@@ -73,7 +78,7 @@ async function parseAgnesResponse(response: Response, fetchImpl: typeof fetch, c
     const error = body && typeof body === 'object' && 'error' in body && typeof body.error === 'object' && body.error
       ? String((body.error as Record<string, unknown>).message ?? 'Agnes request failed')
       : `Agnes request failed with HTTP ${response.status}`;
-    throw new ArtPipelineError(errorForStatus(response.status, error.slice(0, 300)));
+    throw new ArtPipelineError(errorForStatus(response.status, redactProviderMessage(error, config.apiKey)));
   }
   const record = body && typeof body === 'object' ? body as Record<string, unknown> : {};
   const data = Array.isArray(record.data) ? record.data[0] : record;

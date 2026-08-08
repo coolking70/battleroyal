@@ -1,0 +1,18 @@
+{
+  "round": "A",
+  "taskId": "character/scout/portrait",
+  "provider": "agnes",
+  "status": "success",
+  "httpStatus": "2xx",
+  "apiCalls": 1,
+  "cacheHits": 0,
+  "candidateHash": "14511e9a5fb98a79962cc31732cf92d30903a0613f6a3e7141dad4809fbaf625",
+  "contentHash": "14511e9a5fb98a79962cc31732cf92d30903a0613f6a3e7141dad4809fbaf625",
+  "actualWidth": 864,
+  "actualHeight": 1152,
+  "actualMimeType": "image/png",
+  "validation": "passed",
+  "review": "pending",
+  "source": "api",
+  "candidateCreated": true
+}

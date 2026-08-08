@@ -45,3 +45,11 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Verification: 610 tests PASS, typecheck PASS, build PASS, save/dependency audits PASS, offline doctor PASS, published manifest validation PASS, browser/repository secret scans PASS, dry-run 32 tasks / 0 API calls PASS.
 - Browser regression smoke rendered menu and gameplay screenshots with the fallback art path; `render_game_to_text` reported `mode=playing`, Scout in Hospital, time 0, and no console-error artifact.
 - Real provider execution remains blocked by the known 401 credential result. No candidate, approval, or AI asset publication was created.
+
+## Phase 4A-1 progress (2026-08-08)
+
+- Reconciled the live Scout state from the preceding confirmation: one API-origin pending candidate plus cache-verification duplicates; reused the API-origin candidate instead of consuming another live call for the same task.
+- Added `.env.example`-aware repository secret scanning, provider error redaction, reverse Manifest→provenance checks with the legacy bandage SVG allowlist, `--regression` simulation mode, actual-byte MIME normalization, and `art:review-export -- --round A`.
+- Reached 625 passing tests. Offline evidence is in `reports/phase4a1-command-results.txt`; the 500-game regression reports engine health PASS with character balance observation only.
+- Live Round A succeeded in order: Scout (existing live evidence), School, Bandage, Blackout. Four unique tasks have API-origin candidates with validation PASS and reviewStatus=pending. Cache verification reports `apiCalls=0`.
+- Review package exported to `output/art-review/phase4a1-round-a/`; decisions and notes remain blank. `art/approved-assets.json` remains empty and the formal Manifest was not changed.

@@ -28,6 +28,22 @@ function fakePng(width: number, height: number, bytes = 256): Buffer {
   return result;
 }
 
+function fakeWebp(width: number, height: number): Buffer {
+  const result = Buffer.alloc(256);
+  result.write('RIFF', 0, 'ascii');
+  result.writeUInt32LE(248, 4);
+  result.write('WEBP', 8, 'ascii');
+  result.write('VP8X', 12, 'ascii');
+  result[20] = 0x10;
+  result[24] = (width - 1) & 0xff;
+  result[25] = ((width - 1) >> 8) & 0xff;
+  result[26] = ((width - 1) >> 16) & 0xff;
+  result[27] = (height - 1) & 0xff;
+  result[28] = ((height - 1) >> 8) & 0xff;
+  result[29] = ((height - 1) >> 16) & 0xff;
+  return result;
+}
+
 async function fixture(): Promise<{ root: string; config: ArtConfig }> {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'battleroyal-phase4-'));
   tempRoots.push(root);
@@ -209,6 +225,17 @@ describe('Phase 4 API and cache boundary', () => {
     metadata.actualWidth = 999;
     await fs.writeFile(metadataPath, JSON.stringify(metadata));
     expect(await findCacheEntry(config, hash, built)).toBeNull();
+  });
+
+  it('uses actual bytes MIME for cache extension when the provider declaration disagrees', async () => {
+    const { root, config } = await fixture();
+    const task = (await loadTasks(root)).find((item) => item.id === 'item/bandage/icon')!;
+    const built = await buildPrompt(root, task, config.model);
+    const hash = contentHash(built);
+    const entry = await saveCache(config, hash, built, { mimeType: 'image/png', bytes: fakeWebp(512, 512) });
+    expect(entry.mimeType).toBe('image/webp');
+    expect(entry.imagePath.endsWith('image.webp')).toBe(true);
+    expect(await findCacheEntry(config, hash, built)).toMatchObject({ mimeType: 'image/webp' });
   });
 });
 

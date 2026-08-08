@@ -1,0 +1,60 @@
+{
+  "round": "A",
+  "provider": "agnes",
+  "status": "generated_pending_review",
+  "tasks": [
+    {
+      "taskId": "character/scout/portrait",
+      "candidateHash": "14511e9a5fb98a79962cc31732cf92d30903a0613f6a3e7141dad4809fbaf625",
+      "contentHash": "14511e9a5fb98a79962cc31732cf92d30903a0613f6a3e7141dad4809fbaf625",
+      "actualWidth": 864,
+      "actualHeight": 1152,
+      "mimeType": "image/png",
+      "validation": "passed",
+      "review": "pending",
+      "source": "api"
+    },
+    {
+      "taskId": "zone/school/background",
+      "candidateHash": "0256c79e2c5a9e0ad48378e16e74849e7da3d0d864f056ab75697dc4043be1d1",
+      "contentHash": "0256c79e2c5a9e0ad48378e16e74849e7da3d0d864f056ab75697dc4043be1d1",
+      "actualWidth": 1312,
+      "actualHeight": 736,
+      "mimeType": "image/png",
+      "validation": "passed",
+      "review": "pending",
+      "source": "api"
+    },
+    {
+      "taskId": "item/bandage/icon",
+      "candidateHash": "fa8b8d8b6fc778c085592ab0d5e3a53d20002d6da8c99bc42cf9fbde388794bf",
+      "contentHash": "fa8b8d8b6fc778c085592ab0d5e3a53d20002d6da8c99bc42cf9fbde388794bf",
+      "actualWidth": 1024,
+      "actualHeight": 1024,
+      "mimeType": "image/png",
+      "validation": "passed",
+      "review": "pending",
+      "source": "api"
+    },
+    {
+      "taskId": "world_event/blackout/illustration",
+      "candidateHash": "004497ade1bb934a4c80addfefcea9256327edcc1aa4edc067a8ec51dac0a78c",
+      "contentHash": "004497ade1bb934a4c80addfefcea9256327edcc1aa4edc067a8ec51dac0a78c",
+      "actualWidth": 1312,
+      "actualHeight": 736,
+      "mimeType": "image/png",
+      "validation": "passed",
+      "review": "pending",
+      "source": "api"
+    }
+  ],
+  "uniqueTaskCount": 4,
+  "generated": 4,
+  "validationPassed": 4,
+  "pendingReview": 4,
+  "workspaceCandidateCount": 6,
+  "cacheVerificationCandidates": 2,
+  "approved": 0,
+  "rejected": 0,
+  "published": 0
+}

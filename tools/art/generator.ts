@@ -158,6 +158,8 @@ export async function generateTask(
     source = 'api';
     await saveCache(config, hash, built, result);
   }
+  const actualMimeType = validateImageBytes(result.bytes, task).mimeType;
+  if (actualMimeType && actualMimeType !== result.mimeType) result = { ...result, mimeType: actualMimeType };
   const candidateHash = await candidateHashFor(config, task, hash);
   const metadata = await writeCandidate(config, task, built, hash, candidateHash, result, source);
   report.requested += 1;

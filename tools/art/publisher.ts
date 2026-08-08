@@ -2,8 +2,11 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { listCandidates } from './reviewer';
+import { loadTasks } from './taskPlanner';
 import { validateManifest, isSafePublishedPath } from './validator';
 import type { ArtConfig, ArtManifest, ArtVersion, ApprovedAssetsFile, CandidateMetadata } from './types';
+
+export const LEGACY_BASELINE_ASSETS = new Set(['/assets/items/bandage.svg']);
 
 export interface PublishOptions {
   rename?: typeof fs.rename;
@@ -177,6 +180,11 @@ export async function validatePublishedManifest(config: ArtConfig): Promise<stri
   const version = await readJsonFile<ArtVersion>(path.join(config.publicAssetsDir, 'art-version.json'));
   if (!version || version.manifestHash !== manifestHash(manifest)) errors.push('art-version manifestHash does not match manifest.json');
   const provenance = await readProvenance(config);
+  const tasks = await loadTasks(config.rootDir);
+  const taskIds = new Set(tasks.map((task) => task.id));
+  for (const taskId of Object.keys(provenance.assets)) {
+    if (!taskIds.has(taskId)) errors.push(`provenance ${taskId} is not a defined art task`);
+  }
   for (const [taskId, entry] of Object.entries(provenance.assets)) {
     if (!isSafePublishedPath(entry.publicPath)) errors.push(`provenance ${taskId} has unsafe publicPath`);
     if (!entry.candidateHash.match(/^[a-f0-9]{64}(?:-[0-9-]+)?$/)) errors.push(`provenance ${taskId} has invalid candidateHash`);
@@ -184,7 +192,40 @@ export async function validatePublishedManifest(config: ArtConfig): Promise<stri
     if (manifestPath !== entry.publicPath) errors.push(`provenance ${taskId} does not match manifest`);
     if (!(await fileExists(path.join(config.publicAssetsDir, entry.publicPath.slice('/assets/'.length))))) errors.push(`provenance ${taskId} file is missing`);
   }
+  for (const [taskId, publicPath] of manifestAssetEntries(manifest)) {
+    if (LEGACY_BASELINE_ASSETS.has(publicPath)) continue;
+    const task = tasks.find((candidate) => taskPathMatches(candidate, publicPath));
+    if (!task) {
+      errors.push(`manifest ${taskId} references a non-legacy asset without a matching art task`);
+      continue;
+    }
+    const entry = provenance.assets[task.id];
+    if (!entry) errors.push(`manifest ${taskId} AI asset is missing provenance for ${task.id}`);
+    else if (entry.publicPath !== publicPath) errors.push(`manifest ${taskId} provenance path mismatch for ${task.id}`);
+  }
   return errors;
+}
+
+function taskPathPrefix(task: Awaited<ReturnType<typeof loadTasks>>[number]): string {
+  const category = task.category === 'world_event' ? 'world-events' : `${task.category}s`;
+  return `/assets/${category}/${task.entityId}/${task.variant}.`;
+}
+
+function taskPathMatches(task: Awaited<ReturnType<typeof loadTasks>>[number], publicPath: string): boolean {
+  return publicPath.startsWith(taskPathPrefix(task));
+}
+
+function manifestAssetEntries(manifest: ArtManifest): Array<[string, string]> {
+  const entries: Array<[string, string]> = [];
+  for (const [entityId, slots] of Object.entries(manifest.characters)) {
+    for (const [slot, value] of Object.entries(slots)) if (typeof value === 'string') entries.push([`character/${entityId}/${slot}`, value]);
+  }
+  for (const [entityId, slots] of Object.entries(manifest.zones)) {
+    for (const [slot, value] of Object.entries(slots)) if (typeof value === 'string') entries.push([`zone/${entityId}/${slot}`, value]);
+  }
+  for (const [entityId, value] of Object.entries(manifest.items)) if (typeof value === 'string') entries.push([`item/${entityId}`, value]);
+  for (const [entityId, value] of Object.entries(manifest.worldEvents)) if (typeof value === 'string') entries.push([`world_event/${entityId}`, value]);
+  return entries;
 }
 
 function manifestPathForTask(manifest: ArtManifest, taskId: string): string | null {

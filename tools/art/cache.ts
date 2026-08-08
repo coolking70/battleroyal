@@ -71,10 +71,14 @@ export async function saveCache(
 ): Promise<CacheEntry> {
   const dir = path.join(config.cacheDir, hash);
   await fs.mkdir(dir, { recursive: true });
-  const imageName = `image.${extensionForMime(result.mimeType)}`;
-  const imagePath = path.join(dir, imageName);
-  await fs.writeFile(imagePath, result.bytes);
   const validation = validateImageBytes(result.bytes, built.task);
+  const actualMimeType = validation.mimeType ?? result.mimeType;
+  const imageName = `image.${extensionForMime(actualMimeType)}`;
+  const imagePath = path.join(dir, imageName);
+  for (const entry of await fs.readdir(dir)) {
+    if (entry.startsWith('image.')) await fs.rm(path.join(dir, entry), { force: true });
+  }
+  await fs.writeFile(imagePath, result.bytes);
   const metadataPath = path.join(dir, 'metadata.json');
   await fs.writeFile(
     metadataPath,
@@ -91,7 +95,7 @@ export async function saveCache(
         prompt: built.prompt,
         negativePrompt: built.negativePrompt,
         styleProfileVersion: built.styleProfileVersion,
-        mimeType: result.mimeType,
+        mimeType: actualMimeType,
         bytes: result.bytes.byteLength,
         providerRequestId: result.providerRequestId,
         revisedPrompt: result.revisedPrompt,
@@ -104,7 +108,7 @@ export async function saveCache(
     hash,
     imagePath,
     metadataPath,
-    mimeType: result.mimeType,
+    mimeType: actualMimeType,
     bytes: result.bytes.byteLength,
     actualWidth: validation.actualWidth ?? 0,
     actualHeight: validation.actualHeight ?? 0,

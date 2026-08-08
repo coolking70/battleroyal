@@ -26,6 +26,7 @@
     "art:validate": "tsx tools/art/cli.ts validate",
     "art:api-check": "tsx tools/art/cli.ts api-check",
     "art:smoke": "tsx tools/art/cli.ts smoke",
+    "art:review-export": "tsx tools/art/reviewExport.ts",
     "art:security": "npm run art:security:browser && npm run art:security:repo",
     "art:security:browser": "tsx tools/art/securityAudit.ts",
     "art:security:repo": "tsx tools/art/securityRepoAudit.ts"
