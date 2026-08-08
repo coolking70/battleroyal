@@ -35,5 +35,5 @@ if (violations.length > 0) {
   console.error(`FAIL secret-like content found in browser assets: ${violations.join(', ')}`);
   process.exitCode = 1;
 } else {
-  console.log(`PASS browser secret scan (${scope.length} files)`);
+  console.log(`PASS browser secret boundary scan (${scope.length} files)`);
 }

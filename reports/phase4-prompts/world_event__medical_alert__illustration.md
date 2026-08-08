@@ -1,8 +1,9 @@
 # world_event/medical_alert/illustration
 
-- Hash: `b897b7d8ed4ab9e21d107be6e76ecfe0c77d94119c7ff9829d345497cc892aea`
+- Hash: `7c66a22b8a14f118f5ab3e1c42bf7920754440704e8b5fa437b48c64e5fcfc62`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x432
+- Requested size: 768x432
+- Requested ratio: 16:9
 - Revision: 1
 - Style profile version: `430854a859ef`
 

@@ -3,12 +3,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createArtConfig } from '../tools/art/config';
-import { contentHash, saveCache } from '../tools/art/cache';
+import { parseArgs, sanitizeReportName } from '../tools/art/cli';
+import { contentHash, findCacheEntry, saveCache } from '../tools/art/cache';
 import { generateImage } from '../tools/art/apiClient';
 import { generateTask } from '../tools/art/generator';
 import { buildPrompt, promptHashInput } from '../tools/art/promptBuilder';
-import { publishApproved } from '../tools/art/publisher';
-import { reviewCandidate } from '../tools/art/reviewer';
+import { publishApproved, readProvenance } from '../tools/art/publisher';
+import { listCandidates, reviewCandidate } from '../tools/art/reviewer';
 import { loadTasks, selectTasks } from '../tools/art/taskPlanner';
 import { isSafePublishedPath, validateImageBytes, validateManifest } from '../tools/art/validator';
 import { ArtPipelineError, type ArtConfig, type ArtTask } from '../tools/art/types';
@@ -60,9 +61,9 @@ describe('Phase 4 task and prompt contracts', () => {
   });
 
   it('validation enforces image signature, dimensions, aspect ratio and alpha', () => {
-    expect(validateImageBytes(fakePng(768, 1024), { width: 768, height: 1024 })).toMatchObject({ status: 'passed', mimeType: 'image/png' });
-    expect(validateImageBytes(fakePng(512, 512), { width: 768, height: 1024 })).toMatchObject({ status: 'failed' });
-    expect(validateImageBytes(fakePng(512, 512), { width: 512, height: 512, alphaRequired: true })).toMatchObject({ status: 'passed' });
+    expect(validateImageBytes(fakePng(768, 1024), { category: 'character', width: 768, height: 1024 })).toMatchObject({ status: 'passed', mimeType: 'image/png' });
+    expect(validateImageBytes(fakePng(512, 512), { category: 'character', width: 768, height: 1024 })).toMatchObject({ status: 'failed' });
+    expect(validateImageBytes(fakePng(512, 512), { category: 'item', width: 512, height: 512, alphaRequired: true })).toMatchObject({ status: 'passed' });
   });
 
   it.each([
@@ -120,7 +121,7 @@ describe('Phase 4 API and cache boundary', () => {
     const built = await buildPrompt(root, task, config.model);
     const hash = contentHash(built);
     await saveCache(config, hash, built, { mimeType: 'image/png', bytes: fakePng(768, 1024) });
-    const report = { requested: 0, cacheHits: 0, apiCalls: 0, successful: 0, failed: 0, retryCount: 0, totalBytes: 0, tasks: [] as Array<{ taskId: string; hash: string; source: 'api' | 'cache' | 'dry-run'; status: string; errors?: string[] }> };
+    const report = { mode: 'provider' as const, provider: 'agnes' as const, requested: 0, cacheHits: 0, apiCalls: 0, successful: 0, failed: 0, retryCount: 0, totalBytes: 0, tasks: [] as Array<{ taskId: string; hash: string; source: 'api' | 'cache' | 'dry-run'; status: string; errors?: string[] }> };
     const candidate = await generateTask(config, task, { retryDelaysMs: [0, 0, 0] }, report);
     expect(candidate?.source).toBe('cache');
     expect(candidate?.reviewStatus).toBe('pending');
@@ -176,6 +177,38 @@ describe('Phase 4 API and cache boundary', () => {
     expect(second?.hash).not.toBe(first?.hash);
     expect(second?.contentHash).toBe(first?.contentHash);
     expect(second?.reviewStatus).toBe('pending');
+  });
+
+  it.each([
+    ['character floor passes', 'character', 864, 1152, 'passed'],
+    ['character floor fails', 'character', 699, 932, 'failed'],
+    ['zone floor passes', 'zone', 1000, 562, 'passed'],
+    ['event floor fails', 'world_event', 699, 393, 'failed'],
+    ['maximum dimension fails', 'item', 9000, 9000, 'failed'],
+  ] as const)('enforces category resolution and safety floors: %s', (_label, category, width, height, status) => {
+    expect(validateImageBytes(fakePng(width, height), { category, width, height })).toMatchObject({ status });
+  });
+
+  it('treats missing, corrupt, and metadata-mismatched cache entries as misses', async () => {
+    const { root, config } = await fixture();
+    const task = (await loadTasks(root)).find((item) => item.id === 'item/bandage/icon')!;
+    const built = await buildPrompt(root, task, config.model);
+    const hash = contentHash(built);
+    await saveCache(config, hash, built, { mimeType: 'image/png', bytes: fakePng(512, 512) });
+    expect(await findCacheEntry(config, hash, built)).not.toBeNull();
+    await fs.rm(path.join(config.cacheDir, hash, 'image.png'));
+    expect(await findCacheEntry(config, hash, built)).toBeNull();
+
+    await saveCache(config, hash, built, { mimeType: 'image/png', bytes: fakePng(512, 512) });
+    await fs.writeFile(path.join(config.cacheDir, hash, 'image.png'), Buffer.from('corrupt image'));
+    expect(await findCacheEntry(config, hash, built)).toBeNull();
+
+    await saveCache(config, hash, built, { mimeType: 'image/png', bytes: fakePng(512, 512) });
+    const metadataPath = path.join(config.cacheDir, hash, 'metadata.json');
+    const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf8')) as Record<string, unknown>;
+    metadata.actualWidth = 999;
+    await fs.writeFile(metadataPath, JSON.stringify(metadata));
+    expect(await findCacheEntry(config, hash, built)).toBeNull();
   });
 });
 
@@ -242,6 +275,90 @@ describe('Phase 4 review and publish contracts', () => {
     expect(result.published).toHaveLength(0);
     const manifest = JSON.parse(await fs.readFile(config.manifestPath, 'utf8')) as { items: Record<string, string | null> };
     expect(manifest.items.bandage).toBeUndefined();
+  });
+
+  it('supersedes the previous active approval when a newer candidate is approved', async () => {
+    const { config, task, hash } = await cachedCandidate('item/bandage/icon');
+    const first = await reviewCandidate(config, task.id, hash, 'approved');
+    const second = await generateTask(config, task, { retryDelaysMs: [0] });
+    expect(second).not.toBeNull();
+    await reviewCandidate(config, task.id, second!.hash, 'approved');
+    const candidates = await listCandidates(config);
+    expect(candidates.find((candidate) => candidate.hash === first.hash)?.reviewStatus).toBe('superseded');
+    expect(candidates.filter((candidate) => candidate.taskId === task.id && candidate.reviewStatus === 'approved')).toHaveLength(1);
+  });
+
+  it('rejects duplicate active approvals before publishing', async () => {
+    const { config, task, hash } = await cachedCandidate('item/bandage/icon');
+    const first = await reviewCandidate(config, task.id, hash, 'approved');
+    const second = await generateTask(config, task, { retryDelaysMs: [0] });
+    expect(second).not.toBeNull();
+    const secondMetadataPath = path.join(config.rootDir, second!.imagePath.replace(/\.[^.]+$/, '.json'));
+    const secondMetadata = JSON.parse(await fs.readFile(secondMetadataPath, 'utf8')) as Record<string, unknown>;
+    secondMetadata.reviewStatus = 'approved';
+    await fs.writeFile(secondMetadataPath, JSON.stringify(secondMetadata));
+    expect(first.reviewStatus).toBe('approved');
+    await expect(publishApproved(config)).rejects.toThrow('duplicate active approvals');
+  });
+
+  it('restores the old public asset tree when the publish swap fails', async () => {
+    const { config, task, hash } = await cachedCandidate('item/bandage/icon');
+    await reviewCandidate(config, task.id, hash, 'approved');
+    const oldManifest = await fs.readFile(config.manifestPath, 'utf8');
+    const originalRename = fs.rename;
+    const failingRename: typeof fs.rename = async (from, to) => {
+      if (String(to) === config.publicAssetsDir && String(from).includes('.assets-publish-')) throw new Error('injected swap failure');
+      return originalRename(from, to);
+    };
+    await expect(publishApproved(config, { rename: failingRename })).rejects.toThrow('injected swap failure');
+    expect(await fs.readFile(config.manifestPath, 'utf8')).toBe(oldManifest);
+    await expect(fs.access(path.join(config.publicAssetsDir, 'manifest.json'))).resolves.toBeUndefined();
+  });
+
+  it('publishes provenance and is idempotent without changing publishedAt', async () => {
+    const { config, task, hash } = await cachedCandidate('item/bandage/icon');
+    await reviewCandidate(config, task.id, hash, 'approved');
+    const first = await publishApproved(config);
+    expect(first.changed).toBe(true);
+    const versionPath = path.join(config.publicAssetsDir, 'art-version.json');
+    const version = JSON.parse(await fs.readFile(versionPath, 'utf8')) as { publishedAt: string };
+    const provenance = await readProvenance(config);
+    expect(provenance.assets[task.id]).toMatchObject({ candidateHash: hash, provider: 'agnes' });
+    const second = await publishApproved(config);
+    expect(second.changed).toBe(false);
+    expect(JSON.parse(await fs.readFile(versionPath, 'utf8')).publishedAt).toBe(version.publishedAt);
+  });
+
+  it('records requested and actual dimensions in candidate metadata', async () => {
+    const { config, task, hash } = await cachedCandidate('character/scout/portrait');
+    const candidate = (await listCandidates(config)).find((item) => item.hash === hash)!;
+    expect(candidate).toMatchObject({
+      requestedWidth: task.width,
+      requestedHeight: task.height,
+      requestedRatio: '3:4',
+      actualWidth: task.width,
+      actualHeight: task.height,
+      actualMimeType: 'image/png',
+      provider: 'agnes',
+      promptHash: hash,
+    });
+  });
+
+  it('preserves the report mode and provider in the empty report contract', async () => {
+    const { emptyReport } = await import('../tools/art/generator');
+    expect(emptyReport()).toMatchObject({ mode: 'provider', provider: 'agnes', requested: 0, apiCalls: 0 });
+  });
+
+  it('accepts only bounded generation concurrency values', () => {
+    expect(parseArgs(['generate', '--concurrency', '1']).concurrency).toBe(1);
+    expect(parseArgs(['generate', '--concurrency', '2']).concurrency).toBe(2);
+    expect(parseArgs(['generate', '--concurrency', '3']).concurrency).toBe(3);
+  });
+
+  it('sanitizes report names without allowing path traversal', () => {
+    expect(sanitizeReportName('phase4a0/provider report')).toBe('phase4a0-provider-report');
+    expect(sanitizeReportName('../secret')).toBe('secret');
+    expect(() => sanitizeReportName('///')).toThrow('report name');
   });
 
   it('does not expose ArtPipelineError details with authorization headers', async () => {

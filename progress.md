@@ -36,3 +36,12 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Provide a valid/active provider credential before rerunning Round A. Do not commit it; run the four tasks individually through `npm run art:generate -- --task ...`.
 - Review each generated candidate manually. Only then run `art:approve` and `art:publish`.
 - Keep `generated != approved`; technical pipeline PASS and art-production PASS are separate states.
+
+## Phase 4A-0 progress (2026-08-08)
+
+- Read the Phase 4A-0 prompt and recorded the pre-change baseline in `PHASE4A0_BASELINE.md`: 584 tests, core frozen, previous Agnes Scout attempt blocked by HTTP 401 invalid token.
+- Split the Agnes provider adapter, implemented the minimal request body (`model`, `prompt`, `size`, `ratio`, `return_base64`), internal negative-prompt hashing, actual-byte dimension inspection, category resolution floors, cache integrity checks, review supersede, provenance, atomic publish rollback, idempotence, report separation, bounded concurrency, and tracked-repository secret scan.
+- Added `PHASE4_PROVIDER_SPEC.md`, `PHASE4_REVIEW_AND_PUBLISH_SPEC.md`, `PHASE4A0_AUDIT_FIXES.md`, `PHASE4A0_REPORT.md`, and Phase 4A-0 reports.
+- Verification: 610 tests PASS, typecheck PASS, build PASS, save/dependency audits PASS, offline doctor PASS, published manifest validation PASS, browser/repository secret scans PASS, dry-run 32 tasks / 0 API calls PASS.
+- Browser regression smoke rendered menu and gameplay screenshots with the fallback art path; `render_game_to_text` reported `mode=playing`, Scout in Hospital, time 0, and no console-error artifact.
+- Real provider execution remains blocked by the known 401 credential result. No candidate, approval, or AI asset publication was created.

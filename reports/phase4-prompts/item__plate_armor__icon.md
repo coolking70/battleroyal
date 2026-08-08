@@ -1,8 +1,9 @@
 # item/plate_armor/icon
 
-- Hash: `d9109d3a922d871be073066993445d499fa1677da32998f79527add299fd7413`
+- Hash: `0ab243453ff4563fa9530100d6c57231027e91a3b624e7f70446263a6d013183`
 - Model: `agnes-image-2.1-flash`
-- Size: 512x512
+- Requested size: 512x512
+- Requested ratio: 1:1
 - Revision: 1
 - Style profile version: `5e2f3c175e64`
 

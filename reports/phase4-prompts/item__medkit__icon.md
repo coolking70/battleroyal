@@ -1,8 +1,9 @@
 # item/medkit/icon
 
-- Hash: `3e6aae236cfe126dcabe70fa85b699d7b0edf6b3879d572b78a2da038dc691c0`
+- Hash: `4aa614d910d806fb93458f5b295457052c1ec639fdda11824e0edc1925824140`
 - Model: `agnes-image-2.1-flash`
-- Size: 512x512
+- Requested size: 512x512
+- Requested ratio: 1:1
 - Revision: 1
 - Style profile version: `5e2f3c175e64`
 

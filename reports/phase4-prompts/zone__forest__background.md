@@ -1,8 +1,9 @@
 # zone/forest/background
 
-- Hash: `1e6462e9d3b417d92147c5c3d7118d2553f3e9b6dbff204d41f6706a105b0b54`
+- Hash: `0c35133e65478fce7768bf58b9f6971d3af3122741e90851c23dac4ef3889b35`
 - Model: `agnes-image-2.1-flash`
-- Size: 1536x864
+- Requested size: 1536x864
+- Requested ratio: 16:9
 - Revision: 1
 - Style profile version: `dcd653eae6f0`
 

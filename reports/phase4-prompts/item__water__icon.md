@@ -1,8 +1,9 @@
 # item/water/icon
 
-- Hash: `f761474d5370948d58a0240c973b85f96360ac34c7a9867e77397730556236b3`
+- Hash: `8dfe2a30619258c29ebb08fdd23586b0e04d3f7f0aed447422ad47c6ffa3e8e7`
 - Model: `agnes-image-2.1-flash`
-- Size: 512x512
+- Requested size: 512x512
+- Requested ratio: 1:1
 - Revision: 1
 - Style profile version: `5e2f3c175e64`
 

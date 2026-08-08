@@ -1,0 +1,25 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "status": "blocked_by_credential",
+  "endpoint": "https://apihub.agnes-ai.com/v1/images/generations",
+  "model": "agnes-image-2.1-flash",
+  "attemptedTasks": [
+    {
+      "taskId": "character/scout/portrait",
+      "apiCalls": 1,
+      "status": "failed",
+      "errorCategory": "auth",
+      "httpStatus": 401,
+      "message": "provider returned invalid token"
+    }
+  ],
+  "notAttemptedAfterAuthFailure": [
+    "zone/school/background",
+    "item/bandage/icon",
+    "world_event/blackout/illustration"
+  ],
+  "generated": 0,
+  "approved": 0,
+  "published": 0
+}

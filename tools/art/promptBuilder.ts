@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ArtTask, BuiltPrompt } from './types';
+import { ratioForDimensions } from './providers/agnes';
 
 const STYLE_FILE_BY_PROFILE: Record<string, string> = {
   character: 'character-style.md',
@@ -59,6 +60,7 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
     model,
     width: task.width,
     height: task.height,
+    requestedRatio: ratioForDimensions(task.width, task.height),
     styleProfileVersion: styleVersion,
   };
 }
@@ -71,6 +73,7 @@ export function promptHashInput(built: BuiltPrompt): Record<string, unknown> {
     model: built.model,
     width: built.width,
     height: built.height,
+    requestedRatio: built.requestedRatio,
     revision: built.task.revision,
     styleProfileVersion: built.styleProfileVersion,
   };

@@ -1,8 +1,9 @@
 # zone/lab/background
 
-- Hash: `43d04db7b0f2f1ae1e1b9da61baea456363b873f6eb841c715b36183c57375d8`
+- Hash: `e31fd167b12b51c7d4fc25a7e955bf88dd1e85428226cbcb4b16da5cae58f3d5`
 - Model: `agnes-image-2.1-flash`
-- Size: 1536x864
+- Requested size: 1536x864
+- Requested ratio: 16:9
 - Revision: 1
 - Style profile version: `dcd653eae6f0`
 

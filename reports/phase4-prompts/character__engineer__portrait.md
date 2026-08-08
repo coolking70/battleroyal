@@ -1,8 +1,9 @@
 # character/engineer/portrait
 
-- Hash: `cc702d2642ef684eb3708b78120ece17733691dd4145781551ba26aa8189f4aa`
+- Hash: `33252d096ec5c5420b4baab30fecb4d76091bdeed6eba272cddc54d57b8ad6d1`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x1024
+- Requested size: 768x1024
+- Requested ratio: 3:4
 - Revision: 1
 - Style profile version: `2c38f46d3530`
 

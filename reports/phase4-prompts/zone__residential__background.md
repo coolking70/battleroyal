@@ -1,8 +1,9 @@
 # zone/residential/background
 
-- Hash: `1fbe6fbeb80dbb684df9e37feb0f2b7289348cbe6149e0052bc470d5bddb0feb`
+- Hash: `6fa858f5765a9c6dc1c32dc26228d00e348d8299a774db796f6ac17a28b3ffa8`
 - Model: `agnes-image-2.1-flash`
-- Size: 1536x864
+- Requested size: 1536x864
+- Requested ratio: 16:9
 - Revision: 1
 - Style profile version: `dcd653eae6f0`
 

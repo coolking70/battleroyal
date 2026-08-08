@@ -55,12 +55,25 @@ export async function reviewCandidate(
   if (status === 'approved' && candidate.validationStatus !== 'passed') {
     throw new Error('cannot approve a candidate whose automatic validation failed');
   }
-  const metadataPath = path.join(config.rootDir, candidate.imagePath.replace(/\.[^.]+$/, '.json'));
+  const reviews = await readReviews(config);
+  const reviewedAt = new Date().toISOString();
+  if (status === 'approved') {
+    const active = candidates.filter((item) => item.taskId === taskId && item.hash !== candidateHash && item.reviewStatus === 'approved');
+    for (const old of active) {
+      old.reviewStatus = 'superseded';
+      await writeCandidateMetadata(config, old);
+      reviews.push({ taskId, candidateHash: old.hash, status: 'superseded', reason: `superseded by ${candidateHash}`, reviewedAt });
+    }
+  }
   candidate.reviewStatus = status;
   if (reason) candidate.reviewReason = reason;
-  await fs.writeFile(metadataPath, JSON.stringify(candidate, null, 2));
-  const reviews = await readReviews(config);
-  reviews.push({ taskId, candidateHash, status, ...(reason ? { reason } : {}), reviewedAt: new Date().toISOString() });
+  await writeCandidateMetadata(config, candidate);
+  reviews.push({ taskId, candidateHash, status, ...(reason ? { reason } : {}), reviewedAt });
   await writeReviews(config, reviews);
   return candidate;
+}
+
+async function writeCandidateMetadata(config: ArtConfig, candidate: CandidateMetadata): Promise<void> {
+  const metadataPath = path.join(config.rootDir, candidate.imagePath.replace(/\.[^.]+$/, '.json'));
+  await fs.writeFile(metadataPath, JSON.stringify(candidate, null, 2));
 }

@@ -1,8 +1,9 @@
 # item/simple_bow/icon
 
-- Hash: `95ba806832cbe988c205ac040080b0376abba344de5398489e5dae9f86d70fd4`
+- Hash: `9cf4b5518c6b03a2fafc62ec91d808bd51436ccf2d314f2b72a8a56542ec75d4`
 - Model: `agnes-image-2.1-flash`
-- Size: 512x512
+- Requested size: 512x512
+- Requested ratio: 1:1
 - Revision: 1
 - Style profile version: `5e2f3c175e64`
 

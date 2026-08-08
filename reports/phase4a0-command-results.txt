@@ -1,0 +1,13 @@
+Phase 4A-0 command results
+
+Baseline
+- npm test -- --reporter=dot: PASS, 42 files / 584 tests
+- npm run simulate -- --games 500 --seed-prefix PHASE4A0: engine PASS; character balance observation recorded separately
+
+Contract checks
+- npm run typecheck: PASS
+- npm test -- --run tests/agnesProvider.test.ts tests/artPipeline.test.ts: PASS
+
+Provider state
+- Agnes Scout attempt: HTTP 401 invalid token; stopped after first task
+- No credential written to the repository or reports

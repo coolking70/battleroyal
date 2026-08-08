@@ -1,8 +1,9 @@
 # character/fighter/portrait
 
-- Hash: `1ad90e2076976edf19c9af83035813e5af24cf7237ba6cab45dfd1f1bce3fc08`
+- Hash: `bd85673ccc909afcca80b4ae7df233d17045f285b7bcf6088f47cdc394f05f4d`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x1024
+- Requested size: 768x1024
+- Requested ratio: 3:4
 - Revision: 1
 - Style profile version: `2c38f46d3530`
 

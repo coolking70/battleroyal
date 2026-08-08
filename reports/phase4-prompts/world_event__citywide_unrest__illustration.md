@@ -1,8 +1,9 @@
 # world_event/citywide_unrest/illustration
 
-- Hash: `9fcb663183ea6a68c4c4d389b5d315f97a497f564742562774307bdab683d8c8`
+- Hash: `da807226f85c37229ff2ccaefa3d19be2abf94935200b366360976b8c550e12c`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x432
+- Requested size: 768x432
+- Requested ratio: 16:9
 - Revision: 1
 - Style profile version: `430854a859ef`
 

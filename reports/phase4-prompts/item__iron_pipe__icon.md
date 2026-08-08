@@ -1,8 +1,9 @@
 # item/iron_pipe/icon
 
-- Hash: `559599103f6ef51dd0806aacff52e89a9409007e1baea00ecc22ff9864e7bea1`
+- Hash: `6c64099e69c59c7eeae9e6bac9eb5e4e6650784cf4fe6eaf480b11321c9835fc`
 - Model: `agnes-image-2.1-flash`
-- Size: 512x512
+- Requested size: 512x512
+- Requested ratio: 1:1
 - Revision: 1
 - Style profile version: `5e2f3c175e64`
 

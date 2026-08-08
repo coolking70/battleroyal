@@ -1,8 +1,9 @@
 # item/wood/icon
 
-- Hash: `860d1e985faf84f6ed5defaa21e96b65bea03efc0404074c91e21bb9f9a7ff75`
+- Hash: `f590a64ec5d309dbf1a986160f8445eff29d28dc965ced844dc19f6ae0dd67a9`
 - Model: `agnes-image-2.1-flash`
-- Size: 512x512
+- Requested size: 512x512
+- Requested ratio: 1:1
 - Revision: 1
 - Style profile version: `5e2f3c175e64`
 

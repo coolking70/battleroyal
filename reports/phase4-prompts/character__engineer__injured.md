@@ -1,8 +1,9 @@
 # character/engineer/injured
 
-- Hash: `d79c56f99f6dfc81160212e3da955616284e9f8470101bec416f91c662046ab9`
+- Hash: `8f9ed207896c39d1ccb4228a573834e3d7092e3368b338dc7cc4919e7f2f762e`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x1024
+- Requested size: 768x1024
+- Requested ratio: 3:4
 - Revision: 1
 - Style profile version: `2c38f46d3530`
 

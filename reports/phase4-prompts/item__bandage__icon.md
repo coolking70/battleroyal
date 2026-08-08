@@ -1,8 +1,9 @@
 # item/bandage/icon
 
-- Hash: `1c19ebb95012d541bb307918806eecfb6d005cd47e6302252103425aa7661ddf`
+- Hash: `fa8b8d8b6fc778c085592ab0d5e3a53d20002d6da8c99bc42cf9fbde388794bf`
 - Model: `agnes-image-2.1-flash`
-- Size: 512x512
+- Requested size: 512x512
+- Requested ratio: 1:1
 - Revision: 1
 - Style profile version: `5e2f3c175e64`
 

@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { createArtConfig, hasUsableApiConfig } from './config';
 import { contentHash } from './cache';
 import { generateTask, emptyReport, writePromptReport } from './generator';
@@ -16,24 +17,30 @@ interface Args {
   status?: string;
   candidate?: string;
   reason?: string;
+  reportName?: string;
+  concurrency?: number;
+  debugRequest: boolean;
   force: boolean;
   dryRun: boolean;
   offline: boolean;
 }
 
-function parseArgs(argv: string[]): Args {
+export function parseArgs(argv: string[]): Args {
   const [command = 'help', ...rest] = argv;
-  const args: Args = { command, force: false, dryRun: false, offline: false };
+  const args: Args = { command, force: false, dryRun: false, offline: false, debugRequest: false };
   for (let i = 0; i < rest.length; i += 1) {
     const value = rest[i];
     if (value === '--force') args.force = true;
     else if (value === '--dry-run') args.dryRun = true;
     else if (value === '--offline') args.offline = true;
+    else if (value === '--debug-request') args.debugRequest = true;
     else if (value === '--task') args.taskId = rest[++i];
     else if (value === '--category') args.category = rest[++i];
     else if (value === '--status') args.status = rest[++i];
     else if (value === '--candidate') args.candidate = rest[++i];
     else if (value === '--reason') args.reason = rest[++i];
+    else if (value === '--report-name') args.reportName = rest[++i];
+    else if (value === '--concurrency') args.concurrency = Number(rest[++i]);
   }
   return args;
 }
@@ -42,14 +49,16 @@ function printHelp(): void {
   console.log(`art pipeline commands:
   art:doctor [--offline]
   art:prompt --task character/scout/portrait
-  art:generate [--task ...|--category characters|--status missing] [--dry-run] [--force]
+  art:generate [--task ...|--category characters|--status missing] [--dry-run] [--force] [--concurrency 1|2] [--report-name name]
   art:list
   art:approve --task ... --candidate <contentHash>
   art:reject --task ... --candidate <contentHash> --reason "..."
   art:publish
   art:validate
   art:api-check
-  art:smoke`);
+  art:smoke
+  art:security:browser
+  art:security:repo`);
 }
 
 async function doctor(config: ArtConfig, offline: boolean): Promise<number> {
@@ -68,6 +77,7 @@ async function doctor(config: ArtConfig, offline: boolean): Promise<number> {
     'art/style/event-style.md',
     'art/style/negative-prompt.txt',
     'public/assets/manifest.json',
+    'art/approved-assets.json',
   ]) {
     try {
       await fs.access(path.join(config.rootDir, relative));
@@ -81,6 +91,12 @@ async function doctor(config: ArtConfig, offline: boolean): Promise<number> {
     checks.push(['candidate directory', true, config.candidateDir]);
   } catch {
     checks.push(['candidate directory', false, 'not writable']);
+  }
+  try {
+    await fs.mkdir(config.cacheDir, { recursive: true });
+    checks.push(['cache directory', true, config.cacheDir]);
+  } catch {
+    checks.push(['cache directory', false, 'not writable']);
   }
   checks.push(['API configuration', true, offline ? 'offline check' : hasUsableApiConfig(config) ? 'configured' : 'WARN: IMAGE_API_KEY is not set']);
   for (const [name, pass, detail] of checks) console.log(`${pass ? 'PASS' : 'FAIL'} ${name}: ${detail}`);
@@ -99,6 +115,9 @@ async function promptCommand(config: ArtConfig, task: ArtTask): Promise<void> {
 }
 
 async function generateCommand(config: ArtConfig, args: Args): Promise<number> {
+  const concurrency = args.concurrency ?? 1;
+  if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 2) throw new Error('--concurrency must be an integer from 1 to 2');
+  if (args.debugRequest) process.env.IMAGE_API_DEBUG_REQUEST = '1';
   const allTasks = await loadTasks(config.rootDir);
   let tasks = selectTasks(allTasks, args);
   if (args.status === 'missing') {
@@ -108,7 +127,8 @@ async function generateCommand(config: ArtConfig, args: Args): Promise<number> {
   }
   if (tasks.length === 0) throw new Error('no matching art tasks');
   const report = emptyReport();
-  for (const task of tasks) {
+  report.mode = args.dryRun ? 'dry-run' : 'provider';
+  const runTask = async (task: ArtTask): Promise<void> => {
     const built = await buildPrompt(config.rootDir, task, config.model);
     await writePromptReport(config.rootDir, built, contentHash(built));
     try {
@@ -119,9 +139,19 @@ async function generateCommand(config: ArtConfig, args: Args): Promise<number> {
       report.tasks.push({ taskId: task.id, hash: contentHash(built), source: 'api', status: 'failed', errors: [errorMessage(error)] });
       console.error(`FAIL ${task.id}: ${errorMessage(error)}`);
     }
-  }
+  };
+  const queue = [...tasks];
+  const worker = async (): Promise<void> => {
+    while (queue.length > 0) {
+      const task = queue.shift();
+      if (task) await runTask(task);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, tasks.length) }, () => worker()));
   await fs.mkdir(path.join(config.rootDir, 'reports'), { recursive: true });
-  await fs.writeFile(path.join(config.rootDir, 'reports', 'phase4-generation-report.json'), `${JSON.stringify(report, null, 2)}\n`);
+  const defaultReportName = args.dryRun ? 'phase4-dry-run-report' : 'phase4-provider-attempt-report';
+  const reportName = sanitizeReportName(args.reportName ?? defaultReportName);
+  await fs.writeFile(path.join(config.rootDir, 'reports', `${reportName}.json`), `${JSON.stringify(report, null, 2)}\n`);
   console.log(JSON.stringify(report, null, 2));
   return report.failed > 0 && !args.dryRun ? 1 : 0;
 }
@@ -162,7 +192,7 @@ async function main(): Promise<number> {
     }
     case 'publish': {
       const result = await publishApproved(config);
-      console.log(`PUBLISHED ${result.published.length} approved candidates; manifest ${result.manifestHash}`);
+      console.log(result.changed ? `PUBLISHED ${result.published.length} approved candidates; manifest ${result.manifestHash}` : 'NO CHANGES: no new approved assets to publish');
       return 0;
     }
     case 'validate': {
@@ -178,16 +208,24 @@ async function main(): Promise<number> {
       console.log(`API base URL: ${config.baseUrl}`);
       console.log(`Model: ${config.model}`);
       console.log(`API key: ${config.apiKey ? 'configured (value hidden)' : 'missing'}`);
-      return config.apiKey && /^https?:\/\//.test(config.baseUrl) ? 0 : 1;
+      return config.apiKey && /^https?:\/\/[^/]+\/v1\/images\/generations$/.test(config.baseUrl) && config.model === 'agnes-image-2.1-flash' ? 0 : 1;
     case 'smoke':
-      return generateCommand(config, { ...args, command: 'generate', taskId: 'character/scout/portrait' });
+      return generateCommand(config, { ...args, command: 'generate', taskId: 'character/scout/portrait', reportName: args.reportName ?? 'phase4-provider-attempt-report', concurrency: 1 });
     default: printHelp(); return 0;
   }
 }
 
-main().then((code) => {
-  process.exitCode = code;
-}).catch((error: unknown) => {
-  console.error(`FAIL ${errorMessage(error)}`);
-  process.exitCode = 1;
-});
+export function sanitizeReportName(value: string): string {
+  const safe = value.replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  if (!safe) throw new Error('report name must contain letters, numbers, _ or -');
+  return safe;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().then((code) => {
+    process.exitCode = code;
+  }).catch((error: unknown) => {
+    console.error(`FAIL ${errorMessage(error)}`);
+    process.exitCode = 1;
+  });
+}

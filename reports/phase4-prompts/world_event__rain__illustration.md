@@ -1,8 +1,9 @@
 # world_event/rain/illustration
 
-- Hash: `e1330adc08da4e391b5bafdb36c4e205855da1351bb645a3fad206b51b287f4f`
+- Hash: `b7657b1fd89c2b2f4f1bf229894009c05b25f5013c4401d072cc94db58bfbbed`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x432
+- Requested size: 768x432
+- Requested ratio: 16:9
 - Revision: 1
 - Style profile version: `430854a859ef`
 

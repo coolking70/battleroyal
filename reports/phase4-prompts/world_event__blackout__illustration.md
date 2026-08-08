@@ -1,8 +1,9 @@
 # world_event/blackout/illustration
 
-- Hash: `3c9886f80c387959144e6c261b65847bb4387dec0260c00197c516c8044f753f`
+- Hash: `004497ade1bb934a4c80addfefcea9256327edcc1aa4edc067a8ec51dac0a78c`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x432
+- Requested size: 768x432
+- Requested ratio: 16:9
 - Revision: 1
 - Style profile version: `430854a859ef`
 

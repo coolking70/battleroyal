@@ -15,6 +15,7 @@ export function createArtConfig(rootDir = process.cwd(), env = process.env): Art
     candidateDir: path.join(rootDir, 'art', 'candidates'),
     publicAssetsDir,
     manifestPath: path.join(publicAssetsDir, 'manifest.json'),
+    approvedAssetsPath: path.join(rootDir, 'art', 'approved-assets.json'),
     reviewsPath: path.join(rootDir, 'art', 'reviews.json'),
     requestTimeoutMs: Number(env.IMAGE_API_TIMEOUT_MS) || 120_000,
   };

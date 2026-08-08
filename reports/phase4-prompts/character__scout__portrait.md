@@ -1,8 +1,9 @@
 # character/scout/portrait
 
-- Hash: `542172bfa0611d0c0965b39ac8c8f2835911df7d630577f6a21c8932fe92322f`
+- Hash: `14511e9a5fb98a79962cc31732cf92d30903a0613f6a3e7141dad4809fbaf625`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x1024
+- Requested size: 768x1024
+- Requested ratio: 3:4
 - Revision: 1
 - Style profile version: `2c38f46d3530`
 

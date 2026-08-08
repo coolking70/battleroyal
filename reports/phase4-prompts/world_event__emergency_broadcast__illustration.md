@@ -1,8 +1,9 @@
 # world_event/emergency_broadcast/illustration
 
-- Hash: `5da10b8c737bef01ac9c8d07e4664c80c1f3adc35e18ef48834a31292028f9c3`
+- Hash: `e4051c6877ea4088cfb3ec14c95dbd4d2deeb604caae1f9b98281a2ce643b003`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x432
+- Requested size: 768x432
+- Requested ratio: 16:9
 - Revision: 1
 - Style profile version: `430854a859ef`
 

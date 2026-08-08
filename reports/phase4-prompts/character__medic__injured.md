@@ -1,8 +1,9 @@
 # character/medic/injured
 
-- Hash: `7b360124732a64e1709fda711fcf9a0cd940cb658fe1766ef8e148f52e0a7bf2`
+- Hash: `633a002c08c60848714849cbd38df7c9636615e014a6bd1ff44b53eeba383e63`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x1024
+- Requested size: 768x1024
+- Requested ratio: 3:4
 - Revision: 1
 - Style profile version: `2c38f46d3530`
 

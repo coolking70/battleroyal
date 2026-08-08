@@ -1,8 +1,9 @@
 # item/energy_drink/icon
 
-- Hash: `e4697c039c39897b031415fa43a4f1db9e9a39898171bdab9b8f998bc1d9e4bd`
+- Hash: `5d99d023ab3750a348f1a91b45f7afd62c164d4d00682daac74349365c5c9e77`
 - Model: `agnes-image-2.1-flash`
-- Size: 512x512
+- Requested size: 512x512
+- Requested ratio: 1:1
 - Revision: 1
 - Style profile version: `5e2f3c175e64`
 

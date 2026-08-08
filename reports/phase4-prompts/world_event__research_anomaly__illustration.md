@@ -1,8 +1,9 @@
 # world_event/research_anomaly/illustration
 
-- Hash: `57d2fa8ff03b5848e50e967a02b08ff54f9c51de1b03d8523ec3dcab79d18104`
+- Hash: `5f35b02b5058c6161f0ad7efefde6c38e9e9db8c0c2e8c7e818009f806103be5`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x432
+- Requested size: 768x432
+- Requested ratio: 16:9
 - Revision: 1
 - Style profile version: `430854a859ef`
 

@@ -1,8 +1,9 @@
 # zone/hospital/background
 
-- Hash: `dfde8d9961a2407c2a556ee209a23373b4f827558ba3b825965e67f923ac4bb4`
+- Hash: `4bde839bc70d2a6c2b5d8a34f28357f6ee4d2986fba06cc67776cb9258e37c9e`
 - Model: `agnes-image-2.1-flash`
-- Size: 1536x864
+- Requested size: 1536x864
+- Requested ratio: 16:9
 - Revision: 1
 - Style profile version: `dcd653eae6f0`
 

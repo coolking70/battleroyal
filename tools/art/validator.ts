@@ -3,8 +3,16 @@ import path from 'node:path';
 import type { ArtConfig, ArtManifest, ArtTask, ValidationResult } from './types';
 
 const SUPPORTED_MIME = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
+const MAX_DIMENSION = 8192;
 
-function mimeAndDimensions(bytes: Buffer): { mimeType: string; width: number; height: number; alpha: boolean } | null {
+export interface ImageInspection {
+  mimeType: string;
+  width: number;
+  height: number;
+  alpha: boolean;
+}
+
+export function inspectImageBytes(bytes: Buffer): ImageInspection | null {
   if (bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) && bytes.length >= 26) {
     return {
       mimeType: 'image/png',
@@ -53,26 +61,39 @@ function mimeAndDimensions(bytes: Buffer): { mimeType: string; width: number; he
 
 export function validateImageBytes(
   bytes: Buffer,
-  task: Pick<ArtTask, 'width' | 'height' | 'alphaRequired'>,
+  task: Pick<ArtTask, 'category' | 'width' | 'height' | 'alphaRequired'>,
 ): ValidationResult {
   const errors: string[] = [];
   if (bytes.byteLength < 100) errors.push('file is smaller than 100 bytes');
-  const info = mimeAndDimensions(bytes);
+  const info = inspectImageBytes(bytes);
   if (!info) {
-    return { status: 'failed', mimeType: null, width: null, height: null, errors: [...errors, 'unsupported or undecodable image'] };
+    return { status: 'failed', mimeType: null, actualWidth: null, actualHeight: null, errors: [...errors, 'unsupported or undecodable image'] };
   }
   if (!SUPPORTED_MIME.has(info.mimeType)) errors.push(`unsupported MIME: ${info.mimeType}`);
+  if (info.width < 1 || info.height < 1) errors.push('image dimensions must be positive');
+  if (info.width > MAX_DIMENSION || info.height > MAX_DIMENSION) errors.push(`image dimensions exceed ${MAX_DIMENSION}px safety limit`);
   const expectedRatio = task.width / task.height;
   const actualRatio = info.width / info.height;
   if (Math.abs(actualRatio - expectedRatio) / expectedRatio > 0.05) errors.push(`aspect ratio ${actualRatio.toFixed(4)} exceeds 5% tolerance`);
+  const floor = resolutionFloor(task.category);
+  if (info.width < floor.width || info.height < floor.height) errors.push(`actual resolution ${info.width}x${info.height} is below ${floor.width}x${floor.height} floor`);
   if (task.alphaRequired && !info.alpha) errors.push('transparent alpha channel is required');
   return {
     status: errors.length === 0 ? 'passed' : 'failed',
     mimeType: info.mimeType,
-    width: info.width,
-    height: info.height,
+    actualWidth: info.width,
+    actualHeight: info.height,
     errors,
   };
+}
+
+function resolutionFloor(category: ArtTask['category']): { width: number; height: number } {
+  switch (category) {
+    case 'character': return { width: 700, height: 900 };
+    case 'zone': return { width: 1000, height: 550 };
+    case 'item': return { width: 512, height: 512 };
+    case 'world_event': return { width: 700, height: 390 };
+  }
 }
 
 export function isSafePublishedPath(value: string): boolean {
@@ -120,7 +141,7 @@ export async function validateImageFile(filePath: string, task: ArtTask): Promis
     const bytes = await fs.readFile(filePath);
     return validateImageBytes(bytes, task);
   } catch {
-    return { status: 'failed', mimeType: null, width: null, height: null, errors: ['file does not exist or is unreadable'] };
+    return { status: 'failed', mimeType: null, actualWidth: null, actualHeight: null, errors: ['file does not exist or is unreadable'] };
   }
 }
 

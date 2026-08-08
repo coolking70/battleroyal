@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ArtConfig, BuiltPrompt, ImageGenerationResult } from './types';
 import { promptHashInput } from './promptBuilder';
+import { validateImageBytes } from './validator';
 
 export interface CacheEntry {
   hash: string;
@@ -10,6 +11,8 @@ export interface CacheEntry {
   metadataPath: string;
   mimeType: string;
   bytes: number;
+  actualWidth: number;
+  actualHeight: number;
 }
 
 function extensionForMime(mimeType: string): string {
@@ -26,22 +29,34 @@ export function contentHash(built: BuiltPrompt): string {
     .digest('hex');
 }
 
-export async function findCacheEntry(config: ArtConfig, hash: string): Promise<CacheEntry | null> {
+export async function findCacheEntry(config: ArtConfig, hash: string, built?: BuiltPrompt): Promise<CacheEntry | null> {
   const dir = path.join(config.cacheDir, hash);
   try {
     const metadata = JSON.parse(await fs.readFile(path.join(dir, 'metadata.json'), 'utf8')) as {
       mimeType?: string;
       bytes?: number;
+      requestedWidth?: number;
+      requestedHeight?: number;
+      requestedRatio?: string;
+      actualWidth?: number;
+      actualHeight?: number;
     };
     const entries = await fs.readdir(dir);
     const imageName = entries.find((entry) => entry.startsWith('image.'));
     if (!imageName || typeof metadata.mimeType !== 'string') return null;
+    const imagePath = path.join(dir, imageName);
+    const bytes = await fs.readFile(imagePath);
+    if (!built || metadata.requestedWidth === undefined) return null;
+    const validation = validateImageBytes(bytes, built.task);
+    if (validation.status !== 'passed' || metadata.requestedWidth !== built.width || metadata.requestedHeight !== built.height || metadata.requestedRatio !== built.requestedRatio || metadata.mimeType !== validation.mimeType || metadata.actualWidth !== validation.actualWidth || metadata.actualHeight !== validation.actualHeight || metadata.bytes !== bytes.byteLength) return null;
     return {
       hash,
-      imagePath: path.join(dir, imageName),
+      imagePath,
       metadataPath: path.join(dir, 'metadata.json'),
       mimeType: metadata.mimeType,
-      bytes: metadata.bytes ?? (await fs.stat(path.join(dir, imageName))).size,
+      bytes: bytes.byteLength,
+      actualWidth: validation.actualWidth!,
+      actualHeight: validation.actualHeight!,
     };
   } catch {
     return null;
@@ -59,6 +74,7 @@ export async function saveCache(
   const imageName = `image.${extensionForMime(result.mimeType)}`;
   const imagePath = path.join(dir, imageName);
   await fs.writeFile(imagePath, result.bytes);
+  const validation = validateImageBytes(result.bytes, built.task);
   const metadataPath = path.join(dir, 'metadata.json');
   await fs.writeFile(
     metadataPath,
@@ -67,8 +83,11 @@ export async function saveCache(
         hash,
         taskId: built.task.id,
         model: built.model,
-        width: built.width,
-        height: built.height,
+        requestedWidth: built.width,
+        requestedHeight: built.height,
+        requestedRatio: built.requestedRatio,
+        actualWidth: validation.actualWidth,
+        actualHeight: validation.actualHeight,
         prompt: built.prompt,
         negativePrompt: built.negativePrompt,
         styleProfileVersion: built.styleProfileVersion,
@@ -87,6 +106,8 @@ export async function saveCache(
     metadataPath,
     mimeType: result.mimeType,
     bytes: result.bytes.byteLength,
+    actualWidth: validation.actualWidth ?? 0,
+    actualHeight: validation.actualHeight ?? 0,
   };
 }
 

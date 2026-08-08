@@ -1,8 +1,9 @@
 # item/battery/icon
 
-- Hash: `55bef74f49cb27d1ea4f18cc4cd5e0713e2310c8db658170a250392553cc887f`
+- Hash: `e529b3b61c486e9f6374cb82421de3b5e98dc2f0f7dffb3b2fbebe7f86914fe2`
 - Model: `agnes-image-2.1-flash`
-- Size: 512x512
+- Requested size: 512x512
+- Requested ratio: 1:1
 - Revision: 1
 - Style profile version: `5e2f3c175e64`
 

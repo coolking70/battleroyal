@@ -1,8 +1,9 @@
 # character/scout/injured
 
-- Hash: `e3458cec213d1063e6c56d8deb598372598591ff53e9028a0f6e6e7d896e7204`
+- Hash: `73f87758aea8dc2fd8c98356b25dbc6e4cb4dd256acc496ac390f268dac685e1`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x1024
+- Requested size: 768x1024
+- Requested ratio: 3:4
 - Revision: 1
 - Style profile version: `2c38f46d3530`
 

@@ -1,8 +1,9 @@
 # item/iron/icon
 
-- Hash: `b8754253091d57b13797ab84fefa484463e20f1e7b312135e42fa454c8e6184a`
+- Hash: `977ef95e5bcd5b403df47f75a6daffda640fae9ffe56574d067b1f5a4634b709`
 - Model: `agnes-image-2.1-flash`
-- Size: 512x512
+- Requested size: 512x512
+- Requested ratio: 1:1
 - Revision: 1
 - Style profile version: `5e2f3c175e64`
 

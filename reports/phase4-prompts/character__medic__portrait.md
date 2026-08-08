@@ -1,8 +1,9 @@
 # character/medic/portrait
 
-- Hash: `996969106dc24525a0c98163fd5ce0165040ee053f710a2b2289e9ea3f428db0`
+- Hash: `e343adddd454671f2542a579c14b8d7aa12b3b6b3141ea7469e2021531c9bebc`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x1024
+- Requested size: 768x1024
+- Requested ratio: 3:4
 - Revision: 1
 - Style profile version: `2c38f46d3530`
 

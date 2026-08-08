@@ -1,8 +1,9 @@
 # zone/school/background
 
-- Hash: `a600930940a594112d0363b85a4cd9f3c21d575e739f9c5c31db52cb5454014d`
+- Hash: `0256c79e2c5a9e0ad48378e16e74849e7da3d0d864f056ab75697dc4043be1d1`
 - Model: `agnes-image-2.1-flash`
-- Size: 1536x864
+- Requested size: 1536x864
+- Requested ratio: 16:9
 - Revision: 1
 - Style profile version: `dcd653eae6f0`
 

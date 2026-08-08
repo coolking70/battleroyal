@@ -1,8 +1,9 @@
 # character/fighter/injured
 
-- Hash: `316e626c63cbc069a841d9051a959c943e640b2a812db658a6e8aeb7028662c8`
+- Hash: `730c3b8ee1ab18420925d85ac75ce10d6721e86cee3779ccdbcd04692f99f8b3`
 - Model: `agnes-image-2.1-flash`
-- Size: 768x1024
+- Requested size: 768x1024
+- Requested ratio: 3:4
 - Revision: 1
 - Style profile version: `2c38f46d3530`
 

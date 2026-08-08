@@ -42,11 +42,14 @@ jobs:
       - name: Art manifest validation
         run: npm run art:validate
 
-      - name: Browser secret scan
-        run: npm run art:security
+      - name: Browser secret boundary scan
+        run: npm run art:security:browser
+
+      - name: Tracked repository secret scan
+        run: npm run art:security:repo
 
       - name: Art generation dry run
-        run: npm run art:generate -- --dry-run
+        run: npm run art:generate -- --dry-run --report-name ci-art-dry-run-report
 
       # Phase 3A-1：CI 只跑 100 局快速模拟（正式 3000 局在交付前手动跑）。
       # --ci 只守规模无关门槛（引擎健康+风格+命中差+技能玩家侧），

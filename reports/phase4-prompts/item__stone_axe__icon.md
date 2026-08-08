@@ -1,8 +1,9 @@
 # item/stone_axe/icon
 
-- Hash: `df0b705c729b10d0c6a7117fc5fc340aa0e0c1672525d7af3b83cad584e03296`
+- Hash: `fd3c22d534a22f2ec9bce1c884ad647ea904fdd9cb18f4e9c4b4b4169c8a1532`
 - Model: `agnes-image-2.1-flash`
-- Size: 512x512
+- Requested size: 512x512
+- Requested ratio: 1:1
 - Revision: 1
 - Style profile version: `5e2f3c175e64`
 

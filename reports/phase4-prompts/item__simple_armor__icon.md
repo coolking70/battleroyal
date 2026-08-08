@@ -1,8 +1,9 @@
 # item/simple_armor/icon
 
-- Hash: `df4c6f4dc8404cb138d161adf216304b5c03f553dbcbfae9979a210f95a6c2a8`
+- Hash: `a03471a220ab41cffd3ecdc352248a4653ff22d44c428c30fe290169b8b7b4f8`
 - Model: `agnes-image-2.1-flash`
-- Size: 512x512
+- Requested size: 512x512
+- Requested ratio: 1:1
 - Revision: 1
 - Style profile version: `5e2f3c175e64`
 

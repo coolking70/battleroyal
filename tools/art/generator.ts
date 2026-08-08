@@ -8,6 +8,8 @@ import type { ArtConfig, ArtTask, CandidateMetadata, GenerationError, ImageGener
 import { ArtPipelineError } from './types';
 
 export interface GenerationReport {
+  mode: 'dry-run' | 'provider';
+  provider: 'agnes';
   requested: number;
   cacheHits: number;
   apiCalls: number;
@@ -54,6 +56,7 @@ async function generateWithRetry(
         negativePrompt: built.negativePrompt,
         width: built.width,
         height: built.height,
+        requestedRatio: built.requestedRatio,
       });
     } catch (error) {
       const details = await retryableError(error);
@@ -86,14 +89,20 @@ async function writeCandidate(
     taskId: task.id,
     hash: candidateHash,
     contentHash: contentHashValue,
+    promptHash: contentHashValue,
+    provider: 'agnes',
     model: built.model,
     generatedAt: new Date().toISOString(),
-    width: built.width,
-    height: built.height,
+    requestedWidth: built.width,
+    requestedHeight: built.height,
+    requestedRatio: built.requestedRatio,
+    actualWidth: validation.actualWidth ?? 0,
+    actualHeight: validation.actualHeight ?? 0,
     prompt: built.prompt,
     negativePrompt: built.negativePrompt,
     styleProfileVersion: built.styleProfileVersion,
     mimeType: result.mimeType,
+    actualMimeType: validation.mimeType ?? result.mimeType,
     bytes: result.bytes.byteLength,
     imagePath: path.relative(config.rootDir, imagePath),
     publicPath: publicAssetPath(task, result.mimeType),
@@ -130,7 +139,7 @@ export async function generateTask(
 ): Promise<CandidateMetadata | null> {
   const built = await buildPrompt(config.rootDir, task, config.model);
   const hash = contentHash(built);
-  const cache = await findCacheEntry(config, hash);
+  const cache = await findCacheEntry(config, hash, built);
   const cacheHit = !options.force && cache !== null;
   if (options.dryRun) {
     report.requested += 1;
@@ -169,10 +178,10 @@ export async function writePromptReport(
   const filename = `${built.task.id.replaceAll('/', '__')}.md`;
   await fs.writeFile(
     path.join(dir, filename),
-    `# ${built.task.id}\n\n- Hash: \`${hash}\`\n- Model: \`${built.model}\`\n- Size: ${built.width}x${built.height}\n- Revision: ${built.task.revision}\n- Style profile version: \`${built.styleProfileVersion}\`\n\n## Prompt\n\n${built.prompt}\n\n## Negative prompt\n\n${built.negativePrompt}\n`,
+    `# ${built.task.id}\n\n- Hash: \`${hash}\`\n- Model: \`${built.model}\`\n- Requested size: ${built.width}x${built.height}\n- Requested ratio: ${built.requestedRatio}\n- Revision: ${built.task.revision}\n- Style profile version: \`${built.styleProfileVersion}\`\n\n## Prompt\n\n${built.prompt}\n\n## Negative prompt\n\n${built.negativePrompt}\n`,
   );
 }
 
 export function emptyReport(): GenerationReport {
-  return { requested: 0, cacheHits: 0, apiCalls: 0, successful: 0, failed: 0, retryCount: 0, totalBytes: 0, tasks: [] };
+  return { mode: 'provider', provider: 'agnes', requested: 0, cacheHits: 0, apiCalls: 0, successful: 0, failed: 0, retryCount: 0, totalBytes: 0, tasks: [] };
 }
