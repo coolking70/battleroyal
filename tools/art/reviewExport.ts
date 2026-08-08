@@ -25,11 +25,20 @@ const REVIEW_REMINDERS: Record<string, string> = {
   'item/bandage/icon': 'Check for exactly one centered isolated object on a neutral backdrop with no scenery, frame, arrows, buttons, or text; remember the v1 ruins/HUD/frame issue.',
   'world_event/blackout/illustration': 'Check for an environment-only blackout with no people, weapons, or rain, powerless normal lights, and only sparse red emergency lamps; remember the v1 armed-person/rain/HUD issue.',
 };
+const REVIEW_CHECKLISTS: Record<string, string[]> = {
+  'character/scout/portrait': [
+    'no firearm', 'no rifle', 'no weapon on back', 'no holster', 'no camouflage/tactical loadout', 'binocular identity clear', 'adult appearance',
+  ],
+  'world_event/blackout/illustration': [
+    'fully indoor', 'zero people', 'zero human silhouettes', 'zero rain', 'no HUD', 'most lights visibly off', 'dark electronic displays', 'sparse emergency lamps', 'immediately reads as power outage',
+  ],
+};
 
 export interface ReviewExportOptions {
   reportPath?: string;
   outputDir?: string;
   fileSuffix?: string;
+  title?: string;
 }
 
 export function selectPendingReviewCandidates(candidates: CandidateMetadata[], taskIds: readonly string[] = ROUND_A_TASKS): CandidateMetadata[] {
@@ -70,7 +79,7 @@ export async function exportRoundAReview(config: ArtConfig, options: ReviewExpor
   await fs.mkdir(outputDir, { recursive: true });
   const assets = [] as Array<{ taskId: string; candidateHash: string; file: string }>;
   const readme: string[] = [
-    '# Phase 4A-1 Round A Review Package',
+    `# ${options.title ?? 'Phase 4A-1 Round A Review Package'}`,
     '',
     'Automatic validation is recorded below. Human review decisions intentionally remain blank.',
     '',
@@ -87,6 +96,12 @@ export async function exportRoundAReview(config: ArtConfig, options: ReviewExpor
     readme.push('Decision: __________');
     readme.push('Notes: __________');
     readme.push(`Review reminder: ${REVIEW_REMINDERS[candidate.taskId] ?? 'Review against the task brief and hard constraints.'}`);
+    const checklist = REVIEW_CHECKLISTS[candidate.taskId];
+    if (checklist) {
+      readme.push('');
+      readme.push('Human review checklist:');
+      checklist.forEach((item) => readme.push(`- [ ] ${item}`));
+    }
     readme.push('');
   }
   await fs.writeFile(path.join(outputDir, 'index.json'), `${JSON.stringify({ assets }, null, 2)}\n`);
@@ -98,14 +113,22 @@ async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const roundIndex = argv.indexOf('--round');
   const reportIndex = argv.indexOf('--report');
+  const outputIndex = argv.indexOf('--output');
+  const suffixIndex = argv.findIndex((value) => value === '--suffix' || value.startsWith('--suffix='));
   const round = roundIndex >= 0 ? argv[roundIndex + 1] : undefined;
   const reportPath = reportIndex >= 0 ? argv[reportIndex + 1] : undefined;
+  const outputDir = outputIndex >= 0 ? argv[outputIndex + 1] : undefined;
+  const fileSuffix = suffixIndex >= 0 ? (argv[suffixIndex].startsWith('--suffix=') ? argv[suffixIndex].slice('--suffix='.length) : argv[suffixIndex + 1]) : undefined;
   if (reportPath && round) throw new Error('use either --round or --report, not both');
   if (!reportPath && round !== 'A') throw new Error('review export currently supports only --round A');
+  if (reportPath && !outputDir) throw new Error('--output is required with --report');
   const configModule = await import('./config');
-  const options = reportPath
-    ? { reportPath, outputDir: 'output/art-review/phase4a11-round-a2', fileSuffix: '-v2' }
-    : {};
+  const options = reportPath ? {
+    reportPath,
+    outputDir,
+    fileSuffix: fileSuffix ?? '',
+    title: fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : undefined,
+  } : {};
   const result = await exportRoundAReview(configModule.createArtConfig(), options);
   console.log(`EXPORTED ${result.candidates.length} pending candidates to ${result.outputDir}`);
 }

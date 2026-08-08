@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1256152,
+  "tasks": [
+    {
+      "taskId": "world_event/blackout/illustration",
+      "hash": "0e1536f4df281f25ba3d36648aff049bab3d51ed71607f80eb18a31ef82b690b",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

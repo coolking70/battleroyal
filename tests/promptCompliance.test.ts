@@ -117,7 +117,13 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
     'world_event/blackout/illustration',
   ])('does not actively request UI rendering in %s', async (taskId) => {
     const { prompts } = await tasksAndPrompts();
-    expect(prompts[taskId]!.prompt).not.toMatch(/strategy interface|game UI|game screenshot|status bar|navigation arrow|window chrome|inventory window/i);
+    const positiveSections = [
+      prompts[taskId]!.sections.renderStyle,
+      prompts[taskId]!.sections.categoryStyle,
+      prompts[taskId]!.sections.entityBrief,
+      prompts[taskId]!.sections.variant,
+    ].join('\n');
+    expect(positiveSections).not.toMatch(/strategy interface|game UI|game screenshot|status bar|navigation arrow|window chrome|inventory window/i);
   });
 
   it('changes the content hash when the render style revision changes', async () => {
@@ -133,7 +139,84 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
     const oldHash = '14511e9a5fb98a79962cc31732cf92d30903a0613f6a3e7141dad4809fbaf625';
     const newHash = contentHash(prompts['character/scout/portrait']);
     expect(newHash).not.toBe(oldHash);
-    const config = createArtConfig(process.cwd());
+    const cacheRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'battleroyal-prompt-v2-cache-'));
+    roots.push(cacheRoot);
+    const config = createArtConfig(cacheRoot);
     expect(await findCacheEntry(config, newHash, prompts['character/scout/portrait'])).toBeNull();
+  });
+
+  it('raises Scout to revision 2 without changing the global v2 style architecture', async () => {
+    const { prompts } = await tasksAndPrompts();
+    expect(prompts['character/scout/portrait']!.task.revision).toBe(2);
+    expect(prompts['character/scout/portrait']!.styleProfileVersion).toMatch(/^phase4-style-v2-/);
+  });
+
+  it('puts Scout weapon-free positive composition in hard constraints', async () => {
+    const { prompts } = await tasksAndPrompts();
+    const hard = prompts['character/scout/portrait']!.sections.hardConstraints;
+    for (const phrase of ['UNARMED', 'civilian', 'both hands are fully visible and empty', 'upper-back silhouette is visibly empty', 'no gun holster', 'no plate carrier', 'no camouflage pattern', 'binoculars']) {
+      expect(hard).toContain(phrase);
+    }
+  });
+
+  it('keeps Scout positive semantic sections civilian and non-military', async () => {
+    const { prompts } = await tasksAndPrompts();
+    const positive = `${prompts['character/scout/portrait']!.sections.categoryStyle}\n${prompts['character/scout/portrait']!.sections.entityBrief}`;
+    expect(positive).not.toMatch(/\bmilitary scout\b|\btactical operator\b|\barmed\b|\bsniper\b|\bcombat loadout\b/i);
+    expect(positive).toMatch(/civilian|unarmed|empty hands|empty|binoculars/i);
+  });
+
+  it('keeps Scout positive description focused on civilian observation identity', async () => {
+    const { prompts } = await tasksAndPrompts();
+    const positive = prompts['character/scout/portrait']!.sections.entityBrief;
+    expect(positive).toMatch(/civilian urban observer/i);
+    expect(positive).toMatch(/simple neck strap|civilian outdoor clothing|shoulder pouch/i);
+    expect(positive).not.toMatch(/rifle|gun|plate carrier|camouflage/i);
+  });
+
+  it('makes Scout v3 visibly weapon-free in the composition constraints', async () => {
+    const { prompts } = await tasksAndPrompts();
+    const hard = prompts['character/scout/portrait']!.sections.hardConstraints;
+    expect(hard).toContain('both shoulders are clearly visible');
+    expect(hard).toContain('no object extends above either shoulder');
+    expect(hard).toContain('simple unobtrusive background');
+  });
+
+  it('raises Blackout to revision 2 with an indoor event brief', async () => {
+    const { prompts } = await tasksAndPrompts();
+    expect(prompts['world_event/blackout/illustration']!.task.revision).toBe(2);
+    expect(prompts['world_event/blackout/illustration']!.sections.entityBrief).toMatch(/indoor commercial corridor|power failure/i);
+  });
+
+  it('puts Blackout power-loss and isolation constraints in hard constraints', async () => {
+    const { prompts } = await tasksAndPrompts();
+    const hard = prompts['world_event/blackout/illustration']!.sections.hardConstraints;
+    for (const phrase of ['FULLY INDOOR', 'empty corridor', 'ZERO PEOPLE', 'ZERO RAIN', 'no weather', 'no exterior street', 'normal lights are visibly switched off', 'screens are completely black', 'emergency lamps', 'power failure']) {
+      expect(hard.toLowerCase()).toContain(phrase.toLowerCase());
+    }
+  });
+
+  it('keeps Blackout positive sections indoor and free of weather or characters', async () => {
+    const { prompts } = await tasksAndPrompts();
+    const positive = `${prompts['world_event/blackout/illustration']!.sections.categoryStyle}\n${prompts['world_event/blackout/illustration']!.sections.entityBrief}`;
+    expect(positive).toMatch(/indoor|corridor|power failure|electrical fixtures/i);
+    expect(positive).not.toMatch(/\brain\b|street battle|\bsurvivor\b|\bsoldier\b/i);
+  });
+
+  it('changes both targeted hashes and avoids the v2 cache entries', async () => {
+    const { root, prompts } = await tasksAndPrompts();
+    const scout = (await loadTasks(root)).find((task) => task.id === 'character/scout/portrait')!;
+    const blackout = (await loadTasks(root)).find((task) => task.id === 'world_event/blackout/illustration')!;
+    const scoutHash = contentHash(prompts['character/scout/portrait']!);
+    const blackoutHash = contentHash(prompts['world_event/blackout/illustration']!);
+    expect(scoutHash).not.toBe('d47e96af060e6357e8d513ee79056b3b7f701c8add0332f8ae9d3b61bdaaee0a');
+    expect(blackoutHash).not.toBe('48af21a453ef44f2103779f634851607eb3be1377d96b11bf5619043c97b664d');
+    const cacheRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'battleroyal-prompt-v3-cache-'));
+    roots.push(cacheRoot);
+    const config = createArtConfig(cacheRoot);
+    expect(await findCacheEntry(config, scoutHash, prompts['character/scout/portrait'])).toBeNull();
+    expect(await findCacheEntry(config, blackoutHash, prompts['world_event/blackout/illustration'])).toBeNull();
+    expect(scout.revision).toBe(2);
+    expect(blackout.revision).toBe(2);
   });
 });

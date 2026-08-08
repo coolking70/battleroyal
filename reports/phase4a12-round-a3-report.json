@@ -1,0 +1,48 @@
+{
+  "phase": "Phase 4A-1.2",
+  "round": "A3-targeted",
+  "styleRevision": "phase4-style-v2",
+  "promptChanged": true,
+  "requested": 2,
+  "generated": 2,
+  "apiCalls": 2,
+  "cacheHits": 0,
+  "approved": 0,
+  "published": 0,
+  "tasks": [
+    {
+      "taskId": "character/scout/portrait",
+      "previousCandidateHash": "d47e96af060e6357e8d513ee79056b3b7f701c8add0332f8ae9d3b61bdaaee0a",
+      "candidateHash": "1d3efddc1e422e9e5ba4fcb0353ffb6853aa6b9a6a094436b15d802ddbdeb19f",
+      "contentHash": "1d3efddc1e422e9e5ba4fcb0353ffb6853aa6b9a6a094436b15d802ddbdeb19f",
+      "promptChanged": true,
+      "requestedWidth": 768,
+      "requestedHeight": 1024,
+      "actualWidth": 864,
+      "actualHeight": 1152,
+      "mimeType": "image/png",
+      "validation": "passed",
+      "review": "pending",
+      "source": "api",
+      "apiCalls": 1,
+      "cacheHits": 0
+    },
+    {
+      "taskId": "world_event/blackout/illustration",
+      "previousCandidateHash": "48af21a453ef44f2103779f634851607eb3be1377d96b11bf5619043c97b664d",
+      "candidateHash": "0e1536f4df281f25ba3d36648aff049bab3d51ed71607f80eb18a31ef82b690b",
+      "contentHash": "0e1536f4df281f25ba3d36648aff049bab3d51ed71607f80eb18a31ef82b690b",
+      "promptChanged": true,
+      "requestedWidth": 768,
+      "requestedHeight": 432,
+      "actualWidth": 1312,
+      "actualHeight": 736,
+      "mimeType": "image/png",
+      "validation": "passed",
+      "review": "pending",
+      "source": "api",
+      "apiCalls": 1,
+      "cacheHits": 0
+    }
+  ]
+}

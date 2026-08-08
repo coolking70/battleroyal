@@ -63,3 +63,10 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Exported `output/art-review/phase4a11-round-a2/` with exact report-selected candidate hashes, `-v2` filenames, blank Decision/Notes, and v1 issue reminders. v1 candidates and review package remain preserved.
 - No asset was approved or published; the formal Manifest and `art/approved-assets.json` remain unchanged. Round B is waiting for human review.
 - GitHub Actions run `31267622557` completed with `verify` PASS; Draft PR #2 remains open and unmerged.
+
+## Phase 4A-1.2 progress (2026-08-09)
+
+- Targeted Scout and Blackout only: Scout task revision 2 now uses an unarmed civilian observer identity with visible empty hands/back/shoulders; Blackout task revision 2 now uses a fully indoor commercial corridor immediately after a power failure.
+- Added targeted positive-semantic and hard-constraint compliance tests; full suite reached 652 tests PASS. Review export now accepts explicit `--output` and `--suffix` values.
+- Strict Round A3 completed in order with exactly two API calls: Scout v3 then Blackout v3. Both are new hashes, `source=api`, `apiCalls=1`, `cacheHits=0`, automatic validation PASS, review pending.
+- Exported `output/art-review/phase4a12-round-a3/` with exact report-selected candidates, `-v3` filenames, human checklists, and blank Decision/Notes. Bandage/School, Round B, approval, publish, and Manifest changes were not performed.

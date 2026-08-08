@@ -1,0 +1,74 @@
+Phase 4A-1.2 command results
+Date: 2026-08-09 Asia/Shanghai
+
+npm ci
+EXIT 0
+SUMMARY dependencies installed; npm's default audit displayed existing dev-dependency findings.
+
+npm run typecheck
+EXIT 0
+
+npm test
+EXIT 0
+SUMMARY 45 test files, 652 tests passed.
+
+npm run build
+EXIT 0
+
+npm run audit:save
+EXIT 0
+SUMMARY 74/74 save-validation cases rejected and 74/74 accepted counterparts passed; construction failures=0.
+
+npm run audit:deps
+EXIT 0
+SUMMARY scanned=54; layer violations=0; red-line violations=0; cycle warnings=0; overlong warnings=0.
+
+npm run art:doctor -- --offline
+EXIT 0
+SUMMARY 32 tasks and required art/config paths present.
+
+npm run art:validate
+EXIT 0
+SUMMARY published Manifest valid.
+
+npm run art:security:browser
+EXIT 0
+SUMMARY browser secret boundary scan passed.
+
+npm run art:security:repo
+EXIT 0
+SUMMARY tracked repository secret scan passed.
+
+npm run simulate -- --games 500 --seed-prefix PHASE4A12 --regression --output reports/phase4a12-balance.json
+EXIT 0
+SUMMARY requestedTotalGames=500 actualTotalGames=500; timeout/deadlock/illegal/hardlimit gate PASS; character balance remains observation-only under the existing rule.
+
+npm audit --omit=dev
+EXIT 0
+SUMMARY found 0 runtime vulnerabilities.
+
+npm run art:prompt -- --task character/scout/portrait
+EXIT 0
+SUMMARY revision=2; hash=1d3efddc1e422e9e5ba4fcb0353ffb6853aa6b9a6a094436b15d802ddbdeb19f; prompt report saved under reports/phase4-prompts/phase4-targeted-v3/.
+
+npm run art:prompt -- --task world_event/blackout/illustration
+EXIT 0
+SUMMARY revision=2; hash=0e1536f4df281f25ba3d36648aff049bab3d51ed71607f80eb18a31ef82b690b; prompt report saved under reports/phase4-prompts/phase4-targeted-v3/.
+
+Scout v3 generation
+EXIT 0
+SUMMARY apiCalls=1; cacheHits=0; source=api; validation=passed; review=pending; candidateHash=1d3efddc1e422e9e5ba4fcb0353ffb6853aa6b9a6a094436b15d802ddbdeb19f.
+
+Blackout v3 generation
+EXIT 0
+SUMMARY apiCalls=1; cacheHits=0; source=api; validation=passed; review=pending; candidateHash=0e1536f4df281f25ba3d36648aff049bab3d51ed71607f80eb18a31ef82b690b.
+
+npm run art:review-export -- --report reports/phase4a12-round-a3-report.json --output output/art-review/phase4a12-round-a3 --suffix=-v3
+EXIT 0
+SUMMARY exported exactly 2 report-selected candidates with scout-portrait-v3.png and blackout-illustration-v3.png; Decision/Notes remain blank.
+
+Scope summary
+API calls=2; cache hits=0; generated=2; approved=0; published=0; Bandage/School not regenerated; Round B not executed.
+
+GitHub Actions
+FINAL RUN ID WILL BE RECORDED AFTER THE FINAL COMMIT IS PUSHED.

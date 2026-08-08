@@ -57,7 +57,7 @@ function printHelp(): void {
   art:validate
   art:api-check
   art:smoke
-  art:review-export --round A|--report <round-report.json>
+  art:review-export --round A|--report <round-report.json> [--output <dir>] [--suffix <text>]
   art:security:browser
   art:security:repo`);
 }
