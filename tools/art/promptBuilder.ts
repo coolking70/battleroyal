@@ -36,21 +36,32 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
   const renderStyle = await readText(rootDir, 'art/style/render-style.md');
   const category = categoryStyleName(task);
   const categoryStyle = await readText(rootDir, `art/style/${STYLE_FILE_BY_PROFILE[category]!}`);
-  const genericAvoid = await readText(rootDir, 'art/style/negative-prompt.txt');
+  const positiveOnly = task.promptStrategy === 'character-positive-only';
+  const genericAvoid = positiveOnly ? '' : await readText(rootDir, 'art/style/negative-prompt.txt');
   const policy = promptPolicyFor(task);
   const sheetPath = designSheetPath(task);
-  const designSheet = sheetPath ? providerDesignSheet(await readText(rootDir, sheetPath)) : '';
+  const designSheet = !positiveOnly && sheetPath ? providerDesignSheet(await readText(rootDir, sheetPath)) : '';
   const entityBrief = [
     task.providerDescriptor ? `Provider-facing visual identity: ${task.providerDescriptor}` : '',
+    positiveOnly && task.positiveTraits?.length ? `Positive appearance traits:\n${task.positiveTraits.map((item) => `- ${item}`).join('\n')}` : '',
     designSheet ? `Character design source of truth:\n${designSheet}` : '',
     `Asset brief:\n${task.promptTemplate}`,
   ].filter(Boolean).join('\n\n');
   const variant = `Variant: ${task.variant}. Keep the entity identity stable across variants.`;
-  const hardConstraints = [
-    ...policy.hardConstraints,
-    ...(task.hardConstraints ?? []),
-  ];
-  const avoid = [...new Set([
+  const hardConstraints = positiveOnly
+    ? [
+        'single adult portrait',
+        'waist-up portrait',
+        'plain pale neutral studio-like backdrop',
+        'both shoulders are clearly visible',
+        'the silhouette behind the person is clean and empty',
+        ...(task.positiveComposition ?? []),
+      ]
+    : [
+        ...policy.hardConstraints,
+        ...(task.hardConstraints ?? []),
+      ];
+  const avoid = positiveOnly ? '' : [...new Set([
     ...genericPromptAvoid(),
     ...policy.avoid,
     ...(task.avoid ?? []),
@@ -61,21 +72,27 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
     categoryStyle,
     entityBrief,
     variant,
-    hardConstraints: `HARD COMPOSITION CONSTRAINTS:\n${hardConstraints.map((item) => `- ${item}`).join('\n')}`,
-    avoid: `AVOID:\n${avoid}`,
+    hardConstraints: `${positiveOnly ? 'POSITIVE COMPOSITION REQUIREMENTS' : 'HARD COMPOSITION CONSTRAINTS'}:\n${hardConstraints.map((item) => `- ${item}`).join('\n')}`,
+    avoid: avoid ? `AVOID:\n${avoid}` : '',
   };
+  const technicalComposition = positiveOnly
+    ? `Technical composition: ${task.width}x${task.height}; centered waist-up portrait; clear focal subject; pale neutral studio-like backdrop.`
+    : `Technical composition: ${task.width}x${task.height}, clear focal subject, no text, no logo, no watermark.`;
   const prompt = clean([
     sections.renderStyle,
     sections.categoryStyle,
     sections.entityBrief,
     sections.variant,
-    `Technical composition: ${task.width}x${task.height}, clear focal subject, no text, no logo, no watermark.`,
+    technicalComposition,
     sections.hardConstraints,
     sections.avoid,
   ].join('\n\n'));
+  const styleVersionInput = positiveOnly
+    ? `${task.promptStrategy}\n${sections.renderStyle}\n${sections.categoryStyle}\n${sections.entityBrief}\n${sections.variant}\n${sections.hardConstraints}\n${sections.avoid}`
+    : `${sections.renderStyle}\n${sections.categoryStyle}\n${sections.hardConstraints}\n${sections.avoid}`;
   const styleVersion = crypto
     .createHash('sha256')
-    .update(`${sections.renderStyle}\n${sections.categoryStyle}\n${sections.hardConstraints}\n${sections.avoid}`)
+    .update(styleVersionInput)
     .digest('hex')
     .slice(0, 12);
 
@@ -93,6 +110,7 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
 }
 
 export function promptHashInput(built: BuiltPrompt): Record<string, unknown> {
+  const positiveOnly = built.task.promptStrategy === 'character-positive-only';
   return {
     taskId: built.task.id,
     prompt: built.prompt,
@@ -103,5 +121,9 @@ export function promptHashInput(built: BuiltPrompt): Record<string, unknown> {
     requestedRatio: built.requestedRatio,
     revision: built.task.revision,
     styleProfileVersion: built.styleProfileVersion,
+    ...(positiveOnly ? {
+      promptStrategy: built.task.promptStrategy,
+      positiveTraits: built.task.positiveTraits ?? [],
+    } : {}),
   };
 }

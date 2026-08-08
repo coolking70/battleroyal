@@ -27,6 +27,15 @@
       "provider": "agnes",
       "approvedAt": "2026-08-08T18:28:58.814Z",
       "publicPath": "/assets/zones/school/background.png"
+    },
+    "world_event/blackout/illustration": {
+      "candidateHash": "d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843",
+      "contentHash": "d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843",
+      "promptHash": "d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T19:15:46.605Z",
+      "publicPath": "/assets/world-events/blackout/illustration.png"
     }
   }
 }

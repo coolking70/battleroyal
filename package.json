@@ -18,6 +18,7 @@
     "audit:deps": "tsx tools/auditDependencies.ts",
     "art:doctor": "tsx tools/art/cli.ts doctor",
     "art:prompt": "tsx tools/art/cli.ts prompt",
+    "art:prompt-audit": "tsx tools/art/cli.ts prompt-audit",
     "art:generate": "tsx tools/art/cli.ts generate",
     "art:list": "tsx tools/art/cli.ts list",
     "art:approve": "tsx tools/art/cli.ts approve",

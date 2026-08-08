@@ -1,0 +1,36 @@
+Phase 4A-2.1 command results
+============================
+
+Formal review:
+PASS approve Blackout v5 d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843
+PASS reject old Fighter f749da45350da7a2d069cb5b8ffdaab2815268dc558c3e8c43563189912c9b6c
+PASS reject old Engineer 77e02599e4b4798ff6d4668b26423bc37c6b1c7bfe7a2a5def2b48d2cdb52934
+PASS reject old Medic 63d01e7c952da6d1bec5d7880afdcd828e7a5cb10acf2defd677e6e4f0f8ea7c
+
+Publish:
+PASS npm run art:publish — Blackout added; one changed slot; formal Manifest now has 4 AI slots
+PASS npm run art:validate
+PASS second npm run art:publish — NO CHANGES
+
+Positive-only preflight:
+PASS Engineer prompt hash 12989865f752e70e7716b2881c3bfa5dbe5546a9c0ec7694705b38be30101979
+PASS Engineer/Fighter/Medic final Agnes payload audit — forbiddenTokenCount=0
+
+Live generation:
+PASS Engineer — 1 API call, validation passed, pending
+PASS Fighter — 1 API call, validation passed, pending
+PASS Medic — 1 API call, validation passed, pending
+PASS Hospital — 1 API call, validation passed, pending
+PASS Medkit — 1 API call, validation passed, pending
+PASS Rain — 1 API call, validation passed, pending
+
+Offline gates:
+PASS npm ci
+PASS typecheck
+PASS 686 tests
+PASS build
+PASS save/dependency audits
+PASS art doctor/validate
+PASS browser/repository secret scans
+PASS PHASE4A21 500-game regression
+PASS npm audit --omit=dev — 0 vulnerabilities

@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1529432,
+  "tasks": [
+    {
+      "taskId": "world_event/rain/illustration",
+      "hash": "5804105a6f017924222fa112126db9fc8d482dd0707ef0141c0ea09da0f83313",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

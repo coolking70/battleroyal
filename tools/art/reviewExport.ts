@@ -30,9 +30,9 @@ const REVIEW_REMINDERS: Record<string, string> = {
   'zone/school/background': 'Check for zero people, zero human silhouettes, and a calm open lower center; remember the v1 central-person and silhouette issue.',
   'item/bandage/icon': 'Check for exactly one centered isolated object on a neutral backdrop with no scenery, frame, arrows, buttons, or text; remember the v1 ruins/HUD/frame issue.',
   'world_event/blackout/illustration': 'Check the v5 close electrical control-area composition: ceiling out of frame, black displays and controls, zero green/white normal lights, and exactly one dim red emergency beacon.',
-  'character/fighter/portrait': 'Check for a civilian athletic portrait with wraps or sport gloves, no firearm or military/tactical reading, and no injured variant.',
-  'character/engineer/portrait': 'Check for a civilian repair technician with small tools, no firearm or military/tactical reading, and no injured variant.',
-  'character/medic/portrait': 'Check for a civilian emergency medical responder with a compact medical pouch, no firearm or combat reading, and no injured variant.',
+  'character/fighter/portrait': 'Positive-only review: check occupational identity, clean shoulder/back silhouette, sport wraps/gloves, and no injured variant.',
+  'character/engineer/portrait': 'Positive-only review: check workshop repair identity, short wrench/tool belt, clean shoulder/back silhouette, and no injured variant.',
+  'character/medic/portrait': 'Positive-only review: check community first-aid identity, compact pouch, clean shoulder/back silhouette, and no injured variant.',
   'zone/hospital/background': 'Check for an environment-only hospital background with zero people or human silhouettes and no character focal subject.',
   'item/medkit/icon': 'Check for exactly one isolated high-frequency healing consumable object, no bandage-only substitution, scenery, hand, frame, UI, or text.',
   'world_event/rain/illustration': 'Check for an environment-only rain event illustration with no people, weapons, HUD, or unrelated event motifs.',
@@ -44,9 +44,9 @@ const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'world_event/blackout/illustration': [
     'close or medium-close control area', 'ceiling outside the frame', 'zero ceiling lamps visible', 'no windows', 'no exterior view', 'no people', 'no weather/rain', 'no HUD/interface/text', 'all digital displays black', 'control panels and indicator arrays dark', 'zero green lights', 'zero white normal lights', 'exactly one dim red emergency beacon', 'image is predominantly dark', 'immediately reads as blackout',
   ],
-  'character/fighter/portrait': ['one adult civilian', 'athletic sport-trained stance', 'boxing wraps or sport gloves', 'no firearm or weapon', 'no military/tactical equipment'],
-  'character/engineer/portrait': ['one adult civilian', 'repair technician clothing', 'small tool belt or wrench', 'no firearm or weapon', 'no military/tactical equipment'],
-  'character/medic/portrait': ['one adult civilian', 'civilian medical responder', 'compact first-aid pouch', 'no firearm or weapon', 'no combat armor'],
+  'character/fighter/portrait': ['no unexpected long object behind shoulders', 'ordinary occupational identity reads clearly', 'no obvious militarized appearance', 'profession prop is clear', 'character style consistent with Scout'],
+  'character/engineer/portrait': ['no unexpected long object behind shoulders', 'ordinary occupational identity reads clearly', 'no obvious militarized appearance', 'profession prop is clear', 'character style consistent with Scout'],
+  'character/medic/portrait': ['no unexpected long object behind shoulders', 'ordinary occupational identity reads clearly', 'no obvious militarized appearance', 'profession prop is clear', 'character style consistent with Scout'],
   'zone/hospital/background': ['environment only', 'zero people', 'zero human silhouettes', 'no character focal subject', 'lower center remains open'],
   'item/medkit/icon': ['exactly one centered object', 'healing medical kit is the subject', 'no scenery or environment', 'no hands or UI frame', 'no readable text'],
   'world_event/rain/illustration': ['environment-only event', 'rain is visually clear', 'zero people', 'zero weapons', 'no HUD or event card frame'],
@@ -146,7 +146,7 @@ async function main(): Promise<void> {
     reportPath,
     outputDir,
     fileSuffix: fileSuffix ?? '',
-    title: fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : undefined,
+    title: fileSuffix === '-positive' ? 'Phase 4A-2.1 Character Positive-only Review Package' : fileSuffix === '-nonchar' ? 'Phase 4A-2.1 Non-character B1 Review Package' : fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : undefined,
   } : {};
   const result = await exportRoundAReview(configModule.createArtConfig(), options);
   console.log(`EXPORTED ${result.candidates.length} pending candidates to ${result.outputDir}`);

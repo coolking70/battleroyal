@@ -1,0 +1,31 @@
+{
+  "round": "B1 non-character recovery",
+  "apiCalls": 3,
+  "cacheHits": 0,
+  "tasks": [
+    {
+      "taskId": "zone/hospital/background",
+      "candidateHash": "80d603bfd8124a44919ffc590313448511686c51f2648850527c71e8268e9354",
+      "apiCalls": 1,
+      "validation": "passed",
+      "review": "pending",
+      "visualObservation": "Hospital identity reads, but multiple visible people are present despite the environment-only/zero-human policy."
+    },
+    {
+      "taskId": "item/medkit/icon",
+      "candidateHash": "c52f6ec3dd935448b766a090fe32513d6c6b5a9bde3710dee101edb087e09108",
+      "apiCalls": 1,
+      "validation": "passed",
+      "review": "pending",
+      "visualObservation": "Single isolated medkit object on a clean backdrop; prominent medical-cross markings remain for human review."
+    },
+    {
+      "taskId": "world_event/rain/illustration",
+      "candidateHash": "5804105a6f017924222fa112126db9fc8d482dd0707ef0141c0ea09da0f83313",
+      "apiCalls": 1,
+      "validation": "passed",
+      "review": "pending",
+      "visualObservation": "Heavy rain reads clearly, but a visible person is present despite the zero-people event policy."
+    }
+  ]
+}

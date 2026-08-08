@@ -185,6 +185,8 @@ export async function writePromptReport(
   ]);
   const targetedVersion = built.task.id === 'world_event/blackout/illustration' && built.task.revision >= 4
     ? 'phase4-targeted-v5'
+    : built.task.promptStrategy === 'character-positive-only'
+      ? 'phase4a21-character-positive-only'
     : roundB1Tasks.has(built.task.id)
       ? 'phase4-round-b1'
       : built.task.revision >= 3 && (built.task.id === 'character/scout/portrait' || built.task.id === 'world_event/blackout/illustration')
@@ -198,7 +200,7 @@ export async function writePromptReport(
   const filename = `${built.task.id.replaceAll('/', '__')}.md`;
   await fs.writeFile(
     path.join(dir, filename),
-    `# ${built.task.id}\n\n- Hash: \`${hash}\`\n- Model: \`${built.model}\`\n- Requested size: ${built.width}x${built.height}\n- Requested ratio: ${built.requestedRatio}\n- Revision: ${built.task.revision}\n- Style profile version: \`${built.styleProfileVersion}\`\n\n## Prompt\n\n${built.prompt}\n\n## Negative prompt\n\n${built.negativePrompt}\n`,
+    `# ${built.task.id}\n\n- Hash: \`${hash}\`\n- Model: \`${built.model}\`\n- Requested size: ${built.width}x${built.height}\n- Requested ratio: ${built.requestedRatio}\n- Revision: ${built.task.revision}\n- Style profile version: \`${built.styleProfileVersion}\`\n\n## Prompt\n\n${built.prompt}\n\n## Negative prompt\n\n${built.negativePrompt || '(empty: positive-only strategy)'}\n`,
   );
 }
 

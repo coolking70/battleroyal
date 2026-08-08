@@ -8,6 +8,8 @@ import { buildPrompt } from './promptBuilder';
 import { publishApproved, validatePublishedManifest } from './publisher';
 import { listCandidates, reviewCandidate } from './reviewer';
 import { loadTasks, selectTasks, taskForId } from './taskPlanner';
+import { auditCharacterProviderPrompt } from './promptAudit';
+import { agnesRequestFor } from './providers/agnes';
 import type { ArtConfig, ArtTask } from './types';
 
 interface Args {
@@ -49,6 +51,7 @@ function printHelp(): void {
   console.log(`art pipeline commands:
   art:doctor [--offline]
   art:prompt --task character/scout/portrait
+  art:prompt-audit --task character/engineer/portrait
   art:generate [--task ...|--category characters|--status missing] [--dry-run] [--force] [--concurrency 1|2] [--report-name name]
   art:list
   art:approve --task ... --candidate <contentHash>
@@ -116,6 +119,14 @@ async function promptCommand(config: ArtConfig, task: ArtTask): Promise<void> {
   console.log(`Task: ${task.id}\nModel: ${built.model}\nSize: ${built.width}x${built.height}\nRevision: ${task.revision}\nHash: ${hash}\n\nPrompt:\n${built.prompt}\n\nNegative prompt:\n${built.negativePrompt}`);
 }
 
+async function promptAuditCommand(config: ArtConfig, task: ArtTask): Promise<number> {
+  const built = await buildPrompt(config.rootDir, task, config.model);
+  const payload = agnesRequestFor({ model: built.model, prompt: built.prompt, negativePrompt: built.negativePrompt, width: built.width, height: built.height, requestedRatio: built.requestedRatio });
+  const audit = auditCharacterProviderPrompt(task, payload.prompt);
+  console.log(JSON.stringify({ taskId: task.id, ...audit }, null, 2));
+  return audit.passed ? 0 : 1;
+}
+
 async function generateCommand(config: ArtConfig, args: Args): Promise<number> {
   const concurrency = args.concurrency ?? 1;
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 2) throw new Error('--concurrency must be an integer from 1 to 2');
@@ -177,6 +188,10 @@ async function main(): Promise<number> {
       if (!args.taskId) throw new Error('--task is required');
       await promptCommand(config, taskForId(await loadTasks(config.rootDir), args.taskId));
       return 0;
+    }
+    case 'prompt-audit': {
+      if (!args.taskId) throw new Error('--task is required');
+      return promptAuditCommand(config, taskForId(await loadTasks(config.rootDir), args.taskId));
     }
     case 'generate': return generateCommand(config, args);
     case 'list': await listCommand(config); return 0;

@@ -57,5 +57,7 @@
   "items": {
     "bandage": "/assets/items/bandage/icon.png"
   },
-  "worldEvents": {}
+  "worldEvents": {
+    "blackout": "/assets/world-events/blackout/illustration.png"
+  }
 }

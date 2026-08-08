@@ -25,15 +25,16 @@ const B1_TASKS = [
 afterEach(() => setAssetManifest(null));
 
 describe('Phase 4A-2 formal Round A closure', () => {
-  it('publishes exactly three AI slots and keeps Blackout absent', async () => {
+  it('publishes exactly four AI slots after Blackout approval', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
     expect(manifest.characters.scout?.portrait).toBe('/assets/characters/scout/portrait.png');
     expect(manifest.zones.school?.background).toBe('/assets/zones/school/background.png');
     expect(manifest.items.bandage).toBe('/assets/items/bandage/icon.png');
-    expect(manifest.worldEvents.blackout).toBeUndefined();
+    expect(manifest.worldEvents.blackout).toBe('/assets/world-events/blackout/illustration.png');
     expect(Object.values(manifest.characters).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(1);
     expect(Object.values(manifest.zones).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(1);
     expect(Object.values(manifest.items).filter(Boolean)).toHaveLength(1);
+    expect(Object.values(manifest.worldEvents).filter(Boolean)).toHaveLength(1);
   });
 
   it('keeps provenance limited to the approved Round A tasks', async () => {
@@ -41,21 +42,23 @@ describe('Phase 4A-2 formal Round A closure', () => {
     expect(Object.keys(provenance.assets).sort()).toEqual([
       'character/scout/portrait',
       'item/bandage/icon',
+      'world_event/blackout/illustration',
       'zone/school/background',
     ]);
     expect(provenance.assets['character/scout/portrait']?.candidateHash).toBe('2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd');
     expect(provenance.assets['zone/school/background']?.candidateHash).toBe('c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7');
     expect(provenance.assets['item/bandage/icon']?.candidateHash).toBe('3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb');
+    expect(provenance.assets['world_event/blackout/illustration']?.candidateHash).toBe('d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843');
   });
 
-  it('selects the three published visuals officially and Blackout by SVG fallback', async () => {
+  it('selects all four published visuals officially', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
     setAssetManifest(manifest);
     expect(getCharacterVisual('scout').source).toBe('official');
     expect(getZoneVisual('school').source).toBe('official');
     expect(getItemVisual('bandage').source).toBe('official');
-    expect(getWorldEventVisual('blackout').source).toBe('svg');
-    expect(getWorldEventVisual('blackout').image).toBe('events/blackout.svg');
+    expect(getWorldEventVisual('blackout').source).toBe('official');
+    expect(getWorldEventVisual('blackout').image).toBe('/assets/world-events/blackout/illustration.png');
   });
 
   it('falls through from an unavailable official slot to the local SVG source', () => {
@@ -74,9 +77,9 @@ describe('Phase 4A-2 controlled Round B1 and Blackout v5 prompts', () => {
   });
 
   it.each([
-    ['character/fighter/portrait', 'civilian boxing athlete', 'boxing wraps'],
-    ['character/engineer/portrait', 'civilian repair technician', 'small tool belt'],
-    ['character/medic/portrait', 'civilian emergency medical responder', 'compact first-aid pouch'],
+    ['character/fighter/portrait', 'adult amateur boxing athlete', 'boxing wraps'],
+    ['character/engineer/portrait', 'workshop repair technician', 'compact tool belt'],
+    ['character/medic/portrait', 'community first-aid worker', 'first-aid pouch'],
   ] as const)('isolates %s around a civilian positive identity', async (taskId, descriptor, positiveAnchor) => {
     const task = (await loadTasks(process.cwd())).find((item) => item.id === taskId)!;
     const built = await buildPrompt(process.cwd(), task, 'agnes-image-2.1-flash');
