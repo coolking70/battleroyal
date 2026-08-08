@@ -54,3 +54,11 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Live Round A succeeded in order: Scout (existing live evidence), School, Bandage, Blackout. Four unique tasks have API-origin candidates with validation PASS and reviewStatus=pending. Cache verification reports `apiCalls=0`.
 - Review package exported to `output/art-review/phase4a1-round-a/`; decisions and notes remain blank. `art/approved-assets.json` remains empty and the formal Manifest was not changed.
 - Remote GitHub Actions run `31265918529` completed with `verify` PASS; Draft PR #2 remains open and unmerged.
+
+## Phase 4A-1.1 progress (2026-08-09)
+
+- Rebuilt prompt architecture as v2: content-free Render Style, category-isolated styles, character-only design sheets, explicit hard constraints, separate category negatives, and versioned prompt reports.
+- Added 18 structural prompt/review-export tests; full suite reached 643 tests PASS.
+- Strict Round A v2 executed once per task in order: Scout, School, Bandage, Blackout. All four were API-origin, `apiCalls=1`, `cacheHits=0`, automatic validation PASS, and review pending.
+- Exported `output/art-review/phase4a11-round-a2/` with exact report-selected candidate hashes, `-v2` filenames, blank Decision/Notes, and v1 issue reminders. v1 candidates and review package remain preserved.
+- No asset was approved or published; the formal Manifest and `art/approved-assets.json` remain unchanged. Round B is waiting for human review.

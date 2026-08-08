@@ -1,5 +1,3 @@
-# Master style v1
+# Master style v2
 
-Original urban survival game artwork, semi-realistic anime illustration, clean silhouettes, restrained desaturated palette, subtle painterly texture, high readability for game UI, dramatic but grounded lighting, consistent proportions, original costume design, cold strategic atmosphere, no recognizable commercial intellectual property.
-
-The visual language is Japanese survival suspense blended with urban ruins and a restrained strategy interface. Prefer legible shapes, a clear focal subject, believable wear, and controlled contrast. Avoid photorealism, chibi proportions, and spectacle that would overpower the game UI.
+Semi-realistic anime illustration with clean silhouettes, restrained desaturated palette, light cel shading, subtle painterly texture, consistent line quality, grounded lighting, controlled contrast, readable shapes, and original visual design. Keep proportions believable, surfaces tactile, and the focal subject legible at display sizes. Avoid photorealism, chibi proportions, spectacle, and decorative clutter.

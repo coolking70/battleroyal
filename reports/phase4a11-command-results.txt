@@ -1,0 +1,70 @@
+Phase 4A-1.1 command results
+Date: 2026-08-09 Asia/Shanghai
+
+npm ci
+EXIT 0
+SUMMARY installed dependencies; npm reported the existing dev-dependency audit findings, not a runtime audit failure.
+
+npm run typecheck
+EXIT 0
+
+npm test
+EXIT 0
+SUMMARY 45 test files, 643 tests passed.
+
+npm run build
+EXIT 0
+
+npm run art:doctor -- --offline
+EXIT 0
+SUMMARY 32 tasks and all required style/config paths present.
+
+npm run art:validate
+EXIT 0
+SUMMARY published Manifest valid.
+
+npm run art:security:repo
+EXIT 0
+SUMMARY tracked repository secret scan passed.
+
+npm run art:security:browser
+EXIT 0
+SUMMARY browser secret boundary scan passed.
+
+npm run simulate -- --games 500 --seed-prefix PHASE4A11 --regression --output reports/phase4a11-balance.json
+EXIT 0
+SUMMARY requestedTotalGames=500 actualTotalGames=500; engine/regression gate PASS; character balance remains observation-only under the existing rule.
+
+npm audit --omit=dev --audit-level=high
+EXIT 0
+SUMMARY found 0 runtime vulnerabilities.
+
+npm run art:prompt -- --task character/scout/portrait
+EXIT 0
+SUMMARY hash=d47e96af060e6357e8d513ee79056b3b7f701c8add0332f8ae9d3b61bdaaee0a; style=phase4-style-v2.
+
+npm run art:prompt -- --task zone/school/background
+EXIT 0
+SUMMARY hash=c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7; style=phase4-style-v2.
+
+npm run art:prompt -- --task item/bandage/icon
+EXIT 0
+SUMMARY hash=3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb; style=phase4-style-v2.
+
+npm run art:prompt -- --task world_event/blackout/illustration
+EXIT 0
+SUMMARY hash=48af21a453ef44f2103779f634851607eb3be1377d96b11bf5619043c97b664d; style=phase4-style-v2.
+
+Round A v2 live calls, strict order, one command per task
+Scout: apiCalls=1 cacheHits=0 source=api validation=passed.
+School: apiCalls=1 cacheHits=0 source=api validation=passed.
+Bandage: apiCalls=1 cacheHits=0 source=api validation=passed.
+Blackout: apiCalls=1 cacheHits=0 source=api validation=passed.
+SUMMARY total API calls=4, cache hits=0, generated=4, approved=0, published=0.
+
+npm run art:review-export -- --report reports/phase4a11-round-a2-report.json
+EXIT 0
+SUMMARY exported 4 exact candidates to output/art-review/phase4a11-round-a2; filenames carry -v2; human decisions remain blank.
+
+Review status
+All four v2 candidates are pending human review. No Round B call was made.

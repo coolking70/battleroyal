@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { createArtConfig } from '../tools/art/config';
 import { readManifest, manifestHash, validatePublishedManifest } from '../tools/art/publisher';
 import { redactProviderMessage } from '../tools/art/providers/agnes';
-import { exportRoundAReview, selectPendingReviewCandidates } from '../tools/art/reviewExport';
+import { exportRoundAReview, selectCandidatesFromReport, selectPendingReviewCandidates } from '../tools/art/reviewExport';
 import { scanTextForSecrets } from '../tools/art/securityRepoAudit';
 import { parseArgs } from '../tools/simulateBalance';
 import type { ArtConfig, CandidateMetadata } from '../tools/art/types';
@@ -166,5 +166,29 @@ describe('Phase 4A-1 regression and review export boundaries', () => {
     expect(JSON.parse(await fs.readFile(path.join(result.outputDir, 'index.json'), 'utf8')).assets).toHaveLength(4);
     expect(await fs.readdir(result.outputDir)).toEqual(expect.arrayContaining(['README.md', 'index.json', 'scout-portrait.png', 'school-background.png', 'bandage-icon.png', 'blackout-illustration.png']));
     expect((await selectPendingReviewCandidates(await Promise.resolve(candidates))).every((item) => item.reviewStatus === 'pending')).toBe(true);
+  });
+
+  it('selects the exact candidate named by a round report', async () => {
+    const { config } = await fixture();
+    const item = candidate('character/scout/portrait', 'art/candidates/exact.png', 'api', '2026-08-08T10:00:00.000Z');
+    await fs.mkdir(path.join(config.rootDir, 'art', 'candidates'), { recursive: true });
+    await fs.writeFile(path.join(config.rootDir, item.imagePath), fakePng());
+    await fs.writeFile(path.join(config.rootDir, item.imagePath.replace('.png', '.json')), JSON.stringify(item));
+    const reportPath = path.join(config.rootDir, 'reports', 'round.json');
+    await fs.mkdir(path.dirname(reportPath), { recursive: true });
+    await fs.writeFile(reportPath, JSON.stringify({ tasks: [{ taskId: item.taskId, candidateHash: item.hash, validation: 'passed', review: 'pending' }] }));
+    await expect(selectCandidatesFromReport(config, reportPath)).resolves.toEqual([item]);
+  });
+
+  it('fails exact report export when task or candidate hash does not match', async () => {
+    const { config } = await fixture();
+    const item = candidate('character/scout/portrait', 'art/candidates/exact.png', 'api', '2026-08-08T10:00:00.000Z');
+    await fs.mkdir(path.join(config.rootDir, 'art', 'candidates'), { recursive: true });
+    await fs.writeFile(path.join(config.rootDir, item.imagePath), fakePng());
+    await fs.writeFile(path.join(config.rootDir, item.imagePath.replace('.png', '.json')), JSON.stringify(item));
+    const reportPath = path.join(config.rootDir, 'reports', 'round-mismatch.json');
+    await fs.mkdir(path.dirname(reportPath), { recursive: true });
+    await fs.writeFile(reportPath, JSON.stringify({ tasks: [{ taskId: 'zone/school/background', candidateHash: item.hash }] }));
+    await expect(selectCandidatesFromReport(config, reportPath)).rejects.toThrow('candidate not found');
   });
 });

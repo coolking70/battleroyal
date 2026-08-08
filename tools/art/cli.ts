@@ -57,6 +57,7 @@ function printHelp(): void {
   art:validate
   art:api-check
   art:smoke
+  art:review-export --round A|--report <round-report.json>
   art:security:browser
   art:security:repo`);
 }
@@ -71,6 +72,7 @@ async function doctor(config: ArtConfig, offline: boolean): Promise<number> {
   }
   for (const relative of [
     'art/style/master-style.md',
+    'art/style/render-style.md',
     'art/style/character-style.md',
     'art/style/zone-style.md',
     'art/style/item-style.md',

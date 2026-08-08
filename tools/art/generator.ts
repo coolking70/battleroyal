@@ -175,7 +175,8 @@ export async function writePromptReport(
   built: Awaited<ReturnType<typeof buildPrompt>>,
   hash: string,
 ): Promise<void> {
-  const dir = path.join(rootDir, 'reports', 'phase4-prompts');
+  const versionDir = built.styleProfileVersion.startsWith('phase4-style-v2-') ? 'phase4-style-v2' : 'legacy';
+  const dir = path.join(rootDir, 'reports', 'phase4-prompts', versionDir);
   await fs.mkdir(dir, { recursive: true });
   const filename = `${built.task.id.replaceAll('/', '__')}.md`;
   await fs.writeFile(

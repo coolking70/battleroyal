@@ -19,6 +19,19 @@ const OUTPUT_NAMES: Record<string, string> = {
   'world_event/blackout/illustration': 'blackout-illustration',
 };
 
+const REVIEW_REMINDERS: Record<string, string> = {
+  'character/scout/portrait': 'Check that binoculars are the only prominent equipment and that hands, back, and shoulders are free of weapons; remember the v1 rifle issue.',
+  'zone/school/background': 'Check for zero people, zero human silhouettes, and a calm open lower center; remember the v1 central-person and silhouette issue.',
+  'item/bandage/icon': 'Check for exactly one centered isolated object on a neutral backdrop with no scenery, frame, arrows, buttons, or text; remember the v1 ruins/HUD/frame issue.',
+  'world_event/blackout/illustration': 'Check for an environment-only blackout with no people, weapons, or rain, powerless normal lights, and only sparse red emergency lamps; remember the v1 armed-person/rain/HUD issue.',
+};
+
+export interface ReviewExportOptions {
+  reportPath?: string;
+  outputDir?: string;
+  fileSuffix?: string;
+}
+
 export function selectPendingReviewCandidates(candidates: CandidateMetadata[], taskIds: readonly string[] = ROUND_A_TASKS): CandidateMetadata[] {
   return taskIds.map((taskId) => {
     const matches = candidates
@@ -29,9 +42,30 @@ export function selectPendingReviewCandidates(candidates: CandidateMetadata[], t
   });
 }
 
-export async function exportRoundAReview(config: ArtConfig): Promise<{ outputDir: string; candidates: CandidateMetadata[] }> {
-  const candidates = selectPendingReviewCandidates(await listCandidates(config));
-  const outputDir = path.join(config.rootDir, OUTPUT_DIR);
+export async function selectCandidatesFromReport(config: ArtConfig, reportPath: string): Promise<CandidateMetadata[]> {
+  const parsed = JSON.parse(await fs.readFile(path.isAbsolute(reportPath) ? reportPath : path.join(config.rootDir, reportPath), 'utf8')) as {
+    tasks?: Array<{ taskId?: string; candidateHash?: string; validation?: string; review?: string }>;
+  };
+  if (!Array.isArray(parsed.tasks) || parsed.tasks.length === 0) throw new Error('review report has no tasks');
+  const candidates = await listCandidates(config);
+  const selected = parsed.tasks.map((entry) => {
+    if (!entry.taskId || !entry.candidateHash) throw new Error('review report task is missing taskId or candidateHash');
+    const candidate = candidates.find((item) => item.taskId === entry.taskId && item.hash === entry.candidateHash);
+    if (!candidate) throw new Error(`review report candidate not found: ${entry.taskId} / ${entry.candidateHash}`);
+    if (candidate.validationStatus !== 'passed' || candidate.reviewStatus !== 'pending') throw new Error(`review report candidate is not pending/passed: ${entry.taskId}`);
+    if (entry.validation && entry.validation !== candidate.validationStatus) throw new Error(`review report validation mismatch: ${entry.taskId}`);
+    if (entry.review && entry.review !== candidate.reviewStatus) throw new Error(`review report review status mismatch: ${entry.taskId}`);
+    return candidate;
+  });
+  if (new Set(selected.map((candidate) => candidate.taskId)).size !== selected.length) throw new Error('review report contains duplicate task ids');
+  return selected;
+}
+
+export async function exportRoundAReview(config: ArtConfig, options: ReviewExportOptions = {}): Promise<{ outputDir: string; candidates: CandidateMetadata[] }> {
+  const candidates = options.reportPath
+    ? await selectCandidatesFromReport(config, options.reportPath)
+    : selectPendingReviewCandidates(await listCandidates(config));
+  const outputDir = path.join(config.rootDir, options.outputDir ?? OUTPUT_DIR);
   await fs.rm(outputDir, { recursive: true, force: true });
   await fs.mkdir(outputDir, { recursive: true });
   const assets = [] as Array<{ taskId: string; candidateHash: string; file: string }>;
@@ -45,13 +79,14 @@ export async function exportRoundAReview(config: ArtConfig): Promise<{ outputDir
   ];
   for (const candidate of candidates) {
     const extension = path.extname(candidate.imagePath).slice(1) || 'bin';
-    const file = `${OUTPUT_NAMES[candidate.taskId] ?? candidate.taskId.replaceAll('/', '-')}.${extension}`;
+    const file = `${OUTPUT_NAMES[candidate.taskId] ?? candidate.taskId.replaceAll('/', '-')}${options.fileSuffix ?? ''}.${extension}`;
     await fs.copyFile(path.join(config.rootDir, candidate.imagePath), path.join(outputDir, file));
     assets.push({ taskId: candidate.taskId, candidateHash: candidate.hash, file });
     readme.push(`| ${candidate.taskId} | ${candidate.hash} | ${file} | ${candidate.actualWidth}×${candidate.actualHeight} | ${candidate.validationStatus} | pending |`);
     readme.push('');
     readme.push('Decision: __________');
     readme.push('Notes: __________');
+    readme.push(`Review reminder: ${REVIEW_REMINDERS[candidate.taskId] ?? 'Review against the task brief and hard constraints.'}`);
     readme.push('');
   }
   await fs.writeFile(path.join(outputDir, 'index.json'), `${JSON.stringify({ assets }, null, 2)}\n`);
@@ -60,10 +95,18 @@ export async function exportRoundAReview(config: ArtConfig): Promise<{ outputDir
 }
 
 async function main(): Promise<void> {
-  const round = process.argv.slice(2).find((value) => value === '--round') ? process.argv[process.argv.indexOf('--round') + 1] : undefined;
-  if (round !== 'A') throw new Error('review export currently supports only --round A');
+  const argv = process.argv.slice(2);
+  const roundIndex = argv.indexOf('--round');
+  const reportIndex = argv.indexOf('--report');
+  const round = roundIndex >= 0 ? argv[roundIndex + 1] : undefined;
+  const reportPath = reportIndex >= 0 ? argv[reportIndex + 1] : undefined;
+  if (reportPath && round) throw new Error('use either --round or --report, not both');
+  if (!reportPath && round !== 'A') throw new Error('review export currently supports only --round A');
   const configModule = await import('./config');
-  const result = await exportRoundAReview(configModule.createArtConfig());
+  const options = reportPath
+    ? { reportPath, outputDir: 'output/art-review/phase4a11-round-a2', fileSuffix: '-v2' }
+    : {};
+  const result = await exportRoundAReview(configModule.createArtConfig(), options);
   console.log(`EXPORTED ${result.candidates.length} pending candidates to ${result.outputDir}`);
 }
 

@@ -26,6 +26,8 @@ export interface ArtTask {
   revision: number;
   status: ArtTaskStatus;
   alphaRequired?: boolean;
+  hardConstraints?: string[];
+  avoid?: string[];
 }
 
 export interface BuiltPrompt {
@@ -37,6 +39,14 @@ export interface BuiltPrompt {
   height: number;
   requestedRatio: string;
   styleProfileVersion: string;
+  sections: {
+    renderStyle: string;
+    categoryStyle: string;
+    entityBrief: string;
+    variant: string;
+    hardConstraints: string;
+    avoid: string;
+  };
 }
 
 export interface ImageGenerationRequest {

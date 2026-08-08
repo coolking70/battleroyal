@@ -1,3 +1,3 @@
 # Zone style
 
-Unpopulated urban survival game background, mid-distance environment with one unmistakable location identity, readable architecture and props, subtle ruin and abandonment, calm central or lower area reserved for interface overlays. Do not place a clear person in the scene; distant indistinct silhouettes are optional but should be avoided.
+Unpopulated environmental background with one unmistakable location identity, readable architecture and props, restrained abandonment, open sightlines, and a calm lower-center area reserved for later overlay. The scene itself contains no people or silhouettes.

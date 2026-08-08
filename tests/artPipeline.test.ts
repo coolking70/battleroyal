@@ -68,10 +68,11 @@ describe('Phase 4 task and prompt contracts', () => {
     const first = await buildPrompt(root, task, 'test-model');
     const second = await buildPrompt(root, task, 'test-model');
     expect(contentHash(first)).toBe(contentHash(second));
-    expect(first.prompt).toContain('Original urban survival game artwork');
+    expect(first.prompt).toContain('Semi-realistic anime illustration');
+    expect(first.styleProfileVersion).toMatch(/^phase4-style-v2-/);
     expect(first.negativePrompt).toContain('watermark');
 
-    await fs.appendFile(path.join(root, 'art', 'style', 'master-style.md'), '\nrevision marker');
+    await fs.appendFile(path.join(root, 'art', 'style', 'render-style.md'), '\nrevision marker');
     const changed = await buildPrompt(root, task, 'test-model');
     expect(contentHash(changed)).not.toBe(contentHash(first));
   });

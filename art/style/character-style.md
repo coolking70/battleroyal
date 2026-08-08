@@ -1,3 +1,3 @@
 # Character style
 
-Game character portrait, waist-up or knee-up single subject, frontal or slight three-quarter view, complete head and clothing, clear face, readable silhouette, simple unobtrusive background. Anime semi-realism with light cel shading and soft painterly edges. Keep age, hairstyle, clothing construction, and signature prop consistent across variants.
+Single adult character artwork, waist-up or knee-up, frontal or slight three-quarter view, complete head and clothing, clear face, readable silhouette, simple unobtrusive background. Keep age, hairstyle, clothing construction, and one signature profession prop consistent across variants. This is character artwork only, never a selection screen or interface.
