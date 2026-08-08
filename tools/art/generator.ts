@@ -201,8 +201,16 @@ export async function writePromptReport(
     'item/simple_armor/icon',
     'item/plate_armor/icon',
   ]);
+  const e1TaskIds = new Set([
+    'world_event/emergency_broadcast/illustration',
+    'world_event/medical_alert/illustration',
+    'world_event/research_anomaly/illustration',
+    'world_event/citywide_unrest/illustration',
+  ]);
   const targetedVersion = b2TaskIds.has(built.task.id)
     ? 'phase4a23-b2'
+    : e1TaskIds.has(built.task.id)
+      ? 'phase4a4-e1'
     : b3TaskIds.has(built.task.id)
       ? 'phase4a3-b3'
     : built.task.id === 'world_event/rain/illustration' && built.task.revision >= 3

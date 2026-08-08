@@ -137,9 +137,9 @@ describe('Phase 4A-3 Item Production Batch B3 contracts', () => {
     expect(auditItemProviderPrompt(task, `A single iron object with ${token}.`).forbiddenTokens).toContain(token);
   });
 
-  it('does not formally publish any B3 slot before candidate review', async () => {
+  it('keeps all B3 slots official after Track A formalization', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as { items: Record<string, string | null> };
-    for (const taskId of B3_TASKS) expect(manifest.items[taskId.split('/')[1]]).toBeUndefined();
+    for (const taskId of B3_TASKS) expect(manifest.items[taskId.split('/')[1]]).toBe(`/assets/items/${taskId.split('/')[1]}/icon.png`);
   });
 
   it('records item category and strategy in the B3 prompt report', async () => {

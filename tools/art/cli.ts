@@ -8,8 +8,9 @@ import { buildPrompt } from './promptBuilder';
 import { publishApproved, validatePublishedManifest } from './publisher';
 import { listCandidates, reviewCandidate } from './reviewer';
 import { loadTasks, selectTasks, taskForId } from './taskPlanner';
-import { auditCharacterProviderPrompt, auditEnvironmentProviderPrompt, auditItemProviderPrompt, auditRainProviderPrompt } from './promptAudit';
+import { auditCharacterProviderPrompt, auditEnvironmentProviderPrompt, auditEventProviderPrompt, auditItemProviderPrompt, auditRainProviderPrompt } from './promptAudit';
 import { agnesRequestFor } from './providers/agnes';
+import { runEventE1Batch } from './eventBatch';
 import type { ArtConfig, ArtTask } from './types';
 
 interface Args {
@@ -53,6 +54,7 @@ function printHelp(): void {
   art:prompt --task character/scout/portrait
   art:prompt-audit --task character/engineer/portrait
   art:generate [--task ...|--category characters|--status missing] [--dry-run] [--force] [--concurrency 1|2] [--report-name name]
+  art:event-e1 [--report-name name] (exactly four world events, sequential, no rerolls)
   art:list
   art:approve --task ... --candidate <contentHash>
   art:reject --task ... --candidate <contentHash> --reason "..."
@@ -124,6 +126,8 @@ async function promptAuditCommand(config: ArtConfig, task: ArtTask): Promise<num
   const payload = agnesRequestFor({ model: built.model, prompt: built.prompt, negativePrompt: built.negativePrompt, width: built.width, height: built.height, requestedRatio: built.requestedRatio });
   const audit = task.id === 'world_event/rain/illustration'
     ? auditRainProviderPrompt(task, payload.prompt)
+    : task.promptStrategy === 'event-positive-only'
+      ? auditEventProviderPrompt(task, payload.prompt)
     : task.promptStrategy === 'character-positive-only'
     ? auditCharacterProviderPrompt(task, payload.prompt)
     : task.promptStrategy === 'environment-positive-only'
@@ -202,6 +206,12 @@ async function main(): Promise<number> {
       return promptAuditCommand(config, taskForId(await loadTasks(config.rootDir), args.taskId));
     }
     case 'generate': return generateCommand(config, args);
+    case 'event-e1': {
+      if (args.concurrency !== undefined && args.concurrency !== 1) throw new Error('event-e1 requires --concurrency 1');
+      const result = await runEventE1Batch(config, await loadTasks(config.rootDir), { reportName: args.reportName, force: args.force });
+      console.log(JSON.stringify(result.report, null, 2));
+      return result.exitCode;
+    }
     case 'list': await listCommand(config); return 0;
     case 'approve': {
       if (!args.taskId || !args.candidate) throw new Error('--task and --candidate are required');

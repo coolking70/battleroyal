@@ -24,8 +24,8 @@ const B1_TASKS = [
 
 afterEach(() => setAssetManifest(null));
 
-describe('Phase 4A-3 formalization closure', () => {
-  it('publishes exactly fifteen AI slots after B2 formalization', async () => {
+describe('Phase 4A-4 formalization closure', () => {
+  it('publishes exactly twenty-three AI slots after B3 formalization', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
     expect(manifest.characters.scout?.portrait).toBe('/assets/characters/scout/portrait.png');
     expect(manifest.characters.fighter?.portrait).toBe('/assets/characters/fighter/portrait.png');
@@ -41,14 +41,22 @@ describe('Phase 4A-3 formalization closure', () => {
     expect(manifest.items.medkit).toBe('/assets/items/medkit/icon.png');
     expect(manifest.items.water).toBe('/assets/items/water/icon.png');
     expect(manifest.items.energy_drink).toBe('/assets/items/energy_drink/icon.png');
+    expect(manifest.items.battery).toBe('/assets/items/battery/icon.png');
+    expect(manifest.items.iron).toBe('/assets/items/iron/icon.png');
+    expect(manifest.items.wood).toBe('/assets/items/wood/icon.png');
+    expect(manifest.items.iron_pipe).toBe('/assets/items/iron_pipe/icon.png');
+    expect(manifest.items.stone_axe).toBe('/assets/items/stone_axe/icon.png');
+    expect(manifest.items.simple_bow).toBe('/assets/items/simple_bow/icon.png');
+    expect(manifest.items.simple_armor).toBe('/assets/items/simple_armor/icon.png');
+    expect(manifest.items.plate_armor).toBe('/assets/items/plate_armor/icon.png');
     expect(manifest.worldEvents.blackout).toBe('/assets/world-events/blackout/illustration.png');
     expect(Object.values(manifest.characters).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(4);
     expect(Object.values(manifest.zones).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(6);
-    expect(Object.values(manifest.items).filter(Boolean)).toHaveLength(4);
+    expect(Object.values(manifest.items).filter(Boolean)).toHaveLength(12);
     expect(Object.values(manifest.worldEvents).filter(Boolean)).toHaveLength(1);
   });
 
-  it('keeps provenance limited to the fifteen approved formal AI tasks', async () => {
+  it('keeps provenance limited to the twenty-three approved formal AI tasks', async () => {
     const provenance = JSON.parse(await fs.readFile(path.join(process.cwd(), 'art/approved-assets.json'), 'utf8')) as { assets: Record<string, { candidateHash: string }> };
     expect(Object.keys(provenance.assets).sort()).toEqual([
       'character/engineer/portrait',
@@ -56,9 +64,17 @@ describe('Phase 4A-3 formalization closure', () => {
       'character/medic/portrait',
       'character/scout/portrait',
       'item/bandage/icon',
+      'item/battery/icon',
       'item/energy_drink/icon',
+      'item/iron/icon',
+      'item/iron_pipe/icon',
       'item/medkit/icon',
+      'item/plate_armor/icon',
+      'item/simple_armor/icon',
+      'item/simple_bow/icon',
+      'item/stone_axe/icon',
       'item/water/icon',
+      'item/wood/icon',
       'world_event/blackout/illustration',
       'zone/factory/background',
       'zone/forest/background',
@@ -76,6 +92,14 @@ describe('Phase 4A-3 formalization closure', () => {
     expect(provenance.assets['item/medkit/icon']?.candidateHash).toBe('56c73dde328a31f004dc449e0d1e1ac4af0d1f0b616de6906eca99757b5f829d');
     expect(provenance.assets['item/water/icon']?.candidateHash).toBe('ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38');
     expect(provenance.assets['item/energy_drink/icon']?.candidateHash).toBe('795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b');
+    expect(provenance.assets['item/battery/icon']?.candidateHash).toBe('1d7473b3470be8f86f43c2b76f21911cc2055153b7d09fa323acf901c42d5ee6');
+    expect(provenance.assets['item/iron/icon']?.candidateHash).toBe('d8aa7a6d3643de2ae2bdc3b7c363fbec6f72524eebf69a6ef043a55d3595f68c');
+    expect(provenance.assets['item/wood/icon']?.candidateHash).toBe('88c4f10fdf7fb7267746ff391c3e5598df8bf5c08e4a4703fb1a8daeca1d0b56');
+    expect(provenance.assets['item/iron_pipe/icon']?.candidateHash).toBe('8d857fea4bd00318942cba3df985a1f7cc014978d9978c6a6acdfe126231c920');
+    expect(provenance.assets['item/stone_axe/icon']?.candidateHash).toBe('07749b21843468547d12600a18a8add393e10f983dd3440e7ac528a641ec1d96');
+    expect(provenance.assets['item/simple_bow/icon']?.candidateHash).toBe('07db9c7697913d9ac8c24c09b255e6f9d72b54b1ed2df6369ae999a74eea028d');
+    expect(provenance.assets['item/simple_armor/icon']?.candidateHash).toBe('e7fb2c86d17c42d4745d3019ab3f188d13591b66dfe46244882cdd6bc2e695e5');
+    expect(provenance.assets['item/plate_armor/icon']?.candidateHash).toBe('865f8fc5cdcad4eb81aba4a2e712afb47f0b6c11be75455408c5f7cfcafc0af5');
     expect(provenance.assets['world_event/blackout/illustration']?.candidateHash).toBe('d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843');
     expect(provenance.assets['zone/hospital/background']?.candidateHash).toBe('1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5');
     expect(provenance.assets['zone/residential/background']?.candidateHash).toBe('9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84');
@@ -101,6 +125,9 @@ describe('Phase 4A-3 formalization closure', () => {
     expect(getItemVisual('medkit').source).toBe('official');
     expect(getItemVisual('water').source).toBe('official');
     expect(getItemVisual('energy_drink').source).toBe('official');
+    for (const itemId of ['wood', 'iron', 'stone_axe', 'iron_pipe', 'simple_bow', 'simple_armor', 'plate_armor', 'battery']) {
+      expect(getItemVisual(itemId).source).toBe('official');
+    }
     expect(getWorldEventVisual('blackout').source).toBe('official');
     expect(getWorldEventVisual('blackout').image).toBe('/assets/world-events/blackout/illustration.png');
   });

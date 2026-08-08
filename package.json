@@ -20,6 +20,7 @@
     "art:prompt": "tsx tools/art/cli.ts prompt",
     "art:prompt-audit": "tsx tools/art/cli.ts prompt-audit",
     "art:generate": "tsx tools/art/cli.ts generate",
+    "art:event-e1": "tsx tools/art/cli.ts event-e1",
     "art:list": "tsx tools/art/cli.ts list",
     "art:approve": "tsx tools/art/cli.ts approve",
     "art:reject": "tsx tools/art/cli.ts reject",

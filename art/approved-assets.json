@@ -135,6 +135,78 @@
       "provider": "agnes",
       "approvedAt": "2026-08-08T23:14:29.927Z",
       "publicPath": "/assets/zones/residential/background.png"
+    },
+    "item/battery/icon": {
+      "candidateHash": "1d7473b3470be8f86f43c2b76f21911cc2055153b7d09fa323acf901c42d5ee6",
+      "contentHash": "1d7473b3470be8f86f43c2b76f21911cc2055153b7d09fa323acf901c42d5ee6",
+      "promptHash": "1d7473b3470be8f86f43c2b76f21911cc2055153b7d09fa323acf901c42d5ee6",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:40:00.448Z",
+      "publicPath": "/assets/items/battery/icon.png"
+    },
+    "item/iron/icon": {
+      "candidateHash": "d8aa7a6d3643de2ae2bdc3b7c363fbec6f72524eebf69a6ef043a55d3595f68c",
+      "contentHash": "d8aa7a6d3643de2ae2bdc3b7c363fbec6f72524eebf69a6ef043a55d3595f68c",
+      "promptHash": "d8aa7a6d3643de2ae2bdc3b7c363fbec6f72524eebf69a6ef043a55d3595f68c",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:40:00.449Z",
+      "publicPath": "/assets/items/iron/icon.png"
+    },
+    "item/iron_pipe/icon": {
+      "candidateHash": "8d857fea4bd00318942cba3df985a1f7cc014978d9978c6a6acdfe126231c920",
+      "contentHash": "8d857fea4bd00318942cba3df985a1f7cc014978d9978c6a6acdfe126231c920",
+      "promptHash": "8d857fea4bd00318942cba3df985a1f7cc014978d9978c6a6acdfe126231c920",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:40:00.449Z",
+      "publicPath": "/assets/items/iron_pipe/icon.png"
+    },
+    "item/plate_armor/icon": {
+      "candidateHash": "865f8fc5cdcad4eb81aba4a2e712afb47f0b6c11be75455408c5f7cfcafc0af5",
+      "contentHash": "865f8fc5cdcad4eb81aba4a2e712afb47f0b6c11be75455408c5f7cfcafc0af5",
+      "promptHash": "865f8fc5cdcad4eb81aba4a2e712afb47f0b6c11be75455408c5f7cfcafc0af5",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:40:00.449Z",
+      "publicPath": "/assets/items/plate_armor/icon.png"
+    },
+    "item/simple_armor/icon": {
+      "candidateHash": "e7fb2c86d17c42d4745d3019ab3f188d13591b66dfe46244882cdd6bc2e695e5",
+      "contentHash": "e7fb2c86d17c42d4745d3019ab3f188d13591b66dfe46244882cdd6bc2e695e5",
+      "promptHash": "e7fb2c86d17c42d4745d3019ab3f188d13591b66dfe46244882cdd6bc2e695e5",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:40:00.449Z",
+      "publicPath": "/assets/items/simple_armor/icon.png"
+    },
+    "item/simple_bow/icon": {
+      "candidateHash": "07db9c7697913d9ac8c24c09b255e6f9d72b54b1ed2df6369ae999a74eea028d",
+      "contentHash": "07db9c7697913d9ac8c24c09b255e6f9d72b54b1ed2df6369ae999a74eea028d",
+      "promptHash": "07db9c7697913d9ac8c24c09b255e6f9d72b54b1ed2df6369ae999a74eea028d",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:40:00.449Z",
+      "publicPath": "/assets/items/simple_bow/icon.png"
+    },
+    "item/stone_axe/icon": {
+      "candidateHash": "07749b21843468547d12600a18a8add393e10f983dd3440e7ac528a641ec1d96",
+      "contentHash": "07749b21843468547d12600a18a8add393e10f983dd3440e7ac528a641ec1d96",
+      "promptHash": "07749b21843468547d12600a18a8add393e10f983dd3440e7ac528a641ec1d96",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:40:00.449Z",
+      "publicPath": "/assets/items/stone_axe/icon.png"
+    },
+    "item/wood/icon": {
+      "candidateHash": "88c4f10fdf7fb7267746ff391c3e5598df8bf5c08e4a4703fb1a8daeca1d0b56",
+      "contentHash": "88c4f10fdf7fb7267746ff391c3e5598df8bf5c08e4a4703fb1a8daeca1d0b56",
+      "promptHash": "88c4f10fdf7fb7267746ff391c3e5598df8bf5c08e4a4703fb1a8daeca1d0b56",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:40:00.449Z",
+      "publicPath": "/assets/items/wood/icon.png"
     }
   }
 }

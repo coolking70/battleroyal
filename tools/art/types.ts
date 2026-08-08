@@ -5,7 +5,7 @@ export type ArtTaskStatus = 'planned' | 'generated' | 'approved' | 'rejected';
 export type ValidationStatus = 'passed' | 'failed';
 export type ReviewStatus = 'pending' | 'approved' | 'rejected' | 'superseded';
 export type ProviderName = 'agnes';
-export type PromptStrategy = 'standard' | 'character-positive-only' | 'environment-positive-only' | 'item-positive-only-unmarked' | 'item-positive-only';
+export type PromptStrategy = 'standard' | 'character-positive-only' | 'environment-positive-only' | 'item-positive-only-unmarked' | 'item-positive-only' | 'event-positive-only';
 export type ItemProductionCategory = 'consumable' | 'material' | 'weapon' | 'armor';
 
 export interface ProviderCapabilities {

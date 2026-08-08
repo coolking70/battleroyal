@@ -160,7 +160,7 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
     expect(auditItemProviderPrompt(task, `A case with a ${token}.`).forbiddenTokens).toContain(token);
   });
 
-  it('keeps the formal manifest at fifteen AI tasks after B2 publication', async () => {
+  it('keeps the formal manifest at twenty-three AI tasks after B3 publication', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as {
       characters: Record<string, Record<string, string | null>>;
       zones: Record<string, Record<string, string | null>>;
@@ -173,7 +173,7 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
       ...Object.values(manifest.items),
       ...Object.values(manifest.worldEvents),
     ].filter(Boolean).length;
-    expect(count).toBe(15);
+    expect(count).toBe(23);
     expect(manifest.zones.hospital?.background).toBe('/assets/zones/hospital/background.png');
     expect(manifest.zones.residential?.background).toBe('/assets/zones/residential/background.png');
     expect(manifest.zones.factory?.background).toBe('/assets/zones/factory/background.png');
@@ -182,6 +182,14 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
     expect(manifest.items.medkit).toBe('/assets/items/medkit/icon.png');
     expect(manifest.items.water).toBe('/assets/items/water/icon.png');
     expect(manifest.items.energy_drink).toBe('/assets/items/energy_drink/icon.png');
+    expect(manifest.items.battery).toBe('/assets/items/battery/icon.png');
+    expect(manifest.items.iron).toBe('/assets/items/iron/icon.png');
+    expect(manifest.items.wood).toBe('/assets/items/wood/icon.png');
+    expect(manifest.items.iron_pipe).toBe('/assets/items/iron_pipe/icon.png');
+    expect(manifest.items.stone_axe).toBe('/assets/items/stone_axe/icon.png');
+    expect(manifest.items.simple_bow).toBe('/assets/items/simple_bow/icon.png');
+    expect(manifest.items.simple_armor).toBe('/assets/items/simple_armor/icon.png');
+    expect(manifest.items.plate_armor).toBe('/assets/items/plate_armor/icon.png');
   });
 
   it.each([

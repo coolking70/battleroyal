@@ -58,7 +58,15 @@
     "bandage": "/assets/items/bandage/icon.png",
     "medkit": "/assets/items/medkit/icon.png",
     "energy_drink": "/assets/items/energy_drink/icon.png",
-    "water": "/assets/items/water/icon.png"
+    "water": "/assets/items/water/icon.png",
+    "battery": "/assets/items/battery/icon.png",
+    "iron": "/assets/items/iron/icon.png",
+    "iron_pipe": "/assets/items/iron_pipe/icon.png",
+    "plate_armor": "/assets/items/plate_armor/icon.png",
+    "simple_armor": "/assets/items/simple_armor/icon.png",
+    "simple_bow": "/assets/items/simple_bow/icon.png",
+    "stone_axe": "/assets/items/stone_axe/icon.png",
+    "wood": "/assets/items/wood/icon.png"
   },
   "worldEvents": {
     "blackout": "/assets/world-events/blackout/illustration.png"

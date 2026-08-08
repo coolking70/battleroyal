@@ -114,6 +114,75 @@ export const FORBIDDEN_ITEM_OBJECT_TOKENS = [
   'inventory frame',
 ] as const;
 
+export const FORBIDDEN_EVENT_PERSON_TOKENS = [
+  'person',
+  'people',
+  'human',
+  'character',
+  'protagonist',
+  'survivor',
+  'soldier',
+  'crowd',
+  'protester',
+  'pedestrian',
+  'worker',
+  'doctor',
+  'nurse',
+  'patient',
+] as const;
+
+export const FORBIDDEN_EVENT_UI_TOKENS = [
+  'HUD',
+  'interface',
+  'game card',
+  'status bar',
+  'menu',
+  'game screenshot',
+  'event card',
+  'window',
+  'slot',
+  'arrows',
+  'buttons',
+] as const;
+
+const EVENT_PROMPT_REQUIREMENTS: Record<string, readonly string[]> = {
+  'world_event/emergency_broadcast/illustration': [
+    'unattended civic communications room',
+    'public-address speaker',
+    'communications console',
+    'abstract signal bars',
+    'geometric blocks',
+    'amber warning beacon',
+  ],
+  'world_event/medical_alert/illustration': [
+    'hospital emergency supply station',
+    'off-white cases',
+    'muted green panels',
+    'status beacon',
+  ],
+  'world_event/research_anomaly/illustration': [
+    'contained instrument anomaly',
+    'research chamber',
+    'sealed glass apparatus',
+    'blue-violet',
+    'abstract waveforms',
+  ],
+  'world_event/citywide_unrest/illustration': [
+    'disordered city intersection',
+    'displaced lightweight barriers',
+    'overturned bins',
+    'scattered paper',
+    'warning beacons',
+  ],
+};
+
+const EVENT_FORBIDDEN_BY_TASK: Record<string, readonly string[]> = {
+  'world_event/emergency_broadcast/illustration': ['readable text', 'map', 'coordinates'],
+  'world_event/medical_alert/illustration': ['cross', 'logo', 'emblem', 'red cross'],
+  'world_event/research_anomaly/illustration': ['monster', 'magic', 'portal'],
+  'world_event/citywide_unrest/illustration': ['riot', 'protest', 'crowd', 'battle', 'soldier', 'weapon', 'fire', 'explosion', 'political logo'],
+};
+
 function tokenPattern(token: string): RegExp {
   return new RegExp(`\\b${token.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'i');
 }
@@ -181,4 +250,31 @@ export function auditItemProviderPrompt(task: ArtTask, providerPrompt: string): 
     : task.promptStrategy === 'item-positive-only'
       ? FORBIDDEN_ITEM_CATEGORY_TOKENS
       : FORBIDDEN_ITEM_MARKING_TOKENS);
+}
+
+export function auditEventProviderPrompt(task: ArtTask, providerPrompt: string): PromptAuditResult {
+  const forbiddenTokens = [
+    ...FORBIDDEN_EVENT_PERSON_TOKENS,
+    ...FORBIDDEN_EVENT_UI_TOKENS,
+    ...(EVENT_FORBIDDEN_BY_TASK[task.id] ?? []),
+  ].filter((token, index, tokens) => tokens.indexOf(token) === index && tokenPattern(token).test(providerPrompt));
+  const internalTaskId = providerPrompt.includes(task.id);
+  const internalEntityId = tokenPattern(task.entityId).test(providerPrompt);
+  const missingRequirements = (EVENT_PROMPT_REQUIREMENTS[task.id] ?? []).filter((token) => !providerPrompt.toLowerCase().includes(token.toLowerCase()));
+  const failures = [
+    ...forbiddenTokens.map((token) => `forbidden token: ${token}`),
+    ...(internalTaskId ? [`internal task id: ${task.id}`] : []),
+    ...(internalEntityId ? [`internal entity id: ${task.entityId}`] : []),
+    ...missingRequirements.map((token) => `missing positive anchor: ${token}`),
+  ];
+  return {
+    strategy: task.promptStrategy ?? 'standard',
+    passed: failures.length === 0,
+    forbiddenTokenCount: forbiddenTokens.length,
+    forbiddenTokens,
+    internalTaskId,
+    internalEntityId,
+    designSheetHeading: false,
+    failures,
+  };
 }

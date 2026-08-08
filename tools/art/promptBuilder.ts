@@ -38,7 +38,9 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
   const itemProductionPolicy = task.promptStrategy === 'item-positive-only' && task.itemProductionCategory
     ? itemProductionPromptPolicyFor(task)
     : null;
-  const categoryStyle = task.promptStrategy === 'environment-positive-only'
+  const categoryStyle = task.promptStrategy === 'event-positive-only'
+    ? 'Atmospheric environmental illustration for a game event. The event phenomenon or event equipment is the primary visual subject. Wide cinematic environmental composition.'
+    : task.promptStrategy === 'environment-positive-only'
     ? task.category === 'zone'
       ? 'Environmental location illustration with clear architecture, recognizable props, restrained abandonment, open sightlines and a calm lower-center area reserved for later overlay.'
       : 'Environmental event illustration with one clear weather phenomenon as the visual subject, strong mood, readable composition and original visual design.'
@@ -68,7 +70,7 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
         'the silhouette behind the person is clean and empty',
         ...(task.positiveComposition ?? []),
       ]
-    : task.promptStrategy === 'environment-positive-only' || task.promptStrategy === 'item-positive-only-unmarked' || task.promptStrategy === 'item-positive-only'
+    : task.promptStrategy === 'event-positive-only' || task.promptStrategy === 'environment-positive-only' || task.promptStrategy === 'item-positive-only-unmarked' || task.promptStrategy === 'item-positive-only'
       ? [...(task.positiveComposition ?? [])]
     : [
         ...policy.hardConstraints,
@@ -90,6 +92,8 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
   };
   const technicalComposition = task.promptStrategy === 'character-positive-only'
     ? `Technical composition: ${task.width}x${task.height}; centered waist-up portrait; clear focal subject; pale neutral studio-like backdrop.`
+    : task.promptStrategy === 'event-positive-only'
+      ? `Technical composition: ${task.width}x${task.height}; wide environmental framing; clear event focal subject; cinematic atmospheric composition.`
     : task.promptStrategy === 'environment-positive-only'
       ? `Technical composition: ${task.width}x${task.height}; wide environmental framing; clear location or weather focal subject; calm lower-center space.`
       : task.promptStrategy === 'item-positive-only-unmarked' || task.promptStrategy === 'item-positive-only'

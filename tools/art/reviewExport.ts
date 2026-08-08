@@ -37,6 +37,10 @@ const OUTPUT_NAMES: Record<string, string> = {
   'item/simple_bow/icon': 'simple-bow-icon',
   'item/simple_armor/icon': 'simple-armor-icon',
   'item/plate_armor/icon': 'plate-armor-icon',
+  'world_event/emergency_broadcast/illustration': 'emergency-broadcast-illustration',
+  'world_event/medical_alert/illustration': 'medical-alert-illustration',
+  'world_event/research_anomaly/illustration': 'research-anomaly-illustration',
+  'world_event/citywide_unrest/illustration': 'citywide-unrest-illustration',
 };
 
 const REVIEW_REMINDERS: Record<string, string> = {
@@ -64,6 +68,10 @@ const REVIEW_REMINDERS: Record<string, string> = {
   'item/simple_bow/icon': 'Check plain handmade bow identity, curved limbs and string, no character, arrows or fantasy glow.',
   'item/simple_armor/icon': 'Check equipment item only, no wearer or mannequin, protective function clear, and readable at small size.',
   'item/plate_armor/icon': 'Check reinforced plate equipment item only, no wearer or mannequin, protective function clear, and readable at small size.',
+  'world_event/emergency_broadcast/illustration': 'Check the unattended civic communications room, public-address speaker, communications console, abstract non-readable signal displays, amber status lights and single amber warning beacon; no text, map or coordinates.',
+  'world_event/medical_alert/illustration': 'Check the hospital emergency supply station, off-white cases, muted green panels, blank surfaces and compact amber-and-green status beacon; no cross, logo or emblem.',
+  'world_event/research_anomaly/illustration': 'Check the contained instrument anomaly in the research chamber, sealed glass apparatus, blue-violet disturbance and abstract waveforms; no monster, magic or portal.',
+  'world_event/citywide_unrest/illustration': 'Check the disordered city intersection, displaced barriers, overturned bins, scattered paper and municipal warning beacons; no people, riot, protest, battle, weapon, fire or explosion.',
 };
 const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'character/scout/portrait': [
@@ -92,6 +100,10 @@ const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'item/simple_bow/icon': ['bow identity clear', 'plain handmade design', 'no character', 'no fantasy glow', 'readable silhouette'],
   'item/simple_armor/icon': ['equipment item only', 'no wearer', 'protective function clear', 'no mannequin focal subject', 'readable at small size'],
   'item/plate_armor/icon': ['equipment item only', 'no wearer', 'protective function clear', 'no mannequin focal subject', 'readable at small size'],
+  'world_event/emergency_broadcast/illustration': ['unattended civic communications room', 'public-address speaker', 'communications console', 'abstract signal bars/geometric blocks only', 'amber warning beacon', 'no readable text/map/coordinates'],
+  'world_event/medical_alert/illustration': ['hospital emergency supply station', 'off-white cases', 'muted green panels', 'blank smooth surfaces', 'amber-and-green status beacon', 'no cross/logo/emblem'],
+  'world_event/research_anomaly/illustration': ['contained instrument anomaly', 'research chamber', 'sealed glass apparatus', 'blue-violet disturbance', 'abstract waveforms', 'no monster/magic/portal'],
+  'world_event/citywide_unrest/illustration': ['disordered city intersection', 'displaced lightweight barriers', 'overturned bins', 'scattered paper', 'municipal warning beacons', 'no riot/protest/crowd/battle/weapon/fire/explosion'],
 };
 
 export interface ReviewExportOptions {
@@ -188,7 +200,7 @@ async function main(): Promise<void> {
     reportPath,
     outputDir,
     fileSuffix: fileSuffix ?? '',
-    title: fileSuffix === '-positive' ? 'Phase 4A-2.1 Character Positive-only Review Package' : fileSuffix === '-nonchar' ? 'Phase 4A-2.1 Non-character B1 Review Package' : fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : fileSuffix === '-v2' ? 'Phase 4A-2.2 Non-character Positive-only Recovery Review Package' : fileSuffix === '-b2' ? 'Phase 4A-2.3 Controlled Production Expansion B2 Review Package' : fileSuffix === '-b3' ? 'Phase 4A-3 Item Production Batch B3 Review Package' : fileSuffix === '-rain' ? 'Phase 4A-2.3 Rain Provider Recovery Review Package' : undefined,
+    title: fileSuffix === '-positive' ? 'Phase 4A-2.1 Character Positive-only Review Package' : fileSuffix === '-nonchar' ? 'Phase 4A-2.1 Non-character B1 Review Package' : fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : fileSuffix === '-v2' ? 'Phase 4A-2.2 Non-character Positive-only Recovery Review Package' : fileSuffix === '-b2' ? 'Phase 4A-2.3 Controlled Production Expansion B2 Review Package' : fileSuffix === '-b3' ? 'Phase 4A-3 Item Production Batch B3 Review Package' : fileSuffix === '-rain' ? 'Phase 4A-2.3 Rain Provider Recovery Review Package' : fileSuffix === '-e1' ? 'Phase 4A-4 World Event E1 Review Package' : undefined,
   } : {};
   const result = await exportRoundAReview(configModule.createArtConfig(), options);
   console.log(`EXPORTED ${result.candidates.length} pending candidates to ${result.outputDir}`);
