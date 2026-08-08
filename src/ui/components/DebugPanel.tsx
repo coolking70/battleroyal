@@ -17,6 +17,14 @@ import {
 import { listIntel, noiseLevelOf, NOISE_LABEL } from '../../core/info';
 import { allCharacters, getPlayer } from '../../core/gameState';
 import { nextZoneCountdown } from '../../core/restrictedZones';
+import { worldModifiersAt } from '../../core/worldEvents';
+import {
+  ADRENALINE_ID,
+  FIELD_CRAFT_ID,
+  MEDICAL_FOCUS_ID,
+  SCOUT_AWARENESS_ID,
+  hasScoutAwareness,
+} from '../../core/skills';
 import { validateSaveData, type ValidationReport } from '../../core/saveLoad';
 import { tryGetRecipe } from '../../data/recipes';
 import { missingIngredients } from '../../core/inventory';
@@ -259,6 +267,52 @@ export function DebugPanel({
             ))}
           </div>
         )}
+
+        <h5>Phase 3A-1 技能状态 / 世界事件修正</h5>
+        <div className="debug-kv">
+          <span>SCOUT_AWARENESS</span>
+          <span>
+            {(() => {
+              const e = player.statusEffects.find((x) => x.id === SCOUT_AWARENESS_ID);
+              return hasScoutAwareness(player)
+                ? `生效（剩余 ${e?.remaining} 回合）`
+                : '无';
+            })()}
+          </span>
+          <span>ADRENALINE</span>
+          <span>
+            {(() => {
+              const e = player.statusEffects.find((x) => x.id === ADRENALINE_ID);
+              return e
+                ? `剩余攻击 ${e.remainingAttacks ?? 0} · 兜底 ${e.remaining} 回合 · 伤害 ×${(e.damageMult ?? 1).toFixed(2)} · 自伤 ×${(e.selfDamageTakenMult ?? 1).toFixed(2)}`
+                : '无';
+            })()}
+          </span>
+          <span>FIELD_CRAFT</span>
+          <span>
+            {(() => {
+              const e = player.statusEffects.find((x) => x.id === FIELD_CRAFT_ID);
+              return e ? `可用（剩余 ${e.remaining} 回合）` : '无';
+            })()}
+          </span>
+          <span>MEDICAL_FOCUS</span>
+          <span>
+            {(() => {
+              const e = player.statusEffects.find((x) => x.id === MEDICAL_FOCUS_ID);
+              return e ? `生效（剩余 ${e.remaining} 回合，治疗 ×${(e.consumableHealMult ?? 1).toFixed(2)}）` : '无';
+            })()}
+          </span>
+          <span>move cost mod</span>
+          <span>+{worldModifiersAt(state, player.currentZoneId).moveCostBonus}</span>
+          <span>ranged hit mod</span>
+          <span>×{worldModifiersAt(state, player.currentZoneId).rangedHitMultiplier.toFixed(2)}</span>
+          <span>heal mod</span>
+          <span>×{worldModifiersAt(state, player.currentZoneId).healMultiplier.toFixed(2)}</span>
+          <span>noise decay blocked</span>
+          <span>{worldModifiersAt(state, player.currentZoneId).noiseDecayBlocked ? '是' : '否'}</span>
+          <span>search noise mod</span>
+          <span>×{worldModifiersAt(state, player.currentZoneId).searchNoiseMultiplier.toFixed(2)}</span>
+        </div>
 
         <h5>RNG 状态</h5>
         <div className="debug-kv">

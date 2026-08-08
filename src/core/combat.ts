@@ -1,6 +1,5 @@
 import { GAME_CONFIG } from '../data/gameConfig';
 import { getItem } from '../data/items';
-import { getZoneDef } from '../data/zones';
 import { attackStaminaCostFor, spendStamina, type CostCheck } from './actionCosts';
 import { pushEvent } from './events';
 import {
@@ -14,12 +13,9 @@ import {
   armorDefenseOf,
   destroyEquippedWeapon,
   getEquippedWeapon,
-  totalAttack,
-  totalDefense,
   weaponAttackOf,
 } from './inventory';
-import { refreshZoneOccupants } from './gameState';
-import { consumeAdrenalineCharge } from './skills';
+import { consumeAdrenalineCharge, ADRENALINE_ID } from './skills';
 import { selfDamageTakenMultiplier } from './statusIds';
 import { applyDamage } from './vitals';
 import { worldModifiersAt } from './worldEvents';
@@ -77,13 +73,16 @@ export function hitChanceOf(
 }
 
 /**
- * 带世界事件修正的命中率（Phase 3A Step 6）。
+ * 带世界事件修正的命中率（Phase 3A-1）。
  *
  * **这是 UI 与 core 唯一共用的命中率入口。**
  * 不变量「UI 显示的命中率 === core 实际掷骰用的概率」由此保证：
  * `resolveAttack` 掷骰用它、`EncounterPanel` / `DebugPanel` 显示也用它。
- * 直接调用 {@link hitChanceOf} 只会得到**不含天气/停电修正**的裸概率，
+ * 直接调用 {@link hitChanceOf} 只会得到**不含天气修正**的裸概率，
  * 除单元测试外不应在任何判定或展示路径中使用。
+ *
+ * 修正口径：连绵阴雨只影响**远程武器**命中（×0.9），近战与逃跑不受影响；
+ * 停电不再影响战斗命中。
  */
 export function hitChanceIn(
   state: GameState,
@@ -93,9 +92,14 @@ export function hitChanceIn(
 ): number {
   const base = hitChanceOf(attacker, defender, style);
   const mods = worldModifiersAt(state, attacker.currentZoneId);
+  const weapon = getEquippedWeapon(attacker);
+  const isRanged = Boolean(
+    weapon && getItem(weapon.itemId).weaponType === 'ranged',
+  );
+  const mult = isRanged ? mods.rangedHitMultiplier : 1;
   return Math.min(
     GAME_CONFIG.maxHitChance,
-    Math.max(GAME_CONFIG.minHitChance, base * mods.hitMultiplier),
+    Math.max(GAME_CONFIG.minHitChance, base * mult),
   );
 }
 
@@ -186,6 +190,14 @@ export function resolveAttack(
   // Phase 3A：体力成本走 attackStaminaCostFor，肾上腺素的折扣才会真的落地，
   // 且与 UI / legalActions 读的是同一个函数（不重蹈 BUG-01 的覆辙）。
   spendStamina(attacker, attackStaminaCostFor(attacker, style));
+  // Phase 3A-1 统计：记录本次攻击是否处于肾上腺素状态（供模拟指标）
+  const adrenalineActive = attacker.statusEffects.some(
+    (e) => e.id === ADRENALINE_ID,
+  );
+  const rangedAttack = Boolean(
+    getEquippedWeapon(attacker) &&
+      getItem(getEquippedWeapon(attacker)!.itemId).weaponType === 'ranged',
+  );
   // 肾上腺素按「攻击次数」计费：无论命中与否，这一拳都算用掉一次
   consumeAdrenalineCharge(state, attacker);
   // 出手即解除自身防御姿态（防御只能挡下一次攻击）
@@ -210,14 +222,11 @@ export function resolveAttack(
   /** 写进事件 metadata 的命中率百分数：UI 与模拟统计都以此为准，必须与掷骰同源 */
   const chancePct = Math.round(chance * 100);
 
-  // 武器耐久：无论命中与否都会磨损。
-  // 「研究异常」世界事件会让该区域内的装备额外多掉一点耐久（Phase 3A Step 6）。
+  // 武器耐久：无论命中与否都会磨损（Phase 3A-1：研究异常不再增加额外损耗）
   let weaponBroke = false;
   const weapon = getEquippedWeapon(attacker);
   if (weapon && typeof weapon.durability === 'number') {
-    const wear =
-      1 + worldModifiersAt(state, attacker.currentZoneId).durabilityLossBonus;
-    weapon.durability -= wear;
+    weapon.durability -= 1;
     if (weapon.durability <= 0) {
       destroyEquippedWeapon(attacker);
       weaponBroke = true;
@@ -237,13 +246,30 @@ export function resolveAttack(
       targetId: defender.id,
       zoneId: attacker.currentZoneId,
       message: msg,
-      metadata: { style, chance: chancePct, exposed: exposedApplied },
+      metadata: {
+        style,
+        chance: chancePct,
+        exposed: exposedApplied,
+        // Phase 3A-1 统计
+        adrenalineActive,
+        staminaSaved: adrenalineActive ? 1 : 0,
+        ranged: rangedAttack,
+      },
     });
     return { hit: false, damage: 0, targetDied: false, weaponBroke, message: msg };
   }
 
   let damage = computeDamage(attacker, defender, rng, style);
   const baseDamage = damage;
+
+  // Phase 3A-1 统计：肾上腺素带来的伤害加成（damage 已含 ×1.2，反推加成量）
+  const adrenalineBonus = adrenalineActive
+    ? Math.max(
+        0,
+        damage -
+          Math.max(GAME_CONFIG.minDamage, Math.round(damage / GAME_CONFIG.skillAdrenalineDamageMult)),
+      )
+    : 0;
 
   // 防御姿态：减免本次伤害后解除
   let guarded = false;
@@ -308,6 +334,11 @@ export function resolveAttack(
       exposedBonus,
       exposedConsumed,
       frenzyBonus,
+      // Phase 3A-1 统计
+      adrenalineActive,
+      adrenalineBonus,
+      staminaSaved: adrenalineActive ? 1 : 0,
+      ranged: rangedAttack,
     },
   });
 
@@ -353,125 +384,15 @@ export function counterChanceOf(
 /* 逃跑                                                                */
 /* ------------------------------------------------------------------ */
 
-export interface FleeResult {
-  ok: boolean;
-  toZoneId: string | null;
-  message: string;
-}
-
-/**
- * 逃跑成功率 = 基础 0.45
- *            + (自身速度 - 敌人速度) × 0.03
- *            + 濒死时的求生加成
- *            - 斗士被动惩罚
- *            + 谨慎人格加成
- */
-export function fleeChanceOf(actor: Combatant, enemy: Combatant): number {
-  let p =
-    GAME_CONFIG.baseFleeChance + (actor.speed - enemy.speed) * 0.03;
-  const hpRatio = actor.hp / actor.maxHp;
-  if (hpRatio < 0.3) p += 0.1;
-  if (actor.passiveId === 'brawler') p -= GAME_CONFIG.brawlerFleePenalty;
-  // 锐目（侦察员）：更擅长脱身（Phase 2A-1）
-  if (actor.passiveId === 'keen_eye') p += GAME_CONFIG.keenEyeFleeBonus;
-  if (actor.personality === 'cautious') p += 0.1;
-  if (actor.personality === 'aggressive') p -= 0.05;
-  return Math.min(0.9, Math.max(0.1, p));
-}
-
-/**
- * 带世界事件修正的逃跑成功率（Phase 3A Step 6）。
- * 与 {@link hitChanceIn} 同理：判定与展示都走这里，避免两套数字。
- */
-export function fleeChanceIn(
-  state: GameState,
-  actor: Combatant,
-  enemy: Combatant,
-): number {
-  const base = fleeChanceOf(actor, enemy);
-  const mods = worldModifiersAt(state, actor.currentZoneId);
-  return Math.min(0.9, Math.max(0.1, base + mods.fleeBonus));
-}
-
-/** 逃跑可以去的相邻区域（排除正式禁区，优先安全区） */
-export function fleeDestinations(state: GameState, actor: Combatant): string[] {
-  const def = getZoneDef(actor.currentZoneId);
-  const legal = def.adjacent.filter(
-    (id) => state.zones[id]?.status !== 'restricted',
-  );
-  const safe = legal.filter((id) => state.zones[id]?.status === 'safe');
-  return safe.length > 0 ? safe : legal;
-}
-
-export function attemptFlee(
-  state: GameState,
-  actor: Combatant,
-  enemy: Combatant,
-  rng: SeededRandom,
-): FleeResult {
-  const destinations = fleeDestinations(state, actor);
-  if (destinations.length === 0) {
-    const msg = `${actor.name} 无路可退，逃跑失败。`;
-    pushEvent(state, {
-      type: 'CHARACTER_ESCAPED',
-      actorId: actor.id,
-      targetId: enemy.id,
-      zoneId: actor.currentZoneId,
-      message: msg,
-      metadata: { success: false, reason: 'no_exit' },
-    });
-    return { ok: false, toZoneId: null, message: msg };
-  }
-
-  const chance = fleeChanceIn(state, actor, enemy);
-  if (!rng.chance(chance)) {
-    const msg = `${actor.name} 试图脱离，但被 ${enemy.name} 缠住了。`;
-    pushEvent(state, {
-      type: 'CHARACTER_ESCAPED',
-      actorId: actor.id,
-      targetId: enemy.id,
-      zoneId: actor.currentZoneId,
-      message: msg,
-      metadata: { success: false, chance: Math.round(chance * 100) },
-    });
-    return { ok: false, toZoneId: null, message: msg };
-  }
-
-  const target = rng.pick(destinations);
-  if (!target) {
-    return { ok: false, toZoneId: null, message: '逃跑失败。' };
-  }
-
-  actor.currentZoneId = target;
-  actor.stats.moves += 1;
-  refreshZoneOccupants(state);
-
-  const msg = `${actor.name} 摆脱了 ${enemy.name}，撤往${getZoneDef(target).name}。`;
-  pushEvent(state, {
-    type: 'CHARACTER_ESCAPED',
-    actorId: actor.id,
-    targetId: enemy.id,
-    zoneId: target,
-    message: msg,
-    metadata: { success: true, toZoneId: target },
-  });
-  return { ok: true, toZoneId: target, message: msg };
-}
-
 /* ------------------------------------------------------------------ */
-/* 战力评估（NPC 决策用）                                               */
+/* 逃离 / 战力评估（已拆分至 flee.ts，这里原样再导出保持对外契约）      */
 /* ------------------------------------------------------------------ */
 
-/**
- * 粗略战力评估。
- * NPC 只使用「公开可见」的信息：属性、当前生命、已装备的武器防具。
- * 不读取对方背包内容。
- */
-export function estimatePower(c: Combatant): number {
-  return (
-    totalAttack(c) * 2 +
-    totalDefense(c) * 1.5 +
-    c.hp * 0.25 +
-    c.speed * 0.5
-  );
-}
+export {
+  attemptFlee,
+  estimatePower,
+  fleeChanceIn,
+  fleeChanceOf,
+  fleeDestinations,
+  type FleeResult,
+} from './flee';

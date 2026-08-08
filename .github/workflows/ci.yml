@@ -8,13 +8,14 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
+      # Phase 3A-1：统一 Node 20（LTS，与项目开发基线一致，不用 22）
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: npm
 
       - name: Install dependencies
@@ -34,3 +35,10 @@ jobs:
 
       - name: Dependency audit
         run: npm run audit:deps
+
+      # Phase 3A-1：CI 只跑 100 局快速模拟（正式 3000 局在交付前手动跑）。
+      # --ci 只守规模无关门槛（引擎健康+风格+命中差+技能玩家侧），
+      # 胜率比/事件覆盖需 3000 局规模才有统计意义。
+      # simulate 在 CI 门槛 FAIL 时会以 exit code 1 退出，使 CI 失败。
+      - name: 100-game quick simulation
+        run: npm run simulate -- --games 100 --seed-prefix CI --ci

@@ -1,8 +1,8 @@
 {
   "meta": {
     "tool": "audit-save-validation",
-    "version": "0.3.0",
-    "generatedAt": "2026-08-08T04:19:11.700Z",
+    "version": "0.3.1",
+    "generatedAt": "2026-08-08T06:09:46.055Z",
     "control": "normal-save-accepted",
     "totalCases": 74,
     "passedCases": 74,
@@ -96,7 +96,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "版本不受支持（9.9.9，当前 0.3.0）",
+      "errorMessage": "版本不受支持（9.9.9，当前 0.3.1）",
       "constructionFailed": false
     },
     {

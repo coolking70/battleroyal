@@ -31,7 +31,7 @@ import {
   type LegalActionCategory,
 } from '../src/core/legalActions';
 import { tryGetItem } from '../src/data/items';
-import type { Command, Combatant, GameState, Personality } from '../src/core/types';
+import type { Command, Combatant, GameEvent, GameState, Personality } from '../src/core/types';
 
 /* ------------------------------------------------------------------ */
 /* 对外类型                                                            */
@@ -167,8 +167,91 @@ export interface AutoGameResult {
   /** 世界事件触发次数：eventId -> count */
   worldEventCounts: Record<string, number>;
 
+  /* --- Phase 3A-1 完整统计（Step 7） --- */
+  /** 攻击风格细分：attempts/hits/misses/hitRate/damage/avgShownChance/deltaPP */
+  attackStyleStats: Record<string, StyleAggStat>;
+  /** GUARD 命令次数（来自 commandCounts） */
+  guardCommands: number;
+  /** 防御成功触发（减免了伤害）次数 */
+  guardTriggered: number;
+  /** 防御减免伤害总量 */
+  guardDamagePreventedTotal: number;
+  /** 防御平均每次减免伤害 */
+  guardDamagePreventedAverage: number;
+  /** 重击总落空次数（= exposedApplied 的上游） */
+  heavyMissCount: number;
+  /** EXPOSED 未兑现即失效（条件B / 兜底）次数 */
+  exposedExpiredWithoutPunish: number;
+  /** EXPOSED 兑现时多吃的伤害总量 */
+  exposedBonusDamageTotal: number;
+  /** 技能收益统计（玩家 / NPC 分列） */
+  skillStats: Record<string, SkillAggStat>;
+  /** 世界事件影响统计 */
+  worldEventImpact: Record<string, WorldEventImpactAgg>;
+
   /** 仅在 keepFinalState 为 true 时存在 */
   finalState?: GameState;
+}
+
+/* ------------------------------------------------------------------ */
+/* Phase 3A-1 统计聚合类型                                              */
+/* ------------------------------------------------------------------ */
+
+export interface StyleAggStat {
+  attempts: number;
+  hits: number;
+  misses: number;
+  hitRate: number;
+  damageTotal: number;
+  avgDamageOnHit: number;
+  /** 展示命中率均值（百分数，来自 metadata.chance） */
+  averageShownChance: number;
+  /** |展示命中率 - 实际命中率|（百分点） */
+  deltaPP: number;
+}
+
+export interface SkillAggStat {
+  playerUses: number;
+  npcUses: number;
+  /** scout：警觉先手次数 */
+  reconEncounterInitiativeCount: number;
+  /** fighter：肾上腺素覆盖的攻击次数 */
+  adrenalineAttackCount: number;
+  adrenalineBonusDamage: number;
+  adrenalineStaminaSaved: number;
+  /** fighter 状态期间自身多吃的伤害 */
+  adrenalineExtraDamageTaken: number;
+  /** engineer：免费合成次数 */
+  freeCraftCount: number;
+  craftStaminaSaved: number;
+  /** medic：即时治疗量 */
+  instantHealing: number;
+  /** medic：MEDICAL_FOCUS 带来的额外治疗量 */
+  bonusConsumableHealing: number;
+}
+
+export interface WorldEventImpactAgg {
+  triggerCount: number;
+  /** blackout */
+  searchesAffected: number;
+  encounterWeightReductionCount: number;
+  nothingWeightIncreaseCount: number;
+  /** rain */
+  movesAffected: number;
+  extraMoveStaminaPaid: number;
+  rangedAttacksAffected: number;
+  /** broadcast */
+  zonesBroadcast: number;
+  /** medical_alert */
+  healsAffected: number;
+  bonusHealing: number;
+  /** research_anomaly */
+  ticks: number;
+  damageTotal: number;
+  deaths: number;
+  /** citywide_unrest */
+  noiseDecayPrevented: number;
+  searchNoiseBonus: number;
 }
 
 /* ------------------------------------------------------------------ */
@@ -395,6 +478,20 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
   let fallbackSteps = 0;
   let stallCounter = 0;
   let lastTime = s.time;
+  // Phase 3A-1：事件日志会被 pruneEvents 裁剪（miss 是 minor 会被优先丢弃），
+  // 统计必须基于**全量事件流**，否则命中率会被系统性高估。
+  // 注意：pruneEvents 会从数组头部裁剪旧事件，按长度切片会被打乱，
+  // 因此用「已收集事件 id 集合」去重收集。
+  const capturedEventIds = new Set<string>();
+  const fullEvents: GameEvent[] = [];
+  const captureNewEvents = (): void => {
+    for (const e of s.events) {
+      if (!capturedEventIds.has(e.id)) {
+        capturedEventIds.add(e.id);
+        fullEvents.push(e);
+      }
+    }
+  };
 
   while (s.status === 'playing' && steps < maxSteps) {
     // ---- 每步体检 1：死锁 ----
@@ -470,6 +567,8 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
     if (chosen.category === 'resolution') resolutionSteps += 1;
 
     s = res.state;
+    // 增量收集全量事件（不受 pruneEvents 影响）
+    captureNewEvents();
     steps += 1;
 
     // ---- 每步体检 2：时间停滞 ----
@@ -499,6 +598,7 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
     fallbackSteps,
     commandCounts,
     keepFinalState: options.keepFinalState ?? false,
+    fullEvents,
   });
 }
 
@@ -516,6 +616,7 @@ interface ResultContext {
   fallbackSteps: number;
   commandCounts: Record<string, number>;
   keepFinalState: boolean;
+  fullEvents: GameEvent[];
 }
 
 function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
@@ -590,7 +691,10 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
     fallbackSteps: ctx.fallbackSteps,
     commandCounts: ctx.commandCounts,
 
-    ...scanPhase3aCounters(s),
+    ...scanPhase3aCounters(
+      { ...s, events: ctx.fullEvents.length > 0 ? ctx.fullEvents : s.events },
+      ctx.commandCounts,
+    ),
   };
 
   if (ctx.keepFinalState) result.finalState = s;
@@ -598,48 +702,253 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
 }
 
 /**
- * 扫描对局事件，统计 Phase 3A 玩法指标。
+ * 扫描对局事件，统计 Phase 3A / 3A-1 玩法指标。
  *
  * 数据源是 `state.events` —— 与 UI 展示、存档完全同源，不存在「模拟器自己
  * 另算一套」的风险。口径：
- *  - 攻击风格：ATTACK_HIT / ATTACK_MISSED 的 `metadata.style`；
+ *  - 攻击风格：ATTACK_HIT / ATTACK_MISSED 的 `metadata.style` / `chance` / `damage`；
  *  - EXPOSED：重击挥空 `metadata.exposed === true`（施加），
- *    ATTACK_HIT `metadata.exposedConsumed === true`（兑现）；
- *  - 防御姿态：ATTACK_HIT `metadata.guarded === true`（成功减免次数）；
- *  - 技能：SKILL_USED 的 `metadata.skillId`；
- *  - 世界事件：WORLD_EVENT 的 `metadata.worldEventId`。
+ *    ATTACK_HIT `metadata.exposedConsumed === true`（兑现），
+ *    STATUS_EXPIRED(statusId=exposed) 计为「未兑现失效」；
+ *  - 防御姿态：ATTACK_HIT `metadata.guarded` / `guardPrevented`；
+ *  - 技能：SKILL_USED 的 `metadata.skillId` + actorId 区分玩家/NPC；
+ *  - 世界事件：WORLD_EVENT / WORLD_EVENT_DAMAGE / SEARCH_STARTED /
+ *    CHARACTER_MOVED / ITEM_USED / ITEM_CRAFTED 的富化 metadata。
+ *
+ * 理论/实测命中差（§30）：expectedChance = 每次攻击事件 `metadata.chance` 的
+ * 平均（百分数），actualHitRate = hits/attempts；deltaPP = |expected - actual|。
  */
-function scanPhase3aCounters(s: GameState): {
+function scanPhase3aCounters(
+  s: GameState,
+  commandCounts: Record<string, number>,
+): {
   attackStyleCounts: Record<string, number>;
   exposedApplied: number;
   exposedConsumed: number;
   guardResolves: number;
   skillUseCounts: Record<string, number>;
   worldEventCounts: Record<string, number>;
+  attackStyleStats: Record<string, StyleAggStat>;
+  guardCommands: number;
+  guardTriggered: number;
+  guardDamagePreventedTotal: number;
+  guardDamagePreventedAverage: number;
+  heavyMissCount: number;
+  exposedExpiredWithoutPunish: number;
+  exposedBonusDamageTotal: number;
+  skillStats: Record<string, SkillAggStat>;
+  worldEventImpact: Record<string, WorldEventImpactAgg>;
 } {
   const attackStyleCounts: Record<string, number> = {};
   const skillUseCounts: Record<string, number> = {};
   const worldEventCounts: Record<string, number> = {};
+  const attackStyleStats: Record<string, StyleAggStat> = {};
+  const skillStats: Record<string, SkillAggStat> = {};
+  const worldEventImpact: Record<string, WorldEventImpactAgg> = {};
+  /** 内部累积：展示命中率（百分数）之和，按风格 */
+  const chanceSumByStyle: Record<string, number> = {};
+
   let exposedApplied = 0;
   let exposedConsumed = 0;
   let guardResolves = 0;
+  let guardTriggered = 0;
+  let guardDamagePreventedTotal = 0;
+  let heavyMissCount = 0;
+  let exposedExpiredWithoutPunish = 0;
+  let exposedBonusDamageTotal = 0;
+
+  const playerId = s.playerId;
+
+  const styleStat = (style: string): StyleAggStat => {
+    attackStyleStats[style] ??= {
+      attempts: 0,
+      hits: 0,
+      misses: 0,
+      hitRate: 0,
+      damageTotal: 0,
+      avgDamageOnHit: 0,
+      averageShownChance: 0,
+      deltaPP: 0,
+    };
+    return attackStyleStats[style]!;
+  };
+  const skillStat = (sid: string): SkillAggStat => {
+    skillStats[sid] ??= {
+      playerUses: 0,
+      npcUses: 0,
+      reconEncounterInitiativeCount: 0,
+      adrenalineAttackCount: 0,
+      adrenalineBonusDamage: 0,
+      adrenalineStaminaSaved: 0,
+      adrenalineExtraDamageTaken: 0,
+      freeCraftCount: 0,
+      craftStaminaSaved: 0,
+      instantHealing: 0,
+      bonusConsumableHealing: 0,
+    };
+    return skillStats[sid]!;
+  };
+  const impactStat = (wid: string): WorldEventImpactAgg => {
+    worldEventImpact[wid] ??= {
+      triggerCount: 0,
+      searchesAffected: 0,
+      encounterWeightReductionCount: 0,
+      nothingWeightIncreaseCount: 0,
+      movesAffected: 0,
+      extraMoveStaminaPaid: 0,
+      rangedAttacksAffected: 0,
+      zonesBroadcast: 0,
+      healsAffected: 0,
+      bonusHealing: 0,
+      ticks: 0,
+      damageTotal: 0,
+      deaths: 0,
+      noiseDecayPrevented: 0,
+      searchNoiseBonus: 0,
+    };
+    return worldEventImpact[wid]!;
+  };
 
   for (const e of s.events) {
     const m = e.metadata ?? {};
     if (e.type === 'ATTACK_HIT' || e.type === 'ATTACK_MISSED') {
       const style = m.style as string | undefined;
-      if (style) attackStyleCounts[style] = (attackStyleCounts[style] ?? 0) + 1;
+      if (style) {
+        attackStyleCounts[style] = (attackStyleCounts[style] ?? 0) + 1;
+        const st = styleStat(style);
+        st.attempts += 1;
+        chanceSumByStyle[style] =
+          (chanceSumByStyle[style] ?? 0) + (typeof m.chance === 'number' ? m.chance : 0);
+      }
       if (m.exposed === true) exposedApplied += 1;
-      if (e.type === 'ATTACK_HIT' && m.exposedConsumed === true) exposedConsumed += 1;
-      if (e.type === 'ATTACK_HIT' && m.guarded === true) guardResolves += 1;
+      if (e.type === 'ATTACK_HIT') {
+        if (m.exposedConsumed === true) exposedConsumed += 1;
+        if (typeof m.exposedBonus === 'number') exposedBonusDamageTotal += m.exposedBonus;
+        if (m.guarded === true) {
+          guardResolves += 1;
+          guardTriggered += 1;
+          if (typeof m.guardPrevented === 'number') guardDamagePreventedTotal += m.guardPrevented;
+        }
+        const st = style ? styleStat(style) : null;
+        if (st) {
+          st.hits += 1;
+          if (typeof m.damage === 'number') st.damageTotal += m.damage;
+        }
+        if (m.adrenalineActive === true) {
+          const fs = skillStat('adrenaline');
+          fs.adrenalineAttackCount += 1;
+          fs.adrenalineStaminaSaved += typeof m.staminaSaved === 'number' ? m.staminaSaved : 0;
+          fs.adrenalineBonusDamage += typeof m.adrenalineBonus === 'number' ? m.adrenalineBonus : 0;
+        }
+        if (e.targetId === playerId && typeof m.frenzyBonus === 'number') {
+          skillStat('adrenaline').adrenalineExtraDamageTaken += m.frenzyBonus;
+        }
+        if (m.ranged === true) {
+          impactStat('rain').rangedAttacksAffected += 1;
+        }
+      } else {
+        const st = style ? styleStat(style) : null;
+        if (st) {
+          st.misses += 1;
+          if (style === 'heavy') heavyMissCount += 1;
+        }
+        if (m.adrenalineActive === true) {
+          const fs = skillStat('adrenaline');
+          fs.adrenalineAttackCount += 1;
+          fs.adrenalineStaminaSaved += typeof m.staminaSaved === 'number' ? m.staminaSaved : 0;
+        }
+      }
+    } else if (e.type === 'STATUS_EXPIRED') {
+      if (m.statusId === 'exposed') exposedExpiredWithoutPunish += 1;
     } else if (e.type === 'SKILL_USED') {
       const sid = m.skillId as string | undefined;
-      if (sid) skillUseCounts[sid] = (skillUseCounts[sid] ?? 0) + 1;
+      if (sid) {
+        skillUseCounts[sid] = (skillUseCounts[sid] ?? 0) + 1;
+        const ss = skillStat(sid);
+        if (e.actorId === playerId) ss.playerUses += 1;
+        else ss.npcUses += 1;
+        if (sid === 'emergency_treatment' && e.actorId === playerId) {
+          ss.instantHealing += typeof m.hpHealed === 'number' ? m.hpHealed : 0;
+        }
+      }
+    } else if (e.type === 'ENCOUNTER_STARTED') {
+      if (m.reconInitiative === true && e.actorId === playerId) {
+        skillStat('scout_recon').reconEncounterInitiativeCount += 1;
+      }
     } else if (e.type === 'WORLD_EVENT') {
       const wid = m.worldEventId as string | undefined;
-      if (wid) worldEventCounts[wid] = (worldEventCounts[wid] ?? 0) + 1;
+      if (wid) {
+        worldEventCounts[wid] = (worldEventCounts[wid] ?? 0) + 1;
+        impactStat(wid).triggerCount += 1;
+        if (wid === 'emergency_broadcast' && typeof m.broadcastZoneId === 'string') {
+          impactStat(wid).zonesBroadcast += 1;
+        }
+      }
+    } else if (e.type === 'WORLD_EVENT_DAMAGE') {
+      const imp = impactStat('research_anomaly');
+      imp.ticks += 1;
+      imp.damageTotal += typeof m.damage === 'number' ? m.damage : 0;
+      if (m.died === true) imp.deaths += 1;
+    } else if (e.type === 'SEARCH_STARTED') {
+      if (m.blackoutActive === true) {
+        const imp = impactStat('blackout');
+        imp.searchesAffected += 1;
+        if ((m.enemyWeight as number) > 0) imp.encounterWeightReductionCount += 1;
+        if ((m.nothingWeight as number) > 0) imp.nothingWeightIncreaseCount += 1;
+      }
+      if (m.unrestActive === true && typeof m.searchNoiseBonus === 'number') {
+        const imp = impactStat('citywide_unrest');
+        imp.searchNoiseBonus += m.searchNoiseBonus as number;
+      }
+    } else if (e.type === 'CHARACTER_MOVED') {
+      if (m.rainActive === true) {
+        const imp = impactStat('rain');
+        imp.movesAffected += 1;
+        imp.extraMoveStaminaPaid += typeof m.extraMoveStaminaPaid === 'number' ? (m.extraMoveStaminaPaid as number) : 0;
+      }
+    } else if (e.type === 'ITEM_USED') {
+      if (m.medicalAlertActive === true && m.inHospital === true && (m.hpRestored as number) > 0) {
+        const imp = impactStat('medical_alert');
+        imp.healsAffected += 1;
+        const actor = e.actorId ? s.characters[e.actorId] : undefined;
+        const passive = actor?.passiveId === 'field_medic' ? 1.25 : 1;
+        const focus = m.focusActive === true ? 1.25 : 1;
+        const expected = Math.round((m.baseHeal as number) * passive * focus);
+        imp.bonusHealing += Math.max(0, (m.hpRestored as number) - expected);
+      }
+      if (m.focusActive === true && e.actorId === playerId && (m.hpRestored as number) > 0) {
+        const actor = s.characters[e.actorId];
+        const passive = actor?.passiveId === 'field_medic' ? 1.25 : 1;
+        const world = m.medicalAlertActive === true && m.inHospital === true ? 1.2 : 1;
+        const expected = Math.round((m.baseHeal as number) * passive * world);
+        skillStat('emergency_treatment').bonusConsumableHealing += Math.max(
+          0,
+          (m.hpRestored as number) - expected,
+        );
+      }
+    } else if (e.type === 'ITEM_CRAFTED') {
+      if (m.freeCraft === true) {
+        const es = skillStat('field_craft');
+        es.freeCraftCount += 1;
+        es.craftStaminaSaved += typeof m.staminaSaved === 'number' ? m.staminaSaved : 0;
+      }
     }
   }
+
+  // 归一化命中统计
+  for (const [style, st] of Object.entries(attackStyleStats)) {
+    st.averageShownChance = st.attempts > 0 ? (chanceSumByStyle[style] ?? 0) / st.attempts : 0;
+    st.hitRate = st.attempts > 0 ? st.hits / st.attempts : 0;
+    st.avgDamageOnHit = st.hits > 0 ? st.damageTotal / st.hits : 0;
+    st.deltaPP = Math.abs(st.averageShownChance - st.hitRate * 100);
+  }
+  const guardCommands = commandCounts.GUARD ?? 0;
+  const guardDamagePreventedAverage =
+    guardTriggered > 0 ? guardDamagePreventedTotal / guardTriggered : 0;
+  // 全域骚动：阻止噪音衰减的次数来自 state.stats（decayNoise 内统计）
+  impactStat('citywide_unrest').noiseDecayPrevented =
+    s.stats.noiseDecayBlockedTicks ?? 0;
+
   return {
     attackStyleCounts,
     exposedApplied,
@@ -647,6 +956,16 @@ function scanPhase3aCounters(s: GameState): {
     guardResolves,
     skillUseCounts,
     worldEventCounts,
+    attackStyleStats,
+    guardCommands,
+    guardTriggered,
+    guardDamagePreventedTotal,
+    guardDamagePreventedAverage,
+    heavyMissCount,
+    exposedExpiredWithoutPunish,
+    exposedBonusDamageTotal,
+    skillStats,
+    worldEventImpact,
   };
 }
 

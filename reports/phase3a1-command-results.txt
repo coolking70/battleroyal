@@ -1,0 +1,48 @@
+# Phase 3A-1 命令执行记录（真实输出）
+> 日期 2026-08-08 · 版本 0.3.1
+
+## npm run typecheck
+> zone-battle-royale@0.3.1 typecheck
+> tsc -b --force
+
+exit=0
+
+## npm test
+ Test Files  38 passed (38)
+      Tests  527 passed (527)
+
+## npm run build
+dist/assets/index-trrAKHQn.css   21.46 kB │ gzip:  5.05 kB
+dist/assets/index-LDOgUScr.js   295.57 kB │ gzip: 99.17 kB │ map: 942.43 kB
+✓ built in 1.83s
+
+## npm run audit:save
+  /Users/coolking70/Documents/同步空间/battleroyal/reports/save-validation-audit.json
+  /Users/coolking70/Documents/同步空间/battleroyal/reports/save-validation-audit.md
+[audit:save] 判定：PASS
+
+## npm run audit:deps
+  R4 超行告警：1
+[audit:deps] FAIL R4 core/combat.ts：core/combat.ts 共 515 行（> 500）
+[audit:deps] 判定：FAIL（1 项违例）
+
+## npm run scripted:playthroughs
+  - SPT-15 / engineer / opportunist: lost rank=3 t=53 steps=53 目标完成=false 卡死=false 问题=0
+  - SPT-16 / medic / collector: lost rank=6 t=19 steps=19 目标完成=false 卡死=false 问题=0
+[scripted:playthroughs] 报告已写入：/Users/coolking70/Documents/同步空间/battleroyal/reports/phase3a1-scripted-playthroughs.md
+[scripted:playthroughs] 提醒：这是脚本化对局，不等于人工测试。真人清单见 HUMAN_PLAYTEST_CHECKLIST.md
+
+## npm run simulate -- --games 3000 --seed-prefix PHASE3A1
+[phase3-balance] 整体判定：PASS
+[phase3-balance] 报告已写入：
+  /Users/coolking70/Documents/同步空间/battleroyal/reports/phase3a1-final-balance.json
+  /Users/coolking70/Documents/同步空间/battleroyal/reports/phase3a1-final-balance.md
+
+## npm audit --omit=dev
+found 0 vulnerabilities
+
+## npm audit
+5 vulnerabilities (3 moderate, 1 high, 1 critical)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force

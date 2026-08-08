@@ -2,7 +2,7 @@ import type { Combatant, GameState } from '../../core/types';
 import { noiseLevelOf, NOISE_LABEL } from '../../core/info';
 import { ZONES, areAdjacent } from '../../data/zones';
 import { ZONE_STATUS_LABEL, cx } from '../../utils/format';
-import { visualFor } from '../visualAssets';
+import { getZoneVisual } from '../visualAssets';
 
 interface ZoneMapProps {
   state: GameState;
@@ -44,7 +44,7 @@ export function ZoneMap({
           const status = zs?.status ?? 'safe';
           const noise = noiseLevelOf(zs);
           const hasIntel = freshIntelZones?.has(def.id) ?? false;
-          const zoneVisual = visualFor('zone', def.id);
+          const zoneVisual = getZoneVisual(def.id);
 
           return (
             <button

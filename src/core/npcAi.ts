@@ -216,6 +216,23 @@ export function runNpcTurn(
 
     case 'attack': {
       const target = decision.targetId ? state.characters[decision.targetId] : null;
+      // Phase 3A-1：警觉先手 —— 敌方在「遭遇建立瞬间」的首次立即攻击被抑制
+      // （只抑制这一次；玩家的正常攻击 / 反击完全不受影响）。
+      const enc = state.encounter;
+      if (
+        enc &&
+        enc.reconInitiative &&
+        enc.enemyId === npc.id &&
+        target?.isPlayer &&
+        target.alive
+      ) {
+        enc.reconInitiative = false;
+        enc.log.push(`${npc.name}因你的警觉先手谨慎观望，没有立即出手。`);
+        guardActor(state, npc);
+        npc.lastAction = 'guard';
+        npc.lastActionReason = `${decision.reason}（警觉先手，转为防御观望）`;
+        break;
+      }
       if (target && target.alive) {
         const res = resolveNpcEngagement(
           state,

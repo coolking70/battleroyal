@@ -11,7 +11,7 @@ import {
   hasIngredients,
   missingIngredients,
 } from './inventory';
-import { consumeFieldCraftCharge } from './skills';
+import { consumeFieldCraftCharge, hasFieldCraftCharge } from './skills';
 import type { Combatant, GameState, Recipe, RecipeIngredient } from './types';
 
 export interface RecipeView {
@@ -133,8 +133,12 @@ export function performCraft(
   }
 
   consumeIngredients(actor, recipe.ingredients);
+  // Phase 3A-1 统计：本次合成是否免体力（现场加工）；
+  // 「省下的体力」= 无充能时应付的基础成本（充能生效时闸门成本为 0）
+  const freeCraft = hasFieldCraftCharge(actor);
+  const staminaSaved = freeCraft ? craftStaminaCost(actor) : 0;
   payActionCost(actor, 'CRAFT');
-  // Phase 3A：野外工造的充能**只在合成真的成功之后**扣。
+  // Phase 3A-1：现场加工的充能**只在合成真的成功之后**扣。
   // 前面任何一个 return 都意味着这次合成没做成，白扣充能是纯粹的坑。
   consumeFieldCraftCharge(state, actor);
 
@@ -155,7 +159,13 @@ export function performCraft(
     actorId: actor.id,
     zoneId: actor.currentZoneId,
     message: `${actor.name} 合成了 ${outName}（消耗 ${cost} 点体力）。`,
-    metadata: { recipeId: recipe.id, outputItemId: recipe.outputItemId, cost },
+    metadata: {
+      recipeId: recipe.id,
+      outputItemId: recipe.outputItemId,
+      cost,
+      freeCraft,
+      staminaSaved,
+    },
   });
 
   return { ok: true, message: `合成成功：${outName}`, outputItemId: recipe.outputItemId };

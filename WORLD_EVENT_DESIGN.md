@@ -1,75 +1,92 @@
-# WORLD_EVENT_DESIGN.md — 世界事件系统设计（Phase 3A）
+# WORLD_EVENT_DESIGN.md — 世界事件设计（Phase 3A-1 严格回归规格）
 
-> 版本 0.3.0 · 与 `src/core/worldEvents.ts` 一一对应。取代 Phase 3 已删除的 `dynamicEvents.ts`（storm / supply_drop / ambush）。
+> 版本 0.3.1 · 与 `src/core/worldEvents.ts` + `src/core/worldEventTick.ts` 逐字一致。
+> 数值与本文档不一致即视为缺陷。
 
-## 1. 为什么推翻旧动态事件
+## 1. 事件一览（禁止加入未授权额外效果）
 
-旧的三种动态事件各踩一条 Phase 3A 红线：
+| ID | 名称 | 范围 | 持续 | 效果 |
+| --- | --- | --- | ---: | --- |
+| `blackout` | 停电 | 全局 | 6 | 搜索遭遇敌人权重 ×0.8、空手权重 ×1.1（搜索与发现变得不可靠；**不碰战斗命中**） |
+| `rain` | 连绵阴雨 | 全局 | 6 | 移动体力成本 +1（走 `actionCosts`）；远程武器命中率 ×0.9（近战命中、逃跑率不变） |
+| `emergency_broadcast` | 紧急广播 | 全局 | 即时 | 只公布「最近噪音最高」的区域之一；无持续时间、不进入 active |
+| `medical_alert` | 医疗警报 | 医院 | 5 | 医院内治疗类消耗品最终治疗量 ×1.2（其他区域不受影响） |
+| `research_anomaly` | 研究异常 | 研究所（固定） | 4 | 每时间单位对仍在 lab 的存活角色造成 3 点环境伤害（走 `applyDamage`） |
+| `citywide_unrest` | 全域骚动 | 全局 | 3 | 区域噪音停止自然衰减；搜索产生的噪音 ×1.5 |
 
-| 旧事件 | 违反的红线 | 具体表现 |
-| --- | --- | --- |
-| `supply_drop` | 不得修改隐藏库存 | 直接 `addLootItem()` 往区域库存塞物资，玩家不必付出搜索成本 |
-| `ambush` | 不得瞬移角色 | 直接改写 `attacker.currentZoneId`，凭空把 NPC 挪到玩家脚下 |
-| `storm` | 不得绕过 applyDamage | 事件直接扣血（坏范例） |
+## 2. 各事件详述
 
-## 2. 替代设计：环境修正型事件
+### 2.1 停电 blackout
 
-6 种世界事件**一律不直接改变任何角色/区域的实体状态**，只提供一组 `WorldEventModifiers` 修正值，由各系统在**自己的判定点**主动查询 `worldModifiersAt(state, zoneId)`。
+- MUST：`enemyWeight *= 0.8`、`nothingWeight *= 1.1`（`computeSearchWeights` 内，再统一归一化）。
+- 禁止：所有攻击命中率 -15%、屏蔽情报、把 findWeight 降到 0.7。
+- 设计目标：**搜索与发现变得不可靠**，不是「所有人突然不会战斗」。
 
-```
-修正值（乘数/加成/布尔）
-  命中率 ×0.9（雨）  搜索 ×0.7（停电）  治疗 ×0.75（医疗管制）
-  材料搜索 +0.6（研究异常）  遭遇权重 ×1.3（骚动）  逃跑 +0.1（雨）
-  intelBlocked（停电屏蔽视线情报）  revealAll（广播公开位置）
-```
+### 2.2 连绵阴雨 rain
 
-三个结构性好处：
+- MUST：移动体力成本 +1（**玩家与 NPC 同时生效**，必须通过 `actionCosts.moveStaminaCostFor`
+  统一实现，禁止在 player MOVE / NPC MOVE 两处分别硬编码）；远程武器攻击命中率 ×0.9
+  （优先乘数，保持现有概率框架一致）。
+- 禁止：影响近战命中、逃跑概率；删除旧的 `fleeBonus +0.1`。
 
-1. **红线不可能被违反**：`worldEvents.ts` 不 import `zoneLoot` / `vitals` / `inventory`，没有任何写实体状态的能力，编译期杜绝塞物资 / 瞬移 / 直接扣血（`tests/worldEventInvariants.test.ts` 用读文件方式守护）。
-2. **确定性**：修正值是 state 的纯函数，存档只需序列化事件列表即可完整复现。
-3. **UI 与 core 同源**：UI 显示「雨天命中 -10%」与核心掷骰用同一个 `worldModifiersAt`。
+### 2.3 紧急广播 emergency_broadcast
 
-## 3. 事件一览
+- 类型：**即时**，不需要持续 3 回合；不进入 activeWorldEvents。
+- 内容：从公开 noise 数据中选择**最近噪音最高**的区域之一：
+  「监控发现『研究所』近期活动频繁。」或「『工厂』近期传出明显动静。」
+  无有效噪音时输出「监控暂未发现明显集中活动。」等泛化提示。
+- 绝对禁止：公布幸存者姓名 / NPC ID / 每人所在区域 / 精确存活人数 / 装备 / HP；
+  删除 `revealAll` 修正与 `refreshPlayerSight` 的广播全量写入。
 
-| id | 范围 | 效果 |
-| --- | --- | --- |
-| `blackout` 大停电 | 区域 | 命中 ×0.85、搜索 ×0.7、屏蔽该区域情报 |
-| `rain` 连绵阴雨 | 全局 | 命中 ×0.9、逃跑 +0.1 |
-| `emergency_broadcast` 紧急广播 | 全局 | 公开全部存活者所在区域（广播情报） |
-| `medical_alert` 医疗管制 | 全局 | 治疗品效果 ×0.75、医疗物资搜索 +0.35 |
-| `research_anomaly` 研究异常 | 区域 | 材料搜索 +0.6、装备耐久损耗 +1 |
-| `citywide_unrest` 全城骚动 | 全局 | NPC 攻击倾向 +0.25、遭遇权重 ×1.3 |
+### 2.4 医疗警报 medical_alert
 
-## 4. 调度与并发
+- 作用区域：**hospital**（固定区域）。
+- MUST：角色位于医院且使用治疗类消耗品 → 最终治疗量 ×1.2（`healMultiplier = 1.20`），
+  仅医院生效（`worldModifiersAt(state,'hospital')`）。
+- 禁止：全局治疗 -25%、提高医疗物资搜索率。
 
-- `nextWorldEventTime` 首次在 `firstWorldEventTime`，之后每隔 `[worldEventIntervalMin, worldEventIntervalMax]` 时间单位触发一次。
-- **同事件不叠加**：`pickWorldEventId` 排除当前已生效的 eventId（修正值最多由 `maxConcurrentWorldEvents=2` 种不同事件相乘）。
-- 区域事件只落在**未被禁区吞掉**的区域（`z.status !== 'restricted'`）。
-- 触发/结束都广播事件：`WORLD_EVENT`（`metadata.worldEventId`）/ `WORLD_EVENT_ENDED`（写 `worldEventHistory`）。
+### 2.5 研究异常 research_anomaly
 
-## 5. 各系统接入点
+- 固定区域：**lab**（不是随机区域）。
+- MUST：每时间单位对**仍在 lab 中**的存活角色造成 3 点环境伤害，必须走
+  `applyDamage(state, actor, 3, null, '研究设施异常')` 统一入口；
+  能正确致死、死亡只发生一次、写 `damageTaken`、写 `WORLD_EVENT_DAMAGE` 事件。
+- 禁止：增加材料搜索率、额外损耗装备耐久。
 
-| 系统 | 查询的修正 | 位置 |
-| --- | --- | --- |
-| 战斗命中 | `hitMultiplier` | `combat.hitChanceIn` |
-| 逃跑 | `fleeBonus` | `combat.fleeChanceIn` |
-| 搜索 | `searchFindMultiplier` / `encounterMultiplier` / `materialFindBonus` / `medicalFindBonus` | `search.computeSearchWeights`、`zoneLoot.takeLootItem` |
-| 治疗 | `healMultiplier` | `consumables.healMultiplierOf` |
-| 装备损耗 | `durabilityLossBonus` | `combat.resolveAttack` |
-| NPC 决策 | `npcAggressionBonus` | `npcDecide` |
-| 情报 | `intelBlocked` / `revealAll` | `info.recordIntel` / `info.refreshPlayerSight` |
+### 2.6 全域骚动 citywide_unrest
 
-## 6. 不变量与审计
+- MUST 1：区域噪音停止自然衰减（`decayNoise` 期间不降低 noiseLevel，计入
+  `stats.noiseDecayBlockedTicks`）。
+- MUST 2：搜索产生的噪音 ×1.5（`addNoise` 对 search 源放大；noiseLevel 允许取整说明：
+  本实现 `Math.ceil` 向上取整）。
+- 结束后恢复正常衰减。
+- 禁止：直接增加 NPC 攻击倾向、增加搜索遭遇率（旧 `unrestAggressionBonus` /
+  `unrestEncounterMult` 已删除）。
 
-- `auditWorldEventInvariants(state)`（`core/worldEventAudit.ts`）纯函数审计：
-  1. active 实例字段自洽（id/eventId/scope/zoneId/startedAtTime/remaining/label/description）；
-  2. 范围 ↔ zoneId 自洽（全局不带区域、区域指向合法区域）；
-  3. 同事件不叠加；4. 并发 ≤ `maxConcurrentWorldEvents`；
-  5. history 时间区间合法；6. `nextWorldEventTime` 非负；
-  7. `worldModifiersAt` 无 NaN/Infinity 污染。
-- 行为层红线：跑 `runWorldEvents` 后角色血量/库存/地面/位置快照不变（测试覆盖）。
-- 存档校验：`saveValidation/references.ts` 逐字段校验 active/history（Step 6/8）。
+## 3. 世界事件红线（RULE-WE-01 ~ 08）
 
-## 7. 模拟统计
+| # | 红线 |
+| --- | --- |
+| WE-01 | 不得直接 `actor.hp -= x` |
+| WE-02 | 不得直接 `actor.alive = false` |
+| WE-03 | 不得直接修改 `currentZoneId` |
+| WE-04 | 不得增加隐藏 `zone.loot` |
+| WE-05 | 不得创建未登记物品 UID |
+| WE-06 | 环境伤害必须走 `applyDamage`（研究异常经 `worldEventTick.ts`，行为层测试保证） |
+| WE-07 | 移动成本必须走 `actionCosts` |
+| WE-08 | 信息事件不得读取隐藏人物信息（广播只读公开噪音） |
 
-`AutoGameResult.worldEventCounts` 从 `WORLD_EVENT` 事件扫描 6 种 id 的触发次数；正式 3000 局规模下每种 ≥ 50 次为验收门槛（`simulateBalance` 的 `phase3a.worldEventCoveragePassed`）。
+说明：上一轮「worldEvents.ts 绝对不能 import vitals」的结构限制已取消；
+为规避 `vitals → info → worldEvents` 循环依赖，环境伤害放在 `worldEventTick.ts`，
+行为上仍走 `applyDamage` 唯一入口。
+
+## 4. 行为规则测试契约（tests/worldEventInvariants.test.ts）
+
+| 事件 | 必须测试 |
+| --- | --- |
+| Blackout | enemyWeight 变低、nothingWeight 变高、不改变战斗命中 |
+| Rain | 玩家/NPC MOVE +1、远程命中降低、近战命中不变、逃跑率不变 |
+| Broadcast | 选高 noise 区域、不写所有 NPC playerIntel、不显示精确人数 |
+| Medical Alert | 医院治疗 +20%、其他区域不受影响 |
+| Research Anomaly | lab 每 tick -3、其他区域 0、可致死且死亡流程正确 |
+| Citywide Unrest | noise 不衰减、search 噪音增加、结束后恢复正常衰减 |

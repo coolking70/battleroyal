@@ -94,6 +94,26 @@ function makeCell(
       citywide_unrest: 60,
     },
     commandCounts: { GUARD: 50, ATTACK: 60, MOVE: 100, SEARCH: 100 },
+    attackStyleStats: {
+      quick: { attempts: 100, hits: 60, misses: 40, hitRate: 0.6, damageTotal: 500, avgDamageOnHit: 8.33, averageShownChance: 62, deltaPP: 2 },
+      normal: { attempts: 100, hits: 70, misses: 30, hitRate: 0.7, damageTotal: 700, avgDamageOnHit: 10, averageShownChance: 71, deltaPP: 1 },
+      heavy: { attempts: 100, hits: 50, misses: 50, hitRate: 0.5, damageTotal: 800, avgDamageOnHit: 16, averageShownChance: 52, deltaPP: 2 },
+    },
+    guardCommands: 10,
+    guardTriggered: 4,
+    guardDamagePreventedTotal: 20,
+    guardDamagePreventedAverage: 5,
+    heavyMissCount: 0,
+    exposedExpiredWithoutPunish: 0,
+    exposedBonusDamageTotal: 0,
+    skillStats: {
+      scout_recon: { playerUses: 3, npcUses: 1, reconEncounterInitiativeCount: 1, adrenalineAttackCount: 0, adrenalineBonusDamage: 0, adrenalineStaminaSaved: 0, adrenalineExtraDamageTaken: 0, freeCraftCount: 0, craftStaminaSaved: 0, instantHealing: 0, bonusConsumableHealing: 0 },
+      adrenaline: { playerUses: 3, npcUses: 2, reconEncounterInitiativeCount: 0, adrenalineAttackCount: 6, adrenalineBonusDamage: 30, adrenalineStaminaSaved: 6, adrenalineExtraDamageTaken: 10, freeCraftCount: 0, craftStaminaSaved: 0, instantHealing: 0, bonusConsumableHealing: 0 },
+      field_craft: { playerUses: 3, npcUses: 1, reconEncounterInitiativeCount: 0, adrenalineAttackCount: 0, adrenalineBonusDamage: 0, adrenalineStaminaSaved: 0, adrenalineExtraDamageTaken: 0, freeCraftCount: 3, craftStaminaSaved: 6, instantHealing: 0, bonusConsumableHealing: 0 },
+      emergency_treatment: { playerUses: 3, npcUses: 1, reconEncounterInitiativeCount: 0, adrenalineAttackCount: 0, adrenalineBonusDamage: 0, adrenalineStaminaSaved: 0, adrenalineExtraDamageTaken: 0, freeCraftCount: 0, craftStaminaSaved: 0, instantHealing: 45, bonusConsumableHealing: 12 },
+    },
+    worldEventImpact: {},
+
   };
 }
 

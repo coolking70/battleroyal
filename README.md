@@ -2,7 +2,7 @@
 
 一个**纯前端、零后端**的回合制「区域式大逃杀」网页游戏。1 名玩家对阵 5 名 AI 参赛者，在 6 个相互连通的区域中搜索物资、合成装备、遭遇并战斗，同时躲避不断收缩的「禁区」。第一目标是交付一个**可运行、可测试、确定性可复现**的垂直切片（vertical slice），核心逻辑与界面严格分离。
 
-> 项目代号：`zone-battle-royale` · 版本 `0.3.0`（Phase 3A）
+> 项目代号：`zone-battle-royale` · 版本 `0.3.1`（Phase 3A-1 规格闭环）
 
 ---
 
@@ -104,6 +104,27 @@ npm run simulate
 - **依赖审计**：`npm run audit:deps` 静态扫描分层方向 / 红线隔离 / 环依赖 / 单文件体量（core/data ≤ 500 行）。
 
 设计文档：`COMBAT_DESIGN.md` / `SKILL_DESIGN.md` / `WORLD_EVENT_DESIGN.md` / `VISUAL_ASSET_SPEC.md` / `DEPENDENCY_AUDIT.md`。
+
+
+## 3.4 Phase 3A-1 要点（版本 0.3.1 · 规格符合性最终闭环）
+
+把 Phase 3A 已实现但偏离规格的技能 / 世界事件 / 信息不完全重新拉回明确需求，**不新增功能**：
+
+- **四技能严格回归规格**：警觉侦察（CD10/3体力/3回合，噪音增强+SEARCH遭遇先手，**不透视**）、
+  肾上腺素（CD12/2次攻击/伤害+20%/体力-1/自伤+10%/6回合）、现场加工（CD10/下一次成功合成免费/6回合）、
+  应急处理（CD10/固定+15HP/4回合治疗+25%）；删除全局统一冷却。
+- **六世界事件严格回归规格**：停电（搜索遭遇-20%/空手+10%）、暴雨（移动+1/远程命中×0.9）、
+  紧急广播（即时/只公布高噪音区域）、医疗警报（仅医院治疗+20%）、研究异常（lab每tick 3环境伤害走applyDamage）、
+  全域骚动（噪音不衰减/搜索噪音×1.5）。
+- **信息不完全闭环**：侦察技能不再写入任何 playerIntel；广播不再公开全部存活者位置（删除 revealAll）；
+  UI 命中率与 core 掷骰同源（理论/实测命中差 < 5pp，3000 局实测 0.13~0.29pp）。
+- **模拟统计补全**：攻击风格细分（attempts/hits/misses/hitRate/damage/avgShownChance/deltaPP）、
+  Guard 4 项、EXPOSED 5 项、技能收益（玩家/NPC 分列）、世界事件影响统计。
+- **供应链审计**：`npm audit --omit=dev` = 0 漏洞（runtime PASS）；dev 链 5 个漏洞全部记录于
+  `SUPPLY_CHAIN_AUDIT.md`（升级属破坏性变更，暂保留）。
+- **视觉资产为 Phase 4 收口**：`public/assets/manifest.json` + 统一接口
+  `getCharacterVisual/getZoneVisual/getItemVisual/getWorldEventVisual`；解析顺序 正式>SVG>emoji，缺图不裂。
+- **CI**：Node 20 + 100 局快速模拟（失败即 exit 1）；`simulateBalance` 整体判定 FAIL 时同样 exit 1。
 
 ---
 
@@ -233,7 +254,7 @@ tests/                   # Vitest：random / zones / movement / combat / search 
 ## 11. 测试
 
 - 框架：**Vitest**，`globals: true`，默认 node 环境；UI 冒烟测试用 `@vitest-environment jsdom` 单独覆盖。
-- 当前 **491 个测试，全部通过**，分布在 35 个文件（第一阶段 71 → 第二阶段 128 → 第三阶段 424 → Phase 3A 491）。
+- 当前 **527 个测试，全部通过**，分布在 38 个文件（第一阶段 71 → 第二阶段 128 → 第三阶段 424 → Phase 3A 491 → Phase 3A-1 527）。
 - 下表为第一阶段的 10 个基础文件，后续阶段在此之上新增了硬化 / 死锁 / 物品守恒 /
   技能 / 动态事件 / 世界事件不变量 / 视觉资产 / 存档校验 / 平衡验收等专项用例：
 

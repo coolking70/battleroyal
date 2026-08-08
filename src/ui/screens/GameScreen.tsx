@@ -16,7 +16,7 @@ import type { Combatant, Command, GameState } from '../../core/types';
 import { LOG_DISPLAY_COUNT } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { ZONE_STATUS_LABEL, cx, stackLabel } from '../../utils/format';
-import { WORLD_EVENT_VISUALS } from '../visualAssets';
+import { getWorldEventVisual } from '../visualAssets';
 import { ActionBar } from '../components/ActionBar';
 import { CraftPanel } from '../components/CraftPanel';
 import { EncounterPanel } from '../components/EncounterPanel';
@@ -154,7 +154,7 @@ export function GameScreen({
                 {bannerEvents.map((ev) => (
                   <div className={`event-banner event-${ev.eventId}`} key={ev.id}>
                     <span className="event-banner-icon" aria-hidden>
-                      {WORLD_EVENT_VISUALS[ev.eventId]?.emoji ?? '⚠'}
+                      {getWorldEventVisual(ev.eventId).emoji}
                     </span>
                     <div className="event-banner-body">
                       <div className="event-banner-title">

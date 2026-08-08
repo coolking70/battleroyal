@@ -1,45 +1,37 @@
 /**
- * 世界事件系统（Phase 3A Step 6）—— 取代 Phase 3 的 `dynamicEvents.ts`。
+ * 世界事件系统（Phase 3A-1 严格回归规格）。
  *
- * ## 为什么要推翻 storm / supply_drop / ambush
+ * ## 事件一览（数值与 WORLD_EVENT_DESIGN.md 逐字一致）
  *
- * 旧的三种动态事件各自踩了一条 Phase 3A 红线：
+ * | id | 范围 | 持续 | 效果 |
+ * | --- | --- | ---: | --- |
+ * | `blackout` 停电 | 全局 | 6 | 搜索遭遇敌人权重 ×0.8、空手权重 ×1.1（搜索变得不可靠，不碰战斗命中） |
+ * | `rain` 连绵阴雨 | 全局 | 6 | 移动体力 +1（走 actionCosts）、远程武器命中 ×0.9（近战/逃跑不受影响） |
+ * | `emergency_broadcast` 紧急广播 | 全局 | 即时 | 只公布「最近噪音最高的区域」之一，绝不公开身份/人数 |
+ * | `medical_alert` 医疗警报 | 医院 | 5 | 医院内治疗类消耗品最终治疗量 ×1.2 |
+ * | `research_anomaly` 研究异常 | 研究所 | 4 | 每时间单位对仍在 lab 的存活角色造成 3 点环境伤害（走 applyDamage） |
+ * | `citywide_unrest` 全域骚动 | 全局 | 3 | 噪音停止自然衰减；搜索产生的噪音 ×1.5 |
  *
- * | 旧事件 | 违反的红线 | 具体表现 |
- * | --- | --- | --- |
- * | `supply_drop` | **不得修改隐藏库存** | 直接 `addLootItem()` 往区域库存塞物资，玩家不必付出搜索成本 |
- * | `ambush` | **不得瞬移角色** | 直接改写 `attacker.currentZoneId`，凭空把 NPC 挪到玩家脚下 |
- * | `storm` | **不得绕过 applyDamage** | 走 `hpPerTick` 状态确实过了伤害管线，但它是「事件直接扣血」的坏范例 |
+ * ## 世界事件红线（RULE-WE-01 ~ 08）
  *
- * ## Phase 3A 的替代设计：环境修正型事件
+ * 事件**允许**造成环境伤害（研究异常），但必须走统一入口：
+ * - RULE-WE-01 不得直接 `actor.hp -= x`
+ * - RULE-WE-02 不得直接 `actor.alive = false`
+ * - RULE-WE-03 不得直接修改 `currentZoneId`
+ * - RULE-WE-04 不得增加隐藏 `zone.loot`
+ * - RULE-WE-05 不得创建未登记物品 UID
+ * - RULE-WE-06 环境伤害必须走 `applyDamage`（本文件通过 `worldEventTick.ts` 完成）
+ * - RULE-WE-07 移动成本必须走 `actionCosts`
+ * - RULE-WE-08 信息事件不得读取隐藏人物信息（广播只读公开噪音）
  *
- * 6 种世界事件**一律不直接改变任何角色/区域的实体状态**，只提供一组
- * {@link WorldEventModifiers} 修正值，由各系统在自己的判定点主动查询。
- * 这带来三个结构性好处：
- *
- * 1. **红线不可能被违反**：本文件不 import `zoneLoot` / `vitals` / `inventory`，
- *    没有任何写实体状态的能力，编译期就杜绝了塞物资 / 瞬移 / 直接扣血；
- * 2. **确定性**：修正值是 state 的纯函数，存档只需序列化事件列表即可完整复现；
- * 3. **UI 与 core 同源**：UI 想显示「雨天命中 -10%」时调用的是同一个
- *    {@link worldModifiersAt}，不存在 UI 自己算一套的风险
- *    （对应不变量「UI 命中率 === core 实际概率」）。
- *
- * ## 事件一览
- *
- * | id | 范围 | 效果 |
- * | --- | --- | --- |
- * | `blackout` 大停电 | 区域 | 命中 ×0.85、搜索 ×0.7、屏蔽该区域情报 |
- * | `rain` 连绵阴雨 | 全局 | 命中 ×0.9、逃跑 +0.1 |
- * | `emergency_broadcast` 紧急广播 | 全局 | 公开全部存活者所在区域 |
- * | `medical_alert` 医疗管制 | 全局 | 治疗品效果 ×0.75、医疗物资搜索 +0.35 |
- * | `research_anomaly` 研究异常 | 区域 | 材料搜索 +0.6、装备耐久损耗 +1 |
- * | `citywide_unrest` 全城骚动 | 全局 | NPC 攻击倾向 +0.25、遭遇权重 ×1.3 |
+ * 说明：本文件刻意不 import `vitals`（避免 vitals→info→worldEvents 循环依赖），
+ * 环境伤害放在 `worldEventTick.ts`，由 gameEngine 每时间单位调用 —— 效果上
+ * 仍然走 `applyDamage` 唯一入口，行为层测试保证致死/死亡流程正确。
  */
 
 import { GAME_CONFIG } from '../data/gameConfig';
 import { getZoneDef } from '../data/zones';
 import { pushEvent } from './events';
-import { aliveCharacters } from './gameState';
 import type {
   GameState,
   WorldEventId,
@@ -57,21 +49,24 @@ export interface WorldEventDef {
   id: WorldEventId;
   label: string;
   scope: WorldEventScope;
+  /** 持续时间（0 = 即时事件，不进入 active 列表） */
   duration: number;
   weight: number;
   /** 展示用简述（UI 横幅 / 日志） */
   description: string;
+  /** 固定生效区域（scope=zone 时必填；如医院/研究所） */
+  fixedZoneId?: string;
 }
 
 /** 6 种世界事件的静态定义（顺序即 UI 图例顺序） */
 export const WORLD_EVENT_DEFS: Record<WorldEventId, WorldEventDef> = {
   blackout: {
     id: 'blackout',
-    label: '大停电',
-    scope: 'zone',
+    label: '停电',
+    scope: 'global',
     duration: GAME_CONFIG.blackoutDuration,
     weight: GAME_CONFIG.worldEventWeights.blackout,
-    description: `该区域陷入黑暗：命中率 ×${GAME_CONFIG.blackoutHitMult}、搜索效率 ×${GAME_CONFIG.blackoutSearchMult}，且无法获知区域内情报。`,
+    description: `全城供电中断：搜索更不可靠（遭遇 ×0.8、空手 ×1.1），但不影响战斗命中。`,
   },
   rain: {
     id: 'rain',
@@ -79,47 +74,43 @@ export const WORLD_EVENT_DEFS: Record<WorldEventId, WorldEventDef> = {
     scope: 'global',
     duration: GAME_CONFIG.rainDuration,
     weight: GAME_CONFIG.worldEventWeights.rain,
-    description: `全城降雨：命中率 ×${GAME_CONFIG.rainHitMult}，逃跑成功率 +${Math.round(
-      GAME_CONFIG.rainFleeBonus * 100,
-    )}%。`,
+    description: `全城降雨：移动体力 +1，远程武器命中率 ×${GAME_CONFIG.rainRangedHitMult}。`,
   },
   emergency_broadcast: {
     id: 'emergency_broadcast',
     label: '紧急广播',
     scope: 'global',
-    duration: GAME_CONFIG.broadcastDuration,
+    duration: 0,
     weight: GAME_CONFIG.worldEventWeights.emergency_broadcast,
-    description: '应急频道公开了所有幸存者的所在区域 —— 你看得见别人，别人也看得见你。',
+    description: '监控只公布「最近活动最频繁的区域」之一，不涉及任何人。',
   },
   medical_alert: {
     id: 'medical_alert',
-    label: '医疗管制',
-    scope: 'global',
+    label: '医疗警报',
+    scope: 'zone',
+    fixedZoneId: 'hospital',
     duration: GAME_CONFIG.medicalAlertDuration,
     weight: GAME_CONFIG.worldEventWeights.medical_alert,
-    description: `药品被稀释调配：治疗类物品效果 ×${GAME_CONFIG.medicalAlertHealMult}，但医疗物资更容易被翻出来（搜索 +${Math.round(
-      GAME_CONFIG.medicalAlertMedicalFindBonus * 100,
-    )}%）。`,
+    description: `医院医疗资源优先调度：在医院使用治疗类消耗品效果 +${Math.round(
+      (GAME_CONFIG.medicalAlertHealMult - 1) * 100,
+    )}%。`,
   },
   research_anomaly: {
     id: 'research_anomaly',
     label: '研究异常',
     scope: 'zone',
+    fixedZoneId: GAME_CONFIG.researchAnomalyZoneId,
     duration: GAME_CONFIG.researchAnomalyDuration,
     weight: GAME_CONFIG.worldEventWeights.research_anomaly,
-    description: `该区域实验设施失控：材料类物品更易被搜到（+${Math.round(
-      GAME_CONFIG.researchAnomalyMaterialFindBonus * 100,
-    )}%），但装备损耗加剧（耐久 -${GAME_CONFIG.researchAnomalyDurabilityLoss}）。`,
+    description: `研究所实验设施失控：每时间单位对仍在内的人造成 ${GAME_CONFIG.researchAnomalyDamagePerTick} 点环境伤害。`,
   },
   citywide_unrest: {
     id: 'citywide_unrest',
-    label: '全城骚动',
+    label: '全域骚动',
     scope: 'global',
     duration: GAME_CONFIG.unrestDuration,
     weight: GAME_CONFIG.worldEventWeights.citywide_unrest,
-    description: `幸存者陷入躁动：对手进攻倾向 +${Math.round(
-      GAME_CONFIG.unrestAggressionBonus * 100,
-    )}%，搜索时遭遇敌人的概率 ×${GAME_CONFIG.unrestEncounterMult}。`,
+    description: `全城骚动：区域噪音停止自然衰减，搜索产生的噪音 ×${GAME_CONFIG.unrestSearchNoiseMult}。`,
   },
 };
 
@@ -144,43 +135,31 @@ export const WORLD_EVENT_IDS: WorldEventId[] = [
  * 各系统只需无条件乘/加，无需判断事件是否存在。
  */
 export interface WorldEventModifiers {
-  /** 命中率乘数（combat.hitChanceIn） */
-  hitMultiplier: number;
-  /** 搜索「找到物品」权重乘数（search.computeSearchWeights） */
-  searchFindMultiplier: number;
-  /** 搜索「遭遇敌人」权重乘数（search.computeSearchWeights） */
-  encounterMultiplier: number;
-  /** 医疗类物品搜索权重加成（search.computeSearchWeights） */
-  medicalFindBonus: number;
-  /** 材料类物品搜索权重加成（search.computeSearchWeights） */
-  materialFindBonus: number;
-  /** 治疗类消耗品效果乘数（consumables.healMultiplierOf） */
+  /** 远程武器命中率乘数（rain ×0.9；近战不受影响） */
+  rangedHitMultiplier: number;
+  /** 移动体力成本加成（rain +1，走 actionCosts） */
+  moveCostBonus: number;
+  /** 搜索「遭遇敌人」权重乘数（blackout ×0.8） */
+  searchEnemyMult: number;
+  /** 搜索「空手」权重乘数（blackout ×1.1） */
+  searchNothingMult: number;
+  /** 治疗类消耗品最终治疗量倍率（medical_alert ×1.2，仅医院生效） */
   healMultiplier: number;
-  /** 逃跑成功率加成（combat.fleeChanceIn） */
-  fleeBonus: number;
-  /** NPC 进攻倾向加成（npcDecide） */
-  npcAggressionBonus: number;
-  /** 装备额外耐久损耗（itemIntegrity 调用点） */
-  durabilityLossBonus: number;
-  /** 情报是否被屏蔽（info.recordIntel / 侦察技能） */
-  intelBlocked: boolean;
-  /** 是否公开全部存活者位置（info.refreshPlayerSight） */
-  revealAll: boolean;
+  /** 噪音是否停止自然衰减（unrest） */
+  noiseDecayBlocked: boolean;
+  /** 搜索产生的噪音乘数（unrest ×1.5） */
+  searchNoiseMultiplier: number;
 }
 
 /** 无任何世界事件时的中性修正值 */
 export const NEUTRAL_WORLD_MODIFIERS: WorldEventModifiers = {
-  hitMultiplier: 1,
-  searchFindMultiplier: 1,
-  encounterMultiplier: 1,
-  medicalFindBonus: 0,
-  materialFindBonus: 0,
+  rangedHitMultiplier: 1,
+  moveCostBonus: 0,
+  searchEnemyMult: 1,
+  searchNothingMult: 1,
   healMultiplier: 1,
-  fleeBonus: 0,
-  npcAggressionBonus: 0,
-  durabilityLossBonus: 0,
-  intelBlocked: false,
-  revealAll: false,
+  noiseDecayBlocked: false,
+  searchNoiseMultiplier: 1,
 };
 
 /**
@@ -211,28 +190,25 @@ export function worldModifiersAt(
 function applyModifier(m: WorldEventModifiers, id: WorldEventId): void {
   switch (id) {
     case 'blackout':
-      m.hitMultiplier *= GAME_CONFIG.blackoutHitMult;
-      m.searchFindMultiplier *= GAME_CONFIG.blackoutSearchMult;
-      m.intelBlocked = true;
+      m.searchEnemyMult *= GAME_CONFIG.blackoutSearchEnemyMult;
+      m.searchNothingMult *= GAME_CONFIG.blackoutSearchNothingMult;
       break;
     case 'rain':
-      m.hitMultiplier *= GAME_CONFIG.rainHitMult;
-      m.fleeBonus += GAME_CONFIG.rainFleeBonus;
+      m.moveCostBonus += GAME_CONFIG.rainMoveCostBonus;
+      m.rangedHitMultiplier *= GAME_CONFIG.rainRangedHitMult;
       break;
     case 'emergency_broadcast':
-      m.revealAll = true;
+      // 即时事件：不进入 active，无持续修正
       break;
     case 'medical_alert':
       m.healMultiplier *= GAME_CONFIG.medicalAlertHealMult;
-      m.medicalFindBonus += GAME_CONFIG.medicalAlertMedicalFindBonus;
       break;
     case 'research_anomaly':
-      m.materialFindBonus += GAME_CONFIG.researchAnomalyMaterialFindBonus;
-      m.durabilityLossBonus += GAME_CONFIG.researchAnomalyDurabilityLoss;
+      // 每 tick 伤害在 worldEventTick.ts 处理，这里无修正值
       break;
     case 'citywide_unrest':
-      m.npcAggressionBonus += GAME_CONFIG.unrestAggressionBonus;
-      m.encounterMultiplier *= GAME_CONFIG.unrestEncounterMult;
+      m.noiseDecayBlocked = true;
+      m.searchNoiseMultiplier *= GAME_CONFIG.unrestSearchNoiseMult;
       break;
   }
 }
@@ -276,8 +252,8 @@ export function hasWorldEvent(
 /**
  * 推进 1 个时间单位时调用：先衰减既有事件，再按调度触发新事件。
  *
- * 与旧 `runDynamicEvents` 的关键差异：**不再调用 `refreshZoneOccupants`**，
- * 因为世界事件从不移动角色，区域占用名单不可能因它失配。
+ * 说明：研究异常的每 tick 环境伤害由 gameEngine 另行调用
+ * `applyWorldEventTickDamage`（见 worldEventTick.ts），这里不处理实体伤害。
  */
 export function runWorldEvents(state: GameState, rng: SeededRandom): void {
   ensureWorldEventFields(state);
@@ -346,14 +322,20 @@ function pickWorldEventId(state: GameState, rng: SeededRandom): WorldEventId | n
 
 /** 触发一次世界事件（受并发上限与去重限制，可能什么都不做） */
 function tryTriggerWorldEvent(state: GameState, rng: SeededRandom): void {
-  if (state.activeWorldEvents.length >= GAME_CONFIG.maxConcurrentWorldEvents) return;
-
   const eventId = pickWorldEventId(state, rng);
   if (!eventId) return;
 
   const def = WORLD_EVENT_DEFS[eventId];
-  const zoneId = def.scope === 'zone' ? pickZoneId(state, rng) : null;
-  // 区域事件找不到合法区域时放弃本次触发（不消耗调度以外的任何状态）
+  const zoneId =
+    def.scope === 'zone' ? resolveZoneIdFor(def) : null;
+
+  // 即时事件（紧急广播）：不进入 active，当场结算并广播
+  if (def.duration === 0) {
+    triggerInstantBroadcast(state, eventId, def);
+    return;
+  }
+
+  if (state.activeWorldEvents.length >= GAME_CONFIG.maxConcurrentWorldEvents) return;
   if (def.scope === 'zone' && !zoneId) return;
 
   const instance: WorldEventState = {
@@ -373,7 +355,7 @@ function tryTriggerWorldEvent(state: GameState, rng: SeededRandom): void {
     type: 'WORLD_EVENT',
     actorId: null,
     zoneId: zoneId ?? undefined,
-    message: buildAnnouncement(state, def, zoneId),
+    message: buildAnnouncement(def, zoneId),
     metadata: {
       worldEventId: eventId,
       scope: def.scope,
@@ -383,24 +365,69 @@ function tryTriggerWorldEvent(state: GameState, rng: SeededRandom): void {
   });
 }
 
-/** 区域事件的落点：只在**未被禁区吞掉**的区域中随机 */
-function pickZoneId(state: GameState, rng: SeededRandom): string | null {
+/** 区域事件的落点：优先固定区域（医院/研究所），否则在未被禁区吞掉的区域中随机 */
+function resolveZoneIdFor(def: WorldEventDef): string | null {
+  if (def.fixedZoneId) return def.fixedZoneId;
+  return null;
+}
+
+/**
+ * 从公开噪音数据中选择「最近噪音最高」的区域（纯函数，供广播与测试使用）。
+ * 只读 `noiseLevel`（公开数据），绝不读取角色身份/人数。
+ */
+export function pickBroadcastZone(state: GameState): string | null {
   const candidates = Object.values(state.zones)
-    .filter((z) => z.status !== 'restricted')
-    .map((z) => z.id);
-  if (candidates.length === 0) return null;
-  return rng.pick(candidates);
+    .filter((z) => z.noiseLevel >= GAME_CONFIG.noiseActiveThreshold)
+    .sort((a, b) => b.noiseLevel - a.noiseLevel);
+  return candidates[0]?.id ?? null;
+}
+
+/**
+ * 即时广播：从**公开噪音数据**中选择最近噪音最高的区域之一广播。
+ * 绝不读取 aliveCharacterIds / 身份 / 人数。
+ */
+function triggerInstantBroadcast(
+  state: GameState,
+  eventId: WorldEventId,
+  def: WorldEventDef,
+): void {
+  const topZoneId = pickBroadcastZone(state);
+  const topZone = topZoneId ? state.zones[topZoneId] : null;
+
+  const message = topZone
+    ? `监控发现「${getZoneDef(topZone.id).name}」近期活动频繁。`
+    : '监控暂未发现明显集中活动。';
+
+  // 记录 history（即时事件 start=end=当前时间），供统计与回放
+  state.worldEventHistory.push({
+    id: `we${state.eventSeq}`,
+    eventId,
+    zoneId: topZone?.id ?? null,
+    startedAtTime: state.time,
+    endedAtTime: state.time,
+  });
+  state.eventSeq += 1;
+
+  pushEvent(state, {
+    type: 'WORLD_EVENT',
+    actorId: null,
+    zoneId: topZone?.id ?? undefined,
+    message,
+    metadata: {
+      worldEventId: eventId,
+      scope: def.scope,
+      zoneId: topZone?.id ?? null,
+      duration: 0,
+      instant: true,
+      broadcastZoneId: topZone?.id ?? null,
+    },
+  });
 }
 
 function buildAnnouncement(
-  state: GameState,
   def: WorldEventDef,
   zoneId: string | null,
 ): string {
   const where = zoneId ? `「${getZoneDef(zoneId).name}」` : '全城';
-  const suffix =
-    def.id === 'emergency_broadcast'
-      ? `（当前存活 ${aliveCharacters(state).length} 人）`
-      : '';
-  return `【${def.label}】${where}：${def.description}持续 ${def.duration} 个时间单位。${suffix}`;
+  return `【${def.label}】${where}：${def.description}持续 ${def.duration} 个时间单位。`;
 }

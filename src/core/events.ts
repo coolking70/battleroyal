@@ -62,6 +62,7 @@ const DEFAULT_IMPORTANCE: Record<GameEventType, EventImportance> = {
   WORLD_EVENT: 'major',
   // 事件结束同样影响决策（「雨停了，可以放心重击了」），但重要性略低于开始
   WORLD_EVENT_ENDED: 'minor',
+  WORLD_EVENT_DAMAGE: 'minor',
 };
 
 /**

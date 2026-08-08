@@ -19,7 +19,7 @@
  *   3. 之后每一回合从 getLegalPlayerCommands 合法集合里选动作并 executeCommand
  *      （决策内核与自动对局控制器共用，绝不绕过规则）；
  *   4. 对局结束（won / lost / draw / timeout）后，从**真实最终状态**提取
- *      每一个字段，写入 reports/phase3-scripted-playthroughs.md。
+ *      每一个字段，写入 reports/phase3a1-scripted-playthroughs.md。
  *
  * 用法：
  *   npm run scripted:playthroughs
@@ -41,7 +41,7 @@ import { getCharacterSkill, SKILLS } from '../src/core/skills';
 import { getItem, tryGetItem } from '../src/data/items';
 import { getZoneDef } from '../src/data/zones';
 import type { AutoPlayerPolicy } from './autoPlayer';
-import type { Command, GameState, WorldEventId } from '../src/core/types';
+import type { Command, GameEvent, GameState, WorldEventId } from '../src/core/types';
 import { WORLD_EVENT_DEFS, WORLD_EVENT_IDS } from '../src/core/worldEvents';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -75,12 +75,18 @@ export interface ScriptedPlaythroughRecord {
   /** Phase 3 Step 8：动态事件覆盖（按子类型统计） */
   worldEvents: Record<WorldEventId, number>;
   worldEventTotal: number;
+  /** Phase 3A-1 Step 14：玩法覆盖 */
+  styleCoverage: Record<string, boolean>;
+  exposedCovered: boolean;
+  guardCovered: boolean;
+  finaleCovered: boolean;
 }
 
 /**
- * 12 局脚本化完整对局（Phase 3A Step 14 要求 12 局）。
- * 覆盖 4 个角色 × 5 种策略中的 12 种组合，每局一个不同的制作目标；
- * 第 9~12 局显式覆盖四种签名技能（战场侦察 / 肾上腺素 / 野外工造 / 紧急处置）。
+ * 16 局脚本化完整对局（Phase 3A-1 Step 14 要求 16 局）。
+ * 覆盖 4 角色 × 4 技能 × 6 世界事件 × 三种攻击风格 × EXPOSED × Guard ×
+ * 制作目标，且至少出现一次 finale（终局衰竭阶段）。
+ * 明确：这是 Scripted Playthrough（脚本自动驱动），不是人工测试。
  */
 const RUNS: Array<{
   seed: string;
@@ -94,13 +100,18 @@ const RUNS: Array<{
   { seed: 'SPT-4', characterId: 'medic', goal: 'r_medkit', policy: 'cautious' },
   { seed: 'SPT-5', characterId: 'scout', goal: 'r_simple_bow', policy: 'opportunist' },
   { seed: 'SPT-6', characterId: 'fighter', goal: 'r_plate_armor', policy: 'collector' },
-  { seed: 'SPT-7', characterId: 'engineer', goal: 'r_stone_axe', policy: 'random' },
+  { seed: 'FIN3-1-e', characterId: 'engineer', goal: 'r_stone_axe', policy: 'collector' }, // 进入 finale
   { seed: 'SPT-8', characterId: 'medic', goal: 'r_herb_remedy', policy: 'aggressive' },
   // Phase 3A：每角色补一局，强化技能与战斗风格曝光
   { seed: 'SPT-9', characterId: 'scout', goal: 'r_simple_armor', policy: 'random' },
   { seed: 'SPT-10', characterId: 'fighter', goal: 'r_cloth_armor', policy: 'opportunist' },
   { seed: 'SPT-11', characterId: 'engineer', goal: 'r_bandage', policy: 'aggressive' },
   { seed: 'SPT-12', characterId: 'medic', goal: 'r_stone_axe', policy: 'random' },
+  // Phase 3A-1：再补 4 局，凑足 16 局并加深 finale / 事件曝光
+  { seed: 'SPT-13', characterId: 'scout', goal: 'r_iron_pipe', policy: 'aggressive' },
+  { seed: 'FIN2-0-f', characterId: 'fighter', goal: 'r_stick', policy: 'cautious' }, // 进入 finale 并获胜
+  { seed: 'SPT-15', characterId: 'engineer', goal: 'r_simple_bow', policy: 'opportunist' },
+  { seed: 'SPT-16', characterId: 'medic', goal: 'r_stun_rod', policy: 'collector' },
 ];
 
 function sameType(a: Command, b: Command): boolean {
@@ -113,6 +124,7 @@ function playThrough(cfg: (typeof RUNS)[number]): {
   issues: string[];
   steps: number;
   recommendedZones: string[];
+  fullEvents: GameEvent[];
 } {
   let s = createGame({
     seed: cfg.seed,
@@ -135,6 +147,18 @@ function playThrough(cfg: (typeof RUNS)[number]): {
   let steps = 0;
   let lastTime = s.time;
   let stall = 0;
+  // Phase 3A-1：覆盖统计基于全量事件。pruneEvents 会从数组头部裁剪旧事件，
+  // 用「已收集事件 id 集合」去重收集，而不是按数组长度切片（长度会被裁剪打乱）。
+  const capturedEventIds = new Set<string>();
+  const fullEvents: GameEvent[] = [];
+  const captureNewEvents = (): void => {
+    for (const e of s.events) {
+      if (!capturedEventIds.has(e.id)) {
+        capturedEventIds.add(e.id);
+        fullEvents.push(e);
+      }
+    }
+  };
 
   while (s.status === 'playing' && steps < GAME_CONFIG.hardTimeLimit * 4 + 200) {
     const legal = getLegalPlayerCommands(s);
@@ -154,6 +178,7 @@ function playThrough(cfg: (typeof RUNS)[number]): {
       break;
     }
     s = res.state;
+    captureNewEvents();
     steps += 1;
 
     if (s.time === lastTime) {
@@ -169,11 +194,36 @@ function playThrough(cfg: (typeof RUNS)[number]): {
   }
 
   if (s.status === 'playing') issues.push('超时：跑到步数上限仍未结束');
-  return { final: s, issues, steps, recommendedZones };
+  return { final: s, issues, steps, recommendedZones, fullEvents };
+}
+
+/** 从全量事件计算「玩法覆盖」布尔集合（Phase 3A-1 Step 14） */
+function coverageOf(fullEvents: GameEvent[]): {
+  styles: Record<string, boolean>;
+  exposed: boolean;
+  guard: boolean;
+  finale: boolean;
+} {
+  const styles: Record<string, boolean> = {};
+  let exposed = false;
+  let guard = false;
+  let finale = false;
+  for (const e of fullEvents) {
+    if (e.type === 'ATTACK_HIT' || e.type === 'ATTACK_MISSED') {
+      const st = e.metadata?.style as string | undefined;
+      if (st) styles[st] = true;
+      if (e.metadata?.exposed === true) exposed = true;
+    }
+    if (e.type === 'GUARD') guard = true;
+    if (e.type === 'PHASE_CHANGED' && e.metadata?.phase === 'finale') finale = true;
+  }
+  return { styles, exposed, guard, finale };
 }
 
 function recordRun(cfg: (typeof RUNS)[number]): ScriptedPlaythroughRecord {
-  const { final: s, issues, steps, recommendedZones } = playThrough(cfg);
+  const { final: s, issues, steps, recommendedZones, fullEvents } = playThrough(cfg);
+  const coverage = coverageOf(fullEvents);
+  // eslint-disable-next-line no-console
   const p = s.characters[s.playerId]!;
 
   const outcome =
@@ -217,6 +267,10 @@ function recordRun(cfg: (typeof RUNS)[number]): ScriptedPlaythroughRecord {
   const worldEventTotal = s.eventCounters.byType['WORLD_EVENT'] ?? 0;
 
   return {
+    styleCoverage: coverage.styles,
+    exposedCovered: coverage.exposed,
+    guardCovered: coverage.guard,
+    finaleCovered: coverage.finale,
     seed: cfg.seed,
     characterId: cfg.characterId,
     policy: cfg.policy,
@@ -342,6 +396,24 @@ function renderMarkdown(records: ScriptedPlaythroughRecord[]): string {
   );
   L.push('');
 
+  // ---- 玩法覆盖汇总（Phase 3A-1 Step 14）----
+  L.push(`## 玩法覆盖汇总（Phase 3A-1 Step 14）`);
+  L.push('');
+  const styleSeen = ['quick', 'normal', 'heavy'].filter((st) =>
+    records.some((r) => r.styleCoverage[st]),
+  );
+  const exposedCovered = records.some((r) => r.exposedCovered);
+  const guardCovered = records.some((r) => r.guardCovered);
+  const finaleCovered = records.some((r) => r.finaleCovered);
+  L.push(
+    `- 攻击风格覆盖：${styleSeen.map((st) => `${st} ${'✓'}`).join(' · ') || '⚠ 未捕获任何风格'}`,
+  );
+  L.push(`- EXPOSED（露出破绽）出现：${exposedCovered ? '✓' : '✗'}`);
+  L.push(`- Guard（防御姿态）使用：${guardCovered ? '✓' : '✗'}`);
+  L.push(`- 至少一次进入终局（finale）：${finaleCovered ? '✓' : '✗'}`);
+  L.push(`- 制作目标完成的对局：${records.filter((r) => r.craftGoalCompleted).length} / ${records.length}`);
+  L.push('');
+
   const anyIssue = records.some((r) => r.issues.length > 0);
   L.push(`## 结论`);
   L.push('');
@@ -365,7 +437,7 @@ function main(): void {
     __dirname,
     '..',
     'reports',
-    'phase3-scripted-playthroughs.md',
+    'phase3a1-scripted-playthroughs.md',
   );
   mkdirSync(dirname(mdPath), { recursive: true });
   writeFileSync(mdPath, renderMarkdown(records), 'utf8');

@@ -200,39 +200,28 @@ export function auditWorldEventInvariants(state: GameState): WorldEventInvariant
     }
   }
 
-  /* --- 7. 修正值无 NaN/Infinity 污染 --- */
+  /* --- 7. 修正值无 NaN/Infinity 污染（Phase 3A-1 新字段集） --- */
   const zonesToCheck = [null, ...Object.keys(state.zones)];
   for (const zid of zonesToCheck) {
     const m = worldModifiersAt(state, zid);
     const where = zid === null ? '全局（zoneId=null）' : `区域 ${zid}`;
     const multChecks: Array<[string, number]> = [
-      ['hitMultiplier', m.hitMultiplier],
-      ['searchFindMultiplier', m.searchFindMultiplier],
-      ['encounterMultiplier', m.encounterMultiplier],
+      ['rangedHitMultiplier', m.rangedHitMultiplier],
+      ['searchEnemyMult', m.searchEnemyMult],
+      ['searchNothingMult', m.searchNothingMult],
       ['healMultiplier', m.healMultiplier],
+      ['searchNoiseMultiplier', m.searchNoiseMultiplier],
     ];
     for (const [name, val] of multChecks) {
       if (!isFiniteNumber(val) || val <= 0) {
         problems.push(`${where} 的修正值 ${name} 非法（${String(val)}）`);
       }
     }
-    const addChecks: Array<[string, number]> = [
-      ['medicalFindBonus', m.medicalFindBonus],
-      ['materialFindBonus', m.materialFindBonus],
-      ['fleeBonus', m.fleeBonus],
-      ['npcAggressionBonus', m.npcAggressionBonus],
-      ['durabilityLossBonus', m.durabilityLossBonus],
-    ];
-    for (const [name, val] of addChecks) {
-      if (!isFiniteNumber(val)) {
-        problems.push(`${where} 的修正值 ${name} 非法（${String(val)}）`);
-      }
+    if (!isFiniteNumber(m.moveCostBonus)) {
+      problems.push(`${where} 的修正值 moveCostBonus 非法（${String(m.moveCostBonus)}）`);
     }
-    if (typeof m.intelBlocked !== 'boolean') {
-      problems.push(`${where} 的修正值 intelBlocked 不是布尔`);
-    }
-    if (typeof m.revealAll !== 'boolean') {
-      problems.push(`${where} 的修正值 revealAll 不是布尔`);
+    if (typeof m.noiseDecayBlocked !== 'boolean') {
+      problems.push(`${where} 的修正值 noiseDecayBlocked 不是布尔`);
     }
   }
 

@@ -1,6 +1,6 @@
 # VISUAL_ASSET_SPEC.md — 视觉资产接口规范（Phase 3A Step 11）
 
-> 版本 0.3.0 · 与 `src/ui/visualAssets.ts` + `src/ui/assets/` 一一对应。
+> 版本 0.3.1 · 与 `src/ui/visualAssets.ts` + `src/ui/assets/` + `public/assets/manifest.json` 一一对应。
 
 ## 1. 目标
 
@@ -81,3 +81,48 @@ worldEventEmoji(eventId)         // 事件 emoji（横幅用）
 - 未知 key 一律返回 `FALLBACK_VISUAL`；
 - 区域 color/label 与数据表一致（防漂移）；
 - `itemEmoji` 覆盖全部物品类别，未知物品返回 ❓。
+
+## 9. Phase 4 正式资产 Manifest（Phase 3A-1 Step 9 收口）
+
+### 9.1 目录与解析顺序
+
+```
+public/assets/
+  characters/  zones/  items/  world-events/  effects/  manifest.json
+```
+
+**解析顺序（必须遵守）**：
+1. `public/assets/manifest.json` 指定的正式资产（Phase 4 AI 生成后写入）；
+2. 空 / 缺失 → `src/ui/assets/` 的 SVG（development fallback）；
+3. SVG 不存在 → emoji + color fallback。
+
+任何时候不显示 broken img：`image` 为 null 时组件渲染 emoji/色块。
+
+### 9.2 统一接口（React 只能调用这些）
+
+```ts
+getCharacterVisual(id)  // 优先 manifest.characters[id].portrait
+getZoneVisual(id)       // 优先 manifest.zones[id].background
+getItemVisual(id)       // 优先 manifest.items[id]
+getWorldEventVisual(id) // 优先 manifest.worldEvents[id]
+```
+
+Phase 4 替换资产生成后，只需更新 `public/assets/` 与 manifest.json，
+**无需修改任何 React 组件**（组件不得硬编码 `/assets/xxx.png`）。
+
+### 9.3 manifest 结构（version 1）
+
+```json
+{
+  "version": 1,
+  "characters": { "scout": { "portrait": null, "injured": null, "combat": null }, ... },
+  "zones": { "school": { "background": null, "warning": null, "restricted": null }, ... },
+  "items": {},
+  "worldEvents": {}
+}
+```
+
+### 9.4 测试契约（tests/visualAssets.test.ts）
+
+manifest 缺失 → fallback；manifest 为空 → fallback；正式 portrait 存在 → 优先正式图；
+正式图不存在 → SVG fallback；SVG 不存在 → emoji fallback；未知角色/区域 → fallback。

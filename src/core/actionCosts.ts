@@ -13,8 +13,9 @@
  */
 
 import { GAME_CONFIG } from '../data/gameConfig';
+import { worldModifiersAt } from './worldEvents';
 import { adrenalineStaminaDelta, hasFieldCraftCharge } from './statusIds';
-import type { AttackStyle, Combatant } from './types';
+import type { AttackStyle, Combatant, GameState } from './types';
 
 /** 所有会消耗体力的行动 */
 export type CostedAction = 'MOVE' | 'SEARCH' | 'ATTACK' | 'CRAFT' | 'FLEE' | 'GUARD';
@@ -78,6 +79,48 @@ export function getAttackStyleStaminaCost(style: AttackStyle): number {
 export function attackStaminaCostFor(actor: Combatant, style: AttackStyle): number {
   const base = GAME_CONFIG.attackStyleStaminaCost[style];
   return Math.max(1, base + adrenalineStaminaDelta(actor));
+}
+
+/**
+ * 移动体力成本（Phase 3A-1 RULE-WE-07）。
+ *
+ * 「连绵阴雨」给移动 +1 体力，玩家与 NPC **共用**这一个入口，
+ * 禁止在 player MOVE / NPC MOVE 两处分别硬编码。
+ * 调用方：移动闸门（guard）、扣费（moveActor）、合法集可行性、UI 预估。
+ */
+export function moveStaminaCostFor(state: GameState, actor: Combatant): number {
+  return (
+    GAME_CONFIG.moveStaminaCost +
+    worldModifiersAt(state, actor.currentZoneId).moveCostBonus
+  );
+}
+
+/** 移动闸门（带世界事件修正）：对局进行中 + 存活 + 付得起移动体力 */
+export function canPayMove(state: GameState, actor: Combatant): CostCheck {
+  const cost = moveStaminaCostFor(state, actor);
+  if (!actor.alive) {
+    return { ok: false, reason: '已经死亡的角色无法行动。', cost };
+  }
+  if (cost <= 0) {
+    return { ok: true, reason: null, cost };
+  }
+  if (actor.stamina < cost) {
+    return {
+      ok: false,
+      reason: `体力不足：移动需要 ${cost} 点，当前只有 ${Math.floor(actor.stamina)} 点。请先休息或使用恢复品。`,
+      cost,
+    };
+  }
+  return { ok: true, reason: null, cost };
+}
+
+/** 扣除移动体力（带世界事件修正），返回实际扣除点数 */
+export function payMoveCost(state: GameState, actor: Combatant): number {
+  const cost = moveStaminaCostFor(state, actor);
+  if (cost <= 0) return 0;
+  const before = actor.stamina;
+  actor.stamina = clampStamina(actor, actor.stamina - cost);
+  return before - actor.stamina;
 }
 
 export interface CostCheck {

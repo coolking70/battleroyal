@@ -9,7 +9,7 @@
 import { areAdjacent, getZoneDef, tryGetZoneDef } from '../data/zones';
 import { getItem, tryGetItem } from '../data/items';
 import { RECIPES } from '../data/recipes';
-import { canPayActionCost } from './actionCosts';
+import { canPayActionCost, canPayMove } from './actionCosts';
 import { canAttack } from './combat';
 import { SKILLS, canUseSkill, getCharacterSkill, type SkillId } from './skills';
 import { advancesTime, commandLabel } from './commands';
@@ -202,10 +202,10 @@ export function needsEvacuation(state: GameState, player: Combatant): boolean {
   return zone?.status === 'restricted' || zone?.status === 'warning';
 }
 
-/** 移动到相邻且存在的区域，且付得起体力 */
+/** 移动到相邻且存在的区域，且付得起体力（成本含世界事件修正） */
 export function movementActions(state: GameState, player: Combatant): LegalAction[] {
   const out: LegalAction[] = [];
-  const moveCheck = canPayActionCost(player, 'MOVE');
+  const moveCheck = canPayMove(state, player);
   if (!moveCheck.ok) return out;
 
   for (const zoneId of Object.keys(state.zones)) {

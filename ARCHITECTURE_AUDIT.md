@@ -1,6 +1,8 @@
-# DEPENDENCY_AUDIT.md — 依赖审计报告（Phase 3A Step 16）
+# ARCHITECTURE_AUDIT.md — 架构审计报告（Phase 3A-1 更名）
 
-> 版本 0.3.0 · 审计入口：`npm run audit:deps`（`tools/auditDependencies.ts`）
+> 版本 0.3.1 · 审计入口：`npm run audit:deps`（`tools/auditDependencies.ts`）
+> 本文件只覆盖**代码架构**审计（import 层级 / 循环依赖 / 文件行数 / 模块红线）。
+> npm 供应链审计请见 `SUPPLY_CHAIN_AUDIT.md`，两者刻意分开，避免概念混淆。
 
 ## 1. 审计规则
 

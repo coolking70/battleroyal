@@ -27,11 +27,14 @@
  */
 
 import { GAME_CONFIG } from '../data/gameConfig';
-import { getZoneDef } from '../data/zones';
 import { canPayStamina, spendStamina, type CostCheck } from './actionCosts';
 import { pushEvent } from './events';
-import { recordIntel } from './info';
-import { ADRENALINE_ID, FIELD_CRAFT_ID, MEDICAL_FOCUS_ID } from './statusIds';
+import {
+  ADRENALINE_ID,
+  FIELD_CRAFT_ID,
+  MEDICAL_FOCUS_ID,
+  SCOUT_AWARENESS_ID,
+} from './statusIds';
 import { applyHealing } from './vitals';
 import type { Combatant, GameState, StatusEffect } from './types';
 
@@ -47,9 +50,12 @@ export {
   ADRENALINE_ID,
   FIELD_CRAFT_ID,
   MEDICAL_FOCUS_ID,
+  SCOUT_AWARENESS_ID,
+  adrenalineDamageMultiplier,
   adrenalineStaminaDelta,
   consumableHealMultiplier,
   hasFieldCraftCharge,
+  hasScoutAwareness,
   selfDamageTakenMultiplier,
 } from './statusIds';
 
@@ -60,52 +66,54 @@ export interface SkillDef {
   characterId: string;
   /** 体力成本 */
   staminaCost: number;
-  /** 冷却时间单位 */
+  /** 冷却时间单位（每个技能各自定义，禁止全局统一冷却） */
   cooldown: number;
   /** 战略维度标签（UI 与文档用） */
   dimension: '信息' | '战斗节奏' | '合成' | '消耗品经济';
   description: string;
 }
 
-/** 角色 -> 专属技能（每角色一枚签名技能） */
+/** 角色 -> 专属技能（每角色一枚签名技能；数值与 SKILL_DESIGN.md 逐字一致） */
 export const SKILLS: Record<SkillId, SkillDef> = {
   scout_recon: {
     id: 'scout_recon',
-    name: '战场侦察',
+    name: '警觉侦察',
     characterId: 'scout',
     staminaCost: GAME_CONFIG.skillReconStaminaCost,
-    cooldown: GAME_CONFIG.skillCooldown,
+    cooldown: GAME_CONFIG.skillReconCooldown,
     dimension: '信息',
-    description: '立刻查明当前区域与所有相邻区域里还活着的对手位置。',
+    description: '提升噪音情报质量，并在搜索遭遇时抢占先手（不提供精确角色位置）。',
   },
   adrenaline: {
     id: 'adrenaline',
     name: '肾上腺素',
     characterId: 'fighter',
     staminaCost: GAME_CONFIG.skillAdrenalineStaminaCost,
-    cooldown: GAME_CONFIG.skillCooldown,
+    cooldown: GAME_CONFIG.skillAdrenalineCooldown,
     dimension: '战斗节奏',
-    description: `接下来 ${GAME_CONFIG.skillAdrenalineAttacks} 次攻击体力 -1；代价是这期间自己受到的伤害 +${Math.round(
+    description: `接下来 ${GAME_CONFIG.skillAdrenalineAttacks} 次攻击伤害 +${Math.round(
+      (GAME_CONFIG.skillAdrenalineDamageMult - 1) * 100,
+    )}%、体力 -1（下限 1）；代价是这期间自己受到的战斗伤害 +${Math.round(
       (GAME_CONFIG.skillAdrenalineSelfDamageMult - 1) * 100,
     )}%。`,
   },
   field_craft: {
     id: 'field_craft',
-    name: '野外工造',
+    name: '现场加工',
     characterId: 'engineer',
     staminaCost: GAME_CONFIG.skillFieldCraftStaminaCost,
-    cooldown: GAME_CONFIG.skillCooldown,
+    cooldown: GAME_CONFIG.skillFieldCraftCooldown,
     dimension: '合成',
-    description: `接下来 ${GAME_CONFIG.skillFieldCraftCharges} 次合成不消耗体力。`,
+    description: `下一次成功合成不消耗体力（${GAME_CONFIG.skillFieldCraftDuration} 个时间单位内有效，失败不消耗）。`,
   },
   emergency_treatment: {
     id: 'emergency_treatment',
-    name: '紧急处置',
+    name: '应急处理',
     characterId: 'medic',
     staminaCost: GAME_CONFIG.skillTreatmentStaminaCost,
-    cooldown: GAME_CONFIG.skillCooldown,
+    cooldown: GAME_CONFIG.skillTreatmentCooldown,
     dimension: '消耗品经济',
-    description: `立即止血，并在 ${GAME_CONFIG.skillTreatmentDuration} 个时间单位内让治疗类消耗品效果 +${Math.round(
+    description: `立即恢复 ${GAME_CONFIG.skillTreatmentInstantHeal} 点生命，并在 ${GAME_CONFIG.skillTreatmentDuration} 个时间单位内让治疗类消耗品效果 +${Math.round(
       (GAME_CONFIG.skillTreatmentConsumableMult - 1) * 100,
     )}%。`,
   },
@@ -190,14 +198,13 @@ export function consumeAdrenalineCharge(state: GameState, actor: Combatant): boo
 }
 
 /**
- * 野外工造：消费一次合成次数。**只在合成真的成功时调用**，
- * 失败的合成不该白扣充能。
+ * 现场加工：合成**成功**后调用，立即移除充能（只有一次）。
+ * 失败的合成不调用本函数，因此不会白扣充能。
+ * @returns 是否确实消费了（用于模拟统计）
  */
 export function consumeFieldCraftCharge(state: GameState, actor: Combatant): boolean {
   const e = actor.statusEffects.find((s) => s.id === FIELD_CRAFT_ID);
   if (!e || typeof e.remainingCrafts !== 'number' || e.remainingCrafts <= 0) return false;
-  e.remainingCrafts -= 1;
-  if (e.remainingCrafts > 0) return true;
 
   actor.statusEffects = actor.statusEffects.filter((s) => s.id !== FIELD_CRAFT_ID);
   pushEvent(state, {
@@ -205,7 +212,7 @@ export function consumeFieldCraftCharge(state: GameState, actor: Combatant): boo
     actorId: actor.id,
     zoneId: actor.currentZoneId,
     importance: 'minor',
-    message: `${actor.isPlayer ? '你' : actor.name}的野外工造充能用尽。`,
+    message: `${actor.isPlayer ? '你' : actor.name}的现场加工在一次成功合成后用掉了。`,
     metadata: { statusId: FIELD_CRAFT_ID, reason: 'charges_used' },
   });
   return true;
@@ -231,43 +238,16 @@ function failSkill(message: string): SkillResult {
 }
 
 /**
- * 战场侦察：把当前区域与相邻区域里**还活着的**对手全部登记为已知。
- *
- * - 玩家使用：写进 `playerIntel`（界面情报面板会显示，并按 `INTEL_FRESH_WINDOW` 老化）；
- * - NPC 使用：写进 `knownEnemies`（NPC 决策据此选择目标）。
- *
- * 这不违反「信息不完全」不变量 —— 它是**花体力和一个行动换来的**一次性快照，
- * 而且会随时间过期，不是常驻上帝视角。
- */
-function runReconnaissance(state: GameState, actor: Combatant): number {
-  const originId = actor.currentZoneId;
-  const zoneIds = new Set<string>([originId]);
-  if (GAME_CONFIG.skillReconRadius >= 1) {
-    for (const adj of getZoneDef(originId).adjacent) zoneIds.add(adj);
-  }
-
-  let revealed = 0;
-  for (const zoneId of zoneIds) {
-    const zone = state.zones[zoneId];
-    if (!zone) continue;
-    for (const id of zone.aliveCharacterIds) {
-      if (id === actor.id) continue;
-      const target = state.characters[id];
-      if (!target || !target.alive) continue;
-      revealed += 1;
-      if (actor.isPlayer) {
-        recordIntel(state, id, zoneId, 'sight');
-      } else if (!actor.knownEnemies.includes(id)) {
-        actor.knownEnemies.push(id);
-      }
-    }
-  }
-  return revealed;
-}
-
-/**
  * 释放技能。调用方（actorActions / commandHandlers）负责更上层的存活与
  * 对局状态校验；这里只做技能自身的前置与效果结算。
+ *
+ * Phase 3A-1 严格回归规格（与 SKILL_DESIGN.md 逐字一致）：
+ * - 警觉侦察：只挂 SCOUT_AWARENESS（噪音增强 + 搜索遭遇先手），**绝不**遍历
+ *   aliveCharacterIds / 写 playerIntel / 公开身份位置；
+ * - 肾上腺素：2 次攻击，伤害 +20%（damageMult 真正进 computeDamage）、
+ *   体力 -1（下限 1）、自身受战斗攻击伤害 +10%、6 回合兜底；
+ * - 现场加工：下一次成功合成体力 0（失败不消费），6 回合失效；
+ * - 应急处理：固定 +15 HP（非百分比），不清除任何 DoT，4 回合治疗品 +25%。
  */
 export function useSkill(
   state: GameState,
@@ -289,30 +269,35 @@ export function useSkill(
 
   switch (skillId) {
     case 'scout_recon': {
-      revealed = runReconnaissance(state, actor);
-      const scope =
-        GAME_CONFIG.skillReconRadius >= 1 ? '当前区域与相邻区域' : '当前区域';
-      detail =
-        revealed > 0
-          ? `扫描${scope}，查明 ${revealed} 名对手的位置`
-          : `扫描${scope}，附近暂时没有活人`;
+      // 警觉：只增强噪音情报质量 + 为下次搜索遭遇标记先手。
+      // 不读取 aliveCharacterIds、不写 playerIntel、不公开任何身份/位置。
+      addStatusEffect(actor, {
+        id: SCOUT_AWARENESS_ID,
+        remaining: GAME_CONFIG.skillReconDuration,
+        hpPerTick: 0,
+        label: '警觉侦察',
+      });
+      detail = `进入警觉状态 ${GAME_CONFIG.skillReconDuration} 个时间单位：噪音情报更清晰，搜索遭遇时抢占先手`;
       break;
     }
 
     case 'adrenaline': {
       addStatusEffect(actor, {
         id: ADRENALINE_ID,
-        // remaining 只是兜底：正常由攻击次数耗尽来结束
-        remaining: GAME_CONFIG.skillCooldown,
+        // remaining 是 6 回合兜底；正常由 2 次攻击耗尽来结束，以先发生者为准
+        remaining: GAME_CONFIG.skillAdrenalineDuration,
         hpPerTick: 0,
         label: '肾上腺素',
         remainingAttacks: GAME_CONFIG.skillAdrenalineAttacks,
+        damageMult: GAME_CONFIG.skillAdrenalineDamageMult,
         attackStaminaDelta: GAME_CONFIG.skillAdrenalineStaminaDelta,
         selfDamageTakenMult: GAME_CONFIG.skillAdrenalineSelfDamageMult,
       });
       detail =
-        `接下来 ${GAME_CONFIG.skillAdrenalineAttacks} 次攻击体力 -1，` +
-        `但这期间自己受到的伤害 +${Math.round(
+        `接下来 ${GAME_CONFIG.skillAdrenalineAttacks} 次攻击伤害 +${Math.round(
+          (GAME_CONFIG.skillAdrenalineDamageMult - 1) * 100,
+        )}%、体力 -1（下限 1），` +
+        `但这期间自己受到的战斗伤害 +${Math.round(
           (GAME_CONFIG.skillAdrenalineSelfDamageMult - 1) * 100,
         )}%`;
       break;
@@ -323,34 +308,27 @@ export function useSkill(
         id: FIELD_CRAFT_ID,
         remaining: GAME_CONFIG.skillFieldCraftDuration,
         hpPerTick: 0,
-        label: '野外工造',
-        remainingCrafts: GAME_CONFIG.skillFieldCraftCharges,
+        label: '现场加工',
+        remainingCrafts: 1,
       });
-      detail = `接下来 ${GAME_CONFIG.skillFieldCraftCharges} 次合成不消耗体力`;
+      detail = `下一次成功合成不消耗体力（${GAME_CONFIG.skillFieldCraftDuration} 个时间单位内有效，失败不消耗）`;
       break;
     }
 
     case 'emergency_treatment': {
-      // 止血：清掉所有持续掉血的状态（风暴、流血……），这是「处置」的本义
-      const bleeding = actor.statusEffects.filter((e) => (e.hpPerTick ?? 0) < 0);
-      actor.statusEffects = actor.statusEffects.filter((e) => (e.hpPerTick ?? 0) >= 0);
-
-      const amount = Math.round(
-        actor.maxHp * GAME_CONFIG.skillTreatmentInstantHealRatio,
-      );
-      hpHealed = applyHealing(state, actor, amount);
+      // 固定 15 HP（不是最大生命百分比），且**不**清除任何持续伤害状态
+      hpHealed = applyHealing(state, actor, GAME_CONFIG.skillTreatmentInstantHeal);
 
       addStatusEffect(actor, {
         id: MEDICAL_FOCUS_ID,
         remaining: GAME_CONFIG.skillTreatmentDuration,
         hpPerTick: 0,
-        label: '紧急处置',
+        label: '应急处理',
         consumableHealMult: GAME_CONFIG.skillTreatmentConsumableMult,
       });
       detail =
-        `止血并恢复 ${hpHealed} 点生命` +
-        (bleeding.length > 0 ? `，解除 ${bleeding.length} 个持续伤害状态` : '') +
-        `，${GAME_CONFIG.skillTreatmentDuration} 个时间单位内治疗品效果 +${Math.round(
+        `恢复 ${hpHealed} 点生命，` +
+        `${GAME_CONFIG.skillTreatmentDuration} 个时间单位内治疗类消耗品效果 +${Math.round(
           (GAME_CONFIG.skillTreatmentConsumableMult - 1) * 100,
         )}%`;
       break;

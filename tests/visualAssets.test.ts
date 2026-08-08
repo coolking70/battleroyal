@@ -10,7 +10,7 @@
  *  6. 有图时 image 非 null，没图时 image 为 null（fallback 语义）。
  */
 
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { CHARACTERS } from '../src/data/characters';
@@ -21,7 +21,12 @@ import {
   FALLBACK_VISUAL,
   VISUAL_ASSET_MANIFEST,
   WORLD_EVENT_VISUALS,
+  getCharacterVisual,
+  getItemVisual,
+  getWorldEventVisual,
+  getZoneVisual,
   itemEmoji,
+  setAssetManifest,
   visualFor,
 } from '../src/ui/visualAssets';
 
@@ -100,5 +105,78 @@ describe('物品图标', () => {
     for (const cat of cats) {
       expect(visualFor('itemCategory', cat), `物品类别 ${cat} 缺视觉`).not.toBe(FALLBACK_VISUAL);
     }
+  });
+});
+
+describe('Phase 4 资产 Manifest 解析链（Phase 3A-1 Step 9）', () => {
+  afterEach(() => setAssetManifest(null));
+
+  it('manifest 缺失 → 全部回退 SVG/emoji fallback', () => {
+    setAssetManifest(null);
+    const c = getCharacterVisual('scout');
+    expect(c.image).toBe('characters/scout.svg'); // SVG fallback（存在）
+    expect(c.emoji).not.toBe('');
+    const z = getZoneVisual('school');
+    expect(z.image).toBe('zones/school.svg');
+  });
+
+  it('manifest 为空（全 null）→ 回退 SVG fallback', () => {
+    setAssetManifest({
+      version: 1,
+      characters: { scout: { portrait: null, injured: null, combat: null } },
+      zones: {},
+      items: {},
+      worldEvents: {},
+    });
+    const c = getCharacterVisual('scout');
+    expect(c.image).toBe('characters/scout.svg');
+  });
+
+  it('正式 portrait 存在 → 优先正式图', () => {
+    setAssetManifest({
+      version: 1,
+      characters: {
+        scout: { portrait: '/assets/characters/scout/portrait.png', injured: null, combat: null },
+      },
+      zones: {},
+      items: {},
+      worldEvents: {},
+    });
+    const c = getCharacterVisual('scout');
+    expect(c.image).toBe('/assets/characters/scout/portrait.png');
+    expect(c.emoji).not.toBe('');
+  });
+
+  it('正式图不存在 → SVG fallback；SVG 不存在 → emoji fallback', () => {
+    // 正式图缺失 → SVG
+    setAssetManifest({
+      version: 1,
+      characters: { fighter: { portrait: null, injured: null, combat: null } },
+      zones: {},
+      items: {},
+      worldEvents: {},
+    });
+    expect(getCharacterVisual('fighter').image).toBe('characters/fighter.svg');
+    // 未知角色 → FALLBACK_VISUAL（emoji ❓，image 为 fallback.svg）
+    const unknown = getCharacterVisual('nobody');
+    expect(unknown.emoji).toBe('❓');
+  });
+
+  it('未知区域 / 未知事件 → fallback', () => {
+    expect(getZoneVisual('no_such_zone').emoji).toBe('❓');
+    expect(getWorldEventVisual('no_such_event' as never).emoji).toBe('❓');
+  });
+
+  it('React 组件契约：getItemVisual 对已知物品返回类别 emoji', () => {
+    const first = ITEMS[0]!;
+    expect(getItemVisual(first.id).emoji).not.toBe('');
+    expect(getItemVisual('nope').emoji).toBe('❓');
+  });
+
+  it('public/assets/manifest.json 真实存在且版本为 1', () => {
+    const p = resolve(__dirname, '../public/assets/manifest.json');
+    expect(existsSync(p)).toBe(true);
+    const m = JSON.parse(readFileSync(p, 'utf8')) as { version: number };
+    expect(m.version).toBe(1);
   });
 });

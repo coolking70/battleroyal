@@ -33,8 +33,9 @@
  */
 
 import { tryGetItem } from '../data/items';
+import { GAME_CONFIG } from '../data/gameConfig';
 import { getZoneDef } from '../data/zones';
-import { canPayActionCost, payActionCost } from './actionCosts';
+import { canPayActionCost, payMoveCost } from './actionCosts';
 import { performRest, useConsumable } from './consumables';
 import { performCraft } from './crafting';
 import { validateMove } from './commands';
@@ -94,7 +95,8 @@ export function moveActor(
   if (!v.ok) return fail('illegal_zone', v.reason ?? '无法移动。');
 
   actor.currentZoneId = zoneId;
-  const spent = payActionCost(actor, 'MOVE');
+  // Phase 3A-1：移动扣费走 state 感知入口（连绵阴雨 +1，玩家/NPC 共用）
+  const spent = payMoveCost(state, actor);
   actor.stats.moves += 1;
   state.stats.moves += 1;
 
@@ -103,12 +105,14 @@ export function moveActor(
   refreshZoneOccupants(state);
 
   const zoneName = getZoneDef(zoneId).name;
+  // Phase 3A-1 统计：暴雨导致的额外移动体力
+  const extraMoveStaminaPaid = Math.max(0, spent - GAME_CONFIG.moveStaminaCost);
   pushEvent(state, {
     type: 'CHARACTER_MOVED',
     actorId: actor.id,
     zoneId,
     message: `${who(actor)}前往${zoneName}。`,
-    metadata: { zoneId },
+    metadata: { zoneId, extraMoveStaminaPaid, rainActive: extraMoveStaminaPaid > 0 },
   });
   return done(actor.isPlayer ? `已进入${zoneName}。` : `${actor.name} 前往${zoneName}。`, spent);
 }

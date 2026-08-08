@@ -93,6 +93,17 @@ function cell(characterId: string, policy: AutoPlayerPolicy, games: number): Cel
     skillUseCounts: {},
     worldEventCounts: {},
     commandCounts: {},
+    attackStyleStats: {},
+    guardCommands: 0,
+    guardTriggered: 0,
+    guardDamagePreventedTotal: 0,
+    guardDamagePreventedAverage: 0,
+    heavyMissCount: 0,
+    exposedExpiredWithoutPunish: 0,
+    exposedBonusDamageTotal: 0,
+    skillStats: {},
+    worldEventImpact: {},
+
   };
 }
 

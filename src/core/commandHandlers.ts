@@ -66,6 +66,8 @@ export function handleSearch(
       startedAtTime: state.time,
       log: [`你在搜索中遭遇了 ${enemy?.name ?? '陌生人'}。`],
       resolved: false,
+      // Phase 3A-1：警觉侦察 → 本次遭遇建立阶段获得先手（抑制敌方首次立即反击）
+      ...(outcome.reconInitiative ? { reconInitiative: true } : {}),
     };
     return { ok: true, message: `遭遇 ${enemy?.name ?? '敌人'}！` };
   }

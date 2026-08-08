@@ -33,6 +33,7 @@ import { runNpcTurn } from './npcAi';
 import { SeededRandom } from './random';
 import { announceWarning, updateRestrictedZones } from './restrictedZones';
 import { runWorldEvents } from './worldEvents';
+import { applyWorldEventTickDamage } from './worldEventTick';
 import {
   handleAttack,
   handleAttackNearby,
@@ -159,6 +160,8 @@ export function advanceTime(state: GameState, rng: SeededRandom): void {
   updateRestrictedZones(state, rng);
   applyFinaleDecay(state);
   runWorldEvents(state, rng);
+  // Phase 3A-1：需要实体伤害的世界事件（研究异常）在此统一结算，走 applyDamage
+  applyWorldEventTickDamage(state);
   decayNoise(state);
   refreshZoneOccupants(state);
   refreshPlayerSight(state);

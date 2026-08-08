@@ -4,7 +4,7 @@ import { hasExposed, EXPOSED_LABEL } from '../../core/exposed';
 import { totalAttack, totalDefense } from '../../core/inventory';
 import { getCharacterDef } from '../../data/characters';
 import { getZoneDef } from '../../data/zones';
-import { visualFor } from '../visualAssets';
+import { getCharacterVisual } from '../visualAssets';
 import { Bar } from './Bar';
 
 interface StatusBarProps {
@@ -78,7 +78,7 @@ export function StatusBar({
 
       <span className="stat faint">
         <span className="badge badge-you">你</span>{' '}
-        {visualFor('character', player.characterId).emoji} {getCharacterDef(player.characterId).name}
+        {getCharacterVisual(player.characterId).emoji} {getCharacterDef(player.characterId).name}
         {player.guarding && <span className="tag tag-guard" style={{ marginLeft: 6 }}>防御</span>}
         {hasExposed(player) && (
           <span className="tag tag-exposed" style={{ marginLeft: 6 }}>{EXPOSED_LABEL}</span>

@@ -6,7 +6,7 @@
  * 前置校验，避免两边各写一遍导致玩家 / NPC 规则再次漂移。
  */
 
-import { canPayActionCost, type CostedAction } from './actionCosts';
+import { canPayActionCost, canPayMove, type CostedAction } from './actionCosts';
 import type { Combatant, GameState } from './types';
 
 /* ------------------------------------------------------------------ */
@@ -58,7 +58,8 @@ export function guard(
   if (state.status !== 'playing') return fail('game_over', '对局已经结束。');
   if (!actor.alive) return fail('dead', '已经死亡的角色无法行动。');
   if (action) {
-    const cost = canPayActionCost(actor, action);
+    // MOVE 的体力成本受世界事件修正（连绵阴雨 +1），必须走 state 感知的闸门
+    const cost = action === 'MOVE' ? canPayMove(state, actor) : canPayActionCost(actor, action);
     if (!cost.ok) return fail('no_stamina', cost.reason ?? '体力不足。');
   }
   return null;

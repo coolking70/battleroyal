@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "characters": {
+    "scout": { "portrait": null, "injured": null, "combat": null },
+    "fighter": { "portrait": null, "injured": null, "combat": null },
+    "engineer": { "portrait": null, "injured": null, "combat": null },
+    "medic": { "portrait": null, "injured": null, "combat": null }
+  },
+  "zones": {
+    "school": { "background": null, "warning": null, "restricted": null },
+    "hospital": { "background": null, "warning": null, "restricted": null },
+    "residential": { "background": null, "warning": null, "restricted": null },
+    "factory": { "background": null, "warning": null, "restricted": null },
+    "forest": { "background": null, "warning": null, "restricted": null },
+    "lab": { "background": null, "warning": null, "restricted": null }
+  },
+  "items": {},
+  "worldEvents": {}
+}

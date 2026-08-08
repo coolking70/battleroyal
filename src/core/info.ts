@@ -12,7 +12,6 @@
  */
 
 import { GAME_CONFIG } from '../data/gameConfig';
-import { aliveCharacters } from './gameState';
 import { worldModifiersAt } from './worldEvents';
 import type {
   GameState,
@@ -33,18 +32,29 @@ const NOISE_AMOUNT: Record<NoiseSource, number> = {
   death: GAME_CONFIG.noiseFromDeath,
 };
 
-/** 在某区域制造噪音 */
+/** 在某区域制造噪音（搜索噪音受「全域骚动」×1.5 放大，Phase 3A-1） */
 export function addNoise(state: GameState, zoneId: string, source: NoiseSource): void {
   const zone = state.zones[zoneId];
   if (!zone) return;
-  zone.noiseLevel = Math.min(20, zone.noiseLevel + NOISE_AMOUNT[source]);
+  let amount = NOISE_AMOUNT[source];
+  if (source === 'search') {
+    amount *= worldModifiersAt(state, zoneId).searchNoiseMultiplier;
+  }
+  zone.noiseLevel = Math.min(20, zone.noiseLevel + Math.ceil(amount));
   zone.lastNoiseTime = state.time;
 }
 
-/** 每个时间单位衰减一次噪音 */
+/** 每个时间单位衰减一次噪音（「全域骚动」期间停止自然衰减，Phase 3A-1） */
 export function decayNoise(state: GameState): void {
+  if (typeof state.stats.noiseDecayBlockedTicks !== 'number') {
+    state.stats.noiseDecayBlockedTicks = 0; // 旧存档防御性兜底
+  }
   for (const zone of Object.values(state.zones)) {
     if (zone.noiseLevel <= 0) continue;
+    if (worldModifiersAt(state, zone.id).noiseDecayBlocked) {
+      state.stats.noiseDecayBlockedTicks += 1; // Phase 3A-1 统计
+      continue;
+    }
     zone.noiseLevel = Math.max(0, zone.noiseLevel - GAME_CONFIG.noiseDecayPerTick);
   }
 }
@@ -62,6 +72,30 @@ export const NOISE_LABEL: Record<NoiseLevel, string> = {
 };
 
 /* ------------------------------------------------------------------ */
+/* 警觉侦察的噪音增强（Phase 3A-1）                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 警觉状态下展示的噪音描述（比普通分档更丰富，但**不**泄露身份/人数/精确位置）。
+ * 普通：quiet→安静 / active→有动静 / loud→嘈杂。
+ * 警觉：active→近期有人活动 / loud→近期活动频繁（可能发生过冲突）。
+ */
+export const AWARE_NOISE_LABEL: Record<NoiseLevel, string> = {
+  quiet: '安静',
+  active: '近期有人活动',
+  loud: '近期活动频繁，可能发生过冲突',
+};
+
+/** 基于 lastNoiseTime 的**模糊**时间提示（绝不显示精确时间） */
+export function fuzzyNoiseTime(state: GameState, zone: ZoneState): string {
+  if (zone.lastNoiseTime == null) return '';
+  const age = state.time - zone.lastNoiseTime;
+  if (age <= 3) return '刚刚';
+  if (age <= 10) return '不久前';
+  return '较早之前';
+}
+
+/* ------------------------------------------------------------------ */
 /* 情报（最后已知位置）                                                 */
 /* ------------------------------------------------------------------ */
 
@@ -71,9 +105,8 @@ export const INTEL_FRESH_WINDOW = 6;
 /**
  * 记录一条玩家情报。
  *
- * Phase 3A Step 6：`sight` 来源的情报会被「大停电」屏蔽 —— 漆黑的区域里
- * 你根本看不清对面是谁。`encounter` / `broadcast` 不受影响：
- * 前者是真刀真枪打过照面，后者是全城广播，都不依赖视线。
+ * Phase 3A-1：不再有「大停电屏蔽 sight 情报」的修正（停电已重定义为搜索
+ * 权重事件，不碰情报）。情报只由**真正亲眼遭遇**产生；技能与广播不得写入。
  */
 export function recordIntel(
   state: GameState,
@@ -82,7 +115,6 @@ export function recordIntel(
   source: IntelEntry['source'],
 ): void {
   if (targetId === state.playerId) return;
-  if (source === 'sight' && worldModifiersAt(state, zoneId).intelBlocked) return;
   state.playerIntel[targetId] = { zoneId, atTime: state.time, source };
 }
 
@@ -93,20 +125,12 @@ export function recordIntel(
  * 仅仅是同区域共处不会泄露身份——否则玩家只要走进一个有人区域就自动拿到
  * 对方全部档案，等于变相上帝视角。身份只能靠真正交手去换取。
  *
- * Phase 3A Step 6 例外：「紧急广播」生效期间全场位置公开，
- * 这是**双向**的（NPC 决策同样读得到玩家位置），不是单方面送情报。
+ * Phase 3A-1：「紧急广播」已重定义为只公布高噪音区域，**不再**公开全部
+ * 存活者位置，因此这里没有广播分支。
  */
 export function refreshPlayerSight(state: GameState): void {
   const player = state.characters[state.playerId];
   if (!player || !player.alive) return;
-
-  // 紧急广播：公开所有存活者的所在区域
-  if (worldModifiersAt(state, player.currentZoneId).revealAll) {
-    for (const c of aliveCharacters(state)) {
-      if (c.id === player.id) continue;
-      recordIntel(state, c.id, c.currentZoneId, 'broadcast');
-    }
-  }
 
   const encounterId = state.encounter?.enemyId ?? null;
   if (!encounterId) return;

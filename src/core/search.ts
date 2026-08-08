@@ -6,6 +6,7 @@ import { pushEvent } from './events';
 import { addNoise } from './info';
 import { addItem, canAccept, createStack } from './inventory';
 import { charactersInZone } from './gameState';
+import { hasScoutAwareness } from './statusIds';
 import { isZoneExhausted, takeLootItem } from './zoneLoot';
 import { worldModifiersAt } from './worldEvents';
 import type { SeededRandom } from './random';
@@ -22,7 +23,7 @@ export type SearchOutcome =
       /** 背包已满，等待玩家决策 */
       pending: boolean;
     }
-  | { kind: 'enemy'; enemyId: string }
+  | { kind: 'enemy'; enemyId: string; reconInitiative?: boolean }
   | { kind: 'nothing' };
 
 export interface SearchCheck {
@@ -98,12 +99,17 @@ export function computeSearchWeights(
     nothing += GAME_CONFIG.emptyZoneNothingBonus;
   }
 
-  // 世界事件修正（Phase 3A Step 6）：
-  // 大停电压低「找到东西」的权重，全城骚动抬高「撞上敌人」的权重。
-  // 注意这里改的是**概率权重**而非区域库存 —— 世界事件永远不写隐藏库存。
+  // 世界事件修正（Phase 3A-1）：
+  // 停电：搜索遭遇敌人权重 ×0.8、空手权重 ×1.1（搜索与发现变得不可靠，
+  // 不影响战斗命中）。这里改的是**概率权重**而非区域库存。
   const mods = worldModifiersAt(state, zone.id);
-  find *= mods.searchFindMultiplier;
-  if (enemy > 0) enemy *= mods.encounterMultiplier;
+  if (enemy > 0) enemy *= mods.searchEnemyMult;
+  nothing *= mods.searchNothingMult;
+
+  // 警觉侦察（NPC 侧）：提升对活动区域的搜索权重，不获得任何角色位置
+  if (hasScoutAwareness(actor) && !actor.isPlayer && enemy > 0) {
+    enemy *= GAME_CONFIG.scoutAwarenessNpcSearchBoost;
+  }
 
   return { find, enemy, nothing };
 }
@@ -121,14 +127,10 @@ export function rollItemId(
   if (!zone) return null;
 
   const preferRare = rng.chance(GAME_CONFIG.rareChance);
-  // 世界事件只改「取出偏好」，不改库存总量（Phase 3A Step 6）
-  const mods = worldModifiersAt(state, zone.id);
-  const materialBias =
-    (actor.passiveId === 'tinkerer' ? GAME_CONFIG.tinkererMaterialBias : 1) *
-    (1 + mods.materialFindBonus);
-  const consumableBias = 1 + mods.medicalFindBonus;
+  // 物品类别偏好只来自角色被动，世界事件不参与（Phase 3A-1：研究异常不再加材料搜索率）
+  const materialBias = actor.passiveId === 'tinkerer' ? GAME_CONFIG.tinkererMaterialBias : 1;
 
-  return takeLootItem(zone, rng, preferRare, materialBias, consumableBias);
+  return takeLootItem(zone, rng, preferRare, materialBias, 1);
 }
 
 /**
@@ -149,20 +151,33 @@ export function performSearch(
   state.stats.searches += 1;
   addNoise(state, zone.id, 'search');
 
-  pushEvent(state, {
-    type: 'SEARCH_STARTED',
-    actorId: actor.id,
-    zoneId: zone.id,
-    message: `${actor.name} 在${getZoneDef(zone.id).name}搜索。`,
-    metadata: { searchCount: zone.searchCount },
-  });
-
   const w = computeSearchWeights(state, actor);
   const kind = rng.pickWeighted<'item' | 'enemy' | 'nothing'>([
     { value: 'item', weight: w.find },
     { value: 'enemy', weight: w.enemy },
     { value: 'nothing', weight: w.nothing },
   ]);
+  // Phase 3A-1 统计：记录本次搜索时世界事件是否生效（停电影响搜索权重）
+  const modsForStats = worldModifiersAt(state, zone.id);
+  pushEvent(state, {
+    type: 'SEARCH_STARTED',
+    actorId: actor.id,
+    zoneId: zone.id,
+    message: `${actor.name} 在${getZoneDef(zone.id).name}搜索。`,
+    metadata: {
+      searchCount: zone.searchCount,
+      blackoutActive: modsForStats.searchEnemyMult < 1,
+      enemyWeight: w.enemy,
+      nothingWeight: w.nothing,
+      // Phase 3A-1：骚动期间搜索噪音放大统计
+      unrestActive: modsForStats.searchNoiseMultiplier > 1,
+      searchNoiseBonus:
+        modsForStats.searchNoiseMultiplier > 1
+          ? Math.ceil(GAME_CONFIG.noiseFromSearch * modsForStats.searchNoiseMultiplier) -
+            GAME_CONFIG.noiseFromSearch
+          : 0,
+    },
+  });
 
   if (kind === 'enemy') {
     const others = charactersInZone(state, actor.currentZoneId).filter(
@@ -170,6 +185,8 @@ export function performSearch(
     );
     const enemy = rng.pick(others);
     if (enemy) {
+      // Phase 3A-1：侦察员警觉状态下由 SEARCH 建立新遭遇 → 该次遭遇获得先手
+      const reconInitiative = actor.isPlayer && hasScoutAwareness(actor);
       if (!actor.knownEnemies.includes(enemy.id)) actor.knownEnemies.push(enemy.id);
       if (!enemy.knownEnemies.includes(actor.id)) enemy.knownEnemies.push(actor.id);
       pushEvent(state, {
@@ -178,9 +195,9 @@ export function performSearch(
         targetId: enemy.id,
         zoneId: zone.id,
         message: `${actor.name} 在搜索中撞见了 ${enemy.name}。`,
-        metadata: {},
+        metadata: { reconInitiative },
       });
-      return { kind: 'enemy', enemyId: enemy.id };
+      return { kind: 'enemy', enemyId: enemy.id, reconInitiative };
     }
     // 没有可遭遇对象则退化为空手
     return emptyHanded(state, actor, zone.id);

@@ -59,6 +59,7 @@ const EVENT_TYPE_TABLE: Record<GameEventType, true> = {
   STATUS_EXPIRED: true,
   WORLD_EVENT: true,
   WORLD_EVENT_ENDED: true,
+  WORLD_EVENT_DAMAGE: true,
   GAME_ENDED: true,
 };
 

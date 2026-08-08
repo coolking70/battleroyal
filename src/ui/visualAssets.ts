@@ -173,6 +173,107 @@ export function worldEventEmoji(id: WorldEventId): string {
 }
 
 /* ------------------------------------------------------------------ */
+/* Phase 4 正式资产 Manifest（Phase 3A-1 Step 9）                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 正式资产清单（public/assets/manifest.json 的类型镜像）。
+ *
+ * Phase 4 替换美术资产生成后，只需更新 public/assets/ 下的文件与
+ * manifest.json，**无需修改任何 React 组件** —— 组件一律走
+ * `getCharacterVisual` / `getZoneVisual` / `getItemVisual` / `getWorldEventVisual`。
+ */
+export interface AssetManifest {
+  version: number;
+  characters: Record<
+    string,
+    Partial<Record<'portrait' | 'injured' | 'combat', string | null>>
+  >;
+  zones: Record<string, Partial<Record<'background' | 'warning' | 'restricted', string | null>>>;
+  items: Record<string, string | null>;
+  worldEvents: Record<string, string | null>;
+}
+
+/** 当前加载的正式资产清单；未加载（null）时一律走 SVG/emoji fallback */
+let currentManifest: AssetManifest | null = null;
+
+/** 注入正式资产清单（Phase 4 接入点；测试用） */
+export function setAssetManifest(m: AssetManifest | null): void {
+  currentManifest = m;
+}
+
+/** 读取当前正式资产清单（测试 / 调试用） */
+export function getAssetManifest(): AssetManifest | null {
+  return currentManifest;
+}
+
+/** 从 manifest 取某槽位的正式图片路径（无则 null） */
+function officialImage(
+  kind: 'characters' | 'zones' | 'items' | 'worldEvents',
+  key: string,
+  slot?: string,
+): string | null {
+  const m = currentManifest;
+  if (!m) return null;
+  const entry = m[kind]?.[key];
+  if (!entry) return null;
+  if (typeof entry === 'string') return entry as string;
+  if (slot && typeof entry === 'object') {
+    const v = (entry as Record<string, string | null>)[slot];
+    return typeof v === 'string' ? v : null;
+  }
+  return null;
+}
+
+/**
+ * 统一资产接口（Phase 4 契约）：React 组件只能调用这些函数。
+ *
+ * 解析顺序：public/assets/manifest.json 指定正式资产
+ *          → 空/缺失 → src/ui/assets SVG fallback
+ *          → SVG 不存在 → emoji + color fallback
+ * 任何时候不显示 broken img（image 为 null 时组件渲染 emoji/色块）。
+ */
+export function getCharacterVisual(id: string): VisualSpec {
+  const img = officialImage('characters', id, 'portrait');
+  if (img) return { ...visualFor('character', id), image: img };
+  return visualFor('character', id);
+}
+
+export function getZoneVisual(id: string): VisualSpec {
+  const img = officialImage('zones', id, 'background');
+  if (img) return { ...visualFor('zone', id), image: img };
+  return visualFor('zone', id);
+}
+
+export function getItemVisual(id: string): VisualSpec {
+  const img = officialImage('items', id);
+  if (img) {
+    const def = tryGetItem(id);
+    return {
+      emoji: itemEmoji(id),
+      color: def ? ITEM_CATEGORY_VISUALS[def.category]?.color ?? FALLBACK_VISUAL.color : FALLBACK_VISUAL.color,
+      label: def?.name ?? id,
+      image: img,
+    };
+  }
+  const def = tryGetItem(id);
+  return def
+    ? {
+        emoji: itemEmoji(id),
+        color: ITEM_CATEGORY_VISUALS[def.category]?.color ?? FALLBACK_VISUAL.color,
+        label: def.name,
+        image: null,
+      }
+    : FALLBACK_VISUAL;
+}
+
+export function getWorldEventVisual(id: WorldEventId): VisualSpec {
+  const img = officialImage('worldEvents', id);
+  if (img) return { ...WORLD_EVENT_VISUALS[id], image: img };
+  return WORLD_EVENT_VISUALS[id] ?? FALLBACK_VISUAL;
+}
+
+/* ------------------------------------------------------------------ */
 /* 内部：不抛异常的 getter（data 表应保证存在，这里做防御）              */
 /* ------------------------------------------------------------------ */
 

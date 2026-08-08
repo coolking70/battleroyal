@@ -8,7 +8,7 @@
  * 世界事件取代动态事件。0.2.0 存档里的 `dash` / `storm` 等字段在新规则下没有对应语义，
  * 强行读入只会得到一个自相矛盾的局面。因此**明确拒绝**旧档，不做迁移。
  */
-export const GAME_VERSION = '0.3.0';
+export const GAME_VERSION = '0.3.1';
 
 /** 默认测试种子 */
 export const DEFAULT_SEED = 'BR-DEMO-001';
@@ -110,46 +110,56 @@ export const GAME_CONFIG = {
    */
   exposedMaxDuration: 6,
 
-  /* --- 四角色技能（Phase 3A Step 4 重定义） ---
+  /* --- 四角色签名技能（Phase 3A-1 严格回归规格） ---
    *
-   * Phase 3 的四个技能全是纯战斗数值增益（回血、加伤、加闪避），
-   * 谁拿到都一样好用，角色之间只剩数字大小的差别。
-   * Phase 3A 把它们重写为**战略身份技能**：每个技能强化的是该角色
-   * 在「信息 / 战斗节奏 / 合成 / 消耗品经济」四条线里的看家本事。
+   * 每个技能自带 cooldown，禁止全局统一冷却。
+   * 数值与 SKILL_DESIGN.md 逐字一致。
    */
-  /** 技能冷却时间单位（使用后置为 cooldown，每时间单位 -1） */
-  skillCooldown: 6,
-
-  /* 侦察员 · 战场侦察（信息） */
-  /** 侦察半径：0 = 仅当前区域，1 = 当前 + 相邻区域 */
-  skillReconRadius: 1,
-  /** 侦察得到的情报视为「新鲜」的时长（写入 playerIntel 后自然老化） */
-  skillReconStaminaCost: 2,
+  /* 侦察员 · 警觉侦察（信息） */
+  /** 冷却 */
+  skillReconCooldown: 10,
+  /** 体力成本 */
+  skillReconStaminaCost: 3,
+  /** SCOUT_AWARENESS 持续时间（噪音增强 + 搜索遭遇先手） */
+  skillReconDuration: 3,
+  /** NPC 警觉状态下搜索遭遇敌人权重的加成（只提升搜索权重，不获得角色位置） */
+  scoutAwarenessNpcSearchBoost: 1.25,
 
   /* 斗士 · 肾上腺素（战斗节奏，收益与代价并存） */
+  /** 冷却 */
+  skillAdrenalineCooldown: 12,
+  /** 体力成本 */
+  skillAdrenalineStaminaCost: 3,
   /** 生效的攻击次数（用完即失效） */
-  skillAdrenalineAttacks: 3,
+  skillAdrenalineAttacks: 2,
+  /** 兜底存续时间单位（与次数以先发生者为准） */
+  skillAdrenalineDuration: 6,
+  /** 状态期间最终攻击伤害倍率（必须真正进入 computeDamage） */
+  skillAdrenalineDamageMult: 1.2,
   /** 每次攻击的体力折扣（实际成本下限 1） */
   skillAdrenalineStaminaDelta: -1,
-  /** 代价：状态期间自身受到的伤害倍率 */
-  skillAdrenalineSelfDamageMult: 1.25,
-  skillAdrenalineStaminaCost: 3,
+  /** 代价：状态期间自身受到的战斗攻击伤害倍率（不得 1.25） */
+  skillAdrenalineSelfDamageMult: 1.1,
 
-  /* 工程师 · 野外工造（合成） */
-  /** 生效的合成次数（期间合成体力成本为 0） */
-  skillFieldCraftCharges: 2,
-  /** 兜底存续时间单位（防止拿到手却一直不合成，状态永久挂着） */
-  skillFieldCraftDuration: 8,
+  /* 工程师 · 现场加工（合成） */
+  /** 冷却 */
+  skillFieldCraftCooldown: 10,
+  /** 体力成本 */
   skillFieldCraftStaminaCost: 2,
+  /** 兜底存续时间单位（一次成功合成即消失；6 回合未成功则失效） */
+  skillFieldCraftDuration: 6,
 
-  /* 医学生 · 紧急处置（消耗品经济） */
-  /** 状态持续时间单位 */
-  skillTreatmentDuration: 5,
-  /** 状态期间治疗类消耗品的效果倍率 */
-  skillTreatmentConsumableMult: 1.25,
-  /** 施放瞬间的止血量（按最大生命比例，同时清除持续掉血类状态） */
-  skillTreatmentInstantHealRatio: 0.12,
+  /* 医学生 · 应急处理（消耗品经济） */
+  /** 冷却 */
+  skillTreatmentCooldown: 10,
+  /** 体力成本 */
   skillTreatmentStaminaCost: 3,
+  /** 立即恢复的固定生命值（不是最大生命百分比） */
+  skillTreatmentInstantHeal: 15,
+  /** MEDICAL_FOCUS 持续时间 */
+  skillTreatmentDuration: 4,
+  /** 状态期间治疗类消耗品最终治疗量倍率 */
+  skillTreatmentConsumableMult: 1.25,
 
   /* --- 禁区 --- */
   /** 第一次公布禁区的时间单位 */
@@ -256,43 +266,38 @@ export const GAME_CONFIG = {
   maxConcurrentWorldEvents: 2,
   /** 同一种事件在生效期间不会重复触发（去重靠 eventId） */
 
-  /* blackout 大停电（区域级） */
-  blackoutDuration: 4,
-  /** 停电区域内命中率乘数（看不清） */
-  blackoutHitMult: 0.85,
-  /** 停电区域内搜索「找到东西」权重乘数 */
-  blackoutSearchMult: 0.7,
+  /* blackout 大停电（全局） */
+  blackoutDuration: 6,
+  /** 搜索「遭遇敌人」权重乘数（-20%） */
+  blackoutSearchEnemyMult: 0.8,
+  /** 搜索「空手」权重乘数（+10%） */
+  blackoutSearchNothingMult: 1.1,
 
   /* rain 连绵阴雨（全局） */
   rainDuration: 6,
-  /** 雨天全局命中率乘数 */
-  rainHitMult: 0.9,
-  /** 雨天逃跑成功率加成（湿滑难追） */
-  rainFleeBonus: 0.1,
+  /** 移动体力成本加成（玩家与 NPC 同时生效，走 actionCosts） */
+  rainMoveCostBonus: 1,
+  /** 远程武器命中率乘数（近战与逃跑不受影响） */
+  rainRangedHitMult: 0.9,
 
-  /* emergency_broadcast 紧急广播（全局） */
-  broadcastDuration: 3,
+  /* emergency_broadcast 紧急广播（全局·即时，无持续时间） */
 
-  /* medical_alert 医疗管制（全局） */
+  /* medical_alert 医疗警报（仅医院生效） */
   medicalAlertDuration: 5,
-  /** 管制期间治疗类消耗品效果乘数 */
-  medicalAlertHealMult: 0.75,
-  /** 管制期间医疗物资搜索权重加成（物资被翻出来了） */
-  medicalAlertMedicalFindBonus: 0.35,
+  /** 医院内治疗类消耗品最终治疗量倍率 */
+  medicalAlertHealMult: 1.2,
 
-  /* research_anomaly 研究异常（区域级） */
-  researchAnomalyDuration: 5,
-  /** 异常区域内材料类物品搜索权重加成 */
-  researchAnomalyMaterialFindBonus: 0.6,
-  /** 异常区域内装备每次判定的额外耐久损耗 */
-  researchAnomalyDurabilityLoss: 1,
+  /* research_anomaly 研究异常（固定研究所） */
+  researchAnomalyDuration: 4,
+  /** 固定生效区域（不是随机区域） */
+  researchAnomalyZoneId: 'lab',
+  /** 每时间单位环境伤害（必须走 applyDamage） */
+  researchAnomalyDamagePerTick: 3,
 
   /* citywide_unrest 全城骚动（全局） */
-  unrestDuration: 5,
-  /** 骚动期间 NPC 进攻倾向加成 */
-  unrestAggressionBonus: 0.25,
-  /** 骚动期间搜索遭遇敌人的权重乘数 */
-  unrestEncounterMult: 1.3,
+  unrestDuration: 3,
+  /** 搜索产生的噪音乘数 */
+  unrestSearchNoiseMult: 1.5,
 
   /**
    * 6 种事件的相对权重。

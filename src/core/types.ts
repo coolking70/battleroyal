@@ -314,6 +314,8 @@ export type GameEventType =
   | 'WORLD_EVENT'
   /** Phase 3A：世界事件结束 */
   | 'WORLD_EVENT_ENDED'
+  /** Phase 3A-1：世界事件造成的环境伤害（走 applyDamage 后记录） */
+  | 'WORLD_EVENT_DAMAGE'
   | 'GAME_ENDED';
 
 /**
@@ -358,6 +360,12 @@ export interface EncounterState {
   log: string[];
   /** 敌人已死亡 / 已逃跑时，遭遇进入"可关闭"状态 */
   resolved: boolean;
+  /**
+   * Phase 3A-1：侦察员「警觉侦察」由 SEARCH 建立本次遭遇时置 true。
+   * 只影响「遭遇建立阶段」——敌方在建立瞬间的首次立即反击/偷袭收益被抑制；
+   * 玩家之后的正常攻击仍可触发正常反击（不构成免反击护盾）。
+   */
+  reconInitiative?: boolean;
 }
 
 /** 背包已满时发现物品，等待玩家决策 */
@@ -391,6 +399,8 @@ export interface GameGlobalStats {
   attacks: number;
   /** 被搜空的区域数量 */
   zonesExhausted: number;
+  /** Phase 3A-1：「全域骚动」期间被阻止的噪音衰减次数（区域 × tick） */
+  noiseDecayBlockedTicks: number;
 }
 
 /**

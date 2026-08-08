@@ -165,6 +165,7 @@ export function createGame(options: CreateGameOptions): GameState {
       itemsUsed: 0,
       attacks: 0,
       zonesExhausted: 0,
+      noiseDecayBlockedTicks: 0,
     },
     endedAtTime: null,
     phase: 'opening',

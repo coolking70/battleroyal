@@ -16,7 +16,6 @@ import {
 import { enemiesInZone } from './gameState';
 import { armorDefenseOf, hasIngredients, weaponAttackOf } from './inventory';
 import { npcCombatSkill, npcSurvivalSkill } from './npcSkillDecide';
-import { worldModifiersAt } from './worldEvents';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, Personality } from './types';
 
@@ -349,8 +348,7 @@ export function decideNpcAction(
       if (!healthOk) fightScore -= 0.45;
       if (target.hp / target.maxHp < 0.4) fightScore += 0.25;
       if (npc.personality === 'random') fightScore = 0.5;
-      // 「全城骚动」世界事件：所有对手都更愿意动手（Phase 3A Step 6）
-      fightScore += worldModifiersAt(state, npc.currentZoneId).npcAggressionBonus;
+      // Phase 3A-1：「全域骚动」不再直接提高 NPC 攻击倾向（效果已改为噪音管理）
 
       if (rng.chance(Math.min(0.95, Math.max(0.05, fightScore)))) {
         return {

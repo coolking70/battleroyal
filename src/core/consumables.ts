@@ -79,7 +79,16 @@ export function useConsumable(
     actorId: actor.id,
     zoneId: actor.currentZoneId,
     message: `${actor.name} 使用了 ${def.name}（${detail}）。`,
-    metadata: { itemId: def.id, hpRestored, staminaRestored },
+    metadata: {
+      itemId: def.id,
+      hpRestored,
+      staminaRestored,
+      // Phase 3A-1 统计：治疗收益归因
+      baseHeal: def.healHp ?? 0,
+      focusActive: consumableHealMultiplier(actor) > 1,
+      medicalAlertActive: worldModifiersAt(state, actor.currentZoneId).healMultiplier > 1,
+      inHospital: actor.currentZoneId === 'hospital',
+    },
   });
 
   return {

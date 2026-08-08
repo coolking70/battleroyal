@@ -16,7 +16,7 @@
  *   --games N            N = 整轮模拟的**总对局数**，在 20 个 cell 之间平均分配，
  *                        余数依次分给前几个 cell（1003 → 前 3 个 cell 各 51 局，
  *                        其余 17 个各 50 局，合计恰好 1003）。
- *   --games-per-cell N   保留旧行为：每个 cell 各 N 局（总数 = N × cell 数）。
+ *   --ci                    只守规模无关健康门槛（CI 100 局用）\n  --games-per-cell N   保留旧行为：每个 cell 各 N 局（总数 = N × cell 数）。
  * 两者互斥；都不给时默认 `--games-per-cell 50`。
  * 报告 `meta.config` 必须同时给出：
  *   requestedTotalGames / actualTotalGames / gamesPerCell / distribution
@@ -55,6 +55,9 @@ import {
   type AutoGameOutcome,
   type AutoPlayerPolicy,
   type AutoGameResult,
+  type SkillAggStat,
+  type StyleAggStat,
+  type WorldEventImpactAgg,
 } from './autoPlayer';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -80,6 +83,10 @@ interface CliOptions {
   character: string | null;
   policy: string | null;
   output: string;
+  /** Phase 3A-1：CI 模式（100 局）——只守规模无关的健康门槛
+   * （引擎健康 + 风格使用率 + 命中差 + 技能玩家侧），
+   * 不判胜率比与事件覆盖（需要 3000 局规模才有统计意义）。 */
+  ci?: boolean;
 }
 
 const DEFAULT_GAMES_PER_CELL = 50;
@@ -112,6 +119,7 @@ function parseArgs(argv: string[]): CliOptions {
     seedPrefix: DEFAULT_SEED_PREFIX,
     character: null,
     policy: null,
+    ci: false,
     output: DEFAULT_OUTPUT,
   };
   /** 记录用户显式指定过哪个局数参数，用于互斥检测 */
@@ -165,6 +173,9 @@ function parseArgs(argv: string[]): CliOptions {
         opts.character = c;
         break;
       }
+      case '--ci':
+        opts.ci = true;
+        break;
       case '--policy': {
         const p = take();
         if (!AUTO_PLAYER_POLICIES.includes(p as AutoPlayerPolicy)) {
@@ -350,6 +361,18 @@ interface CellStats {
   worldEventCounts: Record<string, number>;
   /** 全部命令类型计数（GUARD 使用率的分母） */
   commandCounts: Record<string, number>;
+
+  /* --- Phase 3A-1 完整统计（Step 7） --- */
+  attackStyleStats: Record<string, StyleAggStat>;
+  guardCommands: number;
+  guardTriggered: number;
+  guardDamagePreventedTotal: number;
+  guardDamagePreventedAverage: number;
+  heavyMissCount: number;
+  exposedExpiredWithoutPunish: number;
+  exposedBonusDamageTotal: number;
+  skillStats: Record<string, SkillAggStat>;
+  worldEventImpact: Record<string, WorldEventImpactAgg>;
 }
 
 function aggregateCell(
@@ -442,6 +465,21 @@ function aggregateCell(
     skillUseCounts: mergeCounts((r) => r.skillUseCounts, results),
     worldEventCounts: mergeCounts((r) => r.worldEventCounts, results),
     commandCounts: mergeCounts((r) => r.commandCounts, results),
+
+    /* --- Phase 3A-1 完整统计聚合（Step 7） --- */
+    attackStyleStats: mergeStyleStats(results),
+    guardCommands: sum((r) => r.guardCommands),
+    guardTriggered: sum((r) => r.guardTriggered),
+    guardDamagePreventedTotal: sum((r) => r.guardDamagePreventedTotal),
+    guardDamagePreventedAverage:
+      sum((r) => r.guardTriggered) > 0
+        ? sum((r) => r.guardDamagePreventedTotal) / sum((r) => r.guardTriggered)
+        : 0,
+    heavyMissCount: sum((r) => r.heavyMissCount),
+    exposedExpiredWithoutPunish: sum((r) => r.exposedExpiredWithoutPunish),
+    exposedBonusDamageTotal: sum((r) => r.exposedBonusDamageTotal),
+    skillStats: mergeSkillStats(results),
+    worldEventImpact: mergeImpactStats(results),
   };
 }
 
@@ -454,6 +492,103 @@ function mergeCounts(
   for (const r of results) {
     for (const [k, v] of Object.entries(pick(r))) {
       out[k] = (out[k] ?? 0) + v;
+    }
+  }
+  return out;
+}
+
+/** 合并攻击风格细分统计（attempts/hits/damage 等按风格累加后重算均值） */
+function mergeStyleStats(results: AutoGameResult[]): Record<string, StyleAggStat> {
+  const out: Record<string, StyleAggStat> = {};
+  for (const r of results) {
+    for (const [style, st] of Object.entries(r.attackStyleStats)) {
+      const a = (out[style] ??= {
+        attempts: 0,
+        hits: 0,
+        misses: 0,
+        hitRate: 0,
+        damageTotal: 0,
+        avgDamageOnHit: 0,
+        averageShownChance: 0,
+        deltaPP: 0,
+      });
+      a.attempts += st.attempts;
+      a.hits += st.hits;
+      a.misses += st.misses;
+      a.damageTotal += st.damageTotal;
+      a.averageShownChance += st.averageShownChance * st.attempts;
+    }
+  }
+  for (const st of Object.values(out)) {
+    st.hitRate = st.attempts > 0 ? st.hits / st.attempts : 0;
+    st.avgDamageOnHit = st.hits > 0 ? st.damageTotal / st.hits : 0;
+    st.averageShownChance = st.attempts > 0 ? st.averageShownChance / st.attempts : 0;
+    st.deltaPP = Math.abs(st.averageShownChance - st.hitRate * 100);
+  }
+  return out;
+}
+
+/** 合并技能收益统计（玩家/NPC 分列，按技能累加） */
+function mergeSkillStats(results: AutoGameResult[]): Record<string, SkillAggStat> {
+  const out: Record<string, SkillAggStat> = {};
+  const zero = (): SkillAggStat => ({
+    playerUses: 0,
+    npcUses: 0,
+    reconEncounterInitiativeCount: 0,
+    adrenalineAttackCount: 0,
+    adrenalineBonusDamage: 0,
+    adrenalineStaminaSaved: 0,
+    adrenalineExtraDamageTaken: 0,
+    freeCraftCount: 0,
+    craftStaminaSaved: 0,
+    instantHealing: 0,
+    bonusConsumableHealing: 0,
+  });
+  for (const r of results) {
+    for (const [sid, st] of Object.entries(r.skillStats)) {
+      const a = (out[sid] ??= zero());
+      a.playerUses += st.playerUses;
+      a.npcUses += st.npcUses;
+      a.reconEncounterInitiativeCount += st.reconEncounterInitiativeCount;
+      a.adrenalineAttackCount += st.adrenalineAttackCount;
+      a.adrenalineBonusDamage += st.adrenalineBonusDamage;
+      a.adrenalineStaminaSaved += st.adrenalineStaminaSaved;
+      a.adrenalineExtraDamageTaken += st.adrenalineExtraDamageTaken;
+      a.freeCraftCount += st.freeCraftCount;
+      a.craftStaminaSaved += st.craftStaminaSaved;
+      a.instantHealing += st.instantHealing;
+      a.bonusConsumableHealing += st.bonusConsumableHealing;
+    }
+  }
+  return out;
+}
+
+/** 合并世界事件影响统计（按事件累加） */
+function mergeImpactStats(results: AutoGameResult[]): Record<string, WorldEventImpactAgg> {
+  const out: Record<string, WorldEventImpactAgg> = {};
+  const zero = (): WorldEventImpactAgg => ({
+    triggerCount: 0,
+    searchesAffected: 0,
+    encounterWeightReductionCount: 0,
+    nothingWeightIncreaseCount: 0,
+    movesAffected: 0,
+    extraMoveStaminaPaid: 0,
+    rangedAttacksAffected: 0,
+    zonesBroadcast: 0,
+    healsAffected: 0,
+    bonusHealing: 0,
+    ticks: 0,
+    damageTotal: 0,
+    deaths: 0,
+    noiseDecayPrevented: 0,
+    searchNoiseBonus: 0,
+  });
+  for (const r of results) {
+    for (const [wid, st] of Object.entries(r.worldEventImpact)) {
+      const a = (out[wid] ??= zero());
+      for (const k of Object.keys(st) as Array<keyof WorldEventImpactAgg>) {
+        a[k] = (a[k] ?? 0) + (st[k] as number);
+      }
     }
   }
   return out;
@@ -545,9 +680,24 @@ interface BalanceReport {
       worldEventCoveragePassed: boolean;
       threshold: number;
       passed: boolean;
+      /* --- Phase 3A-1（Step 7） --- */
+      attackStyleStats: Record<string, StyleAggStat>;
+      styleDeltaPP: Record<string, number>;
+      deltaPPPassed: boolean;
+      guardTriggered: number;
+      guardDamagePreventedTotal: number;
+      guardDamagePreventedAverage: number;
+      heavyMissCount: number;
+      exposedExpiredWithoutPunish: number;
+      exposedBonusDamageTotal: number;
+      skillStats: Record<string, SkillAggStat>;
+      skillPlayerUsesAll: boolean;
+      worldEventImpact: Record<string, WorldEventImpactAgg>;
     };
     /** 整体判定 = 引擎健康 && 角色平衡 && Phase 3A 玩法验收（规格 §六） */
     overallPassed: boolean;
+    /** Phase 3A-1：CI 门槛（100 局规模无关项） */
+    ciGate: boolean;
     summary: GlobalSummary;
   };
   characterSummary: Record<string, CellStats>;
@@ -642,7 +792,112 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
       skillUseCounts: mergeSummaryCounts(subset, (c) => c.skillUseCounts),
       worldEventCounts: mergeSummaryCounts(subset, (c) => c.worldEventCounts),
       commandCounts: mergeSummaryCounts(subset, (c) => c.commandCounts),
+
+      /* --- Phase 3A-1 完整统计（Step 7） --- */
+      attackStyleStats: mergeSummaryStyleStats(subset),
+      guardCommands: sum((c) => c.guardCommands),
+      guardTriggered: sum((c) => c.guardTriggered),
+      guardDamagePreventedTotal: sum((c) => c.guardDamagePreventedTotal),
+      guardDamagePreventedAverage:
+        sum((c) => c.guardTriggered) > 0
+          ? sum((c) => c.guardDamagePreventedTotal) / sum((c) => c.guardTriggered)
+          : 0,
+      heavyMissCount: sum((c) => c.heavyMissCount),
+      exposedExpiredWithoutPunish: sum((c) => c.exposedExpiredWithoutPunish),
+      exposedBonusDamageTotal: sum((c) => c.exposedBonusDamageTotal),
+      skillStats: mergeSummarySkillStats(subset),
+      worldEventImpact: mergeSummaryImpactStats(subset),
     };
+  };
+
+  const mergeSummaryStyleStats = (
+    subset: CellStats[],
+  ): Record<string, StyleAggStat> => {
+    const out: Record<string, StyleAggStat> = {};
+    for (const c of subset) {
+      for (const [style, st] of Object.entries(c.attackStyleStats)) {
+        const a = (out[style] ??= {
+          attempts: 0,
+          hits: 0,
+          misses: 0,
+          hitRate: 0,
+          damageTotal: 0,
+          avgDamageOnHit: 0,
+          averageShownChance: 0,
+          deltaPP: 0,
+        });
+        a.attempts += st.attempts;
+        a.hits += st.hits;
+        a.misses += st.misses;
+        a.damageTotal += st.damageTotal;
+        a.averageShownChance += st.averageShownChance * st.attempts;
+      }
+    }
+    for (const st of Object.values(out)) {
+      st.hitRate = st.attempts > 0 ? st.hits / st.attempts : 0;
+      st.avgDamageOnHit = st.hits > 0 ? st.damageTotal / st.hits : 0;
+      st.averageShownChance = st.attempts > 0 ? st.averageShownChance / st.attempts : 0;
+      st.deltaPP = Math.abs(st.averageShownChance - st.hitRate * 100);
+    }
+    return out;
+  };
+
+  const mergeSummarySkillStats = (
+    subset: CellStats[],
+  ): Record<string, SkillAggStat> => {
+    const out: Record<string, SkillAggStat> = {};
+    for (const c of subset) {
+      for (const [sid, st] of Object.entries(c.skillStats)) {
+        const a = (out[sid] ??= {
+          playerUses: 0,
+          npcUses: 0,
+          reconEncounterInitiativeCount: 0,
+          adrenalineAttackCount: 0,
+          adrenalineBonusDamage: 0,
+          adrenalineStaminaSaved: 0,
+          adrenalineExtraDamageTaken: 0,
+          freeCraftCount: 0,
+          craftStaminaSaved: 0,
+          instantHealing: 0,
+          bonusConsumableHealing: 0,
+        });
+        for (const k of Object.keys(st) as Array<keyof SkillAggStat>) {
+          a[k] = (a[k] ?? 0) + (st[k] as number);
+        }
+      }
+    }
+    return out;
+  };
+
+  const mergeSummaryImpactStats = (
+    subset: CellStats[],
+  ): Record<string, WorldEventImpactAgg> => {
+    const out: Record<string, WorldEventImpactAgg> = {};
+    for (const c of subset) {
+      for (const [wid, st] of Object.entries(c.worldEventImpact)) {
+        const a = (out[wid] ??= {
+          triggerCount: 0,
+          searchesAffected: 0,
+          encounterWeightReductionCount: 0,
+          nothingWeightIncreaseCount: 0,
+          movesAffected: 0,
+          extraMoveStaminaPaid: 0,
+          rangedAttacksAffected: 0,
+          zonesBroadcast: 0,
+          healsAffected: 0,
+          bonusHealing: 0,
+          ticks: 0,
+          damageTotal: 0,
+          deaths: 0,
+          noiseDecayPrevented: 0,
+          searchNoiseBonus: 0,
+        });
+        for (const k of Object.keys(st) as Array<keyof WorldEventImpactAgg>) {
+          a[k] = (a[k] ?? 0) + (st[k] as number);
+        }
+      }
+    }
+    return out;
   };
 
   const mergeSummaryCounts = (
@@ -721,10 +976,34 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
   const worldEventCoveragePassed = WORLD_EVENT_IDS.every(
     (id) => (worldEventCounts[id] ?? 0) >= WORLD_EVENT_TARGET,
   );
+
+  /* --- Phase 3A-1：理论/实测命中差 + 技能玩家侧使用（Step 7/36） --- */
+  const attackStyleStats = all.attackStyleStats;
+  const styleDeltaPP: Record<string, number> = {};
+  for (const [style, st] of Object.entries(attackStyleStats)) {
+    styleDeltaPP[style] = st.deltaPP;
+  }
+  const DELTA_PP_LIMIT = 5; // abs(展示命中率 - 实际命中率) < 5pp
+  const deltaPPPassed = ['quick', 'normal', 'heavy'].every(
+    (s) => (styleDeltaPP[s] ?? Infinity) < DELTA_PP_LIMIT,
+  );
+  // 4 种玩家技能每种 playerUses > 0（3000 局规模）
+  const skillStats = all.skillStats;
+  const skillPlayerUsesAll = ['scout_recon', 'adrenaline', 'field_craft', 'emergency_treatment'].every(
+    (sid) => (skillStats[sid]?.playerUses ?? 0) > 0,
+  );
   const phase3aPassed =
-    quickPassed && heavyPassed && guardPassed && worldEventCoveragePassed;
+    quickPassed &&
+    heavyPassed &&
+    guardPassed &&
+    worldEventCoveragePassed &&
+    deltaPPPassed &&
+    skillPlayerUsesAll;
 
   const engineHealthy = timeoutCount === 0 && illegalCount === 0 && hardLimitCount === 0;
+  // Phase 3A-1：CI 模式（100 局）只守规模无关门槛（胜率比/事件覆盖需 3000 局规模）
+  const ciGate =
+    engineHealthy && quickPassed && heavyPassed && guardPassed && deltaPPPassed && skillPlayerUsesAll;
 
   const dist = distributionFromCells(opts, cells);
 
@@ -782,8 +1061,23 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
         worldEventCoveragePassed,
         threshold: PHASE3A_THRESHOLD,
         passed: phase3aPassed,
+        /* --- Phase 3A-1（Step 7） --- */
+        attackStyleStats,
+        styleDeltaPP,
+        deltaPPPassed,
+        guardTriggered: all.guardTriggered,
+        guardDamagePreventedTotal: all.guardDamagePreventedTotal,
+        guardDamagePreventedAverage: all.guardDamagePreventedAverage,
+        heavyMissCount: all.heavyMissCount,
+        exposedExpiredWithoutPunish: all.exposedExpiredWithoutPunish,
+        exposedBonusDamageTotal: all.exposedBonusDamageTotal,
+        skillStats,
+        skillPlayerUsesAll,
+        worldEventImpact: all.worldEventImpact,
       },
       overallPassed: engineHealthy && characterBalancePassed && phase3aPassed,
+      /** Phase 3A-1：CI 门槛（100 局规模无关项） */
+      ciGate,
       summary: global,
     },
     characterSummary,
@@ -1007,7 +1301,94 @@ function renderMarkdown(report: BalanceReport): string {
   }
   L.push('');
   L.push(
-    `**Phase 3A 玩法整体判定：${p3.passed ? 'PASS' : 'FAIL'}**（quick ${p3.quickPassed ? '✓' : '✗'} / heavy ${p3.heavyPassed ? '✓' : '✗'} / guard ${p3.guardPassed ? '✓' : '✗'} / 事件覆盖 ${p3.worldEventCoveragePassed ? '✓' : '✗'}）`,
+    `**Phase 3A 玩法整体判定：${p3.passed ? 'PASS' : 'FAIL'}**（quick ${p3.quickPassed ? '✓' : '✗'} / heavy ${p3.heavyPassed ? '✓' : '✗'} / guard ${p3.guardPassed ? '✓' : '✗'} / 事件覆盖 ${p3.worldEventCoveragePassed ? '✓' : '✗'} / 命中偏差 ${p3.deltaPPPassed ? '✓' : '✗'} / 四技能玩家侧 ${p3.skillPlayerUsesAll ? '✓' : '✗'}）`,
+  );
+  L.push('');
+
+  // ---- Phase 3A-1：攻击风格细分 + 理论/实测命中差（§29/30） ----
+  L.push('### 攻击风格细分与命中一致性（Phase 3A-1）');
+  L.push('');
+  L.push('| 风格 | 尝试 | 命中 | 落空 | 实际命中率 | 展示命中率均值 | Δpp（\|期望-实际\|） | 门槛（<5pp） | 总伤害 | 命中均伤 |');
+  L.push('| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: |');
+  for (const style of ['quick', 'normal', 'heavy']) {
+    const st = p3.attackStyleStats[style];
+    if (!st) continue;
+    L.push(
+      `| ${style} | ${st.attempts} | ${st.hits} | ${st.misses} | ${fmtPct(st.hitRate)} | ${st.averageShownChance.toFixed(1)}% | ${st.deltaPP.toFixed(2)} | ${st.deltaPP < 5 ? '✓' : '**FAIL**'} | ${st.damageTotal} | ${st.avgDamageOnHit.toFixed(1)} |`,
+    );
+  }
+  L.push('');
+
+  // ---- Phase 3A-1：Guard / EXPOSED 完整统计（§31/32） ----
+  L.push('### Guard 与 EXPOSED 完整统计（Phase 3A-1）');
+  L.push('');
+  L.push('| 指标 | 值 |');
+  L.push('| --- | ---: |');
+  L.push(`| GUARD 命令次数 | ${p3.guardCommandCount} |`);
+  L.push(`| 防御成功触发（减免伤害） | ${p3.guardTriggered} |`);
+  L.push(`| 减免伤害总量 | ${p3.guardDamagePreventedTotal} |`);
+  L.push(`| 平均每次减免 | ${p3.guardDamagePreventedAverage.toFixed(1)} |`);
+  L.push(`| 重击落空（Heavy Miss） | ${p3.heavyMissCount} |`);
+  L.push(`| EXPOSED 施加 | ${p3.exposedApplied} |`);
+  L.push(`| EXPOSED 兑现（被击中） | ${p3.exposedConsumed} |`);
+  L.push(`| EXPOSED 未兑现失效 | ${p3.exposedExpiredWithoutPunish} |`);
+  L.push(`| EXPOSED 兑现时额外伤害总量 | ${p3.exposedBonusDamageTotal} |`);
+  L.push('');
+
+  // ---- Phase 3A-1：技能收益（玩家/NPC 分列，§33） ----
+  L.push('### 技能收益统计（玩家 / NPC 分列，Phase 3A-1）');
+  L.push('');
+  L.push('| 技能 | 玩家使用 | NPC 使用 | 收益指标 |');
+  L.push('| --- | ---: | ---: | --- |');
+  const scout = p3.skillStats.scout_recon;
+  const fighter = p3.skillStats.adrenaline;
+  const engineer = p3.skillStats.field_craft;
+  const medic = p3.skillStats.emergency_treatment;
+  if (scout) {
+    L.push(`| 警觉侦察 | ${scout.playerUses} | ${scout.npcUses} | 遭遇先手次数：${scout.reconEncounterInitiativeCount} |`);
+  }
+  if (fighter) {
+    L.push(
+      `| 肾上腺素 | ${fighter.playerUses} | ${fighter.npcUses} | 覆盖攻击 ${fighter.adrenalineAttackCount} · 额外伤害 ${fighter.adrenalineBonusDamage} · 省体力 ${fighter.adrenalineStaminaSaved} · 自伤 ${fighter.adrenalineExtraDamageTaken} |`,
+    );
+  }
+  if (engineer) {
+    L.push(`| 现场加工 | ${engineer.playerUses} | ${engineer.npcUses} | 免费合成 ${engineer.freeCraftCount} · 省体力 ${engineer.craftStaminaSaved} |`);
+  }
+  if (medic) {
+    L.push(
+      `| 应急处理 | ${medic.playerUses} | ${medic.npcUses} | 即时治疗 ${medic.instantHealing} · 治疗品额外 ${medic.bonusConsumableHealing} |`,
+    );
+  }
+  L.push('');
+
+  // ---- Phase 3A-1：世界事件影响统计（§34） ----
+  L.push('### 世界事件影响统计（Phase 3A-1）');
+  L.push('');
+  const imp = p3.worldEventImpact;
+  const b = imp.blackout;
+  const r = imp.rain;
+  const bc = imp.emergency_broadcast;
+  const ma = imp.medical_alert;
+  const ra = imp.research_anomaly;
+  const cu = imp.citywide_unrest;
+  L.push('| 事件 | 触发 | 影响指标 |');
+  L.push('| --- | ---: | --- |');
+  L.push(
+    `| 停电 | ${b?.triggerCount ?? 0} | 受影响搜索 ${b?.searchesAffected ?? 0} · 遭遇权重降低 ${b?.encounterWeightReductionCount ?? 0} · 空手权重提高 ${b?.nothingWeightIncreaseCount ?? 0} |`,
+  );
+  L.push(
+    `| 暴雨 | ${r?.triggerCount ?? 0} | 受影响移动 ${r?.movesAffected ?? 0} · 额外体力 ${r?.extraMoveStaminaPaid ?? 0} · 远程攻击 ${r?.rangedAttacksAffected ?? 0} |`,
+  );
+  L.push(`| 广播 | ${bc?.triggerCount ?? 0} | 广播区域数：${bc?.zonesBroadcast ?? 0} |`);
+  L.push(
+    `| 医疗警报 | ${ma?.triggerCount ?? 0} | 受影响治疗 ${ma?.healsAffected ?? 0} · 额外治疗 ${ma?.bonusHealing ?? 0} |`,
+  );
+  L.push(
+    `| 研究异常 | ${ra?.triggerCount ?? 0} | 伤害 tick ${ra?.ticks ?? 0} · 总伤害 ${ra?.damageTotal ?? 0} · 致死 ${ra?.deaths ?? 0} |`,
+  );
+  L.push(
+    `| 全域骚动 | ${cu?.triggerCount ?? 0} | 阻止噪音衰减 ${cu?.noiseDecayPrevented ?? 0} · 搜索噪音加成 ${cu?.searchNoiseBonus ?? 0} |`,
   );
   L.push('');
 
@@ -1172,11 +1553,12 @@ function main(): void {
         ? ''
         : `（quick=${p3.quickPassed ? '✓' : '✗'} heavy=${p3.heavyPassed ? '✓' : '✗'} guard=${p3.guardPassed ? '✓' : '✗'} 事件覆盖=${p3.worldEventCoveragePassed ? '✓' : '✗'}）`),
   );
+  const verdict = opts.ci ? report.meta.ciGate : report.meta.overallPassed;
   // eslint-disable-next-line no-console
-  console.log(`[phase3-balance] 整体判定：${report.meta.overallPassed ? 'PASS' : 'FAIL'}`);
+  console.log(`[phase3-balance] 整体判定：${verdict ? 'PASS' : 'FAIL'}${opts.ci ? '（CI 门槛：引擎健康+风格+命中差+技能玩家侧）' : ''}`);
   // eslint-disable-next-line no-console
   console.log(`[phase3-balance] 报告已写入：\n  ${jsonPath}\n  ${mdPath}`);
-  if (!report.meta.overallPassed) {
+  if (!verdict) {
     process.exitCode = 1;
   }
 }

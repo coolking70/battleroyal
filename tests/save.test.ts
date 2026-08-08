@@ -104,16 +104,15 @@ describe('本地存档', () => {
     expect(res.error).toContain('版本');
   });
 
-  it('Phase 3A：0.2.0 旧存档被明确拒绝，不做迁移', () => {
-    // Phase 3A 改了三处不可兼容的结构：EXPOSED 状态、技能 id 全换、
-    // 世界事件取代动态事件。0.2.0 存档里的 `dash` / `storm` 在新规则下
-    // 没有对应语义，硬读进来只会得到一个自相矛盾的局面 —— 宁可拒绝。
-    expect(GAME_VERSION).toBe('0.3.0');
+  it('Phase 3A-1：0.3.0 及更早存档被明确拒绝，不做迁移', () => {
+    // Phase 3A-1 版本 0.3.1（技能/事件数值回归规格）；0.3.0 及更早存档
+    // 里的旧技能语义 / 旧事件字段在新规则下没有对应，宁可拒绝不做迁移。
+    expect(GAME_VERSION).toBe('0.3.1');
 
     const state = newGame();
     saveGame(state);
     const raw = JSON.parse(storage.getItem(SAVE_KEY)!) as Record<string, unknown>;
-    raw.version = '0.2.0';
+    raw.version = '0.3.0';
     storage.setItem(SAVE_KEY, JSON.stringify(raw));
 
     const res = loadGame();
