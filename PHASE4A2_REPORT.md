@@ -40,4 +40,6 @@ Controlled Round B1 was stopped after the first three serial character calls bec
 
 ## CI
 
-Final remote CI will be queried against the final pushed commit after publication of this report. The result will be recorded here before the final handoff, or explicitly marked unavailable if the provider does not return a conclusion.
+Implementation commit `d0c62833e26d98d9db7a7ac92001443d3466c2c5` passed GitHub Actions run `31272434720` (`verify: success`). The run covered typecheck, 671 unit tests, build, save/dependency audits, offline art doctor/manifest validation, both secret scans, art dry run, and the CI quick simulation.
+
+This report-only follow-up records that conclusion; the final handoff also re-checks the resulting remote HEAD.
