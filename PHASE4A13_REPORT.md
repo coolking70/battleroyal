@@ -23,7 +23,7 @@ Both hashes differ from v3. Each task used `apiCalls=1` and `cacheHits=0`. Full 
 - `art/approved-assets.json` remains empty; formal Manifest remains unchanged.
 - All v1/v2/v3 historical candidates remain preserved.
 
-Technical generation is PASS. Scout v4 and Blackout v4 human visual review remain PENDING; this report makes no automated visual-quality claim.
+Technical generation is PASS. Scout v4 and Blackout v4 human visual review remain PENDING; this report makes no automated visual-quality claim. The final implementation commit `4a39c69` was verified by GitHub Actions run `31270069170` with `verify` PASS.
 
 ## Verification
 
