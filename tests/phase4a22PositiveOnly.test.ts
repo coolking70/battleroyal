@@ -160,7 +160,7 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
     expect(auditItemProviderPrompt(task, `A case with a ${token}.`).forbiddenTokens).toContain(token);
   });
 
-  it('keeps the formal manifest at nine AI tasks after Hospital/Medkit publication', async () => {
+  it('keeps the formal manifest at fifteen AI tasks after B2 publication', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as {
       characters: Record<string, Record<string, string | null>>;
       zones: Record<string, Record<string, string | null>>;
@@ -173,9 +173,15 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
       ...Object.values(manifest.items),
       ...Object.values(manifest.worldEvents),
     ].filter(Boolean).length;
-    expect(count).toBe(9);
+    expect(count).toBe(15);
     expect(manifest.zones.hospital?.background).toBe('/assets/zones/hospital/background.png');
+    expect(manifest.zones.residential?.background).toBe('/assets/zones/residential/background.png');
+    expect(manifest.zones.factory?.background).toBe('/assets/zones/factory/background.png');
+    expect(manifest.zones.forest?.background).toBe('/assets/zones/forest/background.png');
+    expect(manifest.zones.lab?.background).toBe('/assets/zones/lab/background.png');
     expect(manifest.items.medkit).toBe('/assets/items/medkit/icon.png');
+    expect(manifest.items.water).toBe('/assets/items/water/icon.png');
+    expect(manifest.items.energy_drink).toBe('/assets/items/energy_drink/icon.png');
   });
 
   it.each([

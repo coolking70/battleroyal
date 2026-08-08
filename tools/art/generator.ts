@@ -191,8 +191,20 @@ export async function writePromptReport(
     'item/water/icon',
     'item/energy_drink/icon',
   ]);
+  const b3TaskIds = new Set([
+    'item/battery/icon',
+    'item/iron/icon',
+    'item/wood/icon',
+    'item/iron_pipe/icon',
+    'item/stone_axe/icon',
+    'item/simple_bow/icon',
+    'item/simple_armor/icon',
+    'item/plate_armor/icon',
+  ]);
   const targetedVersion = b2TaskIds.has(built.task.id)
     ? 'phase4a23-b2'
+    : b3TaskIds.has(built.task.id)
+      ? 'phase4a3-b3'
     : built.task.id === 'world_event/rain/illustration' && built.task.revision >= 3
       ? 'phase4a23-rain-recovery'
       : built.task.promptStrategy === 'environment-positive-only' || built.task.promptStrategy === 'item-positive-only-unmarked' || built.task.promptStrategy === 'item-positive-only'
@@ -214,7 +226,7 @@ export async function writePromptReport(
   const filename = `${built.task.id.replaceAll('/', '__')}.md`;
   await fs.writeFile(
     path.join(dir, filename),
-    `# ${built.task.id}\n\n- Hash: \`${hash}\`\n- Model: \`${built.model}\`\n- Requested size: ${built.width}x${built.height}\n- Requested ratio: ${built.requestedRatio}\n- Revision: ${built.task.revision}\n- Style profile version: \`${built.styleProfileVersion}\`\n\n## Prompt\n\n${built.prompt}\n\n## Negative prompt\n\n${built.negativePrompt || '(empty: positive-only strategy)'}\n`,
+    `# ${built.task.id}\n\n- Category: \`${built.task.itemProductionCategory ?? built.task.category}\`\n- Strategy: \`${built.task.promptStrategy ?? 'standard'}\`\n- Hash: \`${hash}\`\n- Model: \`${built.model}\`\n- Requested size: ${built.width}x${built.height}\n- Requested ratio: ${built.requestedRatio}\n- Revision: ${built.task.revision}\n- Style profile version: \`${built.styleProfileVersion}\`\n\n## Prompt\n\n${built.prompt}\n\n## Negative prompt\n\n${built.negativePrompt || '(empty: positive-only strategy)'}\n`,
   );
 }
 

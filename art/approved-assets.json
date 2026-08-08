@@ -81,6 +81,60 @@
       "provider": "agnes",
       "approvedAt": "2026-08-08T20:02:24.294Z",
       "publicPath": "/assets/zones/hospital/background.png"
+    },
+    "item/energy_drink/icon": {
+      "candidateHash": "795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b",
+      "contentHash": "795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b",
+      "promptHash": "795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:14:29.926Z",
+      "publicPath": "/assets/items/energy_drink/icon.png"
+    },
+    "item/water/icon": {
+      "candidateHash": "ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38",
+      "contentHash": "ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38",
+      "promptHash": "ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:14:29.927Z",
+      "publicPath": "/assets/items/water/icon.png"
+    },
+    "zone/factory/background": {
+      "candidateHash": "94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4",
+      "contentHash": "94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4",
+      "promptHash": "94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:14:29.927Z",
+      "publicPath": "/assets/zones/factory/background.png"
+    },
+    "zone/forest/background": {
+      "candidateHash": "2126353261005efb99059bd7ab230408ab9aa1b3214732f6b20ebd3715951430",
+      "contentHash": "2126353261005efb99059bd7ab230408ab9aa1b3214732f6b20ebd3715951430",
+      "promptHash": "2126353261005efb99059bd7ab230408ab9aa1b3214732f6b20ebd3715951430",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:14:29.927Z",
+      "publicPath": "/assets/zones/forest/background.png"
+    },
+    "zone/lab/background": {
+      "candidateHash": "16eb9bc6cff58880933a81eda9a837678201c672e509656f051d67551f97476e",
+      "contentHash": "16eb9bc6cff58880933a81eda9a837678201c672e509656f051d67551f97476e",
+      "promptHash": "16eb9bc6cff58880933a81eda9a837678201c672e509656f051d67551f97476e",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:14:29.927Z",
+      "publicPath": "/assets/zones/lab/background.png"
+    },
+    "zone/residential/background": {
+      "candidateHash": "9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84",
+      "contentHash": "9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84",
+      "promptHash": "9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-08T23:14:29.927Z",
+      "publicPath": "/assets/zones/residential/background.png"
     }
   }
 }

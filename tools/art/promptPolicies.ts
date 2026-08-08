@@ -1,4 +1,4 @@
-import type { ArtTask } from './types';
+import type { ArtTask, ItemProductionCategory } from './types';
 
 export interface CategoryPromptPolicy {
   includeCharacterSheet: boolean;
@@ -9,6 +9,26 @@ export interface CategoryPromptPolicy {
 }
 
 const GENERIC_AVOID = ['text', 'watermark', 'logo', 'signature', 'bad anatomy', 'recognizable commercial IP'];
+
+export interface ItemProductionPromptPolicy {
+  category: ItemProductionCategory;
+  presentation: string;
+}
+
+const ITEM_PRODUCTION_PRESENTATIONS: Record<ItemProductionCategory, string> = {
+  consumable: 'Single isolated consumable object, centered with a crisp contour, plain studio backdrop, controlled shadow, original visual design, and clear recognition at small game-icon size.',
+  material: 'Single crafting-material subject, centered with a crisp contour, plain studio backdrop, controlled shadow, original visual design, and clear recognition at small game-icon size.',
+  weapon: 'Single weapon alone as an isolated object, centered with a crisp contour, plain studio backdrop, controlled shadow, original visual design, and clear recognition at small game-icon size.',
+  armor: 'Single protective equipment item alone, centered with a crisp contour, plain studio backdrop, controlled shadow, original visual design, and clear recognition at small game-icon size.',
+};
+
+export function itemProductionPromptPolicyFor(task: ArtTask): ItemProductionPromptPolicy {
+  if (!task.itemProductionCategory) throw new Error(`item production category is required for ${task.id}`);
+  return {
+    category: task.itemProductionCategory,
+    presentation: ITEM_PRODUCTION_PRESENTATIONS[task.itemProductionCategory],
+  };
+}
 
 const BASE_CHARACTER_CONSTRAINTS = [
   'character artwork only',

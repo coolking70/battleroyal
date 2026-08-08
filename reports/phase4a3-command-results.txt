@@ -1,0 +1,95 @@
+Phase 4A-3 command evidence
+
+COMMAND: npm run art:approve -- --task zone/residential/background --candidate 9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84
+EXIT CODE: 0
+SUMMARY: approved user-approved Residential B2 candidate
+
+COMMAND: npm run art:approve -- --task zone/factory/background --candidate 94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4
+EXIT CODE: 0
+SUMMARY: approved user-approved Factory B2 candidate
+
+COMMAND: npm run art:approve -- --task zone/forest/background --candidate 2126353261005efb99059bd7ab230408ab9aa1b3214732f6b20ebd3715951430
+EXIT CODE: 0
+SUMMARY: approved user-approved Forest B2 candidate
+
+COMMAND: npm run art:approve -- --task zone/lab/background --candidate 16eb9bc6cff58880933a81eda9a837678201c672e509656f051d67551f97476e
+EXIT CODE: 0
+SUMMARY: approved user-approved Lab B2 candidate
+
+COMMAND: npm run art:approve -- --task item/water/icon --candidate ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38
+EXIT CODE: 0
+SUMMARY: approved user-approved Water B2 candidate
+
+COMMAND: npm run art:approve -- --task item/energy_drink/icon --candidate 795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b
+EXIT CODE: 0
+SUMMARY: approved user-approved Energy Drink B2 candidate
+
+COMMAND: npm run art:list
+EXIT CODE: 0
+SUMMARY: exactly the six B2 candidates became approved; Rain remained rejected and B3 tasks remained planned
+
+COMMAND: npm run art:publish
+EXIT CODE: 0
+SUMMARY: publisher reported 15 approved candidates; six B2 slots changed; manifest hash 82d9f77cc43dc4ffcb716171783c32666f63b6fcdb6c4eed092996d688932e30
+
+COMMAND: npm run art:validate
+EXIT CODE: 0
+SUMMARY: PASS published manifest; all six zones and four formal items are official
+
+COMMAND: npm run art:publish (second publish)
+EXIT CODE: 0
+SUMMARY: NO CHANGES
+
+COMMAND: npm run typecheck; npm test -- --run tests/phase4a3Production.test.ts tests/phase4a23Production.test.ts tests/phase4a2Closure.test.ts tests/phase4a22PositiveOnly.test.ts
+EXIT CODE: 0
+SUMMARY: targeted closure/prompt tests passed; subsequent full suite passed 895/895
+
+COMMAND: npm run art:prompt-audit -- --task item/battery/icon; ... iron; ... wood; ... iron_pipe; ... stone_axe; ... simple_bow; ... simple_armor; ... plate_armor
+EXIT CODE: 0
+SUMMARY: all eight B3 prompt audits passed with forbidden-token count 0
+
+COMMAND: npm ci; npm run typecheck; npm test; npm run build; npm run audit:save; npm run audit:deps; npm run art:doctor -- --offline; npm run art:validate; npm run art:security:browser; npm run art:security:repo; npm audit --omit=dev
+EXIT CODE: 0
+SUMMARY: Offline Gate passed; 894/894 tests at the gate; final suite after report-contract test passed 895/895; build and all audits/scans passed; production dependency audit found 0 vulnerabilities
+
+COMMAND: npm run simulate -- --games 500 --seed-prefix PHASE4A3 --regression --output reports/phase4a3-balance.json
+EXIT CODE: 0
+SUMMARY: requested=500 actual=500; engine health PASS; timeout/deadlock/illegal/hard-limit 0; role balance observational result recorded in report
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task item/battery/icon --concurrency 1 --report-name phase4a3-battery-v1
+EXIT CODE: 0
+SUMMARY: API calls=1 cache hits=0 validation=passed review=pending candidate 1d7473b3470be8f86f43c2b76f21911cc2055153b7d09fa323acf901c42d5ee6
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task item/iron/icon --concurrency 1 --report-name phase4a3-iron-v1
+EXIT CODE: 0
+SUMMARY: API calls=1 cache hits=0 validation=passed review=pending candidate d8aa7a6d3643de2ae2bdc3b7c363fbec6f72524eebf69a6ef043a55d3595f68c
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task item/wood/icon --concurrency 1 --report-name phase4a3-wood-v1
+EXIT CODE: 0
+SUMMARY: API calls=1 cache hits=0 validation=passed review=pending candidate 88c4f10fdf7fb7267746ff391c3e5598df8bf5c08e4a4703fb1a8daeca1d0b56; visual note: multi-piece timber presentation
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task item/iron_pipe/icon --concurrency 1 --report-name phase4a3-iron-pipe-v1
+EXIT CODE: 0
+SUMMARY: API calls=1 cache hits=0 validation=passed review=pending candidate 8d857fea4bd00318942cba3df985a1f7cc014978d9978c6a6acdfe126231c920
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task item/stone_axe/icon --concurrency 1 --report-name phase4a3-stone-axe-v1
+EXIT CODE: 0
+SUMMARY: API calls=1 cache hits=0 validation=passed review=pending candidate 07749b21843468547d12600a18a8add393e10f983dd3440e7ac528a641ec1d96
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task item/simple_bow/icon --concurrency 1 --report-name phase4a3-simple-bow-v1
+EXIT CODE: 0
+SUMMARY: API calls=1 cache hits=0 validation=passed review=pending candidate 07db9c7697913d9ac8c24c09b255e6f9d72b54b1ed2df6369ae999a74eea028d
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task item/simple_armor/icon --concurrency 1 --report-name phase4a3-simple-armor-v1
+EXIT CODE: 0
+SUMMARY: API calls=1 cache hits=0 validation=passed review=pending candidate e7fb2c86d17c42d4745d3019ab3f188d13591b66dfe46244882cdd6bc2e695e5
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task item/plate_armor/icon --concurrency 1 --report-name phase4a3-plate-armor-v1
+EXIT CODE: 0
+SUMMARY: API calls=1 cache hits=0 validation=passed review=pending candidate 865f8fc5cdcad4eb81aba4a2e712afb47f0b6c11be75455408c5f7cfcafc0af5
+
+API BUDGET: B2=6 formalization publishes; B3=8 real first-generation calls; Rain=0; B3 cache hits=0; no force, reroll, approval or B3 publish.
+
+COMMAND: npm run art:review-export -- --report reports/phase4a3-round-b3-report.json --output output/art-review/phase4a3-round-b3 --suffix=-b3
+EXIT CODE: 0
+SUMMARY: exported 8 pending validated B3 candidates; review Decisions and Notes remain blank

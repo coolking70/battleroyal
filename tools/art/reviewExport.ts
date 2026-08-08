@@ -29,6 +29,14 @@ const OUTPUT_NAMES: Record<string, string> = {
   'zone/lab/background': 'lab-background',
   'item/water/icon': 'water-icon',
   'item/energy_drink/icon': 'energy-drink-icon',
+  'item/battery/icon': 'battery-icon',
+  'item/iron/icon': 'iron-icon',
+  'item/wood/icon': 'wood-icon',
+  'item/iron_pipe/icon': 'iron-pipe-icon',
+  'item/stone_axe/icon': 'stone-axe-icon',
+  'item/simple_bow/icon': 'simple-bow-icon',
+  'item/simple_armor/icon': 'simple-armor-icon',
+  'item/plate_armor/icon': 'plate-armor-icon',
 };
 
 const REVIEW_REMINDERS: Record<string, string> = {
@@ -48,6 +56,14 @@ const REVIEW_REMINDERS: Record<string, string> = {
   'zone/lab/background': 'Check research-lab identity, no visible personnel or HUD, lower-center space, and distinction from Hospital.',
   'item/water/icon': 'Check exactly one bottle, clear water identity, no brand or readable text, isolated background, and small-size readability.',
   'item/energy_drink/icon': 'Check exactly one can, generic original beverage design, no real brand or readable text, isolated background, and clear small-size silhouette.',
+  'item/battery/icon': 'Check compact battery identity, isolated object, plain generic surface, visible terminals, no scene or UI contamination, and small-size readability.',
+  'item/iron/icon': 'Check raw iron material identity, isolated object, dense rectangular form, no tool/weapon/armor transformation, and small-size readability.',
+  'item/wood/icon': 'Check cut-timber material identity, isolated object, grain and rough ends, no tree/forest/woodpile scene, and small-size readability.',
+  'item/iron_pipe/icon': 'Check clear hollow pipe identity, isolated object, open circular ends, no firearm confusion, no character, and readable silhouette.',
+  'item/stone_axe/icon': 'Check stone head, wooden handle and handmade identity; no character, fantasy ornament or glow.',
+  'item/simple_bow/icon': 'Check plain handmade bow identity, curved limbs and string, no character, arrows or fantasy glow.',
+  'item/simple_armor/icon': 'Check equipment item only, no wearer or mannequin, protective function clear, and readable at small size.',
+  'item/plate_armor/icon': 'Check reinforced plate equipment item only, no wearer or mannequin, protective function clear, and readable at small size.',
 };
 const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'character/scout/portrait': [
@@ -68,6 +84,14 @@ const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'zone/lab/background': ['research-lab identity clear', 'no visible personnel', 'no HUD', 'distinct from Hospital', 'lower-center usable'],
   'item/water/icon': ['exactly one bottle', 'clear water identity', 'no brand/readable text', 'isolated background', 'readable at small size'],
   'item/energy_drink/icon': ['exactly one can', 'beverage identity clear', 'original generic design', 'no real brand', 'no readable text', 'isolated background'],
+  'item/battery/icon': ['correct material identity', 'isolated object', 'plain generic surface', 'visible terminals', 'no scene contamination', 'no HUD', 'readable at inventory size'],
+  'item/iron/icon': ['correct material identity', 'isolated object', 'raw iron block identity', 'no weapon/armor transformation', 'no scene contamination', 'readable at inventory size'],
+  'item/wood/icon': ['correct material identity', 'isolated object', 'grain and rough cut ends', 'not a tree/forest scene', 'no HUD', 'readable at inventory size'],
+  'item/iron_pipe/icon': ['reads clearly as pipe', 'isolated object', 'open circular ends', 'not confused with firearm', 'no character', 'clear silhouette'],
+  'item/stone_axe/icon': ['stone head clear', 'wooden handle clear', 'handmade identity', 'no character', 'no fantasy ornament'],
+  'item/simple_bow/icon': ['bow identity clear', 'plain handmade design', 'no character', 'no fantasy glow', 'readable silhouette'],
+  'item/simple_armor/icon': ['equipment item only', 'no wearer', 'protective function clear', 'no mannequin focal subject', 'readable at small size'],
+  'item/plate_armor/icon': ['equipment item only', 'no wearer', 'protective function clear', 'no mannequin focal subject', 'readable at small size'],
 };
 
 export interface ReviewExportOptions {
@@ -164,7 +188,7 @@ async function main(): Promise<void> {
     reportPath,
     outputDir,
     fileSuffix: fileSuffix ?? '',
-    title: fileSuffix === '-positive' ? 'Phase 4A-2.1 Character Positive-only Review Package' : fileSuffix === '-nonchar' ? 'Phase 4A-2.1 Non-character B1 Review Package' : fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : fileSuffix === '-v2' ? 'Phase 4A-2.2 Non-character Positive-only Recovery Review Package' : fileSuffix === '-b2' ? 'Phase 4A-2.3 Controlled Production Expansion B2 Review Package' : fileSuffix === '-rain' ? 'Phase 4A-2.3 Rain Provider Recovery Review Package' : undefined,
+    title: fileSuffix === '-positive' ? 'Phase 4A-2.1 Character Positive-only Review Package' : fileSuffix === '-nonchar' ? 'Phase 4A-2.1 Non-character B1 Review Package' : fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : fileSuffix === '-v2' ? 'Phase 4A-2.2 Non-character Positive-only Recovery Review Package' : fileSuffix === '-b2' ? 'Phase 4A-2.3 Controlled Production Expansion B2 Review Package' : fileSuffix === '-b3' ? 'Phase 4A-3 Item Production Batch B3 Review Package' : fileSuffix === '-rain' ? 'Phase 4A-2.3 Rain Provider Recovery Review Package' : undefined,
   } : {};
   const result = await exportRoundAReview(configModule.createArtConfig(), options);
   console.log(`EXPORTED ${result.candidates.length} pending candidates to ${result.outputDir}`);

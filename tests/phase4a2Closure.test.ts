@@ -24,8 +24,8 @@ const B1_TASKS = [
 
 afterEach(() => setAssetManifest(null));
 
-describe('Phase 4A-2.3 formalization closure', () => {
-  it('publishes exactly nine AI slots after Hospital and Medkit formalization', async () => {
+describe('Phase 4A-3 formalization closure', () => {
+  it('publishes exactly fifteen AI slots after B2 formalization', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
     expect(manifest.characters.scout?.portrait).toBe('/assets/characters/scout/portrait.png');
     expect(manifest.characters.fighter?.portrait).toBe('/assets/characters/fighter/portrait.png');
@@ -33,16 +33,22 @@ describe('Phase 4A-2.3 formalization closure', () => {
     expect(manifest.characters.medic?.portrait).toBe('/assets/characters/medic/portrait.png');
     expect(manifest.zones.school?.background).toBe('/assets/zones/school/background.png');
     expect(manifest.zones.hospital?.background).toBe('/assets/zones/hospital/background.png');
+    expect(manifest.zones.residential?.background).toBe('/assets/zones/residential/background.png');
+    expect(manifest.zones.factory?.background).toBe('/assets/zones/factory/background.png');
+    expect(manifest.zones.forest?.background).toBe('/assets/zones/forest/background.png');
+    expect(manifest.zones.lab?.background).toBe('/assets/zones/lab/background.png');
     expect(manifest.items.bandage).toBe('/assets/items/bandage/icon.png');
     expect(manifest.items.medkit).toBe('/assets/items/medkit/icon.png');
+    expect(manifest.items.water).toBe('/assets/items/water/icon.png');
+    expect(manifest.items.energy_drink).toBe('/assets/items/energy_drink/icon.png');
     expect(manifest.worldEvents.blackout).toBe('/assets/world-events/blackout/illustration.png');
     expect(Object.values(manifest.characters).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(4);
-    expect(Object.values(manifest.zones).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(2);
-    expect(Object.values(manifest.items).filter(Boolean)).toHaveLength(2);
+    expect(Object.values(manifest.zones).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(6);
+    expect(Object.values(manifest.items).filter(Boolean)).toHaveLength(4);
     expect(Object.values(manifest.worldEvents).filter(Boolean)).toHaveLength(1);
   });
 
-  it('keeps provenance limited to the nine approved formal AI tasks', async () => {
+  it('keeps provenance limited to the fifteen approved formal AI tasks', async () => {
     const provenance = JSON.parse(await fs.readFile(path.join(process.cwd(), 'art/approved-assets.json'), 'utf8')) as { assets: Record<string, { candidateHash: string }> };
     expect(Object.keys(provenance.assets).sort()).toEqual([
       'character/engineer/portrait',
@@ -50,9 +56,15 @@ describe('Phase 4A-2.3 formalization closure', () => {
       'character/medic/portrait',
       'character/scout/portrait',
       'item/bandage/icon',
+      'item/energy_drink/icon',
       'item/medkit/icon',
+      'item/water/icon',
       'world_event/blackout/illustration',
+      'zone/factory/background',
+      'zone/forest/background',
       'zone/hospital/background',
+      'zone/lab/background',
+      'zone/residential/background',
       'zone/school/background',
     ]);
     expect(provenance.assets['character/scout/portrait']?.candidateHash).toBe('2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd');
@@ -62,8 +74,14 @@ describe('Phase 4A-2.3 formalization closure', () => {
     expect(provenance.assets['zone/school/background']?.candidateHash).toBe('c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7');
     expect(provenance.assets['item/bandage/icon']?.candidateHash).toBe('3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb');
     expect(provenance.assets['item/medkit/icon']?.candidateHash).toBe('56c73dde328a31f004dc449e0d1e1ac4af0d1f0b616de6906eca99757b5f829d');
+    expect(provenance.assets['item/water/icon']?.candidateHash).toBe('ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38');
+    expect(provenance.assets['item/energy_drink/icon']?.candidateHash).toBe('795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b');
     expect(provenance.assets['world_event/blackout/illustration']?.candidateHash).toBe('d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843');
     expect(provenance.assets['zone/hospital/background']?.candidateHash).toBe('1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5');
+    expect(provenance.assets['zone/residential/background']?.candidateHash).toBe('9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84');
+    expect(provenance.assets['zone/factory/background']?.candidateHash).toBe('94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4');
+    expect(provenance.assets['zone/forest/background']?.candidateHash).toBe('2126353261005efb99059bd7ab230408ab9aa1b3214732f6b20ebd3715951430');
+    expect(provenance.assets['zone/lab/background']?.candidateHash).toBe('16eb9bc6cff58880933a81eda9a837678201c672e509656f051d67551f97476e');
   });
 
   it('selects all four published character visuals officially', async () => {
@@ -75,8 +93,14 @@ describe('Phase 4A-2.3 formalization closure', () => {
     expect(getCharacterVisual('medic').source).toBe('official');
     expect(getZoneVisual('school').source).toBe('official');
     expect(getZoneVisual('hospital').source).toBe('official');
+    expect(getZoneVisual('residential').source).toBe('official');
+    expect(getZoneVisual('factory').source).toBe('official');
+    expect(getZoneVisual('forest').source).toBe('official');
+    expect(getZoneVisual('lab').source).toBe('official');
     expect(getItemVisual('bandage').source).toBe('official');
     expect(getItemVisual('medkit').source).toBe('official');
+    expect(getItemVisual('water').source).toBe('official');
+    expect(getItemVisual('energy_drink').source).toBe('official');
     expect(getWorldEventVisual('blackout').source).toBe('official');
     expect(getWorldEventVisual('blackout').image).toBe('/assets/world-events/blackout/illustration.png');
   });

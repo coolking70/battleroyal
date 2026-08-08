@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1326357,
+  "tasks": [
+    {
+      "taskId": "item/wood/icon",
+      "hash": "88c4f10fdf7fb7267746ff391c3e5598df8bf5c08e4a4703fb1a8daeca1d0b56",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

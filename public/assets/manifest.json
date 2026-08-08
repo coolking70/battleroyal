@@ -34,29 +34,31 @@
       "restricted": null
     },
     "residential": {
-      "background": null,
+      "background": "/assets/zones/residential/background.png",
       "warning": null,
       "restricted": null
     },
     "factory": {
-      "background": null,
+      "background": "/assets/zones/factory/background.png",
       "warning": null,
       "restricted": null
     },
     "forest": {
-      "background": null,
+      "background": "/assets/zones/forest/background.png",
       "warning": null,
       "restricted": null
     },
     "lab": {
-      "background": null,
+      "background": "/assets/zones/lab/background.png",
       "warning": null,
       "restricted": null
     }
   },
   "items": {
     "bandage": "/assets/items/bandage/icon.png",
-    "medkit": "/assets/items/medkit/icon.png"
+    "medkit": "/assets/items/medkit/icon.png",
+    "energy_drink": "/assets/items/energy_drink/icon.png",
+    "water": "/assets/items/water/icon.png"
   },
   "worldEvents": {
     "blackout": "/assets/world-events/blackout/illustration.png"

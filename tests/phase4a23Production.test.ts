@@ -171,14 +171,14 @@ describe('Phase 4A-2.3 controlled production expansion contracts', () => {
     expect(auditItemProviderPrompt(task, `A bottle near a ${token}.`).forbiddenTokens).toContain(token);
   });
 
-  it('keeps all B2 Manifest slots unpublished before review', async () => {
+  it('keeps all six B2 Manifest slots official after Track A formalization', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8'));
-    expect(manifest.zones.residential.background).toBeNull();
-    expect(manifest.zones.factory.background).toBeNull();
-    expect(manifest.zones.forest.background).toBeNull();
-    expect(manifest.zones.lab.background).toBeNull();
-    expect(manifest.items.water).toBeUndefined();
-    expect(manifest.items.energy_drink).toBeUndefined();
+    expect(manifest.zones.residential.background).toBe('/assets/zones/residential/background.png');
+    expect(manifest.zones.factory.background).toBe('/assets/zones/factory/background.png');
+    expect(manifest.zones.forest.background).toBe('/assets/zones/forest/background.png');
+    expect(manifest.zones.lab.background).toBe('/assets/zones/lab/background.png');
+    expect(manifest.items.water).toBe('/assets/items/water/icon.png');
+    expect(manifest.items.energy_drink).toBe('/assets/items/energy_drink/icon.png');
   });
 
   it('keeps Rain absent after the prior provider rejection', async () => {

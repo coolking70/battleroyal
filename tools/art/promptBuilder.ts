@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ArtTask, BuiltPrompt } from './types';
 import { ratioForDimensions } from './providers/agnes';
-import { genericPromptAvoid, promptPolicyFor } from './promptPolicies';
+import { genericPromptAvoid, itemProductionPromptPolicyFor, promptPolicyFor } from './promptPolicies';
 
 const STYLE_FILE_BY_PROFILE: Record<string, string> = {
   character: 'character-style.md',
@@ -35,12 +35,17 @@ function providerDesignSheet(value: string): string {
 export async function buildPrompt(rootDir: string, task: ArtTask, model: string): Promise<BuiltPrompt> {
   const renderStyle = await readText(rootDir, 'art/style/render-style.md');
   const category = categoryStyleName(task);
+  const itemProductionPolicy = task.promptStrategy === 'item-positive-only' && task.itemProductionCategory
+    ? itemProductionPromptPolicyFor(task)
+    : null;
   const categoryStyle = task.promptStrategy === 'environment-positive-only'
     ? task.category === 'zone'
       ? 'Environmental location illustration with clear architecture, recognizable props, restrained abandonment, open sightlines and a calm lower-center area reserved for later overlay.'
       : 'Environmental event illustration with one clear weather phenomenon as the visual subject, strong mood, readable composition and original visual design.'
-    : task.promptStrategy === 'item-positive-only'
-      ? 'Isolated inventory-object illustration with one complete object centered, crisp contour, high recognition at small size, plain neutral studio backdrop, controlled shadow and original visual design.'
+    : itemProductionPolicy
+      ? itemProductionPolicy.presentation
+      : task.promptStrategy === 'item-positive-only'
+        ? 'Isolated inventory-object illustration with one complete object centered, crisp contour, high recognition at small size, plain neutral studio backdrop, controlled shadow and original visual design.'
     : await readText(rootDir, `art/style/${STYLE_FILE_BY_PROFILE[category]!}`);
   const positiveOnly = task.promptStrategy !== undefined && task.promptStrategy !== 'standard';
   const genericAvoid = positiveOnly ? '' : await readText(rootDir, 'art/style/negative-prompt.txt');
@@ -135,6 +140,7 @@ export function promptHashInput(built: BuiltPrompt): Record<string, unknown> {
     ...(built.task.promptStrategy && built.task.promptStrategy !== 'standard' ? {
       promptStrategy: built.task.promptStrategy,
       positiveTraits: built.task.positiveTraits ?? [],
+      ...(built.task.itemProductionCategory ? { itemProductionCategory: built.task.itemProductionCategory } : {}),
       ...(built.task.promptStrategy === 'character-positive-only' || built.task.promptStrategy === 'item-positive-only-unmarked' ? {} : { positiveComposition: built.task.positiveComposition ?? [] }),
     } : {}),
   };

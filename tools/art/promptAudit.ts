@@ -85,6 +85,35 @@ export const FORBIDDEN_ITEM_CATEGORY_TOKENS = [
   'text',
 ] as const;
 
+export const FORBIDDEN_ITEM_OBJECT_TOKENS = [
+  'person',
+  'people',
+  'human',
+  'character',
+  'survivor',
+  'soldier',
+  'warrior',
+  'wearer',
+  'worn by',
+  'mannequin',
+  'hand',
+  'battle',
+  'combat',
+  'fight',
+  'scene',
+  'environment',
+  'scenery',
+  'HUD',
+  'interface',
+  'window',
+  'slot',
+  'arrows',
+  'buttons',
+  'game UI',
+  'game interface',
+  'inventory frame',
+] as const;
+
 function tokenPattern(token: string): RegExp {
   return new RegExp(`\\b${token.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'i');
 }
@@ -147,7 +176,9 @@ export function auditRainProviderPrompt(task: ArtTask, providerPrompt: string): 
 }
 
 export function auditItemProviderPrompt(task: ArtTask, providerPrompt: string): PromptAuditResult {
-  return auditTokenSet(task, providerPrompt, task.promptStrategy === 'item-positive-only'
-    ? FORBIDDEN_ITEM_CATEGORY_TOKENS
-    : FORBIDDEN_ITEM_MARKING_TOKENS);
+  return auditTokenSet(task, providerPrompt, task.itemProductionCategory
+    ? FORBIDDEN_ITEM_OBJECT_TOKENS
+    : task.promptStrategy === 'item-positive-only'
+      ? FORBIDDEN_ITEM_CATEGORY_TOKENS
+      : FORBIDDEN_ITEM_MARKING_TOKENS);
 }
