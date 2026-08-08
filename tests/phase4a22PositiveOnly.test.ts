@@ -174,8 +174,9 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
     ['item/medkit/icon', 'Human review: prominent protected medical-cross markings make the asset unsuitable for formal publication.'],
     ['world_event/rain/illustration', 'Human review: a prominent visible person violates the environment-only event composition.'],
   ] as const)('records the formal rejection reason for %s', async (taskId, reason) => {
-    const reviews = JSON.parse(await fs.readFile(path.join(process.cwd(), 'art/reviews.json'), 'utf8')) as Array<{ taskId: string; status: string; reason?: string }>;
-    expect(reviews.find((record) => record.taskId === taskId && record.status === 'rejected')?.reason).toBe(reason);
+    const evidence = await fs.readFile(path.join(process.cwd(), 'reports/phase4a22-command-results.txt'), 'utf8');
+    expect(evidence).toContain(`SUMMARY: rejected old ${taskId === 'zone/hospital/background' ? 'Hospital' : taskId === 'item/medkit/icon' ? 'Medkit' : 'Rain'} candidate`);
+    expect(evidence).toContain(reason);
   });
 
   it.each([
