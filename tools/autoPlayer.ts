@@ -31,7 +31,7 @@ import {
   type LegalActionCategory,
 } from '../src/core/legalActions';
 import { getEquippedArmor, getEquippedWeapon } from '../src/core/inventory';
-import { getCraftGoalRecommendations } from '../src/core/craftGuide';
+import { getCraftGoalRecommendations, getZoneDistance } from '../src/core/craftGuide';
 import { tryGetItem } from '../src/data/items';
 import type { Command, Combatant, GameEvent, GameState, Personality } from '../src/core/types';
 import { craftPathSummary, getCraftGoalSuggestion } from '../src/ui/craftPathPresentation';
@@ -475,10 +475,46 @@ function equipmentScore(itemId: string): number {
  * 公开建议与路线来自现有 presentation/core 查询；所有实际动作仍走
  * SET_CRAFT_GOAL / CRAFT / EQUIP 正式命令。
  */
+interface RepresentativeRouteContext {
+  targetZoneId: string | null;
+  searchNoYield: number;
+  lastSearch: { zoneId: string; time: number } | null;
+}
+
+function chooseEquipmentUpgradeAction(
+  player: Combatant,
+  legal: LegalAction[],
+): LegalAction | null {
+  const currentWeapon = getEquippedWeapon(player);
+  const currentArmor = getEquippedArmor(player);
+  const currentWeaponScore = currentWeapon ? equipmentScore(currentWeapon.itemId) : 0;
+  const currentArmorScore = currentArmor ? equipmentScore(currentArmor.itemId) : 0;
+  const equipment = legal
+    .map((action) => {
+      const command = action.command;
+      if (command.type !== 'EQUIP') return null;
+      const stack = player.inventory.find((item) => item.uid === command.uid);
+      if (!stack) return null;
+      const item = tryGetItem(stack.itemId);
+      if (!item || (item.category !== 'weapon' && item.category !== 'armor')) return null;
+      const current = item.category === 'weapon' ? currentWeaponScore : currentArmorScore;
+      return { action, itemId: stack.itemId, score: equipmentScore(stack.itemId), current };
+    })
+    .filter((item): item is { action: LegalAction; itemId: string; score: number; current: number } => Boolean(item))
+    .sort((a, b) => b.score - a.score || a.itemId.localeCompare(b.itemId));
+  return equipment.find((item) => item.score > item.current)?.action ?? null;
+}
+
+/**
+ * 诊断用的玩家闭环偏好：只从合法命令中选择，不改变引擎规则。
+ * 路线目标在一局内保持稳定，到达推荐区后先搜索；连续两次没有玩家可见的
+ * ITEM_FOUND 才轮换目标，避免因距离评分变化在相邻区域间来回摆动。
+ */
 function chooseRepresentativeBuildAction(
   state: GameState,
   player: Combatant,
   legal: LegalAction[],
+  route: RepresentativeRouteContext,
 ): LegalAction | null {
   if (!state.craftGoalRecipeId) {
     const suggestion = getCraftGoalSuggestion(state, player);
@@ -487,7 +523,11 @@ function chooseRepresentativeBuildAction(
         action.command.type === 'SET_CRAFT_GOAL' &&
         action.command.recipeId === suggestion?.recipeId,
     );
-    if (adopt) return adopt;
+    if (adopt) {
+      route.targetZoneId = null;
+      route.searchNoYield = 0;
+      return adopt;
+    }
   } else {
     const path = craftPathSummary(state.craftGoalRecipeId, state, player);
     const nextRecipeId = path?.nextStep?.recipeId;
@@ -497,38 +537,52 @@ function chooseRepresentativeBuildAction(
       );
       if (craft) return craft;
     }
-
-    // 目标路线有明确的公开推荐区时，优先走当前可达的推荐移动。
-    const recommendations = getCraftGoalRecommendations(state, player);
-    const recommendedZoneIds = new Set(recommendations.slice(0, 2).map((item) => item.zoneId));
-    const move = legal.find(
-      (action) => action.command.type === 'MOVE' && recommendedZoneIds.has(action.command.zoneId),
-    );
-    if (move) return move;
   }
 
-  // 合成 / 拾取后的装备交接：只装备比当前槽位更强的玩家自己的物品。
-  const currentWeaponScore = getEquippedWeapon(player)?.itemId
-    ? equipmentScore(getEquippedWeapon(player)!.itemId)
-    : 0;
-  const currentArmorScore = getEquippedArmor(player)?.itemId
-    ? equipmentScore(getEquippedArmor(player)!.itemId)
-    : 0;
-  const equipment = legal
+  // 拾取/合成后的装备交接优先于下一次移动；仍只装备玩家自己的合法候选。
+  const equipmentUpgrade = chooseEquipmentUpgradeAction(player, legal);
+  if (equipmentUpgrade) return equipmentUpgrade;
+
+  if (!state.craftGoalRecipeId) return null;
+  const recommendations = getCraftGoalRecommendations(state, player);
+  if (recommendations.length === 0) {
+    route.targetZoneId = null;
+    route.searchNoYield = 0;
+    return null;
+  }
+
+  // 保持路线目标稳定，避免“按当前位置重新评分”导致两个区域之间来回摆动。
+  const targetStillValid = recommendations.some(
+    (recommendation) => recommendation.zoneId === route.targetZoneId,
+  );
+  if (!targetStillValid || route.searchNoYield >= 2) {
+    const nextTarget = recommendations.find(
+      (recommendation) => recommendation.zoneId !== player.currentZoneId,
+    ) ?? recommendations[0];
+    route.targetZoneId = nextTarget?.zoneId ?? null;
+    route.searchNoYield = 0;
+  }
+
+  const target = recommendations.find(
+    (recommendation) => recommendation.zoneId === route.targetZoneId,
+  );
+  if (!target) return null;
+  if (target.zoneId === player.currentZoneId) {
+    return legal.find((action) => action.command.type === 'SEARCH') ?? null;
+  }
+
+  const currentDistance = getZoneDistance(player.currentZoneId, target.zoneId);
+  const moves = legal
     .map((action) => {
-      const equipCommand = action.command;
-      if (equipCommand.type !== 'EQUIP') return null;
-      const stack = player.inventory.find((item) => item.uid === equipCommand.uid);
-      if (!stack) return null;
-      const item = tryGetItem(stack.itemId);
-      if (!item || (item.category !== 'weapon' && item.category !== 'armor')) return null;
-      const current = item.category === 'weapon' ? currentWeaponScore : currentArmorScore;
-      return { action, itemId: stack.itemId, score: equipmentScore(stack.itemId), current };
+      if (action.command.type !== 'MOVE') return null;
+      return {
+        action,
+        distance: getZoneDistance(action.command.zoneId, target.zoneId),
+      };
     })
-    .filter((item): item is { action: LegalAction; itemId: string; score: number; current: number } => Boolean(item))
-    .sort((a, b) => b.score - a.score || a.itemId.localeCompare(b.itemId));
-  const upgrade = equipment.find((item) => item.score > item.current);
-  return upgrade?.action ?? null;
+    .filter((move): move is { action: LegalAction; distance: number } => Boolean(move))
+    .sort((a, b) => a.distance - b.distance);
+  return moves.find((move) => move.distance < currentDistance)?.action ?? moves[0]?.action ?? null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -581,6 +635,11 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
   let zeroStaminaGuardCommands = 0;
   let zeroStaminaFleeCommands = 0;
   let playerDeathSnapshot: PlayerDeathSnapshot | null = null;
+  const representativeRoute: RepresentativeRouteContext = {
+    targetZoneId: null,
+    searchNoYield: 0,
+    lastSearch: null,
+  };
   // Phase 3A-1：事件日志会被 pruneEvents 裁剪（miss 是 minor 会被优先丢弃），
   // 统计必须基于**全量事件流**，否则命中率会被系统性高估。
   // 注意：pruneEvents 会从数组头部裁剪旧事件，按长度切片会被打乱，
@@ -616,7 +675,7 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
       chosen = choosePickupResolution(s, player, legal, policy);
     } else {
       const preferred = options.representativeBuildLoop
-        ? chooseRepresentativeBuildAction(s, player, legal)
+        ? chooseRepresentativeBuildAction(s, player, legal, representativeRoute)
         : null;
       const decision = preferred
         ? { command: preferred.command, reason: '代表玩家闭环：目标 / 合成 / 装备' }
@@ -640,6 +699,9 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
     // ---- 只走正式命令通道 ----
     const playerBeforeAction = getPlayer(s);
     const playerBeforeActionStamina = playerBeforeAction.stamina;
+    const searchBeforeAction = chosen.command.type === 'SEARCH'
+      ? { zoneId: playerBeforeAction.currentZoneId, time: s.time }
+      : null;
     let res = executeCommand(s, chosen.command);
 
     if (!res.ok) {
@@ -686,6 +748,23 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
     if (chosen.category === 'resolution') resolutionSteps += 1;
 
     s = res.state;
+    if (options.representativeBuildLoop && representativeRoute.lastSearch) {
+      const previousSearch = representativeRoute.lastSearch;
+      const yielded = s.events.some(
+        (event) =>
+          event.type === 'ITEM_FOUND' &&
+          event.actorId === player.id &&
+          event.zoneId === previousSearch.zoneId &&
+          event.time === previousSearch.time,
+      );
+      representativeRoute.searchNoYield = yielded
+        ? 0
+        : representativeRoute.searchNoYield + 1;
+      representativeRoute.lastSearch = null;
+    }
+    if (options.representativeBuildLoop && searchBeforeAction) {
+      representativeRoute.lastSearch = searchBeforeAction;
+    }
     // 增量收集全量事件（不受 pruneEvents 影响）
     captureNewEvents();
     if (!playerDeathSnapshot && !getPlayer(s).alive) {

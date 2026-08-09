@@ -330,3 +330,25 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   production `npm audit --omit=dev`, and browser evidence all pass with zero
   console/page errors. Human touch/screen-reader/long-session validation remains
   HUMAN-PLAYTEST-NEEDED.
+
+## Phase 4C-6 progress (2026-08-10)
+
+- Audited the Phase 4C-5 representative route and found a real guidance defect:
+  core recommendations only inspected direct recipe ingredients, so a target
+  such as 野外长矛 recommended the unsearchable intermediate 加固握把 instead of
+  its public raw materials.
+- Fixed the read-only route guide in `src/core/craftGuide.ts` to expand visible
+  recipe dependencies to raw materials while consuming the player's own held
+  intermediates first. It still never reads `zone.loot`; hidden recipe seams are
+  not recursively exposed.
+- Stabilized the optional representative diagnostic policy: it retains a route
+  target, searches after arrival, and rotates only after two no-yield searches.
+  This removes residential/factory oscillation without changing gameplay rules.
+- Same-seed paired observation (`PHASE4C5-REP`) improved goal completion from
+  13/400 to 140/400, first-weapon acquisition from 59/400 to 315/400, and player
+  equipment-event games from 100/400 to 341/400; both runs were 400/400 healthy.
+- Added nested-route unit and information-boundary regressions plus clean
+  production-preview evidence for 1280×720 and 390×844. Screenshots visibly
+  show raw-material gaps, public source zones and the current subgoal; preview
+  console/page errors are 0. Remaining: final gates, Phase 4C-6 report,
+  commit/push and CI confirmation.

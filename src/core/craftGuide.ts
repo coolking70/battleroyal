@@ -21,15 +21,14 @@
 
 import { getZoneDef } from '../data/zones';
 import { getItem, tryGetItem } from '../data/items';
-import { tryGetRecipe } from '../data/recipes';
-import { countItem } from './inventory';
+import { RECIPES, recipeVisibility, tryGetRecipe } from '../data/recipes';
 import { SUPPLY_STATUS_LABEL, supplyStatusOf } from './zoneLoot';
 import type { Combatant, GameState } from './types';
 
 export interface CraftGoalRecommendation {
   /** 推荐前往搜索的区域 id */
   zoneId: string;
-  /** 该区域静态池里能覆盖的、当前仍缺失的材料 */
+  /** 该区域静态池里能覆盖的、当前仍缺失的原始材料 */
   itemIds: string[];
   /** 推荐权重：覆盖缺失材料 ×10 + 稀有覆盖 ×3 + 公开资源 − BFS 距离 ×2 */
   score: number;
@@ -39,6 +38,65 @@ export interface CraftGoalRecommendation {
   supplyLabel: string;
   /** 一句话理由（UI 展示用） */
   reason: string;
+}
+
+const OUTPUT_RECIPE_MAP = new Map(
+  RECIPES.map((recipe) => [recipe.outputItemId, recipe]),
+);
+
+/**
+ * 展开制作目标的公开依赖树，返回当前仍缺失的原始材料。
+ *
+ * 这是路线建议的只读计算，不参与合成结算，也不读取 zone.loot。
+ * 已持有的中间部件会优先被消耗；若中间部件尚未持有，则继续展开到
+ * 静态材料。未来隐藏配方不会被反向展开，避免借路线推荐泄露隐藏依赖。
+ */
+function missingRawMaterialsForGoal(
+  recipeId: string,
+  player: Combatant,
+): Map<string, number> {
+  const recipe = tryGetRecipe(recipeId);
+  if (!recipe || recipeVisibility(recipe.id) !== 'visible') return new Map();
+
+  const available = new Map<string, number>();
+  for (const stack of player.inventory) {
+    available.set(stack.itemId, (available.get(stack.itemId) ?? 0) + stack.count);
+  }
+  const missing = new Map<string, number>();
+
+  const visit = (
+    itemId: string,
+    requested: number,
+    visiting: Set<string>,
+  ): void => {
+    const held = Math.min(requested, available.get(itemId) ?? 0);
+    if (held > 0) {
+      available.set(itemId, (available.get(itemId) ?? 0) - held);
+    }
+    const remaining = requested - held;
+    if (remaining <= 0) return;
+
+    const child = OUTPUT_RECIPE_MAP.get(itemId);
+    if (
+      !child ||
+      recipeVisibility(child.id) !== 'visible' ||
+      visiting.has(child.id)
+    ) {
+      missing.set(itemId, (missing.get(itemId) ?? 0) + remaining);
+      return;
+    }
+
+    const batches = Math.ceil(remaining / child.outputCount);
+    const nextVisiting = new Set(visiting).add(child.id);
+    for (const ingredient of child.ingredients) {
+      visit(ingredient.itemId, ingredient.count * batches, nextVisiting);
+    }
+  };
+
+  for (const ingredient of recipe.ingredients) {
+    visit(ingredient.itemId, ingredient.count, new Set([recipe.id]));
+  }
+  return missing;
 }
 
 /**
@@ -94,12 +152,11 @@ export function getCraftGoalRecommendations(
   const recipeId = state.craftGoalRecipeId;
   if (!recipeId) return [];
   const recipe = tryGetRecipe(recipeId);
-  if (!recipe) return [];
+  if (!recipe || recipeVisibility(recipe.id) !== 'visible') return [];
 
-  // 仍缺失的材料（按「已有数量 < 所需数量」判断）
-  const needed = recipe.ingredients.filter(
-    (ing) => countItem(player, ing.itemId) < ing.count,
-  );
+  // 展开多步配方后仍缺失的原始材料；不读取当前区域库存。
+  const needed = [...missingRawMaterialsForGoal(recipe.id, player).entries()]
+    .map(([itemId, count]) => ({ itemId, count }));
   if (needed.length === 0) return [];
 
   const neededIds = new Set(needed.map((i) => i.itemId));
@@ -152,20 +209,18 @@ export function describeCraftGoal(state: GameState, player: Combatant): string {
   const recipeId = state.craftGoalRecipeId;
   if (!recipeId) return '尚未设定制作目标。';
   const recipe = tryGetRecipe(recipeId);
-  if (!recipe) return '制作目标指向未知配方。';
+  if (!recipe || recipeVisibility(recipe.id) !== 'visible') return '制作目标指向未知配方。';
   const name = getItem(recipe.outputItemId).name;
 
-  const needed = recipe.ingredients.filter(
-    (ing) => countItem(player, ing.itemId) < ing.count,
-  );
+  const needed = [...missingRawMaterialsForGoal(recipe.id, player).entries()]
+    .map(([itemId, count]) => ({ itemId, count }));
   if (needed.length === 0) {
     return `制作目标：${name}（材料已齐，可直接合成）。`;
   }
 
   const missing = needed
     .map(
-      (ing) =>
-        `${tryGetItem(ing.itemId)?.name ?? ing.itemId} ×${ing.count - countItem(player, ing.itemId)}`,
+      (ing) => `${tryGetItem(ing.itemId)?.name ?? ing.itemId} ×${ing.count}`,
     )
     .join('、');
 
