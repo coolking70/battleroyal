@@ -97,7 +97,14 @@ export function GameScreen({
   );
 
   return (
-    <div className="game">
+    <div
+      className={cx(
+        'game',
+        inActiveEncounter && 'game-encounter-active',
+        encounter?.resolved && 'game-encounter-resolved',
+      )}
+      data-encounter-mode={inActiveEncounter ? 'active' : encounter?.resolved ? 'resolved' : 'none'}
+    >
       <StatusBar
         state={state}
         player={player}
@@ -144,7 +151,10 @@ export function GameScreen({
 
         {/* ---------- 中栏 ---------- */}
         <div className="col">
-          <section className="panel stage scroll">
+          <section
+            className="panel stage scroll"
+            data-stage-focus={inActiveEncounter ? 'encounter' : 'exploration'}
+          >
             <div className={`zone-hero zone-hero-${zoneStatus}`} data-zone-status={zoneStatus}>
               <VisualImage
                 visual={getZoneVisual(player.currentZoneId)}

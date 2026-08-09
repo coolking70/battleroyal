@@ -76,6 +76,13 @@ export function StatusBar({
         </span>
       </div>
 
+      {state.encounter && (
+        <div className={`topbar-encounter-cue${state.encounter.resolved ? ' is-resolved' : ''}`}>
+          <span className="combat-cue-icon" aria-hidden="true">{state.encounter.resolved ? '✓' : '⚔'}</span>
+          <span>{state.encounter.resolved ? '遭遇已结束' : '遭遇战进行中'}</span>
+        </div>
+      )}
+
       <span className="spacer" />
 
       <div className="player-chip">

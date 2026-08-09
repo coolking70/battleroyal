@@ -141,3 +141,13 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Added four focused UI tests. Full suite is now 58 files / 1240 tests PASS. Typecheck, build, save/dependency/art/provenance/security audits, 500-game `PHASE4B1` regression and production npm audit all PASS.
 - Browser evidence is in `output/phase4b1-browser/`: desktop SAFE/WARNING/RESTRICTED/encounter states and 390×844 SAFE plus encounter-action reachability. Final mobile run measured `scrollWidth=390`, stage client height 960px versus 195px baseline, and escape-button reachability after board scroll with no browser errors.
 - Added `PHASE4B1_REPORT.md` with evidence grading, before/after measurements, gate results and scope declaration. No 4B-2 through 4B-6 work was performed.
+
+## Phase 4B-2 progress (2026-08-09)
+
+- User-authorized scope: Encounter & Combat Feedback only, based on `PHASE4B0_COMBAT_UX_SPEC.md`, UX-003 and UX-004.
+- Frozen: `src/core/**`, `src/data/**`, `public/assets/**/*.png`, `art/approved-assets.json`, combat formulas, RNG, save schema and 4B-1 shell semantics.
+- Added presentation-only combat metadata plus a balanced Player / feedback-and-actions / Enemy encounter composition. Existing `VisualImage` fallback behavior and the existing Portrait / Combat / Injured resolver remain the only visual-state sources.
+- Added persistent icon + text cues for Combat/Injured/Portrait, Guard, EXPOSED and skill readiness; enemy health remains descriptor/bar-only with no exact HP digits. Added active/resolved entry/exit markers and immediate last-result feedback.
+- Added 6 focused UI regression tests, including resolved Portrait state and enemy exact-HP boundary, plus a clean production-preview Playwright evidence test. The final browser run covers 1280×720, 1024×720, 390×844 healthy/injured/Guard/EXPOSED/resolved states with zero console/page errors.
+- Final verification: 59 test files / 1246 tests PASS; typecheck/build, save/dependency/art/provenance/security gates, 500-game `PHASE4B2` regression and `npm audit --omit=dev` all PASS. Mobile encounter height is 559.7px versus ~505px baseline, with no horizontal overflow and all six combat buttons reachable. No core/data/formula/RNG/save/assets/manifest changes were made.
+- Added `PHASE4B2_REPORT.md`. No 4B-3 through 4B-6 implementation occurred.
