@@ -2060,8 +2060,15 @@ input {
   flex: 0.75 1 0;
 }
 
-.planning-panel > .inv-list,
-.planning-panel > .recipe-list {
+.planning-tabpanel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.planning-tabpanel > .inv-list,
+.planning-tabpanel > .recipe-list {
   flex: 1;
 }
 
@@ -2085,8 +2092,8 @@ input {
     min-height: 280px;
   }
 
-  .col-right.planning-rail .planning-panel > .inv-list,
-  .col-right.planning-rail .planning-panel > .recipe-list,
+  .col-right.planning-rail .planning-tabpanel > .inv-list,
+  .col-right.planning-rail .planning-tabpanel > .recipe-list,
   .col-right.planning-rail .log-panel .log-list {
     max-height: 235px;
   }
@@ -2473,8 +2480,8 @@ input {
     min-height: 190px;
   }
 
-  .planning-drawer-panel .planning-panel > .inv-list,
-  .planning-drawer-panel .planning-panel > .recipe-list,
+  .planning-drawer-panel .planning-tabpanel > .inv-list,
+  .planning-drawer-panel .planning-tabpanel > .recipe-list,
   .planning-drawer-panel .log-panel .log-list {
     max-height: 290px;
     overflow-y: auto;

@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
+import { SAVE_KEY } from '../../src/data/gameConfig';
+import { pendingPickupFixture } from './pendingPickupFixture';
 
 const baseUrl = process.env.PHASE4B3_BASE_URL ?? 'http://127.0.0.1:4173';
 const evidenceDir = path.resolve('output/phase4b3-browser');
@@ -16,6 +18,20 @@ async function startGame(page: import('@playwright/test').Page, seed: string, ch
   await page.locator('#seed').fill(seed);
   await page.locator('.char-card').filter({ hasText: character === 'medic' ? '医学生' : '侦察员' }).click();
   await page.getByRole('button', { name: '开始新对局' }).click();
+  await expect(page.locator('.game')).toHaveCount(1);
+}
+
+async function loadFixture(
+  page: import('@playwright/test').Page,
+  fixture: Record<string, unknown>,
+): Promise<void> {
+  await page.goto(`${baseUrl}/?fixture=phase4b3`, { waitUntil: 'networkidle' });
+  await page.evaluate(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), {
+    key: SAVE_KEY,
+    value: fixture,
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: '继续上次对局' }).click();
   await expect(page.locator('.game')).toHaveCount(1);
 }
 
@@ -149,7 +165,7 @@ test('Phase 4B-3 production search and inventory evidence', async ({ page }) => 
   expect((empty.result as { kind?: string } | null)?.kind).toBe('nothing');
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await startGame(page, 'PENDING-0');
+  await loadFixture(page, pendingPickupFixture('PHASE4B3-PENDING'));
   await findPendingPickup(page);
   await focusNodeInBoard(page, '.pending');
   const pending = await snapshot(page, '03-mobile-pending-pickup');

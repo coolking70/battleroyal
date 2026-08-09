@@ -1,6 +1,15 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { cx } from '../../utils/format';
 
+const FOCUSABLE_SELECTOR = [
+  'button:not([disabled])',
+  '[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
 interface PlanningDrawerProps {
   open: boolean;
   onOpen: () => void;
@@ -15,6 +24,7 @@ interface PlanningDrawerProps {
 export function PlanningDrawer({ open, onOpen, onClose, children }: PlanningDrawerProps): JSX.Element {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const wasOpenRef = useRef(false);
 
   useEffect(() => {
@@ -36,6 +46,26 @@ export function PlanningDrawer({ open, onOpen, onClose, children }: PlanningDraw
       if (event.key === 'Escape') {
         event.preventDefault();
         onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusable = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || !panel.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (active === last || !panel.contains(active))) {
+        event.preventDefault();
+        first.focus();
       }
     };
     window.addEventListener('keydown', onKeyDown);
@@ -66,9 +96,11 @@ export function PlanningDrawer({ open, onOpen, onClose, children }: PlanningDraw
       )}
 
       <aside
+        ref={panelRef}
         id="planning-drawer-panel"
         className="col col-right planning-rail planning-drawer-panel"
         aria-label="规划与历史"
+        aria-labelledby="planning-drawer-title"
       >
         <div className="planning-drawer-header">
           <strong id="planning-drawer-title">规划与历史</strong>

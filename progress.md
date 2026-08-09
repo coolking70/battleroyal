@@ -424,3 +424,21 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   errors, including the Phase 4C-9 remote-ground-drop information boundary and
   the Web Game smoke snapshot. Human touch, screen-reader, and long-session
   validation remain HUMAN-PLAYTEST-NEEDED.
+
+## Phase 4C-11 progress (2026-08-10)
+
+- Audited all production browser evidence and found two stale evidence defects:
+  the old `PENDING-0` live-search path could reach the result screen before a
+  pending pickup, and the responsive evidence still expected the pre-codex
+  two-tab planning UI. Neither was valid proof of the current product state.
+- Added a valid deterministic pending-pickup save fixture and updated the old
+  evidence to cover the current three-tab planning surface.
+- Closed the remaining code-verifiable drawer accessibility gap: open-drawer
+  Tab/Shift+Tab focus cycling, Escape close, trigger focus return,
+  `aria-labelledby`, and tab-to-tabpanel relationships. CSS wrappers preserve
+  the existing desktop/mobile layout.
+- Full production browser evidence is green at 14/14 with zero console/page
+  errors. The local suite is 70 files / 1295 tests; typecheck/build, save/
+  dependency/art/security audits and 500-game engine-health regression pass.
+  Human touch, screen-reader, and long-session validation remain
+  HUMAN-PLAYTEST-NEEDED.

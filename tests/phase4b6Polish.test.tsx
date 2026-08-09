@@ -64,6 +64,41 @@ describe('Phase 4B-6 polish and accessibility closure', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
+  it('keeps keyboard focus inside the open drawer and exposes tabpanel relationships', () => {
+    const state = createGame({ seed: 'PHASE4C11-DRAWER-A11Y', playerCharacterId: 'scout', playerName: '测试者' });
+    const player = getPlayer(state);
+    act(() => root.render(<GameScreen state={state} player={player} dispatch={() => undefined} onQuit={() => undefined} />));
+
+    const trigger = container.querySelector('.planning-drawer-trigger') as HTMLButtonElement;
+    act(() => trigger.click());
+
+    const drawer = container.querySelector('.planning-drawer-panel') as HTMLElement;
+    const close = container.querySelector('.planning-drawer-close') as HTMLButtonElement;
+    expect(drawer.getAttribute('aria-labelledby')).toBe('planning-drawer-title');
+
+    const activeTab = container.querySelector('[role="tab"][aria-selected="true"]') as HTMLElement;
+    expect(activeTab.getAttribute('aria-controls')).toBe('planning-tabpanel-inventory');
+    const tabpanel = container.querySelector('#planning-tabpanel-inventory') as HTMLElement;
+    expect(tabpanel.getAttribute('role')).toBe('tabpanel');
+    expect(tabpanel.getAttribute('aria-labelledby')).toBe(activeTab.id);
+
+    const focusable = Array.from(drawer.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ));
+    const last = focusable[focusable.length - 1]!;
+    act(() => last.focus());
+    const forward = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    act(() => window.dispatchEvent(forward));
+    expect(forward.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(close);
+
+    act(() => close.focus());
+    const backward = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+    act(() => window.dispatchEvent(backward));
+    expect(backward.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(last);
+  });
+
   it('renders existing character and zone assets on the result surface only', () => {
     const manifest: AssetManifest = {
       version: 1,
