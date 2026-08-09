@@ -25,9 +25,10 @@ const B1_TASKS = [
 afterEach(() => setAssetManifest(null));
 
 describe('Phase 4A-4 formalization closure', () => {
-  it('publishes exactly twenty-seven AI slots after E1 formalization', async () => {
+  it('publishes exactly twenty-eight AI slots after Scout Injured formalization', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
     expect(manifest.characters.scout?.portrait).toBe('/assets/characters/scout/portrait.png');
+    expect(manifest.characters.scout?.injured).toBe('/assets/characters/scout/injured.png');
     expect(manifest.characters.fighter?.portrait).toBe('/assets/characters/fighter/portrait.png');
     expect(manifest.characters.engineer?.portrait).toBe('/assets/characters/engineer/portrait.png');
     expect(manifest.characters.medic?.portrait).toBe('/assets/characters/medic/portrait.png');
@@ -54,18 +55,19 @@ describe('Phase 4A-4 formalization closure', () => {
     expect(manifest.worldEvents.medical_alert).toBe('/assets/world-events/medical_alert/illustration.png');
     expect(manifest.worldEvents.research_anomaly).toBe('/assets/world-events/research_anomaly/illustration.png');
     expect(manifest.worldEvents.citywide_unrest).toBe('/assets/world-events/citywide_unrest/illustration.png');
-    expect(Object.values(manifest.characters).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(4);
+    expect(Object.values(manifest.characters).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(5);
     expect(Object.values(manifest.zones).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(6);
     expect(Object.values(manifest.items).filter(Boolean)).toHaveLength(12);
     expect(Object.values(manifest.worldEvents).filter(Boolean)).toHaveLength(5);
   });
 
-  it('keeps provenance limited to the twenty-seven approved formal AI tasks', async () => {
+  it('keeps provenance limited to the twenty-eight approved formal AI tasks', async () => {
     const provenance = JSON.parse(await fs.readFile(path.join(process.cwd(), 'art/approved-assets.json'), 'utf8')) as { assets: Record<string, { candidateHash: string }> };
     expect(Object.keys(provenance.assets).sort()).toEqual([
       'character/engineer/portrait',
       'character/fighter/portrait',
       'character/medic/portrait',
+      'character/scout/injured',
       'character/scout/portrait',
       'item/bandage/icon',
       'item/battery/icon',
@@ -92,6 +94,7 @@ describe('Phase 4A-4 formalization closure', () => {
       'zone/school/background',
     ]);
     expect(provenance.assets['character/scout/portrait']?.candidateHash).toBe('2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd');
+    expect(provenance.assets['character/scout/injured']?.candidateHash).toBe('ccb0f5d7e17d097f94e60a5109b898f9fc4bbcaf4ac82b74bb296a31f29c1b51');
     expect(provenance.assets['character/fighter/portrait']?.candidateHash).toBe('33b377a42b0a9a827fed7d3c8701dbe40e70893bc517a6500090a0e1febf8218');
     expect(provenance.assets['character/engineer/portrait']?.candidateHash).toBe('12989865f752e70e7716b2881c3bfa5dbe5546a9c0ec7694705b38be30101979');
     expect(provenance.assets['character/medic/portrait']?.candidateHash).toBe('6a1d891c1597e51d3ea26cab3c63a514994a4ed3d026f3f5f5e675a47eb8ec59');

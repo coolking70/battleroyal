@@ -3,6 +3,7 @@
 The stable production policy is now frozen:
 
 - Character → `character-positive-only` — Character Base Portrait Production Proven
+- Character Injured → `descriptor-locked text-only` positive-only — Scout canary approved; remaining variants require one-shot generation and human identity review
 - Zone → `environment-positive-only` — Zone Background Production Complete
 - Item → category-aware `item-positive-only` — Item Base Icons Production Complete
 - World Event Base Illustrations → 5/6 official; E1 uses controlled per-event `event-positive-only` production
@@ -15,6 +16,10 @@ The stable production policy is now frozen:
 - Armor: protective equipment alone; no wearer or mannequin composition.
 
 All item categories share Render Style, Item Presentation, positive entity brief, positive composition and technical requirements. Negative prompts remain empty for positive-only item production. Provider payload audits reject person/wearer, scene/environment and UI semantics without banning the target category itself.
+
+## Injured character variants
+
+Injured portraits use a descriptor-locked text-only strategy. The provider receives a complete positive visual identity descriptor derived from the approved base portrait and Character Design Sheet, plus only mild state changes: slight fatigue, light dust or scuffing, a small dressing and a restrained expression change. The `negativePrompt` remains empty for character-positive-only tasks. This is not reference guided, img2img or image conditioned generation: approved portrait bytes are not sent to Agnes. Every candidate remains pending until human review; no similarity score, automatic approval/rejection or reroll is permitted.
 
 ## World event policy
 

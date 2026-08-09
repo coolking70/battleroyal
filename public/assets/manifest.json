@@ -3,7 +3,7 @@
   "characters": {
     "scout": {
       "portrait": "/assets/characters/scout/portrait.png",
-      "injured": null,
+      "injured": "/assets/characters/scout/injured.png",
       "combat": null
     },
     "fighter": {

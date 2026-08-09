@@ -11,6 +11,7 @@ import { loadTasks, selectTasks, taskForId } from './taskPlanner';
 import { auditCharacterProviderPrompt, auditEnvironmentProviderPrompt, auditEventProviderPrompt, auditItemProviderPrompt, auditRainProviderPrompt } from './promptAudit';
 import { agnesRequestFor } from './providers/agnes';
 import { runEventE1Batch } from './eventBatch';
+import { runInjuredBatch } from './injuredBatch';
 import type { ArtConfig, ArtTask } from './types';
 
 interface Args {
@@ -55,6 +56,7 @@ function printHelp(): void {
   art:prompt-audit --task character/engineer/portrait
   art:generate [--task ...|--category characters|--status missing] [--dry-run] [--force] [--concurrency 1|2] [--report-name name]
   art:event-e1 [--report-name name] (exactly four world events, sequential, no rerolls)
+  art:injured-batch [--report-name name] (Fighter, Engineer, Medic once each, sequential, no rerolls)
   art:list
   art:approve --task ... --candidate <contentHash>
   art:reject --task ... --candidate <contentHash> --reason "..."
@@ -209,6 +211,12 @@ async function main(): Promise<number> {
     case 'event-e1': {
       if (args.concurrency !== undefined && args.concurrency !== 1) throw new Error('event-e1 requires --concurrency 1');
       const result = await runEventE1Batch(config, await loadTasks(config.rootDir), { reportName: args.reportName, force: args.force });
+      console.log(JSON.stringify(result.report, null, 2));
+      return result.exitCode;
+    }
+    case 'injured-batch': {
+      if (args.concurrency !== undefined && args.concurrency !== 1) throw new Error('injured-batch requires --concurrency 1');
+      const result = await runInjuredBatch(config, await loadTasks(config.rootDir), { reportName: args.reportName, force: args.force });
       console.log(JSON.stringify(result.report, null, 2));
       return result.exitCode;
     }

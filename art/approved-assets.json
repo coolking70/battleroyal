@@ -243,6 +243,15 @@
       "provider": "agnes",
       "approvedAt": "2026-08-09T00:13:33.114Z",
       "publicPath": "/assets/world-events/research_anomaly/illustration.png"
+    },
+    "character/scout/injured": {
+      "candidateHash": "ccb0f5d7e17d097f94e60a5109b898f9fc4bbcaf4ac82b74bb296a31f29c1b51",
+      "contentHash": "ccb0f5d7e17d097f94e60a5109b898f9fc4bbcaf4ac82b74bb296a31f29c1b51",
+      "promptHash": "ccb0f5d7e17d097f94e60a5109b898f9fc4bbcaf4ac82b74bb296a31f29c1b51",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-09T00:35:14.341Z",
+      "publicPath": "/assets/characters/scout/injured.png"
     }
   }
 }

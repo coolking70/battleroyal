@@ -32,9 +32,9 @@ describe('Phase 4A-4.1 E1 formalization and Scout Injured canary contracts', () 
     expect(Object.values(manifest.worldEvents).filter(Boolean)).toHaveLength(5);
   });
 
-  it('keeps the formal asset total at twenty-seven', async () => {
+  it('keeps the formal asset total at twenty-eight after Scout Injured publication', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
-    expect(Object.values(manifest.characters).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(4);
+    expect(Object.values(manifest.characters).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(5);
     expect(Object.values(manifest.zones).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(6);
     expect(Object.values(manifest.items).filter(Boolean)).toHaveLength(12);
     expect(Object.values(manifest.worldEvents).filter(Boolean)).toHaveLength(5);
@@ -42,7 +42,7 @@ describe('Phase 4A-4.1 E1 formalization and Scout Injured canary contracts', () 
 
   it('records exactly four new E1 provenance mappings with unchanged candidate hashes', async () => {
     const provenance = JSON.parse(await fs.readFile(path.join(process.cwd(), 'art/approved-assets.json'), 'utf8')) as { assets: Record<string, { candidateHash: string; contentHash: string; promptHash: string; publicPath: string }> };
-    expect(Object.keys(provenance.assets)).toHaveLength(27);
+    expect(Object.keys(provenance.assets)).toHaveLength(28);
     const expected: Record<string, string> = {
       'world_event/emergency_broadcast/illustration': '07eed3b78bbf16ae30572b61987dcc498a58e446f421508150b291edcac23787',
       'world_event/medical_alert/illustration': '7950c827639922568f0a6f3949145ec60eb812734f847783dc7f3a1e4172c0c1',
@@ -71,13 +71,13 @@ describe('Phase 4A-4.1 E1 formalization and Scout Injured canary contracts', () 
     }
   });
 
-  it('keeps all four portrait visuals official and all injured slots absent', async () => {
+  it('keeps all four portraits official and only Scout Injured official', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
     setAssetManifest(manifest);
     try {
       for (const characterId of ['scout', 'fighter', 'engineer', 'medic']) {
         expect(getCharacterVisual(characterId).source).toBe('official');
-        expect(getCharacterVisual(characterId, 'injured').source).not.toBe('official');
+        expect(getCharacterVisual(characterId, 'injured').source).toBe(characterId === 'scout' ? 'official' : 'svg');
       }
     } finally {
       setAssetManifest(null);
@@ -166,7 +166,7 @@ describe('Phase 4A-4.1 E1 formalization and Scout Injured canary contracts', () 
     expect(auditCharacterProviderPrompt(task, String(body.prompt))).toMatchObject({ passed: true, forbiddenTokenCount: 0 });
   });
 
-  it('keeps the Scout portrait official while canary remains pending in the report contract', async () => {
+  it('keeps the Scout portrait and published injured visual official', async () => {
     const reportPath = path.join(process.cwd(), 'reports/phase4a41-scout-injured-canary.json');
     try {
       const report = JSON.parse(await fs.readFile(reportPath, 'utf8')) as { tasks?: Array<{ taskId: string; review: string; validation: string }> };
@@ -176,6 +176,6 @@ describe('Phase 4A-4.1 E1 formalization and Scout Injured canary contracts', () 
     }
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
     expect(manifest.characters.scout?.portrait).toBe('/assets/characters/scout/portrait.png');
-    expect(manifest.characters.scout?.injured).toBeNull();
+    expect(manifest.characters.scout?.injured).toBe('/assets/characters/scout/injured.png');
   });
 });

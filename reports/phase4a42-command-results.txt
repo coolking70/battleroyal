@@ -1,0 +1,85 @@
+Phase 4A-4.2 command evidence
+
+COMMAND: npm run art:approve -- --task character/scout/injured --candidate ccb0f5d7e17d097f94e60a5109b898f9fc4bbcaf4ac82b74bb296a31f29c1b51
+EXIT CODE: 0
+SUMMARY: exact Scout Injured candidate approved
+
+COMMAND: npm run art:list
+EXIT CODE: 0
+SUMMARY: Scout Injured approved; Fighter/Engineer/Medic Injured planned with no candidates
+
+COMMAND: npm run art:publish
+EXIT CODE: 0
+SUMMARY: Scout Injured published; Manifest increased from 27 to 28
+
+COMMAND: npm run art:validate
+EXIT CODE: 0
+SUMMARY: published Manifest PASS; Scout Injured official; other three injured slots null
+
+COMMAND: npm run art:publish
+EXIT CODE: 0
+SUMMARY: NO CHANGES
+
+COMMAND: npm run art:prompt-audit -- --task character/fighter/injured
+EXIT CODE: 0
+SUMMARY: PASS; forbiddenTokenCount=0; internal IDs absent
+
+COMMAND: npm run art:prompt-audit -- --task character/engineer/injured
+EXIT CODE: 0
+SUMMARY: PASS; forbiddenTokenCount=0; internal IDs absent
+
+COMMAND: npm run art:prompt-audit -- --task character/medic/injured
+EXIT CODE: 0
+SUMMARY: PASS; forbiddenTokenCount=0; internal IDs absent
+
+COMMAND: npm run typecheck
+EXIT CODE: 0
+SUMMARY: PASS
+
+COMMAND: npm test
+EXIT CODE: 0
+SUMMARY: 53 test files; 1074/1074 passed
+
+COMMAND: npm run build
+EXIT CODE: 0
+SUMMARY: production build PASS
+
+COMMAND: npm run audit:save
+EXIT CODE: 0
+SUMMARY: 74/74 malformed save cases rejected; 0 construction failures
+
+COMMAND: npm run audit:deps
+EXIT CODE: 0
+SUMMARY: PASS; no layer or size violations
+
+COMMAND: npm run art:doctor -- --offline
+EXIT CODE: 0
+SUMMARY: PASS
+
+COMMAND: npm run art:security:browser
+EXIT CODE: 0
+SUMMARY: PASS
+
+COMMAND: npm run art:security:repo
+EXIT CODE: 0
+SUMMARY: PASS
+
+COMMAND: npm run simulate -- --games 500 --seed-prefix PHASE4A42 --regression --output reports/phase4a42-balance.json
+EXIT CODE: 0
+SUMMARY: requested=500 actual=500; regression PASS
+
+COMMAND: npm audit --omit=dev
+EXIT CODE: 0
+SUMMARY: 0 vulnerabilities
+
+COMMAND: npm run art:prompt-audit and provider payload contract tests for all three remaining injured tasks
+EXIT CODE: 0
+SUMMARY: actual Agnes body uses 3:4, positive-only prompt, no Avoid suffix, no forbidden token and no internal task/entity ID
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:injured-batch -- --concurrency 1 --report-name phase4a42-injured-batch
+EXIT CODE: 0
+SUMMARY: Fighter → Engineer → Medic; requested=3 attempted=3 generated=3 apiCalls=3 cacheHits=0; all validation passed and review remained pending; Rain/combat calls=0
+
+COMMAND: npm run art:review-export -- --report reports/phase4a42-injured-batch.json --output output/art-review/phase4a42-injured-batch
+EXIT CODE: 0
+SUMMARY: exported 3 pending candidates with blank Decision and Notes fields

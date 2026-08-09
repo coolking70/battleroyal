@@ -209,10 +209,17 @@ export async function writePromptReport(
     'world_event/citywide_unrest/illustration',
   ]);
   const canaryTaskIds = new Set<string>([SCOUT_INJURED_CANARY_TASK_ID]);
+  const injuredBatchTaskIds = new Set<string>([
+    'character/fighter/injured',
+    'character/engineer/injured',
+    'character/medic/injured',
+  ]);
   const targetedVersion = b2TaskIds.has(built.task.id)
     ? 'phase4a23-b2'
     : canaryTaskIds.has(built.task.id)
       ? 'phase4a41-scout-injured-canary'
+    : injuredBatchTaskIds.has(built.task.id)
+      ? 'phase4a42-injured-batch'
     : e1TaskIds.has(built.task.id)
       ? 'phase4a4-e1'
     : b3TaskIds.has(built.task.id)
