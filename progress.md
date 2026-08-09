@@ -172,3 +172,15 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   390px document width, item/empty/pending/craft/equipment/planning-history states.
 - Added `PHASE4B3_REPORT.md`. Formal PNGs, art manifest/Candidates, `src/core/**`,
   `src/data/**`, rules, save schema, and package/GAME_VERSION remain unchanged.
+
+## Phase 4B-3 P0 log privacy fix (2026-08-09)
+
+- Before entering Phase 4B-4, fixed the default EventLog visibility boundary in the
+  UI layer only. NPC `NPC_ACTION`, search/pickup/movement, and other NPC-only events
+  are excluded; player actions, player-participating combat, own environment damage,
+  and public broadcasts remain visible. DebugPanel still receives the complete state.
+- Added unit regression coverage for NPC search/plan/pickup leakage, material
+  percentages, player combat/self damage, public broadcasts, and unchanged debug input.
+- Added a clean production-preview Playwright evidence spec for the default desktop
+  log. No Phase 4B-4 UX code, core/data rule, event schema, asset, or manifest change
+  is included in this P0 patch.

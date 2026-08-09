@@ -7,6 +7,65 @@ interface EventLogProps {
   playerId: string;
 }
 
+/**
+ * 默认日志的可见性边界。
+ *
+ * NPC_ACTION 及其搜索/拾取/移动等事件只属于调试信息；即使 message 被
+ * 改写，也不能通过默认日志泄露 NPC 位置、物资或 planner reason。公开的
+ * 禁区、阶段、世界事件和死亡广播仍然对所有玩家可见。这里只做展示层
+ * 过滤，不改变 core 事件、结算或存档内容；DebugPanel 继续读取完整 state。
+ */
+const PUBLIC_EVENT_TYPES = new Set<GameEventType>([
+  'GAME_STARTED',
+  'CHARACTER_DIED',
+  'ZONE_WARNING',
+  'ZONE_RESTRICTED',
+  'ZONE_EXHAUSTED',
+  'PHASE_CHANGED',
+  'FINALE_DECAY',
+  'WORLD_EVENT',
+  'WORLD_EVENT_ENDED',
+  'GAME_ENDED',
+]);
+
+const PLAYER_ACTION_TYPES = new Set<GameEventType>([
+  'CHARACTER_MOVED',
+  'SEARCH_STARTED',
+  'ITEM_FOUND',
+  'ITEM_PICKED',
+  'ITEM_DROPPED',
+  'ITEM_USED',
+  'ITEM_CRAFTED',
+  'ITEM_EQUIPPED',
+  'REST',
+  'GUARD',
+  'SKILL_USED',
+  'ZONE_DAMAGE',
+  'WORLD_EVENT_DAMAGE',
+]);
+
+const PLAYER_COMBAT_TYPES = new Set<GameEventType>([
+  'ENCOUNTER_STARTED',
+  'ATTACK_HIT',
+  'ATTACK_MISSED',
+  'CHARACTER_ESCAPED',
+  'STATUS_EXPIRED',
+]);
+
+/** Pure UI boundary predicate; complete events remain available to DebugPanel. */
+export function isEventVisibleToPlayer(event: GameEvent, playerId: string): boolean {
+  if (PUBLIC_EVENT_TYPES.has(event.type)) return true;
+  if (PLAYER_ACTION_TYPES.has(event.type)) return event.actorId === playerId;
+  if (PLAYER_COMBAT_TYPES.has(event.type)) {
+    return event.actorId === playerId || event.targetId === playerId;
+  }
+  return false;
+}
+
+export function visibleEventsForPlayer(events: GameEvent[], playerId: string): GameEvent[] {
+  return events.filter((event) => isEventVisibleToPlayer(event, playerId));
+}
+
 /** 日志过滤分类 */
 type LogFilter = 'all' | 'combat' | 'item' | 'zone' | 'world' | 'death' | 'other';
 
@@ -94,7 +153,7 @@ export function EventLog({ events, playerId }: EventLogProps): JSX.Element {
     if (el) el.scrollTop = el.scrollHeight;
   }, [events, filter, selfOnly]);
 
-  const visible = events.filter((e) => {
+  const visible = visibleEventsForPlayer(events, playerId).filter((e) => {
     if (selfOnly && e.actorId !== playerId) return false;
     if (filter === 'all') return true;
     return filterOf(e.type) === filter;
