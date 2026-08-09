@@ -2554,9 +2554,10 @@ input {
 .result {
   min-height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 32px 20px;
+  overflow-y: auto;
 }
 
 .result-inner {
@@ -2570,6 +2571,7 @@ input {
 }
 
 .result-head .verdict {
+  margin: 0;
   font-size: 30px;
   letter-spacing: 0.2em;
   font-weight: 600;

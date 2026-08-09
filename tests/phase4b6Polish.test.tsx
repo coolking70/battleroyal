@@ -121,6 +121,38 @@ describe('Phase 4B-6 polish and accessibility closure', () => {
     expect(container.querySelector('.result-zone-visual')?.getAttribute('src')).toBe('/assets/zones/forest/background.png');
     expect(container.textContent).toContain('森林');
     expect(container.textContent).toContain('最后生还');
+    expect(container.querySelector('main.result')).not.toBeNull();
+    expect(container.querySelector('h1#result-title')?.textContent).toContain('最后生还');
+    expect(document.activeElement).toBe(container.querySelector('h1#result-title'));
+    expect(container.querySelectorAll('.result-inner > section[aria-labelledby]').length).toBe(3);
+    expect(container.querySelector('.rank-table')?.getAttribute('aria-label')).toBe('最终排名表');
+  });
+
+  it('announces victory, defeat, and draw through one stable result heading', () => {
+    const cases = [
+      { status: 'won' as const, endReason: 'player_won' as const, label: '最后生还' },
+      { status: 'lost' as const, endReason: 'player_died' as const, label: '淘汰出局' },
+      { status: 'draw' as const, endReason: 'time_limit' as const, label: '平局 · 时间耗尽' },
+    ];
+
+    for (const outcome of cases) {
+      const state = createGame({ seed: `PHASE4C12-${outcome.status}`, playerCharacterId: 'scout', playerName: '测试者' });
+      const player = getPlayer(state);
+      state.status = outcome.status;
+      state.endReason = outcome.endReason;
+      state.endedAtTime = state.time;
+      if (outcome.status === 'lost') {
+        player.alive = false;
+        player.hp = 0;
+        player.diedAtTime = state.time;
+        state.deathOrder = [player.id];
+      }
+
+      act(() => root.render(<ResultScreen key={outcome.status} state={state} player={player} onRestart={() => undefined} onBackToMenu={() => undefined} />));
+
+      expect(container.querySelector('h1#result-title')?.textContent).toContain(outcome.label);
+      expect(document.activeElement).toBe(container.querySelector('h1#result-title'));
+    }
   });
 
   it('keeps the default information boundary intact after the polish pass', () => {

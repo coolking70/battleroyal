@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { allCharacters } from '../../core/gameState';
 import { PHASE_LABEL } from '../../core/phase';
 import { getEquippedArmor, getEquippedWeapon } from '../../core/inventory';
@@ -124,6 +125,7 @@ export function ResultScreen({
   onRestart,
   onBackToMenu,
 }: ResultScreenProps): JSX.Element {
+  const resultTitleRef = useRef<HTMLHeadingElement>(null);
   const won = state.status === 'won';
   const draw = state.status === 'draw';
   const ranking = buildRanking(state);
@@ -142,8 +144,12 @@ export function ResultScreen({
   const resultVisualState = resolveCharacterVisualState(player);
   const resultZone = getZoneDef(player.currentZoneId);
 
+  useEffect(() => {
+    resultTitleRef.current?.focus({ preventScroll: true });
+  }, []);
+
   return (
-    <div className="result">
+    <main className="result" aria-labelledby="result-title">
       <div className="result-inner">
         <section className={`result-hero result-hero-${won ? 'won' : draw ? 'draw' : 'lost'}`} aria-label="对局视觉收束">
           <VisualImage
@@ -163,11 +169,16 @@ export function ResultScreen({
             className="result-character-visual"
           />
         </section>
-        <div className="result-head">
-          <div className={`verdict ${won ? 'won' : draw ? 'draw' : 'lost'}`}>
+        <div className="result-head" aria-describedby="result-summary">
+          <h1
+            id="result-title"
+            ref={resultTitleRef}
+            tabIndex={-1}
+            className={`verdict ${won ? 'won' : draw ? 'draw' : 'lost'}`}
+          >
             {won ? '最后生还' : draw ? '平局 · 时间耗尽' : '淘汰出局'}
-          </div>
-          <div className="line">
+          </h1>
+          <div className="line" id="result-summary">
             {won
               ? `你在第 ${state.endedAtTime ?? state.time} 个时间单位成为唯一幸存者。`
               : draw
@@ -245,8 +256,8 @@ export function ResultScreen({
           </div>
         </div>
 
-        <div className="panel">
-          <div className="panel-title">装备 · 背包 · 制作目标</div>
+        <section className="panel" aria-labelledby="result-loadout-title">
+          <h2 className="panel-title" id="result-loadout-title">装备 · 背包 · 制作目标</h2>
           <div className="result-grid">
             <div className="result-cell">
               <div className="k">最终武器</div>
@@ -293,11 +304,11 @@ export function ResultScreen({
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="panel">
-          <div className="panel-title">最终排名</div>
-          <table className="rank-table">
+        <section className="panel" aria-labelledby="result-ranking-title">
+          <h2 className="panel-title" id="result-ranking-title">最终排名</h2>
+          <table className="rank-table" aria-label="最终排名表">
             <thead>
               <tr>
                 <th style={{ width: 44 }}>#</th>
@@ -324,14 +335,14 @@ export function ResultScreen({
               ))}
             </tbody>
           </table>
-        </div>
+        </section>
 
-        <div className="panel">
-          <div className="panel-title">关键事件时间线</div>
+        <section className="panel" aria-labelledby="result-timeline-title">
+          <h2 className="panel-title" id="result-timeline-title">关键事件时间线</h2>
           {keyEvents(state, player.id).length === 0 ? (
             <div className="empty">没有记录到关键事件。</div>
           ) : (
-            <ul className="timeline">
+            <ul className="timeline" aria-label="关键事件时间线">
               {keyEvents(state, player.id).map((e) => (
                 <li key={e.id}>
                   <span className="t mono">T{e.time}</span>
@@ -341,7 +352,7 @@ export function ResultScreen({
               ))}
             </ul>
           )}
-        </div>
+        </section>
 
         <div className="result-actions">
           <button className="btn btn-primary" onClick={onRestart}>
@@ -352,6 +363,6 @@ export function ResultScreen({
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

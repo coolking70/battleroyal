@@ -442,3 +442,24 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   dependency/art/security audits and 500-game engine-health regression pass.
   Human touch, screen-reader, and long-session validation remain
   HUMAN-PLAYTEST-NEEDED.
+
+## Phase 4C-12 progress (2026-08-10)
+
+- Audited the result surface and found a real layout/accessibility gap: the
+  result content exceeded the viewport while `.result` vertically centered it,
+  placing the Hero and verdict above the initial viewport even though they were
+  present in the DOM.
+- Closed the gap with a semantic `main`/`h1` result heading, initial focus with
+  `preventScroll`, labelled result sections/table/timeline, and a top-aligned
+  scrollable result container. Existing `visibleEventsForPlayer` filtering and
+  the 4B/4C information boundary remain unchanged.
+- Added victory/defeat/draw unit assertions and a clean production-preview
+  evidence spec. The result evidence covers 1280×720 victory/draw and 390×844
+  defeat; all snapshots have scrollY=0, matching scroll widths, focused
+  `result-title`, and zero console/page errors. The complete browser suite is
+  15/15 green.
+- Final local gates are green: clean `npm ci`, 70 files / 1296 tests,
+  typecheck/build, save/dependency/art/security audits, 500-game engine-health
+  regression, and both npm audits at 0 vulnerabilities. Human touch,
+  screen-reader, long-session and full result-experience validation remain
+  HUMAN-PLAYTEST-NEEDED; `HUMAN_PLAYTEST_CHECKLIST.md` remains untouched.
