@@ -268,3 +268,10 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Added the PlanningDrawer `图鉴` tab and a full dependency-tree codex with static material source zones, item summaries, missing-material display, and VisualImage fallback for new items.
 - Added unit/UI coverage and a clean production Playwright evidence spec. Targeted tests, typecheck, production build, runtime client smoke, and the new browser evidence pass; browser evidence records zero console/page errors.
 - Updating the fixed Phase 3A-1 observation seed from `STAT-11` to `STAT-1` preserves the research-anomaly assertion after the required hospital pool change altered the deterministic loot/RNG stream.
+
+## Phase 4C-3 progress (2026-08-10)
+
+- Implemented the minimal core fix for the zero-stamina deadlock: when every adjacent zone is restricted, FLEE now succeeds as a stationary disengagement and records a successful `no_exit` escape event, so the pursuit branch is not entered.
+- Made GUARD free only at exactly 0 stamina; a character with 1 stamina still needs the configured 2-point cost. This uses the existing shared action-cost path, with no new state field or passive recovery.
+- Updated EncounterPanel’s zero/partial-stamina guidance and flee accessibility text, and added focused player/NPC symmetry and last-safe-zone regression tests. Targeted suite: 4 files / 45 tests PASS.
+- Ran the required develop-web-game Playwright client against the current UI after the change; the production-style exploration shell rendered with no reported console/page errors. Remaining: full gates, dedicated clean-preview zero-stamina evidence, report, commit/push and CI confirmation.

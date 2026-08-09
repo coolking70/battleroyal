@@ -56,8 +56,10 @@ export function getActionStaminaCost(actor: Combatant, action: CostedAction): nu
         : GAME_CONFIG.craftStaminaCost;
     }
     case 'GUARD':
-      // 防御姿态需要付出体力，但比一次 heavy 攻击便宜
-      return GAME_CONFIG.guardStaminaCost;
+      // 资源耗尽时保留一个有意义的防守选择：仅在恰好 0 体力时免费。
+      // 体力仍有 1 点但不足以支付完整防御成本时，防御继续被拒绝，
+      // 避免把免费防御扩成可在任意低体力值下刷出的通用动作。
+      return actor.stamina === 0 ? 0 : GAME_CONFIG.guardStaminaCost;
     default:
       return 0;
   }
@@ -135,7 +137,7 @@ export interface CostCheck {
  * 规则：
  * - 死亡角色一律不能行动；
  * - 体力必须 **大于等于** 成本，`stamina === 0` 且成本 > 0 时必然失败；
- * - 成本为 0 的动作永远放行（免费动作，目前是 FLEE）。
+ * - 成本为 0 的动作永远放行（FLEE，以及恰好 0 体力时的 GUARD）。
  *
  * 注意：免费 ≠ 无代价。免费动作依然会推进时间，
  * 时间本身就是最稀缺的资源（禁区收缩、终局衰竭都按时间结算）。

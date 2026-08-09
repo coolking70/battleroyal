@@ -73,16 +73,18 @@ export function attemptFlee(
 ): FleeResult {
   const destinations = fleeDestinations(state, actor);
   if (destinations.length === 0) {
-    const msg = `${actor.name} 无路可退，逃跑失败。`;
+    // 最后一个安全区时仍要保留“脱离接触”的出口，但不能把角色送入
+    // 禁区。原地脱离不做成功率判定，因此不会进入 fleeActor 的追击分支。
+    const msg = `${actor.name} 无相邻可退区域，原地脱离。`;
     pushEvent(state, {
       type: 'CHARACTER_ESCAPED',
       actorId: actor.id,
       targetId: enemy.id,
       zoneId: actor.currentZoneId,
       message: msg,
-      metadata: { success: false, reason: 'no_exit' },
+      metadata: { success: true, reason: 'no_exit', stationary: true },
     });
-    return { ok: false, toZoneId: null, message: msg };
+    return { ok: true, toZoneId: null, message: msg };
   }
 
   const chance = fleeChanceIn(state, actor, enemy);
