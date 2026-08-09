@@ -379,3 +379,18 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Next handoff: complete a real human playtest using a copied checklist before
   considering any local economy adjustment; do not treat this semi-automated
   report as human evidence.
+
+## Phase 4C-8 progress (2026-08-10)
+
+- Audited the post-game surface and found that `ResultScreen` bypassed the existing
+  player visibility filter for its key-event timeline, while ranking rows exposed
+  NPC planner personality labels.
+- Fixed both at the presentation layer only: the timeline now reuses
+  `visibleEventsForPlayer`, and NPC personality labels are omitted while the
+  player's own strategy summary remains. No core/data/rules/assets/save changes.
+- Added a regression covering hidden NPC goal/encounter events, retained player and
+  public death events, and the absence of NPC planner labels.
+- Targeted tests (6) and typecheck pass; production build and the required
+  develop-web-game client smoke pass with no reported console/page errors.
+- Human result-screen, touch, screen-reader and long-session review remain
+  HUMAN-PLAYTEST-NEEDED; `HUMAN_PLAYTEST_CHECKLIST.md` remains untouched.

@@ -9,6 +9,7 @@ import { getZoneDef } from '../../data/zones';
 import { personalityLabel } from '../../utils/format';
 import { resolveCharacterVisualState } from '../characterVisualState';
 import { VisualImage } from '../components/VisualImage';
+import { visibleEventsForPlayer } from '../components/EventLog';
 import { getCharacterVisual, getZoneVisual } from '../visualAssets';
 
 /** 结束原因的展示文案 */
@@ -62,7 +63,7 @@ interface TimelineEntry {
 }
 
 /** 从事件流中提取关键节点，按时间升序，最多保留最近 20 条 */
-function keyEvents(state: GameState): TimelineEntry[] {
+function keyEvents(state: GameState, playerId: string): TimelineEntry[] {
   const TAG: Record<string, { label: string; cls: string }> = {
     GAME_STARTED: { label: '开局', cls: 'start' },
     ZONE_WARNING: { label: '预警', cls: 'warn' },
@@ -74,7 +75,7 @@ function keyEvents(state: GameState): TimelineEntry[] {
     CRAFT_GOAL_SET: { label: '目标', cls: 'neutral' },
     GAME_ENDED: { label: '结束', cls: 'end' },
   };
-  return state.events
+  return visibleEventsForPlayer(state.events, playerId)
     .filter((e) => TIMELINE_TYPES.has(e.type))
     .map((e) => {
       const meta = TAG[e.type] ?? { label: e.type, cls: 'neutral' };
@@ -315,7 +316,6 @@ export function ResultScreen({
                     <span className="faint" style={{ fontSize: 11 }}>
                       {' '}
                       {getCharacterDef(c.characterId).name}
-                      {c.isPlayer ? '' : ` · ${personalityLabel(c.personality)}`}
                     </span>
                   </td>
                   <td className="mono">{c.kills}</td>
@@ -328,11 +328,11 @@ export function ResultScreen({
 
         <div className="panel">
           <div className="panel-title">关键事件时间线</div>
-          {keyEvents(state).length === 0 ? (
+          {keyEvents(state, player.id).length === 0 ? (
             <div className="empty">没有记录到关键事件。</div>
           ) : (
             <ul className="timeline">
-              {keyEvents(state).map((e) => (
+              {keyEvents(state, player.id).map((e) => (
                 <li key={e.id}>
                   <span className="t mono">T{e.time}</span>
                   <span className={`tag-ev ${e.cls}`}>{e.tag}</span>

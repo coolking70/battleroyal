@@ -113,4 +113,73 @@ describe('Phase 4B-6 polish and accessibility closure', () => {
     expect(visible.map((item) => item.message).join('\n')).not.toContain('物资 100%');
     expect(visible.map((item) => item.message).join('\n')).not.toContain('（search）');
   });
+
+  it('applies the player visibility boundary to the result timeline and hides NPC planner labels', () => {
+    const state = createGame({ seed: 'PHASE4C8-RESULT-BOUNDARY', playerCharacterId: 'scout', playerName: '测试者' });
+    const player = getPlayer(state);
+    Object.values(state.characters)
+      .filter((character) => !character.isPlayer)
+      .forEach((character) => {
+        character.personality = 'aggressive';
+      });
+    const npc = Object.values(state.characters).find((character) => !character.isPlayer)!;
+    state.status = 'draw';
+    state.endReason = 'time_limit';
+    state.endedAtTime = 4;
+    state.events = [
+      {
+        id: 'result-hidden-goal',
+        type: 'CRAFT_GOAL_SET',
+        time: 1,
+        actorId: npc.id,
+        targetId: null,
+        zoneId: npc.currentZoneId,
+        message: 'NPC_SECRET_GOAL 不应出现在结算时间线。',
+        importance: 'major',
+        metadata: { recipeId: 'r_field_spear', completed: false },
+      },
+      {
+        id: 'result-hidden-encounter',
+        type: 'ENCOUNTER_STARTED',
+        time: 2,
+        actorId: npc.id,
+        targetId: 'n2',
+        zoneId: npc.currentZoneId,
+        message: 'NPC_SECRET_ENCOUNTER 不应出现在结算时间线。',
+        importance: 'major',
+        metadata: {},
+      },
+      {
+        id: 'result-own-goal',
+        type: 'CRAFT_GOAL_SET',
+        time: 3,
+        actorId: player.id,
+        targetId: null,
+        zoneId: player.currentZoneId,
+        message: '你的公开制作目标仍应保留。',
+        importance: 'major',
+        metadata: { recipeId: 'r_field_spear', completed: false },
+      },
+      {
+        id: 'result-public-death',
+        type: 'CHARACTER_DIED',
+        time: 4,
+        actorId: npc.id,
+        targetId: 'n2',
+        zoneId: npc.currentZoneId,
+        message: '公开播报：有人出局。',
+        importance: 'critical',
+        metadata: { cause: 'combat', killerId: npc.id, dropCount: 0 },
+      },
+    ];
+
+    act(() => root.render(<ResultScreen state={state} player={player} onRestart={() => undefined} onBackToMenu={() => undefined} />));
+
+    const text = container.textContent ?? '';
+    expect(text).toContain('你的公开制作目标仍应保留。');
+    expect(text).toContain('公开播报：有人出局。');
+    expect(text).not.toContain('NPC_SECRET_GOAL');
+    expect(text).not.toContain('NPC_SECRET_ENCOUNTER');
+    expect(container.querySelector('.rank-table')?.textContent).not.toContain('激进');
+  });
 });
