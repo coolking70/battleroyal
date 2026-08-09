@@ -375,7 +375,7 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   build, save/dependency/art/security audits, 500-game engine health regression,
   production dependency audit and clean production-preview evidence. The
   generated historical audit timestamps were restored and the pre-existing save
-  audit edits remain unstaged.
+  audit edits remain unstaged. GitHub Actions CI run `31332200795` is also green.
 - Next handoff: complete a real human playtest using a copied checklist before
   considering any local economy adjustment; do not treat this semi-automated
   report as human evidence.
