@@ -1,0 +1,55 @@
+Phase 4B-0 command evidence
+===========================
+
+Baseline
+--------
+HEAD=521f8756a364b38ebd91b18b97d4a5dac3aea4fa
+branch=agent/phase4-art-pipeline
+package_version=0.3.2
+GAME_VERSION=0.3.2
+baseline_tests=57 files / 1236 tests
+image_api_calls=0
+formal_public_png_changes=0
+core_or_data_changes=0
+
+Browser runtime audit
+---------------------
+viewport=1280x720: menu, gameplay, search result, encounter, Craft tab, Log tab PASS
+viewport=390x844: gameplay/encounter screenshot PASS; vertical clipping risk observed
+render_game_to_text: mode=playing; state matched visible gameplay PASS
+encounter_path: default seed reached encounter at T6 PASS
+browser_console_errors=0
+browser_page_errors=0
+mobile_horizontal_overflow: scrollWidth=390, innerWidth=390 PASS
+evidence=output/phase4b0-browser-runtime/
+
+Required final gates
+--------------------
+The following commands are run after the Phase 4B-0 planning artifacts are
+created; their final results are recorded below.
+
+npm ci=PASS
+npm run typecheck=PASS
+npm test=PASS (57 files / 1236 tests)
+npm run build=PASS
+npm run audit:save=PASS (pre-existing user-owned save report modifications preserved after audit)
+npm run audit:deps=PASS
+npm run art:doctor -- --offline=PASS
+npm run art:validate=PASS
+npm run art:audit:phase4a=PASS
+npm run art:security:browser=PASS
+npm run art:security:repo=PASS
+npm run simulate -- --games 500 --seed-prefix PHASE4B0 --regression --output reports/phase4b0-balance.json=PASS (requested=500 actual=500; timeout=0 deadlock=0 illegal=0 hardlimit=0; engine/regression/role-balance PASS)
+npm audit --omit=dev=PASS; 0 vulnerabilities
+
+npm ci advisory
+----------------
+npm ci reports 5 dev-tree vulnerabilities (3 moderate, 1 high, 1 critical).
+They are retained as the known dev-only follow-up; no `npm audit fix --force`
+was run. Production dependency audit above is 0 vulnerabilities.
+
+Scope gate
+----------
+No art generation command was run. No Phase 4B-1 implementation was started.
+No formal public PNG, Candidate status, Core rule, data rule, save rule, RNG,
+AI or world-event rule was changed.

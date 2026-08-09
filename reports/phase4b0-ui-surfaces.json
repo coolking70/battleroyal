@@ -1,0 +1,20 @@
+{
+  "phase": "Phase 4B-0",
+  "head": "521f8756a364b38ebd91b18b97d4a5dac3aea4fa",
+  "version": "0.3.2",
+  "evidenceLabels": ["CODE-VERIFIED", "RUNTIME-VERIFIED", "HUMAN-PLAYTEST-NEEDED"],
+  "surfaces": [
+    {"id":"menu","component":"MenuScreen","purpose":"start/resume, seed and character selection","actions":["start","resume","select character","random/default seed","delete save"],"assets":["character portrait"],"dependencies":["save status","seed","character definitions","GAME_VERSION"],"responsive":"auto-fit character grid","importance":"P1","evidence":"RUNTIME-VERIFIED"},
+    {"id":"status","component":"StatusBar","purpose":"survival and run status","actions":["quit"],"assets":["character portrait/combat/injured"],"dependencies":["HP","Stamina","encounter","zone status","countdown","Guard","EXPOSED"],"responsive":"wraps into rows","importance":"P0","evidence":"RUNTIME-VERIFIED"},
+    {"id":"zone-map","component":"ZoneMap","purpose":"six-zone navigation and public signals","actions":["move adjacent"],"assets":["zone backgrounds as 20px visuals"],"dependencies":["adjacency","zone status","noise","fresh intel","ground items","locks"],"responsive":"232px/200px/list; capped narrow height","importance":"P0/P1","evidence":"RUNTIME-VERIFIED"},
+    {"id":"stage","component":"GameScreen stage","purpose":"current scene, events, pickup, encounter, presence and ground loot","actions":["pickup","attack nearby","guard","flee","skill","close encounter"],"assets":["zone background as 30px visual","event icon 30px","enemy art 42x56"],"dependencies":["zone","active events","pending pickup","encounter","presence","ground items","skill"],"responsive":"central scroll container; clipped on phone shell","importance":"P0/P1","evidence":"RUNTIME-VERIFIED"},
+    {"id":"encounter","component":"EncounterPanel","purpose":"enemy and combat choices","actions":["quick/normal/heavy","skill","guard","flee","continue"],"assets":["enemy combat/injured"],"dependencies":["visible enemy fields","HP","weapon","combat odds","Guard/EXPOSED"],"responsive":"flex-wrap","importance":"P0","evidence":"RUNTIME-VERIFIED"},
+    {"id":"actionbar","component":"ActionBar","purpose":"exploration actions","actions":["search","rest"],"assets":[],"dependencies":["search legality","locks","zone status"],"responsive":"wraps at bottom","importance":"P1","evidence":"RUNTIME-VERIFIED"},
+    {"id":"inventory","component":"Inventory","purpose":"equipment and item use","actions":["use","equip","unequip","drop"],"assets":["item icons 18px"],"dependencies":["inventory","equipment","locks","item categories"],"responsive":"right rail then stacked block","importance":"P1/P2","evidence":"RUNTIME-VERIFIED"},
+    {"id":"craft","component":"CraftPanel","purpose":"recipes and craft goal","actions":["craft","set/cancel goal"],"assets":["no item images; category tags"],"dependencies":["recipes","materials","goal","stamina","locks"],"responsive":"right rail scroll","importance":"P2","evidence":"RUNTIME-VERIFIED"},
+    {"id":"log","component":"EventLog","purpose":"filtered history","actions":["filter","self-only"],"assets":[],"dependencies":["event stream","actor id"],"responsive":"right tab scroll","importance":"P3","evidence":"RUNTIME-VERIFIED"},
+    {"id":"events","component":"world event banner","purpose":"persistent event scope/duration/effect","actions":[],"assets":["world event icon 30px"],"dependencies":["activeWorldEvents"],"responsive":"central stack","importance":"P0/P1","evidence":"CODE-VERIFIED"},
+    {"id":"debug","component":"DebugPanel","purpose":"development diagnostics","actions":["collapse","copy/export","validate","weaken NPC"],"assets":["asset source metadata"],"dependencies":["?debug=1","full GameState"],"responsive":"fixed overlay/full-width phone","importance":"P3","evidence":"CODE-VERIFIED"},
+    {"id":"result","component":"ResultScreen","purpose":"outcome and history","actions":["restart","menu"],"assets":["none"],"dependencies":["end status","ranking","stats","timeline"],"responsive":"720px single column","importance":"P3","evidence":"CODE-VERIFIED"}
+  ]
+}

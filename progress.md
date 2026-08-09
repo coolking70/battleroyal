@@ -123,3 +123,12 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Migration dry-run and apply are idempotent and return `NO CHANGES` after the first apply. Public formal asset tree aggregate remains `24831019d5fbbecc004d7a8a77ba5b2e3796f5f69b8bdd1d2aca6aea8af7bfa5`.
 - Added 25 meaningful hash/migration/tamper/audit tests. Final local suite before commit: 57 files / 1236 tests PASS; typecheck/build, bytes audit, security scans, 500-game PHASE4A451 regression and production npm audit all PASS.
 - CI now runs the provenance content integrity audit; a clean-checkout simulation without ignored local Candidates passed the published-only CI gate. No Phase 4B or image generation was performed.
+
+## Phase 4B-0 progress (2026-08-09)
+
+- Read the Phase 4B-0 planning/audit prompt at the start of the phase. Baseline HEAD is `521f8756a364b38ebd91b18b97d4a5dac3aea4fa`, branch `agent/phase4-art-pipeline`, package/GAME_VERSION `0.3.2`, and the previous full suite baseline is 57 files / 1236 tests.
+- Confirmed the task is planning and audit only: no Phase 4B-1 implementation, no image API calls, no changes to `src/core/**`, `src/data/**`, or `public/assets/**`.
+- Code inventory found the current three-column prototype: top StatusBar, list-based ZoneMap, central stage, tabbed Inventory/Craft/Log, bottom ActionBar, optional URL `?debug=1` DebugPanel, and text-heavy ResultScreen.
+- Browser runtime verification used the real Vite app at desktop and phone widths. Menu, gameplay, search feedback, item pickup, tab switching, active encounter, character combat art, toast, and mobile layout were captured. No browser console errors occurred. The mobile screenshot shows the vertical clipping risk caused by the fixed-height/overflow-hidden shell; `document.body.scrollWidth` remained equal to the 390px viewport.
+- Audit conclusion: recommend a Hybrid Zone Presentation for Phase 4B-1, with the current Zone Background promoted to the main gameplay visual and a compact translucent map/navigation layer retained for movement. Do not generate warning/restricted AI variants; use CSS state layers plus icon/label/pattern.
+- Phase 4B-0 documents and machine-readable reports are being prepared. The next phase target is frozen as one theme only: `Main Gameplay Visual Shell & Zone Visual Hierarchy`.
