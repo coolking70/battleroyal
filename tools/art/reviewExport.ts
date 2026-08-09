@@ -46,6 +46,9 @@ const OUTPUT_NAMES: Record<string, string> = {
   'character/engineer/injured': 'engineer-injured',
   'character/medic/injured': 'medic-injured',
   'character/scout/combat': 'scout-combat',
+  'character/fighter/combat': 'fighter-combat',
+  'character/engineer/combat': 'engineer-combat',
+  'character/medic/combat': 'medic-combat',
 };
 
 const REVIEW_REMINDERS: Record<string, string> = {
@@ -82,6 +85,9 @@ const REVIEW_REMINDERS: Record<string, string> = {
   'character/engineer/injured': 'Compare beside the official Engineer portrait. Accept natural text-to-image variation; assess player-recognizable identity, mild injury only, and preserved ochre workwear, tool belt and compact wrench identity.',
   'character/medic/injured': 'Compare beside the official Medic portrait. Accept natural text-to-image variation; assess player-recognizable identity, mild injury only, and preserved green/off-white workwear and white-and-green pouch identity.',
   'character/scout/combat': 'Compare beside the official Scout Portrait and Injured portrait. Check posture-only Combat: binoculars remain static at the center of the chest, both hands are empty and separated from them, and alertness is expressed by body language. Record any duplicate prop or weak action state for human review; never auto-reroll.',
+  'character/fighter/combat': 'Compare beside the official Fighter portrait and Injured portrait. Check posture-only readiness, one matched wearable glove pair with one glove on each hand, compact defensive boxing guard, intact clothing and no dynamic game equipment; never auto-reroll.',
+  'character/engineer/combat': 'Compare beside the official Engineer portrait and Injured portrait. Check posture-only reactive balance, secured wrench/tool belt, empty hands away from tools, static equipment and no repair/reaching interaction; never auto-reroll.',
+  'character/medic/combat': 'Compare beside the official Medic portrait and Injured portrait. Check posture-only cautious reaction, closed fixed waist pouch, empty hands away from the pouch and no treatment interaction; never auto-reroll.',
 };
 const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'character/scout/portrait': [
@@ -119,6 +125,9 @@ const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'character/engineer/injured': ['reads naturally as the same Engineer', 'same age / hairstyle identity', 'same ochre work jacket', 'same gray shirt', 'tool belt remains recognizable', 'compact wrench/tool identity remains', 'injury is mild', 'no drastic redesign'],
   'character/medic/injured': ['reads naturally as the same Medic', 'same age / bob hairstyle identity', 'same green/off-white jacket identity', 'same first-aid pouch identity', 'injury is mild', 'no militarized redesign', 'no drastic character redesign'],
   'character/scout/combat': ['clearly reads as the same Scout', 'same age and hairstyle', 'same slate-blue jacket', 'same charcoal / khaki outfit language', 'same side pouch identity', 'one logical binocular prop only', 'binoculars remain hanging at the center of the chest', 'neither hand touches the binoculars', 'both hands are visually empty', 'posture clearly communicates alert/action state', 'clearly differs from neutral Portrait', 'clearly differs from Injured', 'no fixed dynamic weapon', 'no military/tactical contamination', 'no drastic redesign'],
+  'character/fighter/combat': ['clearly reads as the same Fighter', 'same athletic build and jacket colors', 'one matched glove pair', 'one glove on each hand', 'compact defensive boxing guard', 'healthy intact appearance', 'posture communicates readiness', 'clearly differs from neutral Portrait', 'clearly differs from Injured', 'no dynamic game equipment', 'no militarized contamination'],
+  'character/engineer/combat': ['clearly reads as the same Engineer', 'same ochre workwear and tool belt', 'wrench remains secured at the waist', 'both hands visibly empty', 'hands away from tools', 'posture communicates reactive balance', 'tools remain static', 'clearly differs from neutral Portrait', 'clearly differs from Injured', 'no holding/raising/swinging wrench', 'no repair or reaching action'],
+  'character/medic/combat': ['clearly reads as the same Medic', 'same bob hairstyle and green/off-white workwear', 'pouch is closed and fixed at the waist', 'both hands visibly empty', 'hands away from pouch', 'cautious posture reads clearly', 'clearly differs from neutral Portrait', 'clearly differs from Injured', 'no healing/treatment/bandage action', 'no pouch interaction'],
 };
 
 export interface ReviewExportOptions {
@@ -217,7 +226,7 @@ async function main(): Promise<void> {
     reportPath,
     outputDir,
     fileSuffix: fileSuffix ?? '',
-    title: reportPath.includes('phase4a432') ? 'Phase 4A-4.3.2 Scout Combat Posture-Only Review Package' : reportPath.includes('phase4a431') ? 'Phase 4A-4.3.1 Scout Combat Single-Prop Review Package' : reportPath.includes('phase4a43') ? 'Phase 4A-4.3 Scout Combat Canary Review Package' : reportPath.includes('phase4a42') ? 'Phase 4A-4.2 Remaining Injured Variant Review Package' : fileSuffix === '-positive' ? 'Phase 4A-2.1 Character Positive-only Review Package' : fileSuffix === '-nonchar' ? 'Phase 4A-2.1 Non-character B1 Review Package' : fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : fileSuffix === '-v2' ? 'Phase 4A-2.2 Non-character Positive-only Recovery Review Package' : fileSuffix === '-b2' ? 'Phase 4A-2.3 Controlled Production Expansion B2 Review Package' : fileSuffix === '-b3' ? 'Phase 4A-3 Item Production Batch B3 Review Package' : fileSuffix === '-rain' ? 'Phase 4A-2.3 Rain Provider Recovery Review Package' : fileSuffix === '-e1' ? 'Phase 4A-4 World Event E1 Review Package' : fileSuffix === '-canary' ? 'Phase 4A-4.1 Scout Injured Canary Review Package' : undefined,
+    title: reportPath.includes('phase4a44') ? 'Phase 4A-4.4 Combat Batch Review Package' : reportPath.includes('phase4a432') ? 'Phase 4A-4.3.2 Scout Combat Posture-Only Review Package' : reportPath.includes('phase4a431') ? 'Phase 4A-4.3.1 Scout Combat Single-Prop Review Package' : reportPath.includes('phase4a43') ? 'Phase 4A-4.3 Scout Combat Canary Review Package' : reportPath.includes('phase4a42') ? 'Phase 4A-4.2 Remaining Injured Variant Review Package' : fileSuffix === '-positive' ? 'Phase 4A-2.1 Character Positive-only Review Package' : fileSuffix === '-nonchar' ? 'Phase 4A-2.1 Non-character B1 Review Package' : fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : fileSuffix === '-v2' ? 'Phase 4A-2.2 Non-character Positive-only Recovery Review Package' : fileSuffix === '-b2' ? 'Phase 4A-2.3 Controlled Production Expansion B2 Review Package' : fileSuffix === '-b3' ? 'Phase 4A-3 Item Production Batch B3 Review Package' : fileSuffix === '-rain' ? 'Phase 4A-2.3 Rain Provider Recovery Review Package' : fileSuffix === '-e1' ? 'Phase 4A-4 World Event E1 Review Package' : fileSuffix === '-canary' ? 'Phase 4A-4.1 Scout Injured Canary Review Package' : undefined,
   } : {};
   const result = await exportRoundAReview(configModule.createArtConfig(), options);
   console.log(`EXPORTED ${result.candidates.length} pending candidates to ${result.outputDir}`);

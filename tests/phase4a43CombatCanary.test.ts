@@ -97,9 +97,14 @@ describe('Phase 4A-4.3.2 Scout Combat posture-only canary', () => {
     expect(selectScoutCombatCanary(await loadTasks(process.cwd())).some((task) => task.id === taskId)).toBe(false);
   });
 
-  it('keeps every other Combat task absent and all Injured/Rain work frozen', async () => {
+  it('keeps all four Combat task definitions planned and Rain work frozen', async () => {
     const tasks = await loadTasks(process.cwd());
-    expect(tasks.filter((task) => task.variant === 'combat').map((task) => task.id)).toEqual([SCOUT_COMBAT_CANARY_TASK_ID]);
+    expect(tasks.filter((task) => task.variant === 'combat').map((task) => task.id)).toEqual([
+      'character/scout/combat',
+      'character/fighter/combat',
+      'character/engineer/combat',
+      'character/medic/combat',
+    ]);
     expect(tasks.filter((task) => task.variant === 'injured')).toHaveLength(4);
     expect(tasks.find((task) => task.id === 'world_event/rain/illustration')).toBeDefined();
   });
@@ -269,12 +274,12 @@ describe('Phase 4A-4.3.2 Scout Combat posture-only canary', () => {
     await fs.rm(root, { recursive: true, force: true });
   });
 
-  it('keeps all four Injured official, all Combat slots null, and formal count at 31', async () => {
+  it('keeps all four Injured official, Scout Combat official, other Combat slots null, and formal count at 32', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
     for (const id of ['scout', 'fighter', 'engineer', 'medic']) {
       expect(manifest.characters[id]?.portrait).toBe(`/assets/characters/${id}/portrait.png`);
       expect(manifest.characters[id]?.injured).toBe(`/assets/characters/${id}/injured.png`);
-      expect(manifest.characters[id]?.combat).toBeNull();
+      expect(manifest.characters[id]?.combat).toBe(id === 'scout' ? '/assets/characters/scout/combat.png' : null);
     }
     const count = [
       ...Object.values(manifest.characters).flatMap((entry) => Object.values(entry)),
@@ -282,7 +287,7 @@ describe('Phase 4A-4.3.2 Scout Combat posture-only canary', () => {
       ...Object.values(manifest.items),
       ...Object.values(manifest.worldEvents),
     ].filter(Boolean);
-    expect(count).toHaveLength(31);
+    expect(count).toHaveLength(32);
   });
 
   it('uses SVG fallback when an Injured official path is unavailable', () => {

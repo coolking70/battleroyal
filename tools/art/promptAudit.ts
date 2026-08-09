@@ -95,6 +95,25 @@ export const FORBIDDEN_COMBAT_PROP_TRANSITION_PATTERNS = [
   /\btouches?\s+(?:the\s+)?binoculars\b/i,
 ] as const;
 
+const FORBIDDEN_COMBAT_SIGNATURE_INTERACTION_PATTERNS: Record<string, readonly RegExp[]> = {
+  'character/engineer/combat': [
+    /\bholding\s+(?:the\s+)?(?:compact\s+)?(?:adjustable\s+)?wrench\b/i,
+    /\braising\s+(?:the\s+)?(?:compact\s+)?(?:adjustable\s+)?wrench\b/i,
+    /\bswinging\s+(?:the\s+)?(?:compact\s+)?(?:adjustable\s+)?wrench\b/i,
+    /\brepairing\b/i,
+    /\breaching\s+for\s+tools\b/i,
+  ],
+  'character/medic/combat': [
+    /\bholding\s+(?:the\s+)?(?:first-aid\s+)?pouch\b/i,
+    /\bopening\s+(?:the\s+)?(?:first-aid\s+)?pouch\b/i,
+    /\bopen(?:s|ing)?\s+(?:the\s+)?(?:first-aid\s+)?pouch\b/i,
+    /\breaching\s+for\s+(?:the\s+)?pouch\b/i,
+    /\bhealing\b/i,
+    /\btreatment\b/i,
+    /\bbandage\b/i,
+  ],
+};
+
 export const FORBIDDEN_ENVIRONMENT_TOKENS = [
   'person',
   'people',
@@ -271,6 +290,8 @@ export interface PromptAuditResult {
   postureOnlyContract?: boolean;
   handsEmptyContract?: boolean;
   staticSignaturePropContract?: boolean;
+  signaturePropContract?: boolean;
+  signatureInteractionLanguageCount?: number;
   singlePropContract?: boolean;
   failures: string[];
 }
@@ -326,33 +347,51 @@ export function auditCombatProviderPrompt(task: ArtTask, providerPrompt: string)
   const dynamicTokens = FORBIDDEN_COMBAT_DYNAMIC_EQUIPMENT_TOKENS.filter((token) => tokenPattern(token).test(providerPrompt));
   const injuryTokens = FORBIDDEN_COMBAT_INJURY_TOKENS.filter((token) => tokenPattern(token).test(providerPrompt));
   const militaryTokens = FORBIDDEN_COMBAT_MILITARY_TOKENS.filter((token) => tokenPattern(token).test(providerPrompt));
-  const propTransitionLanguageCount = FORBIDDEN_COMBAT_PROP_TRANSITION_PATTERNS.filter((pattern) => pattern.test(providerPrompt)).length;
+  const signatureInteractionPatterns = [
+    ...FORBIDDEN_COMBAT_PROP_TRANSITION_PATTERNS,
+    ...(FORBIDDEN_COMBAT_SIGNATURE_INTERACTION_PATTERNS[task.id] ?? []),
+  ];
+  const propTransitionLanguageCount = signatureInteractionPatterns.filter((pattern) => pattern.test(providerPrompt)).length;
   const singleProp = task.singlePropTransition ? auditSinglePropTransitionPrompt(providerPrompt) : null;
-  const staticRequirements = [
-    'one compact pair of binoculars hangs naturally at the center of his chest',
-    'binoculars remain resting in their normal hanging position',
-  ];
-  const handsEmptyRequirements = [
-    'both hands are away from the binoculars',
-    'hands are empty',
-  ];
-  const postureRequirements = [
-    'torso leans subtly forward',
-    'shoulders are slightly raised and tense',
-    'eyes focus sharply',
-  ];
-  const staticMissing = task.postureOnly ? staticRequirements.filter((requirement) => !providerPrompt.toLowerCase().includes(requirement)) : [];
-  const handsEmptyMissing = task.handsEmpty ? handsEmptyRequirements.filter((requirement) => !providerPrompt.toLowerCase().includes(requirement)) : [];
+  const contract = task.id === 'character/scout/combat'
+    ? {
+        signatureRequirements: ['one compact pair of binoculars hangs naturally at the center of his chest', 'binoculars remain resting in their normal hanging position'],
+        handsRequirements: ['both hands are away from the binoculars', 'hands are empty'],
+        postureRequirements: ['torso leans subtly forward', 'shoulders are slightly raised and tense', 'eyes focus sharply'],
+      }
+    : task.id === 'character/fighter/combat'
+      ? {
+          signatureRequirements: ['one matched pair of worn training gloves', 'one glove worn normally on each hand', 'compact defensive boxing guard'],
+          handsRequirements: [],
+          postureRequirements: ['center of gravity is slightly lowered', 'compact defensive boxing guard', 'focused eyes'],
+        }
+      : task.id === 'character/engineer/combat'
+        ? {
+            signatureRequirements: ['one compact adjustable wrench remains secured', 'normal carried position on the tool belt', 'tools remain static'],
+            handsRequirements: ['hands are empty', 'away from the tools'],
+            postureRequirements: ['knees bend slightly', 'center of gravity lowers', 'ready for balance'],
+          }
+        : task.id === 'character/medic/combat'
+          ? {
+              signatureRequirements: ['first-aid pouch remains closed', 'fixed in its normal position at her waist'],
+              handsRequirements: ['hands are empty', 'away from the pouch'],
+              postureRequirements: ['upper body leans slightly away', 'shoulders are tense', 'cautious posture'],
+            }
+          : { signatureRequirements: [], handsRequirements: [], postureRequirements: [] };
+  const signatureMissing = task.postureOnly ? contract.signatureRequirements.filter((requirement) => !providerPrompt.toLowerCase().includes(requirement)) : [];
+  const handsEmptyMissing = task.handsEmpty ? contract.handsRequirements.filter((requirement) => !providerPrompt.toLowerCase().includes(requirement)) : [];
+  const postureRequirements = contract.postureRequirements;
   const postureMissing = task.postureOnly ? postureRequirements.filter((requirement) => !providerPrompt.toLowerCase().includes(requirement)) : [];
-  const staticSignaturePropContract = task.postureOnly ? staticMissing.length === 0 && propTransitionLanguageCount === 0 : undefined;
+  const signaturePropContract = task.postureOnly ? signatureMissing.length === 0 && propTransitionLanguageCount === 0 : undefined;
+  const staticSignaturePropContract = task.postureOnly && task.signaturePropMode === 'static' ? signaturePropContract : undefined;
   const handsEmptyContract = task.handsEmpty ? handsEmptyMissing.length === 0 : undefined;
-  const postureOnlyContract = task.postureOnly ? staticSignaturePropContract === true && handsEmptyContract === true && postureMissing.length === 0 : undefined;
+  const postureOnlyContract = task.postureOnly ? signaturePropContract === true && (task.handsEmpty ? handsEmptyContract === true : true) && postureMissing.length === 0 : undefined;
   const forbiddenTokens = [...new Set([...base.forbiddenTokens, ...dynamicTokens])];
   const dynamicFailures = dynamicTokens.map((token) => `dynamic equipment token: ${token}`);
   const injuryFailures = injuryTokens.map((token) => `injury-state token: ${token}`);
   const militaryFailures = militaryTokens.map((token) => `military token: ${token}`);
   const postureFailures = [
-    ...staticMissing.map((requirement) => `missing static prop anchor: ${requirement}`),
+    ...signatureMissing.map((requirement) => `missing signature prop anchor: ${requirement}`),
     ...handsEmptyMissing.map((requirement) => `missing hands-empty anchor: ${requirement}`),
     ...postureMissing.map((requirement) => `missing posture anchor: ${requirement}`),
     ...(propTransitionLanguageCount > 0 ? [`prop transition language count: ${propTransitionLanguageCount}`] : []),
@@ -376,6 +415,8 @@ export function auditCombatProviderPrompt(task: ArtTask, providerPrompt: string)
     postureOnlyContract,
     handsEmptyContract,
     staticSignaturePropContract,
+    signaturePropContract,
+    signatureInteractionLanguageCount: propTransitionLanguageCount,
     singlePropContract: singleProp ? singleProp.passed : undefined,
     failures: [...base.failures, ...dynamicFailures, ...injuryFailures, ...militaryFailures, ...singlePropFailures, ...postureFailures],
   };

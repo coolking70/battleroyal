@@ -279,6 +279,15 @@
       "provider": "agnes",
       "approvedAt": "2026-08-09T01:00:22.693Z",
       "publicPath": "/assets/characters/medic/injured.png"
+    },
+    "character/scout/combat": {
+      "candidateHash": "7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01",
+      "contentHash": "7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01",
+      "promptHash": "7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-09T02:58:24.372Z",
+      "publicPath": "/assets/characters/scout/combat.png"
     }
   }
 }

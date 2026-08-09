@@ -210,6 +210,11 @@ export async function writePromptReport(
   ]);
   const canaryTaskIds = new Set<string>([SCOUT_INJURED_CANARY_TASK_ID]);
   const combatCanaryTaskIds = new Set<string>(['character/scout/combat']);
+  const combatBatchTaskIds = new Set<string>([
+    'character/fighter/combat',
+    'character/engineer/combat',
+    'character/medic/combat',
+  ]);
   const injuredBatchTaskIds = new Set<string>([
     'character/fighter/injured',
     'character/engineer/injured',
@@ -219,6 +224,8 @@ export async function writePromptReport(
     ? 'phase4a23-b2'
     : canaryTaskIds.has(built.task.id)
       ? 'phase4a41-scout-injured-canary'
+    : combatBatchTaskIds.has(built.task.id)
+      ? 'phase4a44-combat-batch'
     : combatCanaryTaskIds.has(built.task.id)
       ? 'phase4a432-scout-combat-posture-only'
     : injuredBatchTaskIds.has(built.task.id)

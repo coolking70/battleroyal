@@ -13,6 +13,7 @@ import { agnesRequestFor } from './providers/agnes';
 import { runEventE1Batch } from './eventBatch';
 import { runInjuredBatch } from './injuredBatch';
 import { runScoutCombatCanary } from './combatCanary';
+import { runCombatBatch } from './combatBatch';
 import type { ArtConfig, ArtTask } from './types';
 
 interface Args {
@@ -58,6 +59,7 @@ function printHelp(): void {
   art:generate [--task ...|--category characters|--status missing] [--dry-run] [--force] [--concurrency 1|2] [--report-name name]
   art:event-e1 [--report-name name] (exactly four world events, sequential, no rerolls)
   art:injured-batch [--report-name name] (Fighter, Engineer, Medic once each, sequential, no rerolls)
+  art:combat-batch [--report-name name] (Fighter, Engineer, Medic once each, sequential, no rerolls)
   Scout Combat canary: art:generate --task character/scout/combat --concurrency 1 (one call, no rerolls)
   art:list
   art:approve --task ... --candidate <contentHash>
@@ -75,7 +77,7 @@ async function doctor(config: ArtConfig, offline: boolean): Promise<number> {
   const checks: Array<[string, boolean, string]> = [];
   try {
     const tasks = await loadTasks(config.rootDir);
-    checks.push(['task definitions', tasks.length === 33 && tasks.length <= 40, `${tasks.length} tasks`]);
+    checks.push(['task definitions', tasks.length === 36 && tasks.length <= 40, `${tasks.length} tasks`]);
   } catch (error) {
     checks.push(['task definitions', false, errorMessage(error)]);
   }
@@ -228,6 +230,13 @@ async function main(): Promise<number> {
     case 'injured-batch': {
       if (args.concurrency !== undefined && args.concurrency !== 1) throw new Error('injured-batch requires --concurrency 1');
       const result = await runInjuredBatch(config, await loadTasks(config.rootDir), { reportName: args.reportName, force: args.force });
+      console.log(JSON.stringify(result.report, null, 2));
+      return result.exitCode;
+    }
+    case 'combat-batch': {
+      if (args.concurrency !== undefined && args.concurrency !== 1) throw new Error('combat-batch requires --concurrency 1');
+      if (args.dryRun) throw new Error('combat-batch dry-run is not a production generation');
+      const result = await runCombatBatch(config, await loadTasks(config.rootDir), { reportName: args.reportName, force: args.force });
       console.log(JSON.stringify(result.report, null, 2));
       return result.exitCode;
     }

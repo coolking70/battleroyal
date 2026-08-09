@@ -60,10 +60,10 @@ afterEach(async () => {
 });
 
 describe('Phase 4 task and prompt contracts', () => {
-  it('loads exactly 32 stable tasks and hashes prompt inputs deterministically', async () => {
+  it('loads exactly 36 stable tasks and hashes prompt inputs deterministically', async () => {
     const { root } = await fixture();
     const tasks = await loadTasks(root);
-    expect(tasks).toHaveLength(33);
+    expect(tasks).toHaveLength(36);
     const task = tasks[0]!;
     const first = await buildPrompt(root, task, 'test-model');
     const second = await buildPrompt(root, task, 'test-model');

@@ -4,7 +4,7 @@
     "scout": {
       "portrait": "/assets/characters/scout/portrait.png",
       "injured": "/assets/characters/scout/injured.png",
-      "combat": null
+      "combat": "/assets/characters/scout/combat.png"
     },
     "fighter": {
       "portrait": "/assets/characters/fighter/portrait.png",
