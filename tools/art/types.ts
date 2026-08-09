@@ -29,6 +29,7 @@ export interface ArtTask {
   itemProductionCategory?: ItemProductionCategory;
   positiveTraits?: string[];
   positiveComposition?: string[];
+  singlePropTransition?: boolean;
   styleProfile: string;
   revision: number;
   status: ArtTaskStatus;

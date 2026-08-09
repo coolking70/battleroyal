@@ -3,11 +3,12 @@ import path from 'node:path';
 import { contentHash } from './cache';
 import { generateTask, emptyReport, writePromptReport } from './generator';
 import { buildPrompt } from './promptBuilder';
+import { auditCombatProviderPrompt } from './promptAudit';
 import { listCandidates } from './reviewer';
 import { ArtPipelineError, type ArtConfig, type ArtTask } from './types';
 import { SCOUT_COMBAT_CANARY_TASK_ID } from './canary';
 
-export const COMBAT_CANARY_STRATEGY = 'descriptor-locked-text-only-dynamic-equipment-neutral' as const;
+export const COMBAT_CANARY_STRATEGY = 'descriptor-locked-text-only-dynamic-equipment-neutral-single-prop' as const;
 export const DYNAMIC_EQUIPMENT_POLICY = 'weapon visuals belong to item/equipment systems; character combat state art remains equipment-neutral' as const;
 
 export interface CombatValidationReport {
@@ -22,8 +23,12 @@ export interface ScoutCombatTaskReport {
   taskId: string;
   basePortraitTask: string;
   injuredTask: string;
+  oldCandidateHash: string;
+  oldReviewDecision: 'rejected';
   candidateHash: string | null;
   contentHash: string | null;
+  promptHash: string | null;
+  previousPromptHash: string;
   width: number | null;
   height: number | null;
   validation: CombatValidationReport;
@@ -35,6 +40,7 @@ export interface ScoutCombatTaskReport {
   identityDescriptorVersion: number;
   combatDescriptorVersion: number;
   dynamicEquipmentPolicy: string;
+  singlePropContract: boolean;
   hardVisualObservation: string;
 }
 
@@ -61,13 +67,17 @@ function emptyValidation(): CombatValidationReport {
   return { status: 'not_attempted', actualWidth: null, actualHeight: null, mimeType: null, errors: [] };
 }
 
-function taskReport(task: ArtTask, basePortrait: ArtTask, injured: ArtTask, values: Partial<ScoutCombatTaskReport> = {}): ScoutCombatTaskReport {
+function taskReport(task: ArtTask, basePortrait: ArtTask, injured: ArtTask, oldCandidateHash: string, previousPromptHash: string, values: Partial<ScoutCombatTaskReport> = {}): ScoutCombatTaskReport {
   return {
     taskId: task.id,
     basePortraitTask: basePortrait.id,
     injuredTask: injured.id,
+    oldCandidateHash,
+    oldReviewDecision: 'rejected',
     candidateHash: null,
     contentHash: null,
+    promptHash: null,
+    previousPromptHash,
     width: null,
     height: null,
     validation: emptyValidation(),
@@ -79,6 +89,7 @@ function taskReport(task: ArtTask, basePortrait: ArtTask, injured: ArtTask, valu
     identityDescriptorVersion: Math.max(basePortrait.revision, injured.revision),
     combatDescriptorVersion: task.revision,
     dynamicEquipmentPolicy: DYNAMIC_EQUIPMENT_POLICY,
+    singlePropContract: false,
     hardVisualObservation: '',
     ...values,
   };
@@ -100,8 +111,10 @@ export async function runScoutCombatCanary(
   const basePortrait = tasks.find((item) => item.id === 'character/scout/portrait');
   const injured = tasks.find((item) => item.id === 'character/scout/injured');
   if (!task || !basePortrait || !injured) throw new Error('Scout Combat canary task or identity sources are missing');
-  if (task.promptStrategy !== 'character-combat-positive-only' || task.revision < 2) throw new Error('Scout Combat task is not descriptor-locked revision 2');
-  if ((await listCandidates(config)).some((candidate) => candidate.taskId === task.id)) throw new Error('Scout Combat candidate already exists; rerolls are prohibited');
+  if (task.promptStrategy !== 'character-combat-positive-only' || task.revision < 3 || !task.singlePropTransition) throw new Error('Scout Combat task is not descriptor-locked single-prop revision 3');
+  const existing = (await listCandidates(config)).filter((candidate) => candidate.taskId === task.id);
+  if (existing.length !== 1 || existing[0]?.reviewStatus !== 'rejected') throw new Error('Scout Combat requires exactly one rejected prior candidate; rerolls are prohibited');
+  const oldCandidate = existing[0]!;
 
   const report: ScoutCombatCanaryReport = {
     strategy: COMBAT_CANARY_STRATEGY,
@@ -117,6 +130,8 @@ export async function runScoutCombatCanary(
   const generationReport = emptyReport();
   const built = await buildPrompt(config.rootDir, task, config.model);
   const hash = contentHash(built);
+  const promptAudit = auditCombatProviderPrompt(task, built.prompt);
+  if (!promptAudit.passed || promptAudit.singlePropContract !== true) throw new Error(`Scout Combat single-prop prompt contract failed: ${promptAudit.failures.join('; ')}`);
   await writePromptReport(config.rootDir, built, hash);
   const beforeApiCalls = generationReport.apiCalls;
   const beforeCacheHits = generationReport.cacheHits;
@@ -124,9 +139,11 @@ export async function runScoutCombatCanary(
     const metadata = await generateTask(config, task, { force: false, retryDelaysMs: [] }, generationReport);
     if (!metadata) throw new Error('Scout Combat generation returned no candidate');
     report.generated = 1;
-    report.tasks.push(taskReport(task, basePortrait, injured, {
+    report.tasks.push(taskReport(task, basePortrait, injured, oldCandidate.hash, oldCandidate.promptHash, {
       candidateHash: metadata.hash,
       contentHash: metadata.contentHash,
+      promptHash: hash,
+      previousPromptHash: oldCandidate.promptHash,
       width: metadata.actualWidth,
       height: metadata.actualHeight,
       validation: {
@@ -141,16 +158,20 @@ export async function runScoutCombatCanary(
       cacheHits: generationReport.cacheHits - beforeCacheHits,
       source: metadata.source,
       providerStatus: metadata.source === 'cache' ? 'cache_hit' : 'generated',
+      singlePropContract: true,
       hardVisualObservation: 'candidate generated; human comparison against Scout Portrait and Injured remains required; no automatic similarity score or reroll',
     }));
   } catch (error) {
     const contentRejected = isCombatContentRejection(error);
-    report.tasks.push(taskReport(task, basePortrait, injured, {
+    report.tasks.push(taskReport(task, basePortrait, injured, oldCandidate.hash, oldCandidate.promptHash, {
+      promptHash: hash,
+      previousPromptHash: oldCandidate.promptHash,
       review: 'pending',
       apiCalls: generationReport.apiCalls - beforeApiCalls,
       cacheHits: generationReport.cacheHits - beforeCacheHits,
       source: 'none',
       providerStatus: contentRejected ? 'provider_rejected' : 'failed',
+      singlePropContract: true,
       hardVisualObservation: error instanceof Error ? error.message : String(error),
     }));
     if (!contentRejected) {
@@ -169,6 +190,6 @@ export async function runScoutCombatCanary(
 
 async function writeReport(config: ArtConfig, reportName: string | undefined, report: ScoutCombatCanaryReport): Promise<void> {
   await fs.mkdir(path.join(config.rootDir, 'reports'), { recursive: true });
-  const safeName = sanitizeReportName(reportName ?? 'phase4a43-scout-combat-canary');
+  const safeName = sanitizeReportName(reportName ?? 'phase4a431-scout-combat-single-prop');
   await fs.writeFile(path.join(config.rootDir, 'reports', `${safeName}.json`), `${JSON.stringify(report, null, 2)}\n`);
 }

@@ -7,11 +7,12 @@ import { contentHash } from '../tools/art/cache';
 import { runScoutCombatCanary, COMBAT_CANARY_STRATEGY, DYNAMIC_EQUIPMENT_POLICY, isCombatContentRejection } from '../tools/art/combatCanary';
 import { SCOUT_COMBAT_CANARY_TASK_ID, EXCLUDED_PHASE4A43_COMBAT_TASK_IDS, selectScoutCombatCanary } from '../tools/art/canary';
 import { generateImage } from '../tools/art/apiClient';
-import { auditCombatProviderPrompt, FORBIDDEN_CHARACTER_TOKENS, FORBIDDEN_COMBAT_DYNAMIC_EQUIPMENT_TOKENS } from '../tools/art/promptAudit';
+import { auditCombatProviderPrompt, auditSinglePropTransitionPrompt, FORBIDDEN_CHARACTER_TOKENS, FORBIDDEN_COMBAT_DYNAMIC_EQUIPMENT_TOKENS } from '../tools/art/promptAudit';
 import { buildPrompt, promptHashInput } from '../tools/art/promptBuilder';
 import { loadTasks } from '../tools/art/taskPlanner';
 import { getCharacterVisual, setAssetManifest, type AssetManifest } from '../src/ui/visualAssets';
 import { ArtPipelineError, type ArtTask } from '../tools/art/types';
+import { listCandidates, reviewCandidate } from '../tools/art/reviewer';
 
 const COMBAT_ANCHORS = [
   'adult male-presenting character around 30',
@@ -19,15 +20,17 @@ const COMBAT_ANCHORS = [
   'plain slate-blue outdoor jacket',
   'simple charcoal shirt',
   'plain khaki outdoor trousers',
-  'compact binoculars',
-  'simple neck strap',
+  'single pair of compact binoculars',
+  'one simple neck strap',
+  'same pair lifted near his face in his left hand',
+  'neck strap visibly connected to the raised binoculars',
+  'center of his chest beneath the raised binoculars is visually clear',
   'small civilian side messenger pouch',
   'fully alert and healthy appearance',
   'slightly forward-leaning body',
   'subtly raised shoulders',
   'eyes focused sharply toward something outside the frame',
-  'one hand steadying binoculars close to the chest',
-  'other hand open and ready to move',
+  'free hand open and ready to move',
   'intact clothing',
 ];
 
@@ -42,6 +45,40 @@ async function tempArtRoot(): Promise<string> {
   await fs.mkdir(path.join(root, 'public', 'assets'), { recursive: true });
   await fs.writeFile(path.join(root, 'public', 'assets', 'manifest.json'), JSON.stringify({ version: 1, characters: {}, zones: {}, items: {}, worldEvents: {} }));
   return root;
+}
+
+async function seedRejectedOldCombatCandidate(root: string): Promise<string> {
+  const hash = '80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1';
+  const dir = path.join(root, 'art', 'candidates', 'characters', 'scout', 'combat', hash);
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, `${hash}.json`), JSON.stringify({
+    taskId: 'character/scout/combat',
+    hash,
+    contentHash: hash,
+    promptHash: hash,
+    provider: 'agnes',
+    model: 'agnes-image-2.1-flash',
+    generatedAt: '2026-08-09T01:09:49.015Z',
+    requestedWidth: 768,
+    requestedHeight: 1024,
+    requestedRatio: '3:4',
+    actualWidth: 864,
+    actualHeight: 1152,
+    prompt: 'old prompt',
+    negativePrompt: '',
+    styleProfileVersion: 'old',
+    mimeType: 'image/png',
+    actualMimeType: 'image/png',
+    bytes: 1,
+    imagePath: `art/candidates/characters/scout/combat/${hash}/${hash}.png`,
+    publicPath: '/assets/characters/scout/combat.png',
+    validationStatus: 'passed',
+    validationErrors: [],
+    reviewStatus: 'rejected',
+    reviewReason: 'Human review: duplicated binocular prop',
+    source: 'api',
+  }));
+  return hash;
 }
 
 describe('Phase 4A-4.3 Scout Combat equipment-neutral canary', () => {
@@ -61,9 +98,9 @@ describe('Phase 4A-4.3 Scout Combat equipment-neutral canary', () => {
     expect(tasks.find((task) => task.id === 'world_event/rain/illustration')).toBeDefined();
   });
 
-  it('uses revision 2 and the equipment-neutral combat strategy', async () => {
+  it('uses revision 3 and the equipment-neutral single-prop strategy', async () => {
     const task = await taskById(SCOUT_COMBAT_CANARY_TASK_ID);
-    expect(task).toMatchObject({ promptStrategy: 'character-combat-positive-only', revision: 2, providerDescriptor: 'alert civilian urban observer in a tense active stance', styleProfile: 'character', status: 'planned' });
+    expect(task).toMatchObject({ promptStrategy: 'character-combat-positive-only', revision: 3, singlePropTransition: true, providerDescriptor: 'alert civilian urban observer in a tense active stance', styleProfile: 'character', status: 'planned' });
   });
 
   it('uses the approved portrait and Injured task as identity sources', async () => {
@@ -99,16 +136,31 @@ describe('Phase 4A-4.3 Scout Combat equipment-neutral canary', () => {
     expect(built.prompt).not.toMatch(/weapon slot|inventory|armor|equipment loadout|\bfixed equipment\b/i);
   });
 
+  it('requires the same binocular instance to transition from strap to raised state', async () => {
+    const task = await taskById(SCOUT_COMBAT_CANARY_TASK_ID);
+    const built = await buildPrompt(process.cwd(), task, 'agnes-image-2.1-flash');
+    expect(auditSinglePropTransitionPrompt(built.prompt)).toEqual({ passed: true, missing: [], ambiguousState: false });
+    expect(built.prompt).not.toMatch(/binoculars\s+(?:hang|hanging)\s+from/i);
+    expect(built.prompt).not.toMatch(/\bhanging\b[\s\S]*\braised\b/i);
+    expect(built.prompt).not.toMatch(/\braised\b[\s\S]*\bhanging\b/i);
+  });
+
+  it('rejects the old independent hanging-plus-raised prop semantics', () => {
+    const result = auditSinglePropTransitionPrompt('Compact binoculars hang from a simple neck strap while another pair is raised near his face.');
+    expect(result.passed).toBe(false);
+    expect(result.ambiguousState).toBe(true);
+  });
+
   it('hashes strategy, identity, combat state, composition, revision, style and final prompt', async () => {
     const built = await buildPrompt(process.cwd(), await taskById(SCOUT_COMBAT_CANARY_TASK_ID), 'agnes-image-2.1-flash');
-    expect(promptHashInput(built)).toMatchObject({ promptStrategy: 'character-combat-positive-only', positiveTraits: built.task.positiveTraits, positiveComposition: built.task.positiveComposition, revision: 2, prompt: built.prompt, styleProfileVersion: built.styleProfileVersion });
+    expect(promptHashInput(built)).toMatchObject({ promptStrategy: 'character-combat-positive-only', positiveTraits: built.task.positiveTraits, positiveComposition: built.task.positiveComposition, singlePropTransition: true, revision: 3, prompt: built.prompt, styleProfileVersion: built.styleProfileVersion });
     expect(contentHash(built)).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('passes the equipment-neutral Combat prompt audit', async () => {
     const task = await taskById(SCOUT_COMBAT_CANARY_TASK_ID);
     const built = await buildPrompt(process.cwd(), task, 'agnes-image-2.1-flash');
-    expect(auditCombatProviderPrompt(task, built.prompt)).toMatchObject({ passed: true, forbiddenTokenCount: 0, dynamicEquipmentForbiddenTokenCount: 0, internalTaskId: false, internalEntityId: false });
+    expect(auditCombatProviderPrompt(task, built.prompt)).toMatchObject({ passed: true, forbiddenTokenCount: 0, dynamicEquipmentForbiddenTokenCount: 0, singlePropContract: true, internalTaskId: false, internalEntityId: false });
   });
 
   it.each(FORBIDDEN_COMBAT_DYNAMIC_EQUIPMENT_TOKENS)('rejects dynamic equipment token %s', async (token) => {
@@ -139,12 +191,13 @@ describe('Phase 4A-4.3 Scout Combat equipment-neutral canary', () => {
   });
 
   it('uses the declared dynamic-equipment policy', () => {
-    expect(COMBAT_CANARY_STRATEGY).toBe('descriptor-locked-text-only-dynamic-equipment-neutral');
+    expect(COMBAT_CANARY_STRATEGY).toBe('descriptor-locked-text-only-dynamic-equipment-neutral-single-prop');
     expect(DYNAMIC_EQUIPMENT_POLICY).toMatch(/item\/equipment systems|equipment-neutral/i);
   });
 
   it('generates exactly one API candidate, keeps it pending and does not publish Combat', async () => {
     const root = await tempArtRoot();
+    const oldCandidateHash = await seedRejectedOldCombatCandidate(root);
     const originalFetch = globalThis.fetch;
     const fixture = await fs.readFile(path.join(process.cwd(), 'tests/fixtures/agnes-success-base64.json'), 'utf8');
     let calls = 0;
@@ -157,10 +210,11 @@ describe('Phase 4A-4.3 Scout Combat equipment-neutral canary', () => {
       expect(calls).toBe(1);
       expect(result.exitCode).toBe(0);
       expect(result.report).toMatchObject({ strategy: COMBAT_CANARY_STRATEGY, requested: 1, attempted: 1, generated: 1, apiCalls: 1, cacheHits: 0, rainApiCalls: 0, otherCombatCalls: 0 });
-      expect(result.report.tasks[0]).toMatchObject({ taskId: SCOUT_COMBAT_CANARY_TASK_ID, basePortraitTask: 'character/scout/portrait', injuredTask: 'character/scout/injured', validation: { status: 'passed', actualWidth: 864, actualHeight: 1152 }, review: 'pending', source: 'api', providerStatus: 'generated', dynamicEquipmentPolicy: DYNAMIC_EQUIPMENT_POLICY });
+      expect(result.report.tasks[0]).toMatchObject({ taskId: SCOUT_COMBAT_CANARY_TASK_ID, oldCandidateHash, oldReviewDecision: 'rejected', previousPromptHash: oldCandidateHash, basePortraitTask: 'character/scout/portrait', injuredTask: 'character/scout/injured', validation: { status: 'passed', actualWidth: 864, actualHeight: 1152 }, review: 'pending', source: 'api', providerStatus: 'generated', dynamicEquipmentPolicy: DYNAMIC_EQUIPMENT_POLICY, singlePropContract: true });
+      expect(result.report.tasks[0]?.promptHash).not.toBe(oldCandidateHash);
       const manifest = JSON.parse(await fs.readFile(path.join(root, 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
       expect(manifest.characters.scout).toBeUndefined();
-      expect((await fs.readdir(path.join(root, 'reports')))).toContain('phase4a43-scout-combat-canary.json');
+      expect((await fs.readdir(path.join(root, 'reports')))).toContain('phase4a431-scout-combat-single-prop.json');
     } finally {
       vi.stubGlobal('fetch', originalFetch);
       await fs.rm(root, { recursive: true, force: true });
@@ -169,6 +223,7 @@ describe('Phase 4A-4.3 Scout Combat equipment-neutral canary', () => {
 
   it('does not retry a provider content rejection', async () => {
     const root = await tempArtRoot();
+    await seedRejectedOldCombatCandidate(root);
     const originalFetch = globalThis.fetch;
     let calls = 0;
     vi.stubGlobal('fetch', async () => {
@@ -180,7 +235,7 @@ describe('Phase 4A-4.3 Scout Combat equipment-neutral canary', () => {
       expect(calls).toBe(1);
       expect(result.exitCode).toBe(0);
       expect(result.report).toMatchObject({ requested: 1, attempted: 1, generated: 0, apiCalls: 1, cacheHits: 0, rainApiCalls: 0, otherCombatCalls: 0 });
-      expect(result.report.tasks[0]).toMatchObject({ candidateHash: null, review: 'pending', source: 'none', providerStatus: 'provider_rejected' });
+      expect(result.report.tasks[0]).toMatchObject({ candidateHash: null, review: 'pending', source: 'none', providerStatus: 'provider_rejected', singlePropContract: true, oldReviewDecision: 'rejected' });
     } finally {
       vi.stubGlobal('fetch', originalFetch);
       await fs.rm(root, { recursive: true, force: true });
@@ -196,6 +251,15 @@ describe('Phase 4A-4.3 Scout Combat equipment-neutral canary', () => {
     } finally {
       await fs.rm(root, { recursive: true, force: true });
     }
+  });
+
+  it('can formally reject the old Scout Combat candidate without touching other candidates', async () => {
+    const root = await tempArtRoot();
+    const hash = await seedRejectedOldCombatCandidate(root);
+    const config = createArtConfig(root, { IMAGE_API_KEY: 'test-secret' });
+    await reviewCandidate(config, SCOUT_COMBAT_CANARY_TASK_ID, hash, 'rejected', 'Human review: duplicated binocular prop');
+    expect((await listCandidates(config)).find((candidate) => candidate.hash === hash)?.reviewStatus).toBe('rejected');
+    await fs.rm(root, { recursive: true, force: true });
   });
 
   it('keeps all four Injured official, all Combat slots null, and formal count at 31', async () => {

@@ -88,3 +88,11 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - One real Scout Combat API call succeeded: candidate/content hash `80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1`, actual 864×1152 PNG, validation PASS, review pending. The candidate is exported for human review and is not in the formal Manifest. The review package records the objective binocular observation for human judgment; no reroll occurred.
 - Full suite reached 1162 tests PASS. Typecheck, build, save/dependency/art/Manifest/secret audits, 500-game regression and production dependency audit passed. Browser smoke rendered menu and gameplay without a browser console-error artifact.
 - Next action is human review of Scout Combat. Only an explicit approval followed by publish may promote it; no other Combat or Rain generation is authorized by this phase.
+
+## Phase 4A-4.3.1 progress (2026-08-09)
+
+- Baseline `232d9c0` had 31 formal AI assets and the previous Scout Combat candidate `80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1` pending. It was formally rejected for the human-confirmed duplicated binocular prop.
+- Revised only `character/scout/combat` from revision 2 to 3 using a positive single-prop Object State Transition: one pair, the same pair, one neck strap, raised near the face, chest beneath it clear. Added contract/audit/provider-payload/hash-change tests; no other Combat prompt was changed.
+- Completed the API-before gate: 1167 tests PASS, typecheck/build/save/dependency/art/Manifest/security audits PASS, 500-game regression PASS, production dependency audit 0 vulnerabilities.
+- Generated exactly once with the new prompt: new hash `752052e828e7708ebc010457bb9eca11e718a7ec91e18e63dd8b133ad11f6159`, API=1, cache=0, validation PASS, review pending. Visual review found the duplicate binocular prop remained; this is recorded as Art Strategy FAIL / Technical Execution PASS, with no reroll and no publication.
+- Review package: `output/art-review/phase4a431-scout-combat/`. If rejected again, do not generate Scout Combat v3/v4; use posture-only recovery and wait for the next explicit phase.

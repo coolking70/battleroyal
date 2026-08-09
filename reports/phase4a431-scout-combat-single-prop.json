@@ -1,0 +1,42 @@
+{
+  "strategy": "descriptor-locked-text-only-dynamic-equipment-neutral-single-prop",
+  "requested": 1,
+  "attempted": 1,
+  "generated": 1,
+  "apiCalls": 1,
+  "cacheHits": 0,
+  "rainApiCalls": 0,
+  "otherCombatCalls": 0,
+  "tasks": [
+    {
+      "taskId": "character/scout/combat",
+      "basePortraitTask": "character/scout/portrait",
+      "injuredTask": "character/scout/injured",
+      "oldCandidateHash": "80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1",
+      "oldReviewDecision": "rejected",
+      "candidateHash": "752052e828e7708ebc010457bb9eca11e718a7ec91e18e63dd8b133ad11f6159",
+      "contentHash": "752052e828e7708ebc010457bb9eca11e718a7ec91e18e63dd8b133ad11f6159",
+      "promptHash": "752052e828e7708ebc010457bb9eca11e718a7ec91e18e63dd8b133ad11f6159",
+      "previousPromptHash": "80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1",
+      "width": 864,
+      "height": 1152,
+      "validation": {
+        "status": "passed",
+        "actualWidth": 864,
+        "actualHeight": 1152,
+        "mimeType": "image/png",
+        "errors": []
+      },
+      "review": "pending",
+      "apiCalls": 1,
+      "cacheHits": 0,
+      "source": "api",
+      "providerStatus": "generated",
+      "identityDescriptorVersion": 3,
+      "combatDescriptorVersion": 3,
+      "dynamicEquipmentPolicy": "weapon visuals belong to item/equipment systems; character combat state art remains equipment-neutral",
+      "singlePropContract": true,
+      "hardVisualObservation": "Human visual review observation: Scout identity, slate-blue jacket, charcoal shirt, khaki trousers and side pouch remain recognizable; active forward-leaning posture and focused expression are clear, with no fixed weapon or military/tactical equipment visible. The single-prop objective was not achieved: one binocular pair is raised near the face while a second complete binocular pair remains on the chest. This is recorded as an art-strategy failure for human review only; the candidate remains pending and no auto-reject or reroll occurred."
+    }
+  ]
+}

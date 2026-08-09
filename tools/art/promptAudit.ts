@@ -225,7 +225,31 @@ export interface PromptAuditResult {
   internalEntityId: boolean;
   designSheetHeading: boolean;
   dynamicEquipmentForbiddenTokenCount?: number;
+  singlePropContract?: boolean;
   failures: string[];
+}
+
+export interface SinglePropContractResult {
+  passed: boolean;
+  missing: string[];
+  ambiguousState: boolean;
+}
+
+const SINGLE_PROP_REQUIREMENTS = [
+  'a single pair of compact binoculars',
+  'that same pair is lifted near his face',
+  'one simple neck strap',
+  'neck strap remains visibly connected to the raised binoculars',
+  'center of his chest beneath the raised binoculars is visually clear',
+] as const;
+
+export function auditSinglePropTransitionPrompt(providerPrompt: string): SinglePropContractResult {
+  const lower = providerPrompt.toLowerCase();
+  const missing = SINGLE_PROP_REQUIREMENTS.filter((requirement) => !lower.includes(requirement));
+  const ambiguousState = /\bbinoculars\s+(?:hang|hanging)\s+from\b/i.test(providerPrompt)
+    || /\bhanging\b[\s\S]*\braised\b/i.test(providerPrompt)
+    || /\braised\b[\s\S]*\bhanging\b/i.test(providerPrompt);
+  return { passed: missing.length === 0 && !ambiguousState, missing: [...missing], ambiguousState };
 }
 
 export function auditCharacterProviderPrompt(task: ArtTask, providerPrompt: string): PromptAuditResult {
@@ -254,16 +278,24 @@ export function auditCharacterProviderPrompt(task: ArtTask, providerPrompt: stri
 export function auditCombatProviderPrompt(task: ArtTask, providerPrompt: string): PromptAuditResult {
   const base = auditCharacterProviderPrompt(task, providerPrompt);
   const dynamicTokens = FORBIDDEN_COMBAT_DYNAMIC_EQUIPMENT_TOKENS.filter((token) => tokenPattern(token).test(providerPrompt));
+  const singleProp = task.singlePropTransition ? auditSinglePropTransitionPrompt(providerPrompt) : null;
   const forbiddenTokens = [...new Set([...base.forbiddenTokens, ...dynamicTokens])];
   const dynamicFailures = dynamicTokens.map((token) => `dynamic equipment token: ${token}`);
+  const singlePropFailures = singleProp
+    ? [
+        ...singleProp.missing.map((requirement) => `missing single-prop anchor: ${requirement}`),
+        ...(singleProp.ambiguousState ? ['ambiguous independent hanging/raised binocular state'] : []),
+      ]
+    : [];
   return {
     ...base,
     strategy: task.promptStrategy ?? 'standard',
-    passed: base.passed && dynamicTokens.length === 0,
+    passed: base.passed && dynamicTokens.length === 0 && singlePropFailures.length === 0,
     forbiddenTokenCount: forbiddenTokens.length,
     forbiddenTokens,
     dynamicEquipmentForbiddenTokenCount: dynamicTokens.length,
-    failures: [...base.failures, ...dynamicFailures],
+    singlePropContract: singleProp ? singleProp.passed : undefined,
+    failures: [...base.failures, ...dynamicFailures, ...singlePropFailures],
   };
 }
 

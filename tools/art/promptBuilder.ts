@@ -150,6 +150,7 @@ export function promptHashInput(built: BuiltPrompt): Record<string, unknown> {
       positiveTraits: built.task.positiveTraits ?? [],
       ...(built.task.itemProductionCategory ? { itemProductionCategory: built.task.itemProductionCategory } : {}),
       ...(built.task.promptStrategy !== 'item-positive-only-unmarked' && built.task.positiveComposition ? { positiveComposition: built.task.positiveComposition } : {}),
+      ...(built.task.singlePropTransition ? { singlePropTransition: true } : {}),
     } : {}),
   };
 }
