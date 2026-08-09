@@ -3,6 +3,8 @@ import type { RecipeView } from '../../core/crafting';
 import { getItem } from '../../data/items';
 import { getZoneDef } from '../../data/zones';
 import { CATEGORY_LABEL, itemSummary, stackLabel } from '../../utils/format';
+import { ITEM_CATEGORY_META, presentItem } from '../itemPresentation';
+import { VisualImage } from './VisualImage';
 
 interface CraftPanelProps {
   views: RecipeView[];
@@ -42,6 +44,11 @@ export function CraftPanel({
             )}
           </div>
           <div className="cg-name">
+            <VisualImage
+              visual={presentItem(goalView.recipe.outputItemId).visual}
+              alt={`${getItem(goalView.recipe.outputItemId).name}制作目标图标`}
+              className="craft-output-visual craft-goal-output-visual"
+            />
             {stackLabel({
               uid: 'goal',
               itemId: goalView.recipe.outputItemId,
@@ -66,6 +73,11 @@ export function CraftPanel({
                 const ok = held >= required;
                 return (
                   <span key={ing.itemId} className={`cg-mat${ok ? ' ok' : ' no'}`}>
+                    <VisualImage
+                      visual={presentItem(ing.itemId).visual}
+                      alt={`${getItem(ing.itemId).name}材料图标`}
+                      className="craft-material-visual"
+                    />
                     {getItem(ing.itemId).name} {held} / {required}{' '}
                     {ok ? '✓' : '✗'}
                   </span>
@@ -97,17 +109,28 @@ export function CraftPanel({
 
       {views.map(({ recipe, craftable, missing, staminaCost, blockedReason }) => {
         const out = getItem(recipe.outputItemId);
+        const output = presentItem(recipe.outputItemId);
+        const outputMeta = ITEM_CATEGORY_META[out.category];
         const missingIds = new Set(missing.map((m) => m.itemId));
         const isGoal = recipe.id === goalRecipeId;
         return (
           <div
             className={`recipe${craftable ? '' : ' locked'}${isGoal ? ' is-goal' : ''}`}
+            data-craft-state={craftable ? 'available' : 'blocked'}
+            data-output-item-id={recipe.outputItemId}
             key={recipe.id}
           >
             <div className="row1">
-              <span className="nm">{recipe.name}</span>
+              <span className="nm recipe-output-name">
+                <VisualImage
+                  visual={output.visual}
+                  alt={`${out.name}合成结果图标`}
+                  className="craft-output-visual"
+                />
+                {recipe.name}
+              </span>
               <span className={`tag tag-${out.category}`}>
-                {CATEGORY_LABEL[out.category]}
+                <span aria-hidden="true">{outputMeta.icon}</span> {CATEGORY_LABEL[out.category]}
               </span>
             </div>
 
@@ -130,6 +153,16 @@ export function CraftPanel({
             <div className="faint mono" style={{ fontSize: 11, marginBottom: 6 }}>
               {itemSummary(out)} · 体力 -{staminaCost}
             </div>
+
+            <div className={`recipe-state ${craftable ? 'recipe-state-ready' : 'recipe-state-blocked'}`}>
+              <span className="recipe-state-icon" aria-hidden="true">{craftable ? '✓' : '!'}</span>
+              <span>{craftable ? '可合成' : blockedReason ?? '当前不可合成'}</span>
+            </div>
+            {!craftable && missing.length > 0 && (
+              <div className="recipe-missing" data-missing-materials="true">
+                缺少：{missing.map((m) => `${getItem(m.itemId).name}×${m.count}`).join('、')}
+              </div>
+            )}
 
             <div className="recipe-actions">
               <button

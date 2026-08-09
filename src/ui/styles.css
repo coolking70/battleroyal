@@ -1031,6 +1031,134 @@ input {
   font-size: 12px;
 }
 
+.ground-item-name {
+  min-width: 0;
+}
+
+.ground-item-visual,
+.pending-replace-visual,
+.craft-material-visual {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
+.ground-item-visual {
+  width: 30px;
+  height: 30px;
+  font-size: 22px;
+  border-radius: 3px;
+}
+
+.search-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent-dim);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, rgba(38, 75, 94, 0.64), rgba(20, 28, 35, 0.82));
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.16);
+}
+
+.search-result-empty {
+  border-color: var(--line);
+  border-left-color: var(--text-faint);
+  background: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.025) 0 5px, rgba(8, 12, 16, 0.2) 5px 10px);
+}
+
+.search-result-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 22px;
+}
+
+.search-result-item-visual {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border: 1px solid rgba(234, 243, 248, 0.26);
+  border-radius: 4px;
+  font-size: 32px;
+}
+
+.search-result-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.search-result-kicker,
+.pending-kicker {
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.search-result-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.search-result-title-row strong,
+.search-result-empty strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.search-result-meta,
+.search-result-note,
+.search-result-destination,
+.search-result-modifiers {
+  margin-top: 3px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.search-result-destination {
+  color: #b9e3f4;
+}
+
+.search-result-cue {
+  display: inline-flex;
+  width: 16px;
+  justify-content: center;
+  margin-right: 3px;
+  font-family: var(--mono);
+  font-weight: 700;
+}
+
+.search-result-modifiers {
+  color: var(--warn);
+  font-family: var(--mono);
+}
+
+.tag-item-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
 /* 遭遇战：Player / 即时反馈与行动 / Enemy 三段式构图。 */
 
 .game-encounter-active .stage {
@@ -1465,6 +1593,39 @@ input {
   border-radius: var(--radius);
   padding: 12px 14px;
   margin-bottom: 14px;
+  max-height: min(420px, calc(100vh - 150px));
+  overflow-y: auto;
+}
+
+.pending-found {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.pending-item-visual {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border: 1px solid rgba(216, 166, 87, 0.5);
+  border-radius: 4px;
+  font-size: 28px;
+}
+
+.pending-replace-visual {
+  width: 24px;
+  height: 24px;
+  object-fit: cover;
+  font-size: 16px;
+  vertical-align: middle;
+}
+
+.pending-instruction {
+  margin-top: 7px;
 }
 
 .pending h4 {
@@ -1604,6 +1765,48 @@ input {
   text-transform: uppercase;
 }
 
+.equip-item-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.equip-item-visual {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border-radius: 3px;
+  font-size: 22px;
+}
+
+.equip-empty {
+  min-height: 37px;
+}
+
+.equip-candidate {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  color: var(--accent);
+  font-size: 10px;
+}
+
+.equip-candidate-visual {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  object-fit: cover;
+  font-size: 15px;
+}
+
 .equip-slot .nm {
   font-size: 13px;
   margin: 2px 0 3px;
@@ -1683,6 +1886,129 @@ input {
 
 .recipe .nm {
   font-size: 13px;
+}
+
+.recipe-output-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.craft-output-visual {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border-radius: 3px;
+  font-size: 21px;
+}
+
+.craft-goal-output-visual {
+  width: 40px;
+  height: 40px;
+  margin-right: 5px;
+}
+
+.cg-name {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.craft-material-visual {
+  width: 20px;
+  height: 20px;
+  margin-right: 2px;
+  object-fit: cover;
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.cg-mat {
+  display: inline-flex;
+  align-items: center;
+}
+
+.recipe-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.recipe-state-ready {
+  color: var(--ok);
+  background: rgba(45, 89, 62, 0.18);
+}
+
+.recipe-state-blocked {
+  color: var(--warn);
+  background: repeating-linear-gradient(-45deg, rgba(216, 166, 87, 0.12) 0 4px, transparent 4px 8px);
+}
+
+.recipe-state-icon {
+  font-family: var(--mono);
+  font-weight: 700;
+}
+
+.recipe-missing {
+  margin: -1px 0 6px;
+  color: #f0a3a3;
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+
+.planning-rail {
+  gap: 10px;
+}
+
+.planning-panel {
+  flex: 1.25 1 0;
+}
+
+.log-panel {
+  flex: 0.75 1 0;
+}
+
+.planning-panel > .inv-list,
+.planning-panel > .recipe-list {
+  flex: 1;
+}
+
+@media (max-width: 760px) {
+  .col-right.planning-rail {
+    max-height: 640px;
+    overflow-y: auto;
+  }
+
+  .col-right.planning-rail .planning-panel,
+  .col-right.planning-rail .log-panel {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+
+  .col-right.planning-rail .planning-panel {
+    min-height: 300px;
+  }
+
+  .col-right.planning-rail .log-panel {
+    min-height: 280px;
+  }
+
+  .col-right.planning-rail .planning-panel > .inv-list,
+  .col-right.planning-rail .planning-panel > .recipe-list,
+  .col-right.planning-rail .log-panel .log-list {
+    max-height: 235px;
+  }
 }
 
 .recipe .ing {

@@ -151,3 +151,24 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Added 6 focused UI regression tests, including resolved Portrait state and enemy exact-HP boundary, plus a clean production-preview Playwright evidence test. The final browser run covers 1280×720, 1024×720, 390×844 healthy/injured/Guard/EXPOSED/resolved states with zero console/page errors.
 - Final verification: 59 test files / 1246 tests PASS; typecheck/build, save/dependency/art/provenance/security gates, 500-game `PHASE4B2` regression and `npm audit --omit=dev` all PASS. Mobile encounter height is 559.7px versus ~505px baseline, with no horizontal overflow and all six combat buttons reachable. No core/data/formula/RNG/save/assets/manifest changes were made.
 - Added `PHASE4B2_REPORT.md`. No 4B-3 through 4B-6 implementation occurred.
+
+## Phase 4B-3 progress (2026-08-09)
+
+- Fixed the Phase 4B-2 CI blocker first in isolated commit `8bc09bc`: declared
+  `@playwright/test`, added the reproducible preview config, ran the clean-install
+  typecheck path, and pushed. GitHub Actions run `31314784246` completed with `verify`
+  PASS before Phase 4B-3 implementation began.
+- Added presentation-only item and search metadata modules. Search now has consistent
+  in-place item, empty, and encounter feedback derived from existing structured player
+  events; environment-only events cannot overwrite a search result.
+- Added official `VisualImage` item visuals to inventory rows, equipment slots,
+  crafting output/materials, pending pickup/replacement choices, and ground drops.
+  Craft missing materials and public blocking reasons are rendered explicitly.
+- Reworked only the desktop secondary rail so planning and history are visible
+  together. Mobile remains stacked and scrollable; no Phase 4B-5 drawer/bottom-sheet
+  redesign was performed.
+- Added focused UI coverage and a clean production-preview browser evidence spec.
+  Final browser evidence covers 1280×720 and 390×844 with zero console/page errors,
+  390px document width, item/empty/pending/craft/equipment/planning-history states.
+- Added `PHASE4B3_REPORT.md`. Formal PNGs, art manifest/Candidates, `src/core/**`,
+  `src/data/**`, rules, save schema, and package/GAME_VERSION remain unchanged.

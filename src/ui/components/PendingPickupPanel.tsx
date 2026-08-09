@@ -1,6 +1,7 @@
 import type { Combatant, PendingPickup } from '../../core/types';
-import { getItem } from '../../data/items';
-import { itemSummary, stackLabel } from '../../utils/format';
+import { stackLabel } from '../../utils/format';
+import { ITEM_CATEGORY_META, stackPresentation } from '../itemPresentation';
+import { VisualImage } from './VisualImage';
 
 interface PendingPickupPanelProps {
   pending: PendingPickup;
@@ -14,13 +15,24 @@ export function PendingPickupPanel({
   player,
   onResolve,
 }: PendingPickupPanelProps): JSX.Element {
-  const def = getItem(pending.stack.itemId);
+  const pendingItem = stackPresentation(pending.stack);
+  const pendingMeta = ITEM_CATEGORY_META[pendingItem.category];
 
   return (
-    <div className="pending">
+    <div className="pending" data-pending-item-id={pendingItem.itemId}>
       <h4>背包已满</h4>
-      <div className="dim" style={{ fontSize: 12.5 }}>
-        发现 <b>{stackLabel(pending.stack)}</b>（{itemSummary(def, pending.stack)}）。
+      <div className="pending-found">
+        <VisualImage
+          visual={pendingItem.visual}
+          alt={`${pendingItem.name}拾取图标`}
+          className="pending-item-visual"
+        />
+        <div className="dim" style={{ fontSize: 12.5 }}>
+          <div><span className="pending-kicker">待处理拾取</span> · <b>{stackLabel(pending.stack)}</b></div>
+          <div>{pendingItem.summary} · <span className="tag tag-item-category"><span aria-hidden="true">{pendingMeta.icon}</span> {pendingMeta.label}</span></div>
+        </div>
+      </div>
+      <div className="dim pending-instruction" style={{ fontSize: 12.5 }}>
         选择一件背包物品替换，或者放弃它。
       </div>
 
@@ -29,9 +41,15 @@ export function PendingPickupPanel({
           <button
             className="btn btn-sm"
             key={stack.uid}
+            data-replace-item-id={stack.itemId}
             onClick={() => onResolve(true, stack.uid)}
-            title={`丢弃 ${stackLabel(stack)}，换取 ${def.name}`}
+            title={`丢弃 ${stackLabel(stack)}，换取 ${pendingItem.name}`}
           >
+            <VisualImage
+              visual={stackPresentation(stack).visual}
+              alt={`${stackLabel(stack)}图标`}
+              className="pending-replace-visual"
+            />
             换掉 {stackLabel(stack)}
           </button>
         ))}

@@ -16,6 +16,8 @@ import type { Combatant, Command, GameState } from '../../core/types';
 import { LOG_DISPLAY_COUNT } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { cx, stackLabel } from '../../utils/format';
+import { stackPresentation } from '../itemPresentation';
+import { latestPlayerSearchFeedback } from '../searchPresentation';
 import { getWorldEventVisual, getZoneVisual } from '../visualAssets';
 import { zoneStatusMeta } from '../zonePresentation';
 import { ActionBar } from '../components/ActionBar';
@@ -24,6 +26,7 @@ import { EncounterPanel } from '../components/EncounterPanel';
 import { EventLog } from '../components/EventLog';
 import { Inventory } from '../components/Inventory';
 import { PendingPickupPanel } from '../components/PendingPickupPanel';
+import { SearchResultFeedback } from '../components/SearchResultFeedback';
 import { StatusBar } from '../components/StatusBar';
 import { ZoneMap } from '../components/ZoneMap';
 import { VisualImage } from '../components/VisualImage';
@@ -95,6 +98,7 @@ export function GameScreen({
     () => recentEvents(state, LOG_DISPLAY_COUNT),
     [state],
   );
+  const searchFeedback = useMemo(() => latestPlayerSearchFeedback(state), [state]);
 
   return (
     <div
@@ -180,7 +184,10 @@ export function GameScreen({
               </div>
             </div>
 
-            <div className="stage-content">
+            <div
+              className="stage-content"
+              data-search-feedback={searchFeedback?.kind ?? 'none'}
+            >
 
             {bannerEvents.length > 0 && (
               <div className="event-banner-wrap">
@@ -205,6 +212,8 @@ export function GameScreen({
                 ))}
               </div>
             )}
+
+            {searchFeedback && <SearchResultFeedback feedback={searchFeedback} />}
 
             {pending && (
               <PendingPickupPanel
@@ -298,8 +307,13 @@ export function GameScreen({
               ) : (
                 <div className="ground-list">
                   {zoneState?.groundItems.map((stack) => (
-                    <span className="ground-item" key={stack.uid}>
-                      {stackLabel(stack)}
+                    <span className="ground-item" key={stack.uid} data-item-id={stack.itemId}>
+                      <VisualImage
+                        visual={stackPresentation(stack).visual}
+                        alt={`${stackLabel(stack)}地面图标`}
+                        className="ground-item-visual"
+                      />
+                      <span className="ground-item-name">{stackLabel(stack)}</span>
                       <button
                         className="btn btn-sm"
                         disabled={lockedAll}
@@ -322,9 +336,13 @@ export function GameScreen({
         </div>
 
         {/* ---------- 右栏 ---------- */}
-        <div className="col col-right">
-          <section className="panel" style={{ flex: 1 }}>
-            <div className="tabs">
+        <div className="col col-right planning-rail">
+          <section className="panel planning-panel">
+            <div className="panel-title">
+              <span>规划区</span>
+              <span className="faint">背包 · 合成</span>
+            </div>
+            <div className="tabs planning-tabs">
               <button
                 className={cx(tab === 'inventory' && 'active')}
                 onClick={() => setTab('inventory')}
@@ -371,8 +389,15 @@ export function GameScreen({
             )}
 
             {tab === 'log' && (
-              <EventLog events={logEvents} playerId={state.playerId} />
+              <div className="faint">日志已移至下方历史面板。</div>
             )}
+          </section>
+          <section className="panel log-panel">
+            <div className="panel-title">
+              <span>历史日志</span>
+              <span className="faint">最近 {logEvents.length} 条</span>
+            </div>
+            <EventLog events={logEvents} playerId={state.playerId} />
           </section>
         </div>
       </div>
