@@ -1,0 +1,1236 @@
+{
+  "phase": "Phase 4C-7",
+  "generatedAt": "2026-08-09T19:38:06.217Z",
+  "evidenceClass": "SEMI_AUTOMATED_ROUTE_OBSERVATION",
+  "humanPlaytestStatus": "NOT_PERFORMED",
+  "method": {
+    "requestedRuns": 20,
+    "actualRuns": 20,
+    "matrix": "4 characters × 5 policies (truncated deterministic matrix)",
+    "source": "tools/autoPlayer.ts representativeBuildLoop via executeCommand",
+    "commandChannel": "SET_CRAFT_GOAL / SEARCH / MOVE / CRAFT / EQUIP and other legal commands only",
+    "hiddenStatePolicy": "record only player actor milestones; no zone.loot, NPC inventory, NPC location, planner reason or future event data"
+  },
+  "health": {
+    "trustworthyRuns": 20,
+    "requestedEqualsActual": true,
+    "noTimeoutDeadlockIllegalOrHardLimit": true
+  },
+  "milestones": {
+    "targetAdoptedRuns": 20,
+    "rawMaterialObservedRuns": 20,
+    "intermediateCraftRuns": 15,
+    "weaponObtainedRuns": 19,
+    "equipmentRuns": 19,
+    "encounterRuns": 18,
+    "targetCompletedRuns": 9,
+    "deathRuns": 17
+  },
+  "diagnosis": {
+    "target-completed": 9,
+    "equipped-before-encounter": 3,
+    "encounter-before-equipment": 0,
+    "weapon-not-converted": 8,
+    "no-player-material-observed": 0,
+    "no-target-adopted": 0
+  },
+  "records": [
+    {
+      "runId": "route-0-scout-aggressive",
+      "seed": "PHASE4C7-ROUTE-0-scout-aggressive",
+      "characterId": "scout",
+      "policy": "aggressive",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 87,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 3,
+          "glass": 6,
+          "herb": null,
+          "iron": null,
+          "rope": 22,
+          "scrap": null,
+          "stone": 85,
+          "wood": 2
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 3,
+          "glass": 6,
+          "herb": null,
+          "iron": null,
+          "rope": 22,
+          "scrap": null,
+          "stone": 85,
+          "wood": 2
+        },
+        "firstIntermediateCrafted": 23,
+        "firstHighTierWeaponCrafted": 24,
+        "firstWeaponObtained": 5,
+        "firstEquipped": 6,
+        "firstEncounter": 4,
+        "targetCompleted": 24,
+        "death": 87
+      },
+      "rawMaterialsSeen": [
+        "cloth",
+        "glass",
+        "rope",
+        "stone",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [
+        "composite_bow"
+      ],
+      "routeDiagnosis": "target-completed"
+    },
+    {
+      "runId": "route-1-fighter-aggressive",
+      "seed": "PHASE4C7-ROUTE-1-fighter-aggressive",
+      "characterId": "fighter",
+      "policy": "aggressive",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 39,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 10,
+          "glass": 9,
+          "herb": 20,
+          "iron": null,
+          "rope": 1,
+          "scrap": null,
+          "stone": null,
+          "wood": 3
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 10,
+          "glass": 9,
+          "herb": 20,
+          "iron": null,
+          "rope": 1,
+          "scrap": null,
+          "stone": null,
+          "wood": 3
+        },
+        "firstIntermediateCrafted": 8,
+        "firstHighTierWeaponCrafted": null,
+        "firstWeaponObtained": 8,
+        "firstEquipped": 9,
+        "firstEncounter": 2,
+        "targetCompleted": null,
+        "death": 39
+      },
+      "rawMaterialsSeen": [
+        "cloth",
+        "glass",
+        "herb",
+        "rope",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [],
+      "routeDiagnosis": "weapon-not-converted"
+    },
+    {
+      "runId": "route-2-engineer-aggressive",
+      "seed": "PHASE4C7-ROUTE-2-engineer-aggressive",
+      "characterId": "engineer",
+      "policy": "aggressive",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 82,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": null,
+          "glass": 55,
+          "herb": null,
+          "iron": 14,
+          "rope": 12,
+          "scrap": 11,
+          "stone": 13,
+          "wood": 24
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": null,
+          "glass": 55,
+          "herb": null,
+          "iron": 14,
+          "rope": 12,
+          "scrap": 11,
+          "stone": 13,
+          "wood": 24
+        },
+        "firstIntermediateCrafted": 26,
+        "firstHighTierWeaponCrafted": 27,
+        "firstWeaponObtained": 26,
+        "firstEquipped": 20,
+        "firstEncounter": 4,
+        "targetCompleted": 27,
+        "death": 82
+      },
+      "rawMaterialsSeen": [
+        "glass",
+        "iron",
+        "rope",
+        "scrap",
+        "stone",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [
+        "composite_bow"
+      ],
+      "routeDiagnosis": "target-completed"
+    },
+    {
+      "runId": "route-3-medic-aggressive",
+      "seed": "PHASE4C7-ROUTE-3-medic-aggressive",
+      "characterId": "medic",
+      "policy": "aggressive",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 42,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": null,
+          "glass": 23,
+          "herb": null,
+          "iron": null,
+          "rope": 20,
+          "scrap": null,
+          "stone": 35,
+          "wood": 36
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": null,
+          "glass": 23,
+          "herb": null,
+          "iron": null,
+          "rope": 20,
+          "scrap": null,
+          "stone": 35,
+          "wood": 36
+        },
+        "firstIntermediateCrafted": 39,
+        "firstHighTierWeaponCrafted": 40,
+        "firstWeaponObtained": 1,
+        "firstEquipped": 2,
+        "firstEncounter": 30,
+        "targetCompleted": 40,
+        "death": 42
+      },
+      "rawMaterialsSeen": [
+        "glass",
+        "rope",
+        "stone",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [
+        "composite_bow"
+      ],
+      "routeDiagnosis": "target-completed"
+    },
+    {
+      "runId": "route-4-scout-cautious",
+      "seed": "PHASE4C7-ROUTE-4-scout-cautious",
+      "characterId": "scout",
+      "policy": "cautious",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 43,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 31,
+          "glass": 16,
+          "herb": null,
+          "iron": null,
+          "rope": 39,
+          "scrap": 1,
+          "stone": null,
+          "wood": 15
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 31,
+          "glass": 16,
+          "herb": null,
+          "iron": null,
+          "rope": 39,
+          "scrap": 1,
+          "stone": null,
+          "wood": 15
+        },
+        "firstIntermediateCrafted": null,
+        "firstHighTierWeaponCrafted": null,
+        "firstWeaponObtained": 9,
+        "firstEquipped": 10,
+        "firstEncounter": 2,
+        "targetCompleted": null,
+        "death": 43
+      },
+      "rawMaterialsSeen": [
+        "cloth",
+        "glass",
+        "rope",
+        "scrap",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [],
+      "highTierWeaponsCrafted": [],
+      "routeDiagnosis": "weapon-not-converted"
+    },
+    {
+      "runId": "route-5-fighter-cautious",
+      "seed": "PHASE4C7-ROUTE-5-fighter-cautious",
+      "characterId": "fighter",
+      "policy": "cautious",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 22,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": null,
+          "glass": null,
+          "herb": null,
+          "iron": null,
+          "rope": 1,
+          "scrap": null,
+          "stone": 21,
+          "wood": 18
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": null,
+          "glass": null,
+          "herb": null,
+          "iron": null,
+          "rope": 1,
+          "scrap": null,
+          "stone": 21,
+          "wood": 18
+        },
+        "firstIntermediateCrafted": 19,
+        "firstHighTierWeaponCrafted": null,
+        "firstWeaponObtained": 9,
+        "firstEquipped": 10,
+        "firstEncounter": null,
+        "targetCompleted": null,
+        "death": 22
+      },
+      "rawMaterialsSeen": [
+        "rope",
+        "stone",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [],
+      "routeDiagnosis": "equipped-before-encounter"
+    },
+    {
+      "runId": "route-6-engineer-cautious",
+      "seed": "PHASE4C7-ROUTE-6-engineer-cautious",
+      "characterId": "engineer",
+      "policy": "cautious",
+      "outcome": "won",
+      "endReason": "player_won",
+      "timeUsed": 41,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 2,
+          "glass": 19,
+          "herb": null,
+          "iron": 10,
+          "rope": 8,
+          "scrap": 18,
+          "stone": null,
+          "wood": 6
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 2,
+          "glass": 19,
+          "herb": null,
+          "iron": 10,
+          "rope": 8,
+          "scrap": 18,
+          "stone": null,
+          "wood": 6
+        },
+        "firstIntermediateCrafted": 9,
+        "firstHighTierWeaponCrafted": 25,
+        "firstWeaponObtained": 3,
+        "firstEquipped": 4,
+        "firstEncounter": null,
+        "targetCompleted": 26,
+        "death": null
+      },
+      "rawMaterialsSeen": [
+        "cloth",
+        "glass",
+        "iron",
+        "rope",
+        "scrap",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [
+        "composite_bow",
+        "steel_axe"
+      ],
+      "routeDiagnosis": "target-completed"
+    },
+    {
+      "runId": "route-7-medic-cautious",
+      "seed": "PHASE4C7-ROUTE-7-medic-cautious",
+      "characterId": "medic",
+      "policy": "cautious",
+      "outcome": "won",
+      "endReason": "player_won",
+      "timeUsed": 73,
+      "trustworthy": true,
+      "targetRecipeId": "r_insulated_pipe",
+      "targetName": "绝缘铁管",
+      "targetOutputItemId": "insulated_pipe",
+      "targetOutputName": "绝缘铁管",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": 33,
+          "battery": null,
+          "cloth": null,
+          "glass": null,
+          "herb": 30,
+          "iron": 4,
+          "rope": 1,
+          "scrap": 7,
+          "stone": 5,
+          "wood": 13
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": null,
+          "glass": null,
+          "herb": null,
+          "iron": 4,
+          "rope": 1,
+          "scrap": 7,
+          "stone": 5,
+          "wood": 13
+        },
+        "firstIntermediateCrafted": null,
+        "firstHighTierWeaponCrafted": 3,
+        "firstWeaponObtained": 2,
+        "firstEquipped": 4,
+        "firstEncounter": 20,
+        "targetCompleted": 3,
+        "death": null
+      },
+      "rawMaterialsSeen": [
+        "iron",
+        "rope",
+        "scrap",
+        "stone",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [],
+      "highTierWeaponsCrafted": [
+        "insulated_pipe"
+      ],
+      "routeDiagnosis": "target-completed"
+    },
+    {
+      "runId": "route-8-scout-collector",
+      "seed": "PHASE4C7-ROUTE-8-scout-collector",
+      "characterId": "scout",
+      "policy": "collector",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 36,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 17,
+          "glass": 13,
+          "herb": null,
+          "iron": null,
+          "rope": 32,
+          "scrap": null,
+          "stone": 31,
+          "wood": 7
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 17,
+          "glass": 13,
+          "herb": null,
+          "iron": null,
+          "rope": 32,
+          "scrap": null,
+          "stone": 31,
+          "wood": 7
+        },
+        "firstIntermediateCrafted": 33,
+        "firstHighTierWeaponCrafted": null,
+        "firstWeaponObtained": 33,
+        "firstEquipped": 34,
+        "firstEncounter": 1,
+        "targetCompleted": null,
+        "death": 36
+      },
+      "rawMaterialsSeen": [
+        "cloth",
+        "glass",
+        "rope",
+        "stone",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [],
+      "routeDiagnosis": "weapon-not-converted"
+    },
+    {
+      "runId": "route-9-fighter-collector",
+      "seed": "PHASE4C7-ROUTE-9-fighter-collector",
+      "characterId": "fighter",
+      "policy": "collector",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 33,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": null,
+          "glass": null,
+          "herb": 18,
+          "iron": null,
+          "rope": 1,
+          "scrap": null,
+          "stone": null,
+          "wood": 4
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": null,
+          "glass": null,
+          "herb": 18,
+          "iron": null,
+          "rope": 1,
+          "scrap": null,
+          "stone": null,
+          "wood": 4
+        },
+        "firstIntermediateCrafted": 5,
+        "firstHighTierWeaponCrafted": null,
+        "firstWeaponObtained": 5,
+        "firstEquipped": 6,
+        "firstEncounter": 2,
+        "targetCompleted": null,
+        "death": 33
+      },
+      "rawMaterialsSeen": [
+        "herb",
+        "rope",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [],
+      "routeDiagnosis": "weapon-not-converted"
+    },
+    {
+      "runId": "route-10-engineer-collector",
+      "seed": "PHASE4C7-ROUTE-10-engineer-collector",
+      "characterId": "engineer",
+      "policy": "collector",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 42,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 12,
+          "glass": 16,
+          "herb": null,
+          "iron": 8,
+          "rope": 36,
+          "scrap": null,
+          "stone": null,
+          "wood": 11
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 12,
+          "glass": 16,
+          "herb": null,
+          "iron": 8,
+          "rope": 36,
+          "scrap": null,
+          "stone": null,
+          "wood": 11
+        },
+        "firstIntermediateCrafted": 37,
+        "firstHighTierWeaponCrafted": 38,
+        "firstWeaponObtained": 37,
+        "firstEquipped": 39,
+        "firstEncounter": 1,
+        "targetCompleted": 38,
+        "death": 42
+      },
+      "rawMaterialsSeen": [
+        "cloth",
+        "glass",
+        "iron",
+        "rope",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [
+        "composite_bow"
+      ],
+      "routeDiagnosis": "target-completed"
+    },
+    {
+      "runId": "route-11-medic-collector",
+      "seed": "PHASE4C7-ROUTE-11-medic-collector",
+      "characterId": "medic",
+      "policy": "collector",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 81,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 10,
+          "glass": null,
+          "herb": null,
+          "iron": null,
+          "rope": 45,
+          "scrap": null,
+          "stone": null,
+          "wood": 6
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 10,
+          "glass": null,
+          "herb": null,
+          "iron": null,
+          "rope": 45,
+          "scrap": null,
+          "stone": null,
+          "wood": 6
+        },
+        "firstIntermediateCrafted": 46,
+        "firstHighTierWeaponCrafted": null,
+        "firstWeaponObtained": 46,
+        "firstEquipped": 47,
+        "firstEncounter": 2,
+        "targetCompleted": null,
+        "death": 81
+      },
+      "rawMaterialsSeen": [
+        "cloth",
+        "rope",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [],
+      "routeDiagnosis": "weapon-not-converted"
+    },
+    {
+      "runId": "route-12-scout-opportunist",
+      "seed": "PHASE4C7-ROUTE-12-scout-opportunist",
+      "characterId": "scout",
+      "policy": "opportunist",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 54,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 4,
+          "glass": 7,
+          "herb": null,
+          "iron": null,
+          "rope": 8,
+          "scrap": 15,
+          "stone": 22,
+          "wood": 1
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 4,
+          "glass": 7,
+          "herb": null,
+          "iron": null,
+          "rope": 8,
+          "scrap": 15,
+          "stone": 22,
+          "wood": 1
+        },
+        "firstIntermediateCrafted": 9,
+        "firstHighTierWeaponCrafted": 10,
+        "firstWeaponObtained": 9,
+        "firstEquipped": 11,
+        "firstEncounter": 12,
+        "targetCompleted": 10,
+        "death": 54
+      },
+      "rawMaterialsSeen": [
+        "cloth",
+        "glass",
+        "rope",
+        "scrap",
+        "stone",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [
+        "composite_bow"
+      ],
+      "routeDiagnosis": "target-completed"
+    },
+    {
+      "runId": "route-13-fighter-opportunist",
+      "seed": "PHASE4C7-ROUTE-13-fighter-opportunist",
+      "characterId": "fighter",
+      "policy": "opportunist",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 71,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 2,
+          "glass": 15,
+          "herb": null,
+          "iron": null,
+          "rope": 4,
+          "scrap": null,
+          "stone": null,
+          "wood": 37
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 2,
+          "glass": 15,
+          "herb": null,
+          "iron": null,
+          "rope": 4,
+          "scrap": null,
+          "stone": null,
+          "wood": 37
+        },
+        "firstIntermediateCrafted": 38,
+        "firstHighTierWeaponCrafted": null,
+        "firstWeaponObtained": 5,
+        "firstEquipped": 6,
+        "firstEncounter": 1,
+        "targetCompleted": null,
+        "death": 71
+      },
+      "rawMaterialsSeen": [
+        "cloth",
+        "glass",
+        "rope",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [],
+      "routeDiagnosis": "weapon-not-converted"
+    },
+    {
+      "runId": "route-14-engineer-opportunist",
+      "seed": "PHASE4C7-ROUTE-14-engineer-opportunist",
+      "characterId": "engineer",
+      "policy": "opportunist",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 36,
+      "trustworthy": true,
+      "targetRecipeId": "r_insulated_stun_rod",
+      "targetName": "绝缘电击棒",
+      "targetOutputItemId": "insulated_stun_rod",
+      "targetOutputName": "绝缘电击棒",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 5,
+          "glass": 12,
+          "herb": null,
+          "iron": null,
+          "rope": null,
+          "scrap": null,
+          "stone": null,
+          "wood": null
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 5,
+          "glass": 12,
+          "herb": null,
+          "iron": null,
+          "rope": null,
+          "scrap": null,
+          "stone": null,
+          "wood": null
+        },
+        "firstIntermediateCrafted": null,
+        "firstHighTierWeaponCrafted": null,
+        "firstWeaponObtained": null,
+        "firstEquipped": null,
+        "firstEncounter": 8,
+        "targetCompleted": null,
+        "death": 36
+      },
+      "rawMaterialsSeen": [
+        "cloth",
+        "glass"
+      ],
+      "intermediateOutputsCrafted": [],
+      "highTierWeaponsCrafted": [],
+      "routeDiagnosis": "weapon-not-converted"
+    },
+    {
+      "runId": "route-15-medic-opportunist",
+      "seed": "PHASE4C7-ROUTE-15-medic-opportunist",
+      "characterId": "medic",
+      "policy": "opportunist",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 28,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": null,
+          "glass": 14,
+          "herb": null,
+          "iron": null,
+          "rope": null,
+          "scrap": null,
+          "stone": null,
+          "wood": null
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": null,
+          "glass": 14,
+          "herb": null,
+          "iron": null,
+          "rope": null,
+          "scrap": null,
+          "stone": null,
+          "wood": null
+        },
+        "firstIntermediateCrafted": null,
+        "firstHighTierWeaponCrafted": null,
+        "firstWeaponObtained": 16,
+        "firstEquipped": 17,
+        "firstEncounter": 1,
+        "targetCompleted": null,
+        "death": 28
+      },
+      "rawMaterialsSeen": [
+        "glass"
+      ],
+      "intermediateOutputsCrafted": [],
+      "highTierWeaponsCrafted": [],
+      "routeDiagnosis": "weapon-not-converted"
+    },
+    {
+      "runId": "route-16-scout-random",
+      "seed": "PHASE4C7-ROUTE-16-scout-random",
+      "characterId": "scout",
+      "policy": "random",
+      "outcome": "won",
+      "endReason": "player_won",
+      "timeUsed": 84,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 19,
+          "glass": null,
+          "herb": null,
+          "iron": 24,
+          "rope": 26,
+          "scrap": 25,
+          "stone": 23,
+          "wood": 8
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 19,
+          "glass": null,
+          "herb": null,
+          "iron": 24,
+          "rope": 26,
+          "scrap": 25,
+          "stone": 23,
+          "wood": 8
+        },
+        "firstIntermediateCrafted": 27,
+        "firstHighTierWeaponCrafted": null,
+        "firstWeaponObtained": 7,
+        "firstEquipped": 8,
+        "firstEncounter": 9,
+        "targetCompleted": null,
+        "death": null
+      },
+      "rawMaterialsSeen": [
+        "cloth",
+        "iron",
+        "rope",
+        "scrap",
+        "stone",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [],
+      "routeDiagnosis": "equipped-before-encounter"
+    },
+    {
+      "runId": "route-17-fighter-random",
+      "seed": "PHASE4C7-ROUTE-17-fighter-random",
+      "characterId": "fighter",
+      "policy": "random",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 34,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": 31,
+          "battery": null,
+          "cloth": 3,
+          "glass": 5,
+          "herb": null,
+          "iron": null,
+          "rope": 19,
+          "scrap": 14,
+          "stone": 15,
+          "wood": 16
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": 31,
+          "battery": null,
+          "cloth": 3,
+          "glass": 5,
+          "herb": null,
+          "iron": null,
+          "rope": 19,
+          "scrap": 14,
+          "stone": 15,
+          "wood": 16
+        },
+        "firstIntermediateCrafted": 20,
+        "firstHighTierWeaponCrafted": 21,
+        "firstWeaponObtained": 20,
+        "firstEquipped": 22,
+        "firstEncounter": 6,
+        "targetCompleted": 21,
+        "death": 34
+      },
+      "rawMaterialsSeen": [
+        "alcohol",
+        "cloth",
+        "glass",
+        "rope",
+        "scrap",
+        "stone",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "simple_bow"
+      ],
+      "highTierWeaponsCrafted": [
+        "composite_bow"
+      ],
+      "routeDiagnosis": "target-completed"
+    },
+    {
+      "runId": "route-18-engineer-random",
+      "seed": "PHASE4C7-ROUTE-18-engineer-random",
+      "characterId": "engineer",
+      "policy": "random",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 70,
+      "trustworthy": true,
+      "targetRecipeId": "r_insulated_pipe",
+      "targetName": "绝缘铁管",
+      "targetOutputItemId": "insulated_pipe",
+      "targetOutputName": "绝缘铁管",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 5,
+          "glass": null,
+          "herb": null,
+          "iron": 11,
+          "rope": 4,
+          "scrap": 25,
+          "stone": 29,
+          "wood": 30
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": 5,
+          "glass": null,
+          "herb": null,
+          "iron": 11,
+          "rope": 4,
+          "scrap": 25,
+          "stone": 29,
+          "wood": 30
+        },
+        "firstIntermediateCrafted": 31,
+        "firstHighTierWeaponCrafted": 27,
+        "firstWeaponObtained": 26,
+        "firstEquipped": 13,
+        "firstEncounter": 8,
+        "targetCompleted": 27,
+        "death": 70
+      },
+      "rawMaterialsSeen": [
+        "cloth",
+        "iron",
+        "rope",
+        "scrap",
+        "stone",
+        "wood"
+      ],
+      "intermediateOutputsCrafted": [
+        "iron_pipe"
+      ],
+      "highTierWeaponsCrafted": [
+        "insulated_pipe"
+      ],
+      "routeDiagnosis": "target-completed"
+    },
+    {
+      "runId": "route-19-medic-random",
+      "seed": "PHASE4C7-ROUTE-19-medic-random",
+      "characterId": "medic",
+      "policy": "random",
+      "outcome": "lost",
+      "endReason": "player_died",
+      "timeUsed": 36,
+      "trustworthy": true,
+      "targetRecipeId": "r_composite_bow",
+      "targetName": "复合弓",
+      "targetOutputItemId": "composite_bow",
+      "targetOutputName": "复合弓",
+      "milestones": {
+        "targetAdopted": 0,
+        "firstRawMaterialFound": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": null,
+          "glass": null,
+          "herb": null,
+          "iron": 9,
+          "rope": null,
+          "scrap": null,
+          "stone": null,
+          "wood": null
+        },
+        "firstRawMaterialPicked": {
+          "alcohol": null,
+          "battery": null,
+          "cloth": null,
+          "glass": null,
+          "herb": null,
+          "iron": 9,
+          "rope": null,
+          "scrap": null,
+          "stone": null,
+          "wood": null
+        },
+        "firstIntermediateCrafted": null,
+        "firstHighTierWeaponCrafted": null,
+        "firstWeaponObtained": 30,
+        "firstEquipped": 31,
+        "firstEncounter": 31,
+        "targetCompleted": null,
+        "death": 36
+      },
+      "rawMaterialsSeen": [
+        "iron"
+      ],
+      "intermediateOutputsCrafted": [],
+      "highTierWeaponsCrafted": [],
+      "routeDiagnosis": "equipped-before-encounter"
+    }
+  ]
+}

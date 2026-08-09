@@ -350,5 +350,32 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Added nested-route unit and information-boundary regressions plus clean
   production-preview evidence for 1280×720 and 390×844. Screenshots visibly
   show raw-material gaps, public source zones and the current subgoal; preview
-  console/page errors are 0. Remaining: final gates, Phase 4C-6 report,
-  commit/push and CI confirmation.
+  console/page errors are 0. Phase 4C-6 report, gates, commit, push and CI
+  confirmation are complete; CI run `31331617407` is green.
+
+## Phase 4C-7 progress (2026-08-10)
+
+- Added `tools/observeRoutePlaytest.ts`, an explicitly labelled
+  `SEMI_AUTOMATED_ROUTE_OBSERVATION`. It records only player milestones through
+  the existing representative command loop: target adoption, raw material found
+  vs picked, dependency craft, high-tier weapon, equipment, encounter, goal
+  completion and player death cause/time.
+- Added two regression tests for deterministic health, player-only data scope and
+  the explicit `NOT_PERFORMED` human-playtest marker. `HUMAN_PLAYTEST_CHECKLIST.md`
+  remains untouched and blank.
+- Full 20-route observation is complete: requested=actual 20, trustworthy 20/20;
+  target adoption 20, raw-material observation 20, dependency craft 15, weapon
+  obtained 19, equipment 19, first encounter 18 and target completion 9.
+  These are diagnostic observations, not win-rate or economy gates.
+- Current finding: the formal route is executable and supply is observed in all
+  20 routes, so no loot/prescription/combat tuning is justified by this sample.
+  The remaining 8 routes classified as `weapon-not-converted` need human review
+  to distinguish target choice, encounter pressure and route comprehension.
+- Final local gates are green: clean `npm ci`, 70 files / 1292 tests, typecheck,
+  build, save/dependency/art/security audits, 500-game engine health regression,
+  production dependency audit and clean production-preview evidence. The
+  generated historical audit timestamps were restored and the pre-existing save
+  audit edits remain unstaged.
+- Next handoff: complete a real human playtest using a copied checklist before
+  considering any local economy adjustment; do not treat this semi-automated
+  report as human evidence.
