@@ -306,3 +306,27 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   production `npm audit --omit=dev` (0 vulnerabilities), and the final clean
   preview evidence. Remaining handoff is intentional commit/push and CI check;
   real-device/AT playtest items stay classified as HUMAN-PLAYTEST-NEEDED.
+
+## Phase 4C-5 progress (2026-08-10)
+
+- Added the presentation-only equipment handoff layer. Search and craft result
+  cards now expose the player's own “装备 / 立即装备” action and preserve a
+  visible “已装备” result after the parent dispatches the formal `EQUIP`
+  command. Inventory equipment candidates now choose the strongest item in the
+  player's own slot rather than the first stack.
+- Added regression coverage for search/craft handoff callbacks, strongest
+  candidate selection, result lifecycle after `ITEM_EQUIPPED`, and a
+  representative command-channel build loop. No component directly mutates
+  equipment state.
+- Added an optional representative diagnostic mode to `tools/autoPlayer.ts` and
+  `tools/observeCoreLoopDiagnosis.ts`. Across two 400-game matrices, both had
+  requested=actual 400 and healthy 400; the representative mode set a goal in
+  400/400 games and produced player equipment events in 100/400 games. Its lower
+  weapon rate is recorded as strategy-calibration evidence, not a balance verdict.
+- Added `PHASE4C5_REPORT.md`, clean production-preview evidence for 1280×720 and
+  390×844, and `reports/phase4c5-balance.json` plus the two diagnosis reports.
+  Final local suite is 69 files / 1287 tests; typecheck/build, clean `npm ci`,
+  save/dependency/art/provenance/security gates, 500-game health regression,
+  production `npm audit --omit=dev`, and browser evidence all pass with zero
+  console/page errors. Human touch/screen-reader/long-session validation remains
+  HUMAN-PLAYTEST-NEEDED.

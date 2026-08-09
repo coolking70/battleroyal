@@ -31,8 +31,10 @@ import {
   type LegalActionCategory,
 } from '../src/core/legalActions';
 import { getEquippedArmor, getEquippedWeapon } from '../src/core/inventory';
+import { getCraftGoalRecommendations } from '../src/core/craftGuide';
 import { tryGetItem } from '../src/data/items';
 import type { Command, Combatant, GameEvent, GameState, Personality } from '../src/core/types';
+import { craftPathSummary, getCraftGoalSuggestion } from '../src/ui/craftPathPresentation';
 
 /* ------------------------------------------------------------------ */
 /* 对外类型                                                            */
@@ -87,6 +89,8 @@ export interface AutoGameOptions {
   keepFinalState?: boolean;
   /** 是否保留未被事件裁剪的完整事件流（仅诊断工具使用） */
   keepEventTrace?: boolean;
+  /** 可选的玩家式闭环：采纳公开建议、优先当前子目标、合成后装备。 */
+  representativeBuildLoop?: boolean;
 }
 
 /** 玩家死亡瞬间的只读诊断快照，不参与任何规则结算。 */
@@ -457,6 +461,76 @@ function weightedPick(
   return entries[entries.length - 1]!.action;
 }
 
+function equipmentScore(itemId: string): number {
+  const item = tryGetItem(itemId);
+  return item?.category === 'weapon'
+    ? item.attack ?? 0
+    : item?.category === 'armor'
+      ? item.defense ?? 0
+      : 0;
+}
+
+/**
+ * 诊断用的玩家闭环偏好：只从合法命令中选择，不改变引擎规则。
+ * 公开建议与路线来自现有 presentation/core 查询；所有实际动作仍走
+ * SET_CRAFT_GOAL / CRAFT / EQUIP 正式命令。
+ */
+function chooseRepresentativeBuildAction(
+  state: GameState,
+  player: Combatant,
+  legal: LegalAction[],
+): LegalAction | null {
+  if (!state.craftGoalRecipeId) {
+    const suggestion = getCraftGoalSuggestion(state, player);
+    const adopt = legal.find(
+      (action) =>
+        action.command.type === 'SET_CRAFT_GOAL' &&
+        action.command.recipeId === suggestion?.recipeId,
+    );
+    if (adopt) return adopt;
+  } else {
+    const path = craftPathSummary(state.craftGoalRecipeId, state, player);
+    const nextRecipeId = path?.nextStep?.recipeId;
+    if (nextRecipeId) {
+      const craft = legal.find(
+        (action) => action.command.type === 'CRAFT' && action.command.recipeId === nextRecipeId,
+      );
+      if (craft) return craft;
+    }
+
+    // 目标路线有明确的公开推荐区时，优先走当前可达的推荐移动。
+    const recommendations = getCraftGoalRecommendations(state, player);
+    const recommendedZoneIds = new Set(recommendations.slice(0, 2).map((item) => item.zoneId));
+    const move = legal.find(
+      (action) => action.command.type === 'MOVE' && recommendedZoneIds.has(action.command.zoneId),
+    );
+    if (move) return move;
+  }
+
+  // 合成 / 拾取后的装备交接：只装备比当前槽位更强的玩家自己的物品。
+  const currentWeaponScore = getEquippedWeapon(player)?.itemId
+    ? equipmentScore(getEquippedWeapon(player)!.itemId)
+    : 0;
+  const currentArmorScore = getEquippedArmor(player)?.itemId
+    ? equipmentScore(getEquippedArmor(player)!.itemId)
+    : 0;
+  const equipment = legal
+    .map((action) => {
+      const equipCommand = action.command;
+      if (equipCommand.type !== 'EQUIP') return null;
+      const stack = player.inventory.find((item) => item.uid === equipCommand.uid);
+      if (!stack) return null;
+      const item = tryGetItem(stack.itemId);
+      if (!item || (item.category !== 'weapon' && item.category !== 'armor')) return null;
+      const current = item.category === 'weapon' ? currentWeaponScore : currentArmorScore;
+      return { action, itemId: stack.itemId, score: equipmentScore(stack.itemId), current };
+    })
+    .filter((item): item is { action: LegalAction; itemId: string; score: number; current: number } => Boolean(item))
+    .sort((a, b) => b.score - a.score || a.itemId.localeCompare(b.itemId));
+  const upgrade = equipment.find((item) => item.score > item.current);
+  return upgrade?.action ?? null;
+}
+
 /* ------------------------------------------------------------------ */
 /* 主循环                                                              */
 /* ------------------------------------------------------------------ */
@@ -541,9 +615,14 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
       // 阻塞态只有一条出路：先把待决拾取处理掉
       chosen = choosePickupResolution(s, player, legal, policy);
     } else {
-      const preferred = decideAutoPlayerCommand(s, player, policy, policyRng);
-      const matched = preferred.command
-        ? legal.find((a) => sameCommand(a.command, preferred.command!))
+      const preferred = options.representativeBuildLoop
+        ? chooseRepresentativeBuildAction(s, player, legal)
+        : null;
+      const decision = preferred
+        ? { command: preferred.command, reason: '代表玩家闭环：目标 / 合成 / 装备' }
+        : decideAutoPlayerCommand(s, player, policy, policyRng);
+      const matched = decision.command
+        ? legal.find((a) => sameCommand(a.command, decision.command!))
         : undefined;
       if (matched) {
         chosen = matched;

@@ -3,6 +3,7 @@ import { getItem } from '../../data/items';
 import { getEquippedArmor, getEquippedWeapon } from '../../core/inventory';
 import type { Combatant, ItemStack } from '../../core/types';
 import { CATEGORY_LABEL, itemSummary, stackLabel } from '../../utils/format';
+import { bestInventoryEquipment } from '../equipmentPresentation';
 import { ITEM_CATEGORY_META, presentItem, stackPresentation } from '../itemPresentation';
 import { VisualImage } from './VisualImage';
 
@@ -85,8 +86,8 @@ export function Inventory({
 }: InventoryProps): JSX.Element {
   const weapon = getEquippedWeapon(player);
   const armor = getEquippedArmor(player);
-  const weaponCandidate = player.inventory.find((stack) => getItem(stack.itemId).category === 'weapon') ?? null;
-  const armorCandidate = player.inventory.find((stack) => getItem(stack.itemId).category === 'armor') ?? null;
+  const weaponCandidate = bestInventoryEquipment(player, 'weapon');
+  const armorCandidate = bestInventoryEquipment(player, 'armor');
 
   return (
     <>

@@ -1200,6 +1200,21 @@ input {
   font-family: var(--mono);
 }
 
+.equipment-handoff {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  color: #d9f0e4;
+  font-size: 10.5px;
+}
+
+.equipment-handoff-equipped {
+  color: var(--ok);
+  font-family: var(--mono);
+}
+
 .tag-item-category {
   display: inline-flex;
   align-items: center;
@@ -2143,6 +2158,10 @@ input {
 .craft-progress-feedback div div {
   margin-top: 2px;
   color: var(--text-dim);
+}
+
+.craft-progress-feedback .equipment-handoff {
+  margin-top: 6px;
 }
 
 .cg-subgoal-tracker {

@@ -6,6 +6,7 @@ import { getZoneDef } from '../../data/zones';
 import { CATEGORY_LABEL, itemSummary, stackLabel } from '../../utils/format';
 import type { CraftGoalSuggestion, CraftProgressFeedback } from '../craftPathPresentation';
 import { craftPathSummary } from '../craftPathPresentation';
+import { equipmentHandoffFor } from '../equipmentPresentation';
 import { ITEM_CATEGORY_META, presentItem } from '../itemPresentation';
 import { VisualImage } from './VisualImage';
 
@@ -27,6 +28,8 @@ interface CraftPanelProps {
   suggestion?: CraftGoalSuggestion | null;
   /** 最近一次玩家合成，用于原地显示非阻塞进度反馈。 */
   latestCraftFeedback?: CraftProgressFeedback | null;
+  /** 装备交接仍由父层派发正式 EQUIP 命令。 */
+  onEquip?: (uid: string) => void;
 }
 
 /** 合成面板：列出全部配方，缺失材料标红；顶部显示制作目标 + 路线推荐 */
@@ -42,11 +45,16 @@ export function CraftPanel({
   onCraft,
   suggestion = null,
   latestCraftFeedback = null,
+  onEquip,
 }: CraftPanelProps): JSX.Element {
   const goalView = views.find((v) => v.recipe.id === goalRecipeId) ?? null;
   const goalPath = goalView ? craftPathSummary(goalView.recipe.id, state, player) : null;
   const weaponViews = views.filter((view) => getItem(view.recipe.outputItemId).category === 'weapon');
   const craftableWeaponCount = weaponViews.filter((view) => view.craftable).length;
+  const craftHandoff = latestCraftFeedback
+    ? equipmentHandoffFor(player, latestCraftFeedback.outputItemId)
+    : null;
+  const canEquipCraftOutput = Boolean(craftHandoff?.candidate && craftHandoff.status !== 'equipped' && onEquip);
   return (
     <div className="recipe-list scroll">
       <section className="craft-route-guide" data-craft-guidance="weapon-primary-path">
@@ -93,6 +101,24 @@ export function CraftPanel({
           <div>
             <strong>合成进度已更新</strong>
             <div>{latestCraftFeedback.message}</div>
+            {craftHandoff?.status === 'equipped' && (
+              <div className="equipment-handoff equipment-handoff-equipped">
+                <span aria-hidden="true">✓</span> 成品已装备
+              </div>
+            )}
+            {canEquipCraftOutput && craftHandoff?.candidate && (
+              <div className="equipment-handoff">
+                <span>{craftHandoff.status === 'ready' ? '成品可提升装备位' : '成品可作为备用'}</span>
+                <button
+                  className="btn btn-sm btn-primary"
+                  data-craft-equip-output="true"
+                  disabled={disabled}
+                  onClick={() => onEquip?.(craftHandoff.candidate!.uid)}
+                >
+                  立即装备
+                </button>
+              </div>
+            )}
           </div>
         </section>
       )}

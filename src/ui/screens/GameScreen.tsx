@@ -229,7 +229,13 @@ export function GameScreen({
               </div>
             )}
 
-            {searchFeedback && <SearchResultFeedback feedback={searchFeedback} />}
+            {searchFeedback && (
+              <SearchResultFeedback
+                feedback={searchFeedback}
+                player={player}
+                onEquip={(uid) => dispatch({ type: 'EQUIP', uid })}
+              />
+            )}
 
             {pending && (
               <PendingPickupPanel
@@ -415,6 +421,7 @@ export function GameScreen({
                 onCraft={(recipeId) => dispatch({ type: 'CRAFT', recipeId })}
                 suggestion={craftGoalSuggestion}
                 latestCraftFeedback={latestCraftFeedback}
+                onEquip={(uid) => dispatch({ type: 'EQUIP', uid })}
               />
             )}
 

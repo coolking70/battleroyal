@@ -27,6 +27,7 @@ import {
 
 const SEED_COUNT = positiveInt(process.env.CORE_LOOP_SEED_COUNT, 20);
 const SEED_PREFIX = process.env.CORE_LOOP_SEED_PREFIX ?? 'PHASE4C4-CORE';
+const REPRESENTATIVE_BUILD_LOOP = process.env.CORE_LOOP_REPRESENTATIVE === '1';
 const OUTPUT = resolve(
   process.cwd(),
   process.env.CORE_LOOP_DIAGNOSIS_OUTPUT ?? 'reports/phase4c4-core-loop-diagnosis.json',
@@ -83,6 +84,10 @@ interface Bucket {
   playerAttackEvents: number;
   playerGuardEvents: number;
   playerEscapeEvents: number;
+  playerEquipEvents: number;
+  playerEquipGames: number;
+  playerWeaponEquipEvents: number;
+  playerArmorEquipEvents: number;
   zeroStaminaGuardCommands: number;
   zeroStaminaFleeCommands: number;
   stationaryEscapeEvents: number;
@@ -126,6 +131,10 @@ function newBucket(): Bucket {
     playerAttackEvents: 0,
     playerGuardEvents: 0,
     playerEscapeEvents: 0,
+    playerEquipEvents: 0,
+    playerEquipGames: 0,
+    playerWeaponEquipEvents: 0,
+    playerArmorEquipEvents: 0,
     zeroStaminaGuardCommands: 0,
     zeroStaminaFleeCommands: 0,
     stationaryEscapeEvents: 0,
@@ -250,6 +259,17 @@ function observeResult(bucket: Bucket, result: AutoGameResult): void {
   ).length;
   bucket.zeroStaminaGuardCommands += result.zeroStaminaGuardCommands;
   bucket.zeroStaminaFleeCommands += result.zeroStaminaFleeCommands;
+  const playerEquips = trace.filter(
+    (event) => event.type === 'ITEM_EQUIPPED' && event.actorId === playerId,
+  );
+  bucket.playerEquipEvents += playerEquips.length;
+  if (playerEquips.length > 0) bucket.playerEquipGames += 1;
+  for (const event of playerEquips) {
+    const itemId = event.metadata?.itemId;
+    const item = typeof itemId === 'string' ? ITEMS.find((candidate) => candidate.id === itemId) : undefined;
+    if (item?.category === 'weapon') bucket.playerWeaponEquipEvents += 1;
+    if (item?.category === 'armor') bucket.playerArmorEquipEvents += 1;
+  }
 
   const death = result.playerDeathSnapshot;
   if (death) {
@@ -322,6 +342,13 @@ function finalBucket(bucket: Bucket): Record<string, unknown> {
       zeroStaminaGuards: bucket.zeroStaminaGuardCommands,
       zeroStaminaFlees: bucket.zeroStaminaFleeCommands,
     },
+    equipmentHandoff: {
+      games: bucket.playerEquipGames,
+      gameRate: rate(bucket.playerEquipGames),
+      events: bucket.playerEquipEvents,
+      weaponEvents: bucket.playerWeaponEquipEvents,
+      armorEvents: bucket.playerArmorEquipEvents,
+    },
     deaths: {
       causes: bucket.deathCauses,
       withWeapon: bucket.deathsWithWeapon,
@@ -349,6 +376,7 @@ for (let seedIndex = 0; seedIndex < SEED_COUNT; seedIndex += 1) {
         policy: policy as AutoPlayerPolicy,
         keepFinalState: true,
         keepEventTrace: true,
+        representativeBuildLoop: REPRESENTATIVE_BUILD_LOOP,
       });
       actualGames += 1;
       observeResult(overall, result);
@@ -361,7 +389,7 @@ for (let seedIndex = 0; seedIndex < SEED_COUNT; seedIndex += 1) {
 }
 
 const output = {
-  phase: 'Phase 4C-4',
+  phase: REPRESENTATIVE_BUILD_LOOP ? 'Phase 4C-5' : 'Phase 4C-4',
   generatedAt: new Date().toISOString(),
   interpretation:
     '观察数据 only；不对胜率、存活率或角色平衡作 PASS/FAIL 判定。玩家目标设定为模拟器命令通道指标，不等同于真实玩家采纳 UI 建议。',
@@ -369,6 +397,7 @@ const output = {
     seedCount: SEED_COUNT,
     matrix: '4 characters × 5 policies',
     seedPrefix: SEED_PREFIX,
+    mode: REPRESENTATIVE_BUILD_LOOP ? 'representative-build-loop' : 'baseline-policy',
     requestedGames,
     actualGames,
     source: 'tools/autoPlayer.ts via executeCommand',
