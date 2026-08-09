@@ -184,3 +184,26 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Added a clean production-preview Playwright evidence spec for the default desktop
   log. No Phase 4B-4 UX code, core/data rule, event schema, asset, or manifest change
   is included in this P0 patch.
+
+## Phase 4B-4 progress (2026-08-09)
+
+- After the independent P0 commit `e1745e4` reached CI run `31317531844` PASS,
+  implemented the World Events & Restricted Zone presentation scope only.
+- Added `worldEventPresentation.ts` and `WorldEventFeedback.tsx`: persistent events
+  now sort by presentation severity and urgency, expose scope and remaining-time
+  labels, and carry icon/label/pattern cues. `emergency_broadcast` is shown as a
+  short non-blocking live announcement for 4.5 seconds while its historical log
+  event remains intact.
+- Extended the existing Zone presentation without changing its rules: warning
+  countdown distinguishes near/imminent states; restricted surfaces show the
+  current public damage-per-turn; the StatusBar emits a player-only immediate
+  hazard source/damage cue for the current time unit.
+- Added UI tests for severity/scope/remaining time, instant announcement auto-hide,
+  warning/restricted non-color cues, and player-only hazard feedback. Added clean
+  production-preview browser evidence with a valid save fixture containing two
+  simultaneously active public events. Natural scheduler overlap was not claimed:
+  current event interval rules are longer than event durations.
+- Current verification chunk: 62 test files / 1259 tests PASS, typecheck/build PASS,
+  and Phase 4B-4 browser evidence has 0 console/page errors at 1280×720 and 390×844.
+- Remaining before handoff: final all-browser regression run, report, commit/push,
+  and final CI confirmation. No core/data/rules/assets/Manifest changes are planned.

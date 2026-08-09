@@ -1,9 +1,11 @@
 import type { Combatant, GameState } from '../../core/types';
+import { GAME_CONFIG } from '../../data/gameConfig';
 import { noiseLevelOf, NOISE_LABEL } from '../../core/info';
+import { zoneDamagePerTick } from '../../core/restrictedZones';
 import { ZONES, areAdjacent } from '../../data/zones';
 import { cx } from '../../utils/format';
 import { getZoneVisual } from '../visualAssets';
-import { zoneStatusMeta } from '../zonePresentation';
+import { warningRemaining, zoneStatusMeta, zoneUrgencyMeta } from '../zonePresentation';
 import { VisualImage } from './VisualImage';
 
 interface ZoneMapProps {
@@ -48,6 +50,10 @@ export function ZoneMap({
           const hasIntel = freshIntelZones?.has(def.id) ?? false;
           const zoneVisual = getZoneVisual(def.id);
           const statusMeta = zoneStatusMeta(status);
+          const warningTimeRemaining = status === 'warning'
+            ? warningRemaining(zs?.warningAtTime, state.time, GAME_CONFIG.zoneWarningDuration)
+            : null;
+          const urgency = zoneUrgencyMeta(warningTimeRemaining);
 
           return (
             <button
@@ -80,6 +86,16 @@ export function ZoneMap({
                   噪音：{NOISE_LABEL[noise]}
                 </span>
                 {hasIntel && <span className="intel-tag">情报</span>}
+                {status === 'warning' && warningTimeRemaining !== null && (
+                  <span className={`zone-urgency zone-urgency-${urgency.urgency}`}>
+                    <span aria-hidden="true">{urgency.icon}</span> {urgency.label} · {warningTimeRemaining} 回合
+                  </span>
+                )}
+                {status === 'restricted' && (
+                  <span className="zone-urgency zone-urgency-imminent">
+                    <span aria-hidden="true">☠</span> 每回合 −{zoneDamagePerTick(state)} 生命
+                  </span>
+                )}
                 {(zs?.groundItems.length ?? 0) > 0 && (
                   <span>掉落 {zs?.groundItems.length}</span>
                 )}

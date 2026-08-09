@@ -1,4 +1,6 @@
 import { nextZoneCountdown } from '../../core/restrictedZones';
+import { zoneDamagePerTick } from '../../core/restrictedZones';
+import { GAME_CONFIG } from '../../data/gameConfig';
 import type { Combatant, GameState } from '../../core/types';
 import { hasExposed, EXPOSED_LABEL } from '../../core/exposed';
 import { totalAttack, totalDefense } from '../../core/inventory';
@@ -6,7 +8,7 @@ import { getCharacterDef } from '../../data/characters';
 import { getZoneDef } from '../../data/zones';
 import { getCharacterVisual } from '../visualAssets';
 import { resolveCharacterVisualState } from '../characterVisualState';
-import { zoneStatusMeta } from '../zonePresentation';
+import { latestPlayerHazardFeedback, warningRemaining, zoneStatusMeta, zoneUrgencyMeta } from '../zonePresentation';
 import { Bar } from './Bar';
 import { VisualImage } from './VisualImage';
 
@@ -33,11 +35,19 @@ export function StatusBar({
 
   const zoneStatus = zone?.status ?? 'safe';
   const zoneMeta = zoneStatusMeta(zoneStatus);
+  const warningTimeRemaining = zoneStatus === 'warning'
+    ? warningRemaining(zone?.warningAtTime, state.time, GAME_CONFIG.zoneWarningDuration)
+    : null;
+  const zoneUrgency = zoneUrgencyMeta(warningTimeRemaining);
+  const hazardFeedback = latestPlayerHazardFeedback(state.events, state.playerId, state.time);
   let alert: { text: string; danger: boolean } | null = null;
   if (zone?.status === 'restricted') {
-    alert = { text: `${zoneName} 已是禁区 · 每回合 -20 生命`, danger: true };
+    alert = { text: `${zoneName} 已是禁区 · 每回合 -${zoneDamagePerTick(state)} 生命`, danger: true };
   } else if (zone?.status === 'warning') {
-    alert = { text: `${zoneName} 即将封锁 · 尽快撤离`, danger: false };
+    alert = {
+      text: `${zoneName} ${zoneUrgency.label} · 剩余 ${warningTimeRemaining ?? 0} 回合`,
+      danger: warningTimeRemaining === 0,
+    };
   } else if (countdown !== null && countdown <= 2) {
     alert = { text: `${countdown} 时间单位后公布新禁区`, danger: false };
   }
@@ -68,11 +78,20 @@ export function StatusBar({
         <span className="stat">攻 <b>{totalAttack(player)}</b> / 防 <b>{totalDefense(player)}</b></span>
       </div>
 
-      <div className={`topbar-danger topbar-danger-${zoneStatus}${alert?.danger ? ' is-critical' : ''}`}>
+      <div
+        className={`topbar-danger topbar-danger-${zoneStatus}${alert?.danger ? ' is-critical' : ''} topbar-zone-urgency-${zoneUrgency.urgency}`}
+        data-zone-urgency={zoneUrgency.urgency}
+        data-zone-hazard-feedback={hazardFeedback?.eventId ?? 'none'}
+      >
         <span className="zone-state-icon" aria-hidden="true">{zoneMeta.icon}</span>
         <span className="topbar-danger-copy">
           <b>{zoneName} · {zoneMeta.label}</b>
           <span>{alert?.text ?? (countdown !== null ? `下次禁区 T+${countdown}` : zoneMeta.description)}</span>
+          {hazardFeedback && (
+            <span className="topbar-hazard-feedback" role="status">
+              <span aria-hidden="true">↘</span> {hazardFeedback.source} −{hazardFeedback.damage} 生命
+            </span>
+          )}
         </span>
       </div>
 

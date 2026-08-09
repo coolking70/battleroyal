@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react';
 import { getCraftGoalRecommendations } from '../../core/craftGuide';
 import { listRecipes } from '../../core/crafting';
 import { recentEvents } from '../../core/events';
+import { GAME_CONFIG } from '../../data/gameConfig';
 import { listIntel, PRESENCE_TEXT, zonePresence } from '../../core/info';
 import { aliveCharacters } from '../../core/gameState';
 import { activeWorldEvents } from '../../core/worldEvents';
+import { zoneDamagePerTick } from '../../core/restrictedZones';
 import { canPayActionCost } from '../../core/actionCosts';
 import {
   SKILLS,
@@ -18,8 +20,10 @@ import { getZoneDef } from '../../data/zones';
 import { cx, stackLabel } from '../../utils/format';
 import { stackPresentation } from '../itemPresentation';
 import { latestPlayerSearchFeedback } from '../searchPresentation';
-import { getWorldEventVisual, getZoneVisual } from '../visualAssets';
+import { getZoneVisual } from '../visualAssets';
 import { zoneStatusMeta } from '../zonePresentation';
+import { warningRemaining, zoneUrgencyMeta } from '../zonePresentation';
+import { latestInstantWorldEvent, sortWorldEvents } from '../worldEventPresentation';
 import { ActionBar } from '../components/ActionBar';
 import { CraftPanel } from '../components/CraftPanel';
 import { EncounterPanel } from '../components/EncounterPanel';
@@ -30,6 +34,7 @@ import { SearchResultFeedback } from '../components/SearchResultFeedback';
 import { StatusBar } from '../components/StatusBar';
 import { ZoneMap } from '../components/ZoneMap';
 import { VisualImage } from '../components/VisualImage';
+import { InstantWorldEventAnnouncement, WorldEventBanner } from '../components/WorldEventFeedback';
 
 interface GameScreenProps {
   state: GameState;
@@ -59,6 +64,10 @@ export function GameScreen({
   const zoneState = state.zones[player.currentZoneId];
   const zoneStatus = zoneState?.status ?? 'safe';
   const zoneMeta = zoneStatusMeta(zoneStatus);
+  const warningTimeRemaining = zoneStatus === 'warning'
+    ? warningRemaining(zoneState?.warningAtTime, state.time, GAME_CONFIG.zoneWarningDuration)
+    : null;
+  const zoneUrgency = zoneUrgencyMeta(warningTimeRemaining);
   const alive = aliveCharacters(state);
 
   // 信息不完全：同区域只给"存在感"分档，精确数值只在遭遇中揭示
@@ -77,7 +86,8 @@ export function GameScreen({
   const pending = state.pendingPickup;
 
   // 世界事件横幅（Phase 3A Step 6）：展示当前生效中的事件
-  const bannerEvents = activeWorldEvents(state);
+  const bannerEvents = sortWorldEvents(activeWorldEvents(state));
+  const instantEvent = useMemo(() => latestInstantWorldEvent(state.events), [state.events]);
 
   // 有待处理拾取时锁定一切；遭遇战中只锁定通用行动
   const lockedAll = Boolean(pending);
@@ -177,9 +187,19 @@ export function GameScreen({
                   </span>
                 </div>
                 <p>{zoneDef.description}</p>
-                <div className="zone-hero-state-note">
+                <div className={`zone-hero-state-note zone-hero-urgency-${zoneUrgency.urgency}`}>
                   <span className="zone-state-icon" aria-hidden="true">{zoneMeta.icon}</span>
                   <span>{zoneMeta.description}</span>
+                  {zoneStatus === 'warning' && warningTimeRemaining !== null && (
+                    <strong className="zone-hero-countdown">
+                      {zoneUrgency.icon} {zoneUrgency.label} · 剩余 {warningTimeRemaining} 回合
+                    </strong>
+                  )}
+                  {zoneStatus === 'restricted' && (
+                    <strong className="zone-hero-hazard">
+                      ☠ 禁区侵蚀 · 每回合 −{zoneDamagePerTick(state)} 生命
+                    </strong>
+                  )}
                 </div>
               </div>
             </div>
@@ -189,27 +209,11 @@ export function GameScreen({
               data-search-feedback={searchFeedback?.kind ?? 'none'}
             >
 
+            <InstantWorldEventAnnouncement event={instantEvent} />
+
             {bannerEvents.length > 0 && (
               <div className="event-banner-wrap">
-                {bannerEvents.map((ev) => (
-                  <div className={`event-banner event-${ev.eventId}`} key={ev.id}>
-                    <VisualImage
-                      visual={getWorldEventVisual(ev.eventId)}
-                      alt={`${ev.label}事件图标`}
-                      className="event-banner-icon"
-                    />
-                    <div className="event-banner-body">
-                      <div className="event-banner-title">
-                        {ev.label}
-                        {`（剩余 ${ev.remaining} 回合）`}
-                        {ev.zoneId
-                          ? ` · ${getZoneDef(ev.zoneId).name}`
-                          : ' · 全城'}
-                      </div>
-                      <div className="event-banner-desc">{ev.description}</div>
-                    </div>
-                  </div>
-                ))}
+                {bannerEvents.map((ev) => <WorldEventBanner event={ev} key={ev.id} />)}
               </div>
             )}
 
