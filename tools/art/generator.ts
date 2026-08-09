@@ -220,7 +220,7 @@ export async function writePromptReport(
     : canaryTaskIds.has(built.task.id)
       ? 'phase4a41-scout-injured-canary'
     : combatCanaryTaskIds.has(built.task.id)
-      ? 'phase4a431-scout-combat-single-prop'
+      ? 'phase4a432-scout-combat-posture-only'
     : injuredBatchTaskIds.has(built.task.id)
       ? 'phase4a42-injured-batch'
     : e1TaskIds.has(built.task.id)

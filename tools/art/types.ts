@@ -30,6 +30,9 @@ export interface ArtTask {
   positiveTraits?: string[];
   positiveComposition?: string[];
   singlePropTransition?: boolean;
+  postureOnly?: boolean;
+  signaturePropMode?: 'static' | 'transition';
+  handsEmpty?: boolean;
   styleProfile: string;
   revision: number;
   status: ArtTaskStatus;

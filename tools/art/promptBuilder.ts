@@ -151,6 +151,9 @@ export function promptHashInput(built: BuiltPrompt): Record<string, unknown> {
       ...(built.task.itemProductionCategory ? { itemProductionCategory: built.task.itemProductionCategory } : {}),
       ...(built.task.promptStrategy !== 'item-positive-only-unmarked' && built.task.positiveComposition ? { positiveComposition: built.task.positiveComposition } : {}),
       ...(built.task.singlePropTransition ? { singlePropTransition: true } : {}),
+      ...(built.task.postureOnly ? { postureOnly: true } : {}),
+      ...(built.task.signaturePropMode ? { signaturePropMode: built.task.signaturePropMode } : {}),
+      ...(built.task.handsEmpty ? { handsEmpty: true } : {}),
     } : {}),
   };
 }

@@ -5,10 +5,10 @@ import { generateTask, emptyReport, writePromptReport } from './generator';
 import { buildPrompt } from './promptBuilder';
 import { auditCombatProviderPrompt } from './promptAudit';
 import { listCandidates } from './reviewer';
-import { ArtPipelineError, type ArtConfig, type ArtTask } from './types';
+import { ArtPipelineError, type ArtConfig, type ArtTask, type CandidateMetadata } from './types';
 import { SCOUT_COMBAT_CANARY_TASK_ID } from './canary';
 
-export const COMBAT_CANARY_STRATEGY = 'descriptor-locked-text-only-dynamic-equipment-neutral-single-prop' as const;
+export const COMBAT_CANARY_STRATEGY = 'descriptor-locked-text-only-dynamic-equipment-neutral-posture-only' as const;
 export const DYNAMIC_EQUIPMENT_POLICY = 'weapon visuals belong to item/equipment systems; character combat state art remains equipment-neutral' as const;
 
 export interface CombatValidationReport {
@@ -23,8 +23,10 @@ export interface ScoutCombatTaskReport {
   taskId: string;
   basePortraitTask: string;
   injuredTask: string;
-  oldCandidateHash: string;
-  oldReviewDecision: 'rejected';
+  v1CandidateHash: string;
+  v1Decision: 'rejected';
+  v2CandidateHash: string;
+  v2Decision: 'rejected';
   candidateHash: string | null;
   contentHash: string | null;
   promptHash: string | null;
@@ -40,7 +42,12 @@ export interface ScoutCombatTaskReport {
   identityDescriptorVersion: number;
   combatDescriptorVersion: number;
   dynamicEquipmentPolicy: string;
-  singlePropContract: boolean;
+  postureOnly: boolean;
+  signaturePropMode: 'static';
+  handsEmpty: boolean;
+  postureOnlyContract: boolean;
+  handsEmptyContract: boolean;
+  staticSignaturePropContract: boolean;
   hardVisualObservation: string;
 }
 
@@ -67,17 +74,26 @@ function emptyValidation(): CombatValidationReport {
   return { status: 'not_attempted', actualWidth: null, actualHeight: null, mimeType: null, errors: [] };
 }
 
-function taskReport(task: ArtTask, basePortrait: ArtTask, injured: ArtTask, oldCandidateHash: string, previousPromptHash: string, values: Partial<ScoutCombatTaskReport> = {}): ScoutCombatTaskReport {
+function taskReport(
+  task: ArtTask,
+  basePortrait: ArtTask,
+  injured: ArtTask,
+  v1: CandidateMetadata,
+  v2: CandidateMetadata,
+  values: Partial<ScoutCombatTaskReport> = {},
+): ScoutCombatTaskReport {
   return {
     taskId: task.id,
     basePortraitTask: basePortrait.id,
     injuredTask: injured.id,
-    oldCandidateHash,
-    oldReviewDecision: 'rejected',
+    v1CandidateHash: v1.hash,
+    v1Decision: 'rejected',
+    v2CandidateHash: v2.hash,
+    v2Decision: 'rejected',
     candidateHash: null,
     contentHash: null,
     promptHash: null,
-    previousPromptHash,
+    previousPromptHash: v2.promptHash,
     width: null,
     height: null,
     validation: emptyValidation(),
@@ -89,7 +105,12 @@ function taskReport(task: ArtTask, basePortrait: ArtTask, injured: ArtTask, oldC
     identityDescriptorVersion: Math.max(basePortrait.revision, injured.revision),
     combatDescriptorVersion: task.revision,
     dynamicEquipmentPolicy: DYNAMIC_EQUIPMENT_POLICY,
-    singlePropContract: false,
+    postureOnly: true,
+    signaturePropMode: 'static',
+    handsEmpty: true,
+    postureOnlyContract: false,
+    handsEmptyContract: false,
+    staticSignaturePropContract: false,
     hardVisualObservation: '',
     ...values,
   };
@@ -99,6 +120,17 @@ function sanitizeReportName(value: string): string {
   const safe = value.replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   if (!safe) throw new Error('report name must contain letters, numbers, _ or -');
   return safe;
+}
+
+function priorCombatCandidates(candidates: CandidateMetadata[]): [CandidateMetadata, CandidateMetadata] {
+  const taskCandidates = candidates.filter((candidate) => candidate.taskId === SCOUT_COMBAT_CANARY_TASK_ID);
+  const rejected = taskCandidates
+    .filter((candidate) => candidate.reviewStatus === 'rejected')
+    .sort((a, b) => a.generatedAt.localeCompare(b.generatedAt));
+  if (taskCandidates.length !== 2 || rejected.length !== 2) {
+    throw new Error('Scout Combat requires exactly two rejected prior candidates (v1 and v2); rerolls are prohibited');
+  }
+  return [rejected[0]!, rejected[1]!];
 }
 
 export async function runScoutCombatCanary(
@@ -111,10 +143,10 @@ export async function runScoutCombatCanary(
   const basePortrait = tasks.find((item) => item.id === 'character/scout/portrait');
   const injured = tasks.find((item) => item.id === 'character/scout/injured');
   if (!task || !basePortrait || !injured) throw new Error('Scout Combat canary task or identity sources are missing');
-  if (task.promptStrategy !== 'character-combat-positive-only' || task.revision < 3 || !task.singlePropTransition) throw new Error('Scout Combat task is not descriptor-locked single-prop revision 3');
-  const existing = (await listCandidates(config)).filter((candidate) => candidate.taskId === task.id);
-  if (existing.length !== 1 || existing[0]?.reviewStatus !== 'rejected') throw new Error('Scout Combat requires exactly one rejected prior candidate; rerolls are prohibited');
-  const oldCandidate = existing[0]!;
+  if (task.promptStrategy !== 'character-combat-positive-only' || task.revision < 4 || task.postureOnly !== true || task.signaturePropMode !== 'static' || task.handsEmpty !== true) {
+    throw new Error('Scout Combat task is not descriptor-locked posture-only revision 4');
+  }
+  const [v1, v2] = priorCombatCandidates(await listCandidates(config));
 
   const report: ScoutCombatCanaryReport = {
     strategy: COMBAT_CANARY_STRATEGY,
@@ -131,7 +163,9 @@ export async function runScoutCombatCanary(
   const built = await buildPrompt(config.rootDir, task, config.model);
   const hash = contentHash(built);
   const promptAudit = auditCombatProviderPrompt(task, built.prompt);
-  if (!promptAudit.passed || promptAudit.singlePropContract !== true) throw new Error(`Scout Combat single-prop prompt contract failed: ${promptAudit.failures.join('; ')}`);
+  if (!promptAudit.passed || promptAudit.postureOnlyContract !== true || promptAudit.handsEmptyContract !== true || promptAudit.staticSignaturePropContract !== true) {
+    throw new Error(`Scout Combat posture-only prompt contract failed: ${promptAudit.failures.join('; ')}`);
+  }
   await writePromptReport(config.rootDir, built, hash);
   const beforeApiCalls = generationReport.apiCalls;
   const beforeCacheHits = generationReport.cacheHits;
@@ -139,11 +173,11 @@ export async function runScoutCombatCanary(
     const metadata = await generateTask(config, task, { force: false, retryDelaysMs: [] }, generationReport);
     if (!metadata) throw new Error('Scout Combat generation returned no candidate');
     report.generated = 1;
-    report.tasks.push(taskReport(task, basePortrait, injured, oldCandidate.hash, oldCandidate.promptHash, {
+    report.tasks.push(taskReport(task, basePortrait, injured, v1, v2, {
       candidateHash: metadata.hash,
       contentHash: metadata.contentHash,
       promptHash: hash,
-      previousPromptHash: oldCandidate.promptHash,
+      previousPromptHash: v2.promptHash,
       width: metadata.actualWidth,
       height: metadata.actualHeight,
       validation: {
@@ -158,20 +192,24 @@ export async function runScoutCombatCanary(
       cacheHits: generationReport.cacheHits - beforeCacheHits,
       source: metadata.source,
       providerStatus: metadata.source === 'cache' ? 'cache_hit' : 'generated',
-      singlePropContract: true,
+      postureOnlyContract: true,
+      handsEmptyContract: true,
+      staticSignaturePropContract: true,
       hardVisualObservation: 'candidate generated; human comparison against Scout Portrait and Injured remains required; no automatic similarity score or reroll',
     }));
   } catch (error) {
     const contentRejected = isCombatContentRejection(error);
-    report.tasks.push(taskReport(task, basePortrait, injured, oldCandidate.hash, oldCandidate.promptHash, {
+    report.tasks.push(taskReport(task, basePortrait, injured, v1, v2, {
       promptHash: hash,
-      previousPromptHash: oldCandidate.promptHash,
+      previousPromptHash: v2.promptHash,
       review: 'pending',
       apiCalls: generationReport.apiCalls - beforeApiCalls,
       cacheHits: generationReport.cacheHits - beforeCacheHits,
       source: 'none',
       providerStatus: contentRejected ? 'provider_rejected' : 'failed',
-      singlePropContract: true,
+      postureOnlyContract: true,
+      handsEmptyContract: true,
+      staticSignaturePropContract: true,
       hardVisualObservation: error instanceof Error ? error.message : String(error),
     }));
     if (!contentRejected) {
@@ -190,6 +228,6 @@ export async function runScoutCombatCanary(
 
 async function writeReport(config: ArtConfig, reportName: string | undefined, report: ScoutCombatCanaryReport): Promise<void> {
   await fs.mkdir(path.join(config.rootDir, 'reports'), { recursive: true });
-  const safeName = sanitizeReportName(reportName ?? 'phase4a431-scout-combat-single-prop');
+  const safeName = sanitizeReportName(reportName ?? 'phase4a432-scout-combat-posture-only');
   await fs.writeFile(path.join(config.rootDir, 'reports', `${safeName}.json`), `${JSON.stringify(report, null, 2)}\n`);
 }

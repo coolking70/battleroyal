@@ -96,3 +96,11 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Completed the API-before gate: 1167 tests PASS, typecheck/build/save/dependency/art/Manifest/security audits PASS, 500-game regression PASS, production dependency audit 0 vulnerabilities.
 - Generated exactly once with the new prompt: new hash `752052e828e7708ebc010457bb9eca11e718a7ec91e18e63dd8b133ad11f6159`, API=1, cache=0, validation PASS, review pending. Visual review found the duplicate binocular prop remained; this is recorded as Art Strategy FAIL / Technical Execution PASS, with no reroll and no publication.
 - Review package: `output/art-review/phase4a431-scout-combat/`. If rejected again, do not generate Scout Combat v3/v4; use posture-only recovery and wait for the next explicit phase.
+
+## Phase 4A-4.3.2 progress (2026-08-09)
+
+- Baseline `c0e878e` had 31 formal AI assets. Scout Combat v1 `80109ee0…` and v2 `752052e8…` were both human-rejected for duplicated binoculars; v2 was formally rejected at phase start and both candidates remain preserved.
+- Abandoned signature-prop position transitions after 2/2 failures. Revised Scout Combat to revision 4 with `postureOnly=true`, `signaturePropMode=static` and `handsEmpty=true`; the provider prompt keeps one binocular pair static at the chest and expresses action through posture only.
+- Offline gates passed: 1168 tests, typecheck/build/save/dependency/art/Manifest/security audits, 500-game regression and production dependency audit.
+- Generated exactly once: candidate `7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01`, API=1, cache=0, validation PASS, review pending. Visual review found static binoculars, empty separated hands and clear alert posture; no duplicate prop observed. No approval, publication or remaining Combat generation performed.
+- Review package: `output/art-review/phase4a432-scout-combat/`. Await human review; if this strategy later fails, stop text-only Combat tuning and consider Phase 4A-4.3R simplification.
