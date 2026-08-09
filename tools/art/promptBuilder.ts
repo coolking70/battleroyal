@@ -56,12 +56,14 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
   const designSheet = !positiveOnly && sheetPath ? providerDesignSheet(await readText(rootDir, sheetPath)) : '';
   const entityBrief = [
     task.providerDescriptor ? `Provider-facing visual identity: ${task.providerDescriptor}` : '',
-    task.positiveTraits?.length ? `${task.promptStrategy === 'character-positive-only' ? 'Positive appearance traits' : 'Positive visual traits'}:\n${task.positiveTraits.map((item) => `- ${item}`).join('\n')}` : '',
+    task.positiveTraits?.length ? `${task.promptStrategy === 'character-positive-only' || task.promptStrategy === 'character-combat-positive-only' ? 'Positive appearance traits' : 'Positive visual traits'}:\n${task.positiveTraits.map((item) => `- ${item}`).join('\n')}` : '',
     designSheet ? `Character design source of truth:\n${designSheet}` : '',
     `Asset brief:\n${task.promptTemplate}`,
   ].filter(Boolean).join('\n\n');
-  const variant = `Variant: ${task.variant}. Keep the entity identity stable across variants.`;
-  const hardConstraints = task.promptStrategy === 'character-positive-only'
+  const variant = task.promptStrategy === 'character-combat-positive-only'
+    ? 'State: healthy, fully alert and actively observing in a tense civilian stance.'
+    : `Variant: ${task.variant}. Keep the entity identity stable across variants.`;
+  const hardConstraints = task.promptStrategy === 'character-positive-only' || task.promptStrategy === 'character-combat-positive-only'
     ? [
         'single adult portrait',
         'waist-up portrait',
@@ -92,6 +94,8 @@ export async function buildPrompt(rootDir: string, task: ArtTask, model: string)
   };
   const technicalComposition = task.promptStrategy === 'character-positive-only'
     ? `Technical composition: ${task.width}x${task.height}; centered waist-up portrait; clear focal subject; pale neutral studio-like backdrop.`
+    : task.promptStrategy === 'character-combat-positive-only'
+      ? `Technical composition: ${task.width}x${task.height}; dynamic three-quarter portrait; clear focal subject; pale neutral studio-like backdrop.`
     : task.promptStrategy === 'event-positive-only'
       ? `Technical composition: ${task.width}x${task.height}; wide environmental framing; clear event focal subject; cinematic atmospheric composition.`
     : task.promptStrategy === 'environment-positive-only'

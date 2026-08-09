@@ -3,7 +3,8 @@
 The stable production policy is now frozen:
 
 - Character → `character-positive-only` — Character Base Portrait Production Proven
-- Character Injured → `descriptor-locked text-only` positive-only — Scout canary approved; remaining variants require one-shot generation and human identity review
+- Character Injured Base Variants → `descriptor-locked text-only` positive-only — 4/4 official; production complete
+- Character Combat State → `descriptor-locked text-only dynamic-equipment-neutral` — state art only; Scout canary requires human review
 - Zone → `environment-positive-only` — Zone Background Production Complete
 - Item → category-aware `item-positive-only` — Item Base Icons Production Complete
 - World Event Base Illustrations → 5/6 official; E1 uses controlled per-event `event-positive-only` production
@@ -19,7 +20,11 @@ All item categories share Render Style, Item Presentation, positive entity brief
 
 ## Injured character variants
 
-Injured portraits use a descriptor-locked text-only strategy. The provider receives a complete positive visual identity descriptor derived from the approved base portrait and Character Design Sheet, plus only mild state changes: slight fatigue, light dust or scuffing, a small dressing and a restrained expression change. The `negativePrompt` remains empty for character-positive-only tasks. This is not reference guided, img2img or image conditioned generation: approved portrait bytes are not sent to Agnes. Every candidate remains pending until human review; no similarity score, automatic approval/rejection or reroll is permitted.
+Injured portraits use a descriptor-locked text-only strategy. The provider receives a complete positive visual identity descriptor derived from the approved base portrait and Character Design Sheet, plus only mild state changes: slight fatigue, light dust or scuffing, a small dressing and a restrained expression change. The `negativePrompt` remains empty for character-positive-only tasks. This is not reference guided, img2img or image conditioned generation: approved portrait bytes are not sent to Agnes. New candidates remain pending until human review; no similarity score, automatic approval/rejection or reroll is permitted. Approved assets are published only through explicit review and publish commands.
+
+## Combat state variants
+
+Combat state art is a state illustration, not an equipment illustration. It communicates expression, posture, tension and motion while remaining equipment-neutral; weapon visuals belong to item/equipment systems and are never fixed into a character Combat portrait. The provider receives only a positive descriptor-locked text-to-image prompt. No reference image is passed, and no reference-guided or image-conditioned capability is claimed. Scout Combat is a one-sample canary; it remains pending and unpublished until human review.
 
 ## World event policy
 

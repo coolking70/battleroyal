@@ -8,10 +8,11 @@ import { buildPrompt } from './promptBuilder';
 import { publishApproved, validatePublishedManifest } from './publisher';
 import { listCandidates, reviewCandidate } from './reviewer';
 import { loadTasks, selectTasks, taskForId } from './taskPlanner';
-import { auditCharacterProviderPrompt, auditEnvironmentProviderPrompt, auditEventProviderPrompt, auditItemProviderPrompt, auditRainProviderPrompt } from './promptAudit';
+import { auditCharacterProviderPrompt, auditCombatProviderPrompt, auditEnvironmentProviderPrompt, auditEventProviderPrompt, auditItemProviderPrompt, auditRainProviderPrompt } from './promptAudit';
 import { agnesRequestFor } from './providers/agnes';
 import { runEventE1Batch } from './eventBatch';
 import { runInjuredBatch } from './injuredBatch';
+import { runScoutCombatCanary } from './combatCanary';
 import type { ArtConfig, ArtTask } from './types';
 
 interface Args {
@@ -57,6 +58,7 @@ function printHelp(): void {
   art:generate [--task ...|--category characters|--status missing] [--dry-run] [--force] [--concurrency 1|2] [--report-name name]
   art:event-e1 [--report-name name] (exactly four world events, sequential, no rerolls)
   art:injured-batch [--report-name name] (Fighter, Engineer, Medic once each, sequential, no rerolls)
+  Scout Combat canary: art:generate --task character/scout/combat --concurrency 1 (one call, no rerolls)
   art:list
   art:approve --task ... --candidate <contentHash>
   art:reject --task ... --candidate <contentHash> --reason "..."
@@ -73,7 +75,7 @@ async function doctor(config: ArtConfig, offline: boolean): Promise<number> {
   const checks: Array<[string, boolean, string]> = [];
   try {
     const tasks = await loadTasks(config.rootDir);
-    checks.push(['task definitions', tasks.length === 32 && tasks.length <= 40, `${tasks.length} tasks`]);
+    checks.push(['task definitions', tasks.length === 33 && tasks.length <= 40, `${tasks.length} tasks`]);
   } catch (error) {
     checks.push(['task definitions', false, errorMessage(error)]);
   }
@@ -130,8 +132,10 @@ async function promptAuditCommand(config: ArtConfig, task: ArtTask): Promise<num
     ? auditRainProviderPrompt(task, payload.prompt)
     : task.promptStrategy === 'event-positive-only'
       ? auditEventProviderPrompt(task, payload.prompt)
+    : task.promptStrategy === 'character-combat-positive-only'
+      ? auditCombatProviderPrompt(task, payload.prompt)
     : task.promptStrategy === 'character-positive-only'
-    ? auditCharacterProviderPrompt(task, payload.prompt)
+      ? auditCharacterProviderPrompt(task, payload.prompt)
     : task.promptStrategy === 'environment-positive-only'
       ? auditEnvironmentProviderPrompt(task, payload.prompt)
       : task.promptStrategy === 'item-positive-only-unmarked' || task.promptStrategy === 'item-positive-only'
@@ -146,6 +150,13 @@ async function generateCommand(config: ArtConfig, args: Args): Promise<number> {
   if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 2) throw new Error('--concurrency must be an integer from 1 to 2');
   if (args.debugRequest) process.env.IMAGE_API_DEBUG_REQUEST = '1';
   const allTasks = await loadTasks(config.rootDir);
+  if (args.taskId === 'character/scout/combat') {
+    if (concurrency !== 1) throw new Error('Scout Combat canary requires --concurrency 1');
+    if (args.dryRun) throw new Error('Scout Combat canary dry-run is not a production generation');
+    const result = await runScoutCombatCanary(config, allTasks, { reportName: args.reportName, force: args.force });
+    console.log(JSON.stringify(result.report, null, 2));
+    return result.exitCode;
+  }
   let tasks = selectTasks(allTasks, args);
   if (args.status === 'missing') {
     const candidates = await listCandidates(config);

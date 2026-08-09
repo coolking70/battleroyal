@@ -45,6 +45,7 @@ const OUTPUT_NAMES: Record<string, string> = {
   'character/fighter/injured': 'fighter-injured',
   'character/engineer/injured': 'engineer-injured',
   'character/medic/injured': 'medic-injured',
+  'character/scout/combat': 'scout-combat',
 };
 
 const REVIEW_REMINDERS: Record<string, string> = {
@@ -80,6 +81,7 @@ const REVIEW_REMINDERS: Record<string, string> = {
   'character/fighter/injured': 'Compare beside the official Fighter portrait. Accept natural text-to-image variation; assess player-recognizable identity, mild injury only, and preserved athletic clothing and glove/wrap identity.',
   'character/engineer/injured': 'Compare beside the official Engineer portrait. Accept natural text-to-image variation; assess player-recognizable identity, mild injury only, and preserved ochre workwear, tool belt and compact wrench identity.',
   'character/medic/injured': 'Compare beside the official Medic portrait. Accept natural text-to-image variation; assess player-recognizable identity, mild injury only, and preserved green/off-white workwear and white-and-green pouch identity.',
+  'character/scout/combat': 'Compare beside the official Scout Portrait and Injured portrait. Check active tension without fixed weapon, military/tactical contamination or injured-state drift.',
 };
 const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'character/scout/portrait': [
@@ -116,6 +118,7 @@ const REVIEW_CHECKLISTS: Record<string, string[]> = {
   'character/fighter/injured': ['reads naturally as the same Fighter', 'same age and short dark hair', 'same athletic build', 'same charcoal/rust-orange jacket', 'same boxing gloves/wraps', 'injury is mild', 'no drastic redesign'],
   'character/engineer/injured': ['reads naturally as the same Engineer', 'same age / hairstyle identity', 'same ochre work jacket', 'same gray shirt', 'tool belt remains recognizable', 'compact wrench/tool identity remains', 'injury is mild', 'no drastic redesign'],
   'character/medic/injured': ['reads naturally as the same Medic', 'same age / bob hairstyle identity', 'same green/off-white jacket identity', 'same first-aid pouch identity', 'injury is mild', 'no militarized redesign', 'no drastic character redesign'],
+  'character/scout/combat': ['clearly reads as the same Scout', 'same age range and hairstyle', 'same slate-blue jacket identity', 'same charcoal shirt / khaki outfit language', 'binoculars remain recognizable', 'side pouch identity remains compatible', 'action/tension state clearly differs from neutral Portrait', 'clearly differs from Injured state', 'no fixed weapon', 'no military/tactical contamination', 'no drastic redesign'],
 };
 
 export interface ReviewExportOptions {
@@ -214,7 +217,7 @@ async function main(): Promise<void> {
     reportPath,
     outputDir,
     fileSuffix: fileSuffix ?? '',
-    title: reportPath.includes('phase4a42') ? 'Phase 4A-4.2 Remaining Injured Variant Review Package' : fileSuffix === '-positive' ? 'Phase 4A-2.1 Character Positive-only Review Package' : fileSuffix === '-nonchar' ? 'Phase 4A-2.1 Non-character B1 Review Package' : fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : fileSuffix === '-v2' ? 'Phase 4A-2.2 Non-character Positive-only Recovery Review Package' : fileSuffix === '-b2' ? 'Phase 4A-2.3 Controlled Production Expansion B2 Review Package' : fileSuffix === '-b3' ? 'Phase 4A-3 Item Production Batch B3 Review Package' : fileSuffix === '-rain' ? 'Phase 4A-2.3 Rain Provider Recovery Review Package' : fileSuffix === '-e1' ? 'Phase 4A-4 World Event E1 Review Package' : fileSuffix === '-canary' ? 'Phase 4A-4.1 Scout Injured Canary Review Package' : undefined,
+    title: reportPath.includes('phase4a43') ? 'Phase 4A-4.3 Scout Combat Canary Review Package' : reportPath.includes('phase4a42') ? 'Phase 4A-4.2 Remaining Injured Variant Review Package' : fileSuffix === '-positive' ? 'Phase 4A-2.1 Character Positive-only Review Package' : fileSuffix === '-nonchar' ? 'Phase 4A-2.1 Non-character B1 Review Package' : fileSuffix === '-v5' ? 'Phase 4A-2 Blackout v5 Review Package' : fileSuffix === '-b1' ? 'Phase 4A-2 Controlled Round B1 Review Package' : fileSuffix === '-v4' ? 'Phase 4A-1.3 Round A4 Review Package' : fileSuffix === '-v3' ? 'Phase 4A-1.2 Round A3 Review Package' : fileSuffix === '-v2' ? 'Phase 4A-2.2 Non-character Positive-only Recovery Review Package' : fileSuffix === '-b2' ? 'Phase 4A-2.3 Controlled Production Expansion B2 Review Package' : fileSuffix === '-b3' ? 'Phase 4A-3 Item Production Batch B3 Review Package' : fileSuffix === '-rain' ? 'Phase 4A-2.3 Rain Provider Recovery Review Package' : fileSuffix === '-e1' ? 'Phase 4A-4 World Event E1 Review Package' : fileSuffix === '-canary' ? 'Phase 4A-4.1 Scout Injured Canary Review Package' : undefined,
   } : {};
   const result = await exportRoundAReview(configModule.createArtConfig(), options);
   console.log(`EXPORTED ${result.candidates.length} pending candidates to ${result.outputDir}`);

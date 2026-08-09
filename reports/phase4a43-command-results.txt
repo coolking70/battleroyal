@@ -1,0 +1,52 @@
+Phase 4A-4.3 command evidence
+Branch: agent/phase4-art-pipeline
+Baseline: ebff421dcff410f113a5c670d6d77d993745ce74
+
+Track A — exact approvals
+1. npm run art:approve -- --task character/fighter/injured --candidate bdfbd88d5ad6b746586decb62227b5f4d92676dbded3ac16c624a1efc7d3e61e
+   APPROVED
+2. npm run art:approve -- --task character/engineer/injured --candidate a696243e0873e7e44e352c27721a25e6ff558b5027482beffe89ca95792352d5
+   APPROVED
+3. npm run art:approve -- --task character/medic/injured --candidate 804ea57b335ffd9b0f8557d3ce81e72e8b6071038aa396c8a244b7f97c8d8154
+   APPROVED
+4. npm run art:list
+   Scout/Fighter/Engineer/Medic Injured approved; no Combat approval
+5. npm run art:publish
+   PUBLISHED 31 approved candidates; manifest 143537a5...
+6. npm run art:validate
+   PASS
+7. npm run art:publish
+   NO CHANGES
+
+Track B — one controlled canary
+8. IMAGE_API_KEY=(local environment only) npm run art:generate -- --task character/scout/combat --concurrency 1 --report-name phase4a43-scout-combat-canary
+   requested=1 attempted=1 generated=1 apiCalls=1 cacheHits=0 rainApiCalls=0 otherCombatCalls=0
+   candidate/content hash 80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1
+   864x1152 PNG; validation passed; source api; review pending
+9. npm run art:review-export -- --report reports/phase4a43-scout-combat-canary.json --output output/art-review/phase4a43-scout-combat-canary
+   EXPORTED 1 pending candidate; Decision/Notes blank
+
+Offline gates
+10. npm run typecheck
+    PASS
+11. npm test -- --run
+    1162/1162 PASS
+12. npm run build
+    PASS
+13. npm run audit:save
+    74/74 PASS
+14. npm run audit:deps
+    PASS
+15. npm run art:doctor -- --offline
+    PASS
+16. npm run art:validate
+    PASS
+17. npm audit --omit=dev
+    0 vulnerabilities
+18. PHASE4A43 500-game regression
+    PASS; zero timeout, illegalState and hardLimitReached
+19. Browser smoke via develop-web-game Playwright client
+    Menu and gameplay rendered; no browser console-error artifact
+
+Secret handling
+The provider credential was supplied only as a local process environment value for the one real call. It was not written to source, reports, prompts, candidates, Manifest or this evidence file.

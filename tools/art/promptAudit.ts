@@ -32,6 +32,29 @@ export const FORBIDDEN_CHARACTER_TOKENS = [
   'img2img',
 ] as const;
 
+export const FORBIDDEN_COMBAT_DYNAMIC_EQUIPMENT_TOKENS = [
+  'gun',
+  'rifle',
+  'firearm',
+  'pistol',
+  'sniper',
+  'weapon',
+  'armed',
+  'bow',
+  'axe',
+  'sword',
+  'knife',
+  'military',
+  'tactical',
+  'soldier',
+  'special forces',
+  'combat gear',
+  'plate carrier',
+  'chest rig',
+  'ammunition',
+  'holster',
+] as const;
+
 export const FORBIDDEN_ENVIRONMENT_TOKENS = [
   'person',
   'people',
@@ -201,6 +224,7 @@ export interface PromptAuditResult {
   internalTaskId: boolean;
   internalEntityId: boolean;
   designSheetHeading: boolean;
+  dynamicEquipmentForbiddenTokenCount?: number;
   failures: string[];
 }
 
@@ -224,6 +248,22 @@ export function auditCharacterProviderPrompt(task: ArtTask, providerPrompt: stri
     internalEntityId,
     designSheetHeading,
     failures,
+  };
+}
+
+export function auditCombatProviderPrompt(task: ArtTask, providerPrompt: string): PromptAuditResult {
+  const base = auditCharacterProviderPrompt(task, providerPrompt);
+  const dynamicTokens = FORBIDDEN_COMBAT_DYNAMIC_EQUIPMENT_TOKENS.filter((token) => tokenPattern(token).test(providerPrompt));
+  const forbiddenTokens = [...new Set([...base.forbiddenTokens, ...dynamicTokens])];
+  const dynamicFailures = dynamicTokens.map((token) => `dynamic equipment token: ${token}`);
+  return {
+    ...base,
+    strategy: task.promptStrategy ?? 'standard',
+    passed: base.passed && dynamicTokens.length === 0,
+    forbiddenTokenCount: forbiddenTokens.length,
+    forbiddenTokens,
+    dynamicEquipmentForbiddenTokenCount: dynamicTokens.length,
+    failures: [...base.failures, ...dynamicFailures],
   };
 }
 

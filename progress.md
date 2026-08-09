@@ -80,3 +80,11 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Strict Round A4 completed Scout v4 then Blackout v4 with exactly two API calls. Both are new hashes, `source=api`, `apiCalls=1`, `cacheHits=0`, automatic validation PASS, review pending.
 - Exported `output/art-review/phase4a13-round-a4/` with exact report-selected candidates, `-v4` filenames, human checklists, and blank Decision/Notes. Round B, approval, publish, and Manifest changes were not performed.
 - Final implementation commit `4a39c69` was pushed and GitHub Actions run `31270069170` completed with `verify` PASS; the Draft PR remains open.
+
+## Phase 4A-4.3 progress (2026-08-09)
+
+- Baseline was `ebff421` with 28 formal AI assets. Track A approved and published the exact Fighter, Engineer and Medic Injured candidates, reaching 31 formal assets; all four Injured variants are official.
+- Added the isolated `character/scout/combat` canary path with descriptor-locked text-only dynamic-equipment-neutral prompting, forbidden combat/equipment token auditing, exact-one-call enforcement and no auto-approval/publish behavior.
+- One real Scout Combat API call succeeded: candidate/content hash `80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1`, actual 864×1152 PNG, validation PASS, review pending. The candidate is exported for human review and is not in the formal Manifest. The review package records the objective binocular observation for human judgment; no reroll occurred.
+- Full suite reached 1162 tests PASS. Typecheck, build, save/dependency/art/Manifest/secret audits, 500-game regression and production dependency audit passed. Browser smoke rendered menu and gameplay without a browser console-error artifact.
+- Next action is human review of Scout Combat. Only an explicit approval followed by publish may promote it; no other Combat or Rain generation is authorized by this phase.
