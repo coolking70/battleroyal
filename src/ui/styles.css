@@ -3784,3 +3784,105 @@ input {
     scroll-behavior: auto !important;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Phase 4C-1：合成路线引导（不改变 4B 布局，只增加路径说明）           */
+/* ------------------------------------------------------------------ */
+
+.craft-route-guide {
+  margin: 0 0 10px;
+  padding: 10px 11px;
+  border: 1px solid rgba(110, 168, 199, 0.4);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(39, 66, 80, 0.42), rgba(17, 24, 30, 0.86));
+}
+
+.craft-route-guide-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: #e8f1f5;
+}
+
+.craft-route-guide-icon {
+  color: #f2c56c;
+  font-size: 16px;
+}
+
+.craft-route-guide p {
+  margin: 6px 0 4px;
+  color: rgba(235, 242, 247, 0.78);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.craft-route-guide-meta,
+.cg-path-depth,
+.recipe-chain-note {
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.cg-path,
+.cg-raw-materials {
+  margin-top: 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(110, 168, 199, 0.3);
+  border-radius: 3px;
+  background: rgba(16, 24, 30, 0.54);
+}
+
+.cg-path-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 5px 0;
+}
+
+.cg-path-step {
+  padding: 3px 5px;
+  border: 1px solid rgba(110, 168, 199, 0.42);
+  border-radius: 3px;
+  color: #cce7f2;
+  font-size: 11px;
+}
+
+.cg-path-step + .cg-path-step::before {
+  content: '→';
+  margin-right: 4px;
+  color: var(--text-faint);
+}
+
+.cg-raw-material {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(110, 126, 138, 0.2);
+  font-size: 11px;
+}
+
+.cg-raw-material:last-child {
+  border-bottom: 0;
+}
+
+.recipe-chain-note {
+  margin: -2px 0 6px;
+  color: #b8d8e5;
+}
+
+@media (max-width: 760px) {
+  .craft-route-guide {
+    padding: 8px 9px;
+  }
+
+  .cg-raw-material {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+}

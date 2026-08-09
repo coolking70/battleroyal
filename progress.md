@@ -232,3 +232,21 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   `reports/phase4b-final-ux-debt.json`, `PHASE4B_PR_DESCRIPTION.md` and the
   Phase 4C candidate list. Human real-device/screen-reader review remains
   explicitly classified as `HUMAN-PLAYTEST-NEEDED`.
+
+## Phase 4C-1 progress (2026-08-10)
+
+- Started `codex/phase4c1-synthesis-weapons` from `main` merge `bf6e810`.
+- Expanded the data layer from 23 to 29 items and 11 to 17 recipes. Added
+  intermediate weapon components and five cross-zone high-tier paths; every
+  rare pool now contains at least one weapon and hospital has a stick fallback
+  in both base and rare pools.
+- Added the presentation-only `craftPathPresentation.ts` and CraftPanel guidance
+  for “weapons mainly come from crafting”, intermediate steps, raw material
+  gaps, static source zones, and expected emoji fallback for new no-art items.
+- Confirmed the existing NPC `findUpgradeRecipe` can complete the chain without
+  touching `src/core/**`; added item-integrity, deterministic-RNG fixture,
+  information-boundary, NPC-chain, fallback, and browser evidence coverage.
+- Local suite is 65 files / 1272 tests PASS. Clean production preview evidence
+  covers 1280×720 and 390×844 with zero console/page errors. The required 500
+  game regression and 200-game craft reachability observation are recorded in
+  `reports/phase4c1-balance.*` and `reports/phase4c1-craft-reachability.json`.

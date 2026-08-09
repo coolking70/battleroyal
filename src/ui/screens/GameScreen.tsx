@@ -385,6 +385,8 @@ export function GameScreen({
             {tab === 'craft' && (
               <CraftPanel
                 views={recipeViews}
+                state={state}
+                player={player}
                 disabled={lockedGeneral}
                 goalRecipeId={state.craftGoalRecipeId}
                 goalCompleted={state.craftGoalCompleted}

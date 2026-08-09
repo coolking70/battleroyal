@@ -1,0 +1,70 @@
+{
+  "phase": "4C-1",
+  "generatedAt": "2026-08-09T16:34:14.503Z",
+  "method": {
+    "seedCount": 10,
+    "matrix": "4 characters × 5 policies",
+    "requestedGames": 200,
+    "actualGames": 200,
+    "source": "tools/autoPlayer.ts via executeCommand",
+    "interpretation": "observation only; no win-rate or balance gate"
+  },
+  "health": {
+    "healthyGames": 200,
+    "requestedEqualsActual": true,
+    "noTimeoutOrDeadlockOrIllegal": true,
+    "averageTimeUsed": 35.395
+  },
+  "highTierWeapons": [
+    {
+      "itemId": "field_spear",
+      "name": "野外长矛",
+      "gamesWithCraft": 5,
+      "craftEvents": 5,
+      "playerGamesWithCraft": 3,
+      "firstCraftTime": 9,
+      "gameRate": 0.025,
+      "playerGameRate": 0.015
+    },
+    {
+      "itemId": "steel_axe",
+      "name": "钢刃斧",
+      "gamesWithCraft": 15,
+      "craftEvents": 15,
+      "playerGamesWithCraft": 2,
+      "firstCraftTime": 13,
+      "gameRate": 0.075,
+      "playerGameRate": 0.01
+    },
+    {
+      "itemId": "composite_bow",
+      "name": "复合弓",
+      "gamesWithCraft": 22,
+      "craftEvents": 24,
+      "playerGamesWithCraft": 4,
+      "firstCraftTime": 10,
+      "gameRate": 0.11,
+      "playerGameRate": 0.02
+    },
+    {
+      "itemId": "insulated_pipe",
+      "name": "绝缘铁管",
+      "gamesWithCraft": 11,
+      "craftEvents": 11,
+      "playerGamesWithCraft": 3,
+      "firstCraftTime": 5,
+      "gameRate": 0.055,
+      "playerGameRate": 0.015
+    },
+    {
+      "itemId": "insulated_stun_rod",
+      "name": "绝缘电击棒",
+      "gamesWithCraft": 7,
+      "craftEvents": 7,
+      "playerGamesWithCraft": 5,
+      "firstCraftTime": 13,
+      "gameRate": 0.035,
+      "playerGameRate": 0.025
+    }
+  ]
+}

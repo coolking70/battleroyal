@@ -1,8 +1,8 @@
 import type { ItemDef } from '../core/types';
 
 /**
- * 第一版物品表：10 材料 + 5 武器 + 3 防具 + 5 消耗品 = 23 种。
- * 所有名称与描述均为原创占位内容。
+ * Phase 4C-1 物品表：10 材料 + 11 武器 + 3 防具 + 5 消耗品 = 29 种。
+ * 新增武器没有正式 PNG，统一沿用 VisualImage 的 SVG / emoji fallback。
  */
 export const ITEMS: ItemDef[] = [
   /* ---------------- 材料 ---------------- */
@@ -155,6 +155,79 @@ export const ITEMS: ItemDef[] = [
     durability: 15,
     description: '接了电池的金属棒，电流让对手很难还手。',
     value: 32,
+    stackable: false,
+    maxStack: 1,
+  },
+  /* ---------------- 武器 · Phase 4C-1 深层成品 ---------------- */
+  {
+    id: 'reinforced_handle',
+    name: '加固握把',
+    category: 'weapon',
+    weaponType: 'melee',
+    attack: 4,
+    durability: 24,
+    description: '木棍外缠绳子，握持更稳，是长柄武器的中间部件。',
+    value: 14,
+    stackable: false,
+    maxStack: 1,
+  },
+  {
+    id: 'field_spear',
+    name: '野外长矛',
+    category: 'weapon',
+    weaponType: 'melee',
+    attack: 9,
+    durability: 28,
+    description: '加固握把接上铁片，适合在野外保持距离。',
+    value: 28,
+    stackable: false,
+    maxStack: 1,
+  },
+  {
+    id: 'steel_axe',
+    name: '钢刃斧',
+    category: 'weapon',
+    weaponType: 'melee',
+    attack: 12,
+    durability: 32,
+    description: '石斧换上铁块加固，沉重但能应付更强的对手。',
+    value: 30,
+    stackable: false,
+    maxStack: 1,
+  },
+  {
+    id: 'composite_bow',
+    name: '复合弓',
+    category: 'weapon',
+    weaponType: 'ranged',
+    attack: 12,
+    durability: 24,
+    description: '用玻璃片加固弓身，弓弦张力更稳定。',
+    value: 30,
+    stackable: false,
+    maxStack: 1,
+  },
+  {
+    id: 'insulated_pipe',
+    name: '绝缘铁管',
+    category: 'weapon',
+    weaponType: 'melee',
+    attack: 12,
+    durability: 34,
+    description: '铁管包上布料，握持更安全，也更适合持续近战。',
+    value: 31,
+    stackable: false,
+    maxStack: 1,
+  },
+  {
+    id: 'insulated_stun_rod',
+    name: '绝缘电击棒',
+    category: 'weapon',
+    weaponType: 'melee',
+    attack: 12,
+    durability: 20,
+    description: '电击棒加上布料绝缘，输出更强但仍需小心电池。',
+    value: 31,
     stackable: false,
     maxStack: 1,
   },

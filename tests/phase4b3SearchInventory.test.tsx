@@ -121,6 +121,8 @@ describe('Phase 4B-3 search, loot, inventory and craft presentation', () => {
     render(
       <CraftPanel
         views={views}
+        state={state}
+        player={player}
         disabled={false}
         goalRecipeId={views[0]?.recipe.id ?? null}
         goalCompleted={false}

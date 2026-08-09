@@ -103,7 +103,10 @@ describe('世界事件影响统计', () => {
   });
 
   it('研究异常伤害/致死与 WORLD_EVENT_DAMAGE 事件一致', () => {
-    const r = play('STAT-9', 'engineer', 'aggressive');
+    // Phase 4C-1 adds hospital loot entries, which intentionally shifts the
+    // deterministic loot/RNG stream. STAT-11 remains a fixed seed that
+    // exercises research_anomaly instead of weakening the event assertion.
+    const r = play('STAT-11', 'engineer', 'aggressive');
     const ra = r.worldEventImpact.research_anomaly!;
     if (ra.ticks > 0) {
       expect(ra.damageTotal).toBeGreaterThan(0);
