@@ -2078,6 +2078,293 @@ input {
 }
 
 /* ------------------------------------------------------------------ */
+/* Phase 4C-2：自动目标、子目标追踪与公开合成图鉴                       */
+/* ------------------------------------------------------------------ */
+
+.craft-auto-suggestion,
+.craft-progress-feedback {
+  margin: 0 0 10px;
+  padding: 9px 10px;
+  border: 1px solid rgba(109, 185, 158, 0.55);
+  border-left: 3px solid var(--ok, #4a9);
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(34, 75, 64, 0.48), rgba(17, 24, 30, 0.88));
+}
+
+.craft-auto-suggestion-head,
+.craft-progress-feedback {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.craft-auto-suggestion-icon {
+  color: #f2c56c;
+  font-size: 16px;
+}
+
+.craft-auto-suggestion p {
+  margin: 5px 0 3px 23px;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.craft-auto-suggestion-meta {
+  margin: 0 0 7px 23px;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.craft-progress-feedback {
+  border-color: rgba(110, 168, 199, 0.48);
+  border-left-color: var(--accent);
+  background: linear-gradient(90deg, rgba(38, 75, 94, 0.52), rgba(20, 28, 35, 0.82));
+  font-size: 11px;
+}
+
+.craft-progress-feedback-visual {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  object-fit: cover;
+  font-size: 24px;
+  border-radius: 3px;
+}
+
+.craft-progress-feedback strong {
+  color: #d9f0f7;
+}
+
+.craft-progress-feedback div div {
+  margin-top: 2px;
+  color: var(--text-dim);
+}
+
+.cg-subgoal-tracker {
+  margin-top: 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(109, 185, 158, 0.38);
+  border-radius: 3px;
+  background: rgba(19, 42, 37, 0.44);
+}
+
+.cg-subgoal-current {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  color: #d9f0e4;
+  font-size: 12px;
+}
+
+.cg-subgoal-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.cg-subgoal-step {
+  padding: 3px 5px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+.cg-subgoal-complete {
+  border-color: rgba(109, 185, 158, 0.55);
+  color: #a8dfc4;
+}
+
+.cg-subgoal-ready {
+  border-color: rgba(110, 168, 199, 0.6);
+  color: #cce7f2;
+}
+
+.cg-subgoal-blocked {
+  border-style: dashed;
+}
+
+.craft-codex {
+  max-height: min(66vh, 720px);
+  padding-right: 2px;
+}
+
+.craft-codex-intro {
+  margin-bottom: 9px;
+  padding: 9px 10px;
+  border: 1px solid rgba(110, 168, 199, 0.42);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  background: rgba(24, 44, 54, 0.55);
+}
+
+.craft-codex-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #e8f1f5;
+}
+
+.craft-codex-title > span:first-child {
+  color: #f2c56c;
+  font-size: 16px;
+}
+
+.craft-codex-intro p {
+  margin: 5px 0 0;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.craft-codex-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.craft-codex-root {
+  padding: 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: rgba(16, 24, 30, 0.58);
+}
+
+.craft-codex-root-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.craft-codex-visual {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  object-fit: cover;
+  font-size: 24px;
+  border-radius: 3px;
+}
+
+.craft-codex-root-name {
+  min-width: 0;
+  flex: 1;
+}
+
+.craft-codex-root-name > strong {
+  margin-right: 5px;
+  color: #e8f1f5;
+  font-size: 12px;
+}
+
+.craft-codex-summary,
+.craft-codex-step-recipe,
+.craft-codex-source {
+  color: var(--text-faint);
+  font-size: 10px;
+}
+
+.craft-codex-relation {
+  margin: 6px 0 5px 41px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.craft-codex-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.craft-codex-step {
+  display: grid;
+  grid-template-columns: 15px minmax(70px, max-content) auto 1fr;
+  align-items: baseline;
+  gap: 5px;
+  margin-left: calc((var(--codex-depth) - 1) * 12px);
+  padding: 3px 5px;
+  border-left: 2px solid var(--line);
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 10px;
+}
+
+.craft-codex-step-marker {
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.craft-codex-step-complete .craft-codex-step-marker {
+  color: var(--ok, #4a9);
+}
+
+.craft-codex-step-ready {
+  border-left-color: var(--accent);
+}
+
+.craft-codex-step-ready .craft-codex-step-marker {
+  color: var(--accent);
+}
+
+.craft-codex-step-depth {
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.craft-codex-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 6px 0 0 41px;
+}
+
+.craft-codex-gaps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 0 41px;
+  color: var(--text-faint);
+  font-size: 10px;
+}
+
+.craft-codex-gaps strong {
+  color: var(--text-dim);
+}
+
+.craft-codex-source {
+  padding: 2px 4px;
+  border: 1px dashed rgba(110, 168, 199, 0.32);
+  border-radius: 3px;
+}
+
+@media (max-width: 760px) {
+  .craft-codex {
+    max-height: 58vh;
+  }
+
+  .craft-codex-step {
+    grid-template-columns: 15px minmax(0, 1fr);
+  }
+
+  .craft-codex-step-depth,
+  .craft-codex-step-recipe {
+    grid-column: 2;
+  }
+
+  .craft-codex-root-head .btn {
+    min-height: 34px;
+    padding-inline: 7px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Phase 4B-5：平板 / 手机将规划区移出主滚动流，改为可关闭抽屉        */
 /* ------------------------------------------------------------------ */
 

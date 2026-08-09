@@ -13,7 +13,12 @@ import { ITEMS } from '../src/data/items';
 import { runAutoGame, AUTO_PLAYER_POLICIES } from './autoPlayer';
 
 const SEED_COUNT = 10;
-const OUTPUT = resolve(process.cwd(), 'reports/phase4c1-craft-reachability.json');
+const phase = process.env.CRAFT_REACHABILITY_PHASE ?? '4C-1';
+const seedPrefix = process.env.CRAFT_REACHABILITY_SEED_PREFIX ?? 'PHASE4C1-CRAFT';
+const OUTPUT = resolve(
+  process.cwd(),
+  process.env.CRAFT_REACHABILITY_OUTPUT ?? 'reports/phase4c1-craft-reachability.json',
+);
 const HIGH_TIER_WEAPONS = [
   'field_spear',
   'steel_axe',
@@ -57,7 +62,7 @@ for (let seedIndex = 0; seedIndex < SEED_COUNT; seedIndex += 1) {
     for (const policy of AUTO_PLAYER_POLICIES) {
       requestedGames += 1;
       const result = runAutoGame({
-        seed: `PHASE4C1-CRAFT-${seedIndex}-${character.id}-${policy}`,
+        seed: `${seedPrefix}-${seedIndex}-${character.id}-${policy}`,
         characterId: character.id,
         policy,
         keepFinalState: true,
@@ -95,7 +100,7 @@ writeFileSync(
   OUTPUT,
   `${JSON.stringify(
     {
-      phase: '4C-1',
+      phase,
       generatedAt: new Date().toISOString(),
       method: {
         seedCount: SEED_COUNT,

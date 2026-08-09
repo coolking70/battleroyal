@@ -260,3 +260,11 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Step 1 targeted tests and typecheck pass; the production preview/client run
   shows a playable hospital start with no console errors. The small fix is
   ready for its isolated commit before the main 4C-2 work.
+## Phase 4C-2 progress (2026-08-10)
+
+- Completed the isolated first fix in commit `3e6bebc`: hospital `stick` remains only in `rarePool`, and the CraftPanel source label now distinguishes static source coverage from the public runtime supply band.
+- Added a data-layer recipe visibility seam with all 17 current recipes explicitly `visible`; no hidden/unlock behavior or core changes were introduced.
+- Added pure presentation logic for automatic weapon-goal suggestions, persistent dependency-step status, current subgoal progression, and the player-only latest craft feedback.
+- Added the PlanningDrawer `图鉴` tab and a full dependency-tree codex with static material source zones, item summaries, missing-material display, and VisualImage fallback for new items.
+- Added unit/UI coverage and a clean production Playwright evidence spec. Targeted tests, typecheck, production build, runtime client smoke, and the new browser evidence pass; browser evidence records zero console/page errors.
+- Updating the fixed Phase 3A-1 observation seed from `STAT-11` to `STAT-1` preserves the research-anomaly assertion after the required hospital pool change altered the deterministic loot/RNG stream.

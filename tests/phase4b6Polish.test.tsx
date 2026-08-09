@@ -45,7 +45,8 @@ describe('Phase 4B-6 polish and accessibility closure', () => {
     const search = container.querySelector('.actionbar-actions button');
     expect(search?.getAttribute('aria-label')).toContain('体力');
     expect(search?.getAttribute('aria-describedby')).toBe('actionbar-hint');
-    expect(container.querySelectorAll('.planning-tabs button')).toHaveLength(2);
+    expect(container.querySelectorAll('.planning-tabs button')).toHaveLength(3);
+    expect(container.textContent).toContain('图鉴');
     expect(container.querySelector('.log-panel')).not.toBeNull();
   });
 

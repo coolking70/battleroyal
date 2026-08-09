@@ -199,6 +199,23 @@ const RECIPE_MAP: Record<string, Recipe> = Object.fromEntries(
   RECIPES.map((r) => [r.id, r]),
 );
 
+/**
+ * 图鉴可见性接缝。
+ *
+ * 4C-2 中所有配方都公开；未来若加入隐藏配方，只需在数据层调整这个
+ * 维度，展示层不必重构依赖图。本阶段不实现解锁或发现逻辑。
+ */
+export type RecipeVisibility = 'visible' | 'hidden';
+
+export const RECIPE_VISIBILITY: Readonly<Record<string, RecipeVisibility>> =
+  Object.freeze(
+    Object.fromEntries(RECIPES.map((recipe) => [recipe.id, 'visible'])),
+  ) as Readonly<Record<string, RecipeVisibility>>;
+
+export function recipeVisibility(recipeId: string): RecipeVisibility {
+  return RECIPE_VISIBILITY[recipeId] ?? 'hidden';
+}
+
 export function getRecipe(id: string): Recipe {
   const r = RECIPE_MAP[id];
   if (!r) {

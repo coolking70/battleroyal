@@ -4,6 +4,7 @@ import type { Combatant, GameState } from '../../core/types';
 import { getItem } from '../../data/items';
 import { getZoneDef } from '../../data/zones';
 import { CATEGORY_LABEL, itemSummary, stackLabel } from '../../utils/format';
+import type { CraftGoalSuggestion, CraftProgressFeedback } from '../craftPathPresentation';
 import { craftPathSummary } from '../craftPathPresentation';
 import { ITEM_CATEGORY_META, presentItem } from '../itemPresentation';
 import { VisualImage } from './VisualImage';
@@ -22,6 +23,10 @@ interface CraftPanelProps {
   /** 设定 / 取消制作目标 */
   onSetGoal: (recipeId: string | null) => void;
   onCraft: (recipeId: string) => void;
+  /** 无手动目标时的只读建议；采纳仍由父层派发 SET_CRAFT_GOAL。 */
+  suggestion?: CraftGoalSuggestion | null;
+  /** 最近一次玩家合成，用于原地显示非阻塞进度反馈。 */
+  latestCraftFeedback?: CraftProgressFeedback | null;
 }
 
 /** 合成面板：列出全部配方，缺失材料标红；顶部显示制作目标 + 路线推荐 */
@@ -35,6 +40,8 @@ export function CraftPanel({
   recommendations,
   onSetGoal,
   onCraft,
+  suggestion = null,
+  latestCraftFeedback = null,
 }: CraftPanelProps): JSX.Element {
   const goalView = views.find((v) => v.recipe.id === goalRecipeId) ?? null;
   const goalPath = goalView ? craftPathSummary(goalView.recipe.id, state, player) : null;
@@ -51,6 +58,44 @@ export function CraftPanel({
         <p>武器主要靠合成；直接搜索只是低概率补充。先设定目标，缺什么材料与公开来源区域会显示在这里。</p>
         <div className="craft-route-guide-meta">武器配方 {weaponViews.length} 条 · 当前可做 {craftableWeaponCount} 条 · 新物品无正式图时自动使用降级图标</div>
       </section>
+
+      {suggestion && !goalRecipeId && (
+        <section className="craft-auto-suggestion" data-craft-auto-suggestion="true">
+          <div className="craft-auto-suggestion-head">
+            <span className="craft-auto-suggestion-icon" aria-hidden="true">✦</span>
+            <strong>下一步建议：{suggestion.name}</strong>
+            <span className="tag tag-weapon">攻击 +{suggestion.attack}</span>
+          </div>
+          <p>{suggestion.reason}</p>
+          <div className="craft-auto-suggestion-meta">
+            {suggestion.sourceZoneIds.length > 0
+              ? `公开来源：${suggestion.sourceZoneIds.slice(0, 3).map((id) => getZoneDef(id).name).join('、')}`
+              : '公开来源：请查看图鉴'}
+          </div>
+          <button
+            className="btn btn-sm btn-primary"
+            disabled={disabled}
+            data-craft-adopt-suggestion="true"
+            onClick={() => onSetGoal(suggestion.recipeId)}
+          >
+            采纳建议并持续追踪
+          </button>
+        </section>
+      )}
+
+      {latestCraftFeedback && (
+        <section className="craft-progress-feedback" data-craft-progress-feedback="true">
+          <VisualImage
+            visual={presentItem(latestCraftFeedback.outputItemId).visual}
+            alt={`${getItem(latestCraftFeedback.outputItemId).name}合成反馈图标`}
+            className="craft-progress-feedback-visual"
+          />
+          <div>
+            <strong>合成进度已更新</strong>
+            <div>{latestCraftFeedback.message}</div>
+          </div>
+        </section>
+      )}
 
       {goalView && (
         <div className={`craft-goal${goalCompleted ? ' done' : ''}`}>
@@ -135,6 +180,28 @@ export function CraftPanel({
                 ))}
               </div>
               <div className="cg-path-depth">路线深度 {goalPath.depth} 层；只显示静态公开配方与来源池。</div>
+            </div>
+          )}
+
+          {!goalCompleted && goalPath && goalPath.steps.length > 0 && (
+            <div className="cg-subgoal-tracker" data-craft-subgoal-tracker="true">
+              <div className="cg-recs-head">持续追踪 · 当前子目标</div>
+              <div className="cg-subgoal-current">
+                <span aria-hidden="true">{goalPath.nextStep ? '→' : '✓'}</span>
+                <strong>{goalPath.nextStep?.name ?? '全部步骤已具备，可合成目标'}</strong>
+              </div>
+              <div className="cg-subgoal-steps">
+                {goalPath.steps.map((step) => (
+                  <span
+                    key={step.recipeId}
+                    className={`cg-subgoal-step cg-subgoal-${step.status}`}
+                    data-craft-step-status={step.status}
+                  >
+                    <span aria-hidden="true">{step.status === 'complete' ? '✓' : step.status === 'ready' ? '○' : '!'}</span>
+                    {step.name}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 

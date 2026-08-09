@@ -19,6 +19,7 @@ import { LOG_DISPLAY_COUNT } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { cx, stackLabel } from '../../utils/format';
 import { stackPresentation } from '../itemPresentation';
+import { getCraftGoalSuggestion, latestPlayerCraftFeedback } from '../craftPathPresentation';
 import { latestPlayerSearchFeedback } from '../searchPresentation';
 import { getZoneVisual } from '../visualAssets';
 import { zoneStatusMeta } from '../zonePresentation';
@@ -26,6 +27,7 @@ import { warningRemaining, zoneUrgencyMeta } from '../zonePresentation';
 import { latestInstantWorldEvent, sortWorldEvents } from '../worldEventPresentation';
 import { ActionBar } from '../components/ActionBar';
 import { CraftPanel } from '../components/CraftPanel';
+import { CraftingCodex } from '../components/CraftingCodex';
 import { EncounterPanel } from '../components/EncounterPanel';
 import { EventLog } from '../components/EventLog';
 import { Inventory } from '../components/Inventory';
@@ -44,7 +46,7 @@ interface GameScreenProps {
   onQuit: () => void;
 }
 
-type Tab = 'inventory' | 'craft';
+type Tab = 'inventory' | 'craft' | 'codex';
 
 /**
  * 世界事件横幅（Phase 3A Step 6）。
@@ -104,6 +106,14 @@ export function GameScreen({
   const recipeViews = useMemo(() => listRecipes(state, player), [state, player]);
   const craftGoalRecs = useMemo(
     () => getCraftGoalRecommendations(state, player),
+    [state, player],
+  );
+  const craftGoalSuggestion = useMemo(
+    () => getCraftGoalSuggestion(state, player),
+    [state, player],
+  );
+  const latestCraftFeedback = useMemo(
+    () => latestPlayerCraftFeedback(state, player),
     [state, player],
   );
   const logEvents = useMemo(
@@ -350,7 +360,7 @@ export function GameScreen({
           <section className="panel planning-panel">
             <div className="panel-title">
               <span>规划区</span>
-              <span className="faint">背包 · 合成</span>
+              <span className="faint">背包 · 合成 · 图鉴</span>
             </div>
             <div className="tabs planning-tabs" role="tablist" aria-label="规划面板">
               <button
@@ -368,6 +378,14 @@ export function GameScreen({
                 onClick={() => setTab('craft')}
               >
                 合成
+              </button>
+              <button
+                role="tab"
+                aria-selected={tab === 'codex'}
+                className={cx(tab === 'codex' && 'active')}
+                onClick={() => setTab('codex')}
+              >
+                图鉴
               </button>
             </div>
 
@@ -395,6 +413,17 @@ export function GameScreen({
                   dispatch({ type: 'SET_CRAFT_GOAL', recipeId })
                 }
                 onCraft={(recipeId) => dispatch({ type: 'CRAFT', recipeId })}
+                suggestion={craftGoalSuggestion}
+                latestCraftFeedback={latestCraftFeedback}
+              />
+            )}
+
+            {tab === 'codex' && (
+              <CraftingCodex
+                state={state}
+                player={player}
+                disabled={lockedGeneral}
+                onSetGoal={(recipeId) => dispatch({ type: 'SET_CRAFT_GOAL', recipeId })}
               />
             )}
 
