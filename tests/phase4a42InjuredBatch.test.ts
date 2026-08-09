@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { createArtConfig } from '../tools/art/config';
-import { contentHash } from '../tools/art/cache';
+import { generationInputHash } from '../tools/art/hash';
 import {
   INJURED_BATCH_TASK_IDS,
   isInjuredContentRejection,
@@ -105,7 +105,7 @@ describe('Phase 4A-4.2 injured variant controlled production', () => {
     const task = await taskById(INJURED_BATCH_TASK_IDS[1]);
     const built = await buildPrompt(process.cwd(), task, 'agnes-image-2.1-flash');
     expect(promptHashInput(built)).toMatchObject({ promptStrategy: 'character-positive-only', positiveTraits: task.positiveTraits, positiveComposition: task.positiveComposition, revision: 2, prompt: built.prompt, styleProfileVersion: built.styleProfileVersion });
-    expect(contentHash(built)).toMatch(/^[a-f0-9]{64}$/);
+    expect(generationInputHash(built)).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('stops only after two consecutive provider content rejections', () => {

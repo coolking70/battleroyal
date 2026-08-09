@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { createArtConfig } from '../tools/art/config';
 import { EXCLUDED_PHASE4A41_VARIANT_TASK_IDS, SCOUT_INJURED_CANARY_TASK_ID, selectScoutInjuredCanary } from '../tools/art/canary';
 import { generateImage } from '../tools/art/apiClient';
-import { contentHash } from '../tools/art/cache';
+import { generationInputHash } from '../tools/art/hash';
 import { auditCharacterProviderPrompt, FORBIDDEN_CHARACTER_TOKENS } from '../tools/art/promptAudit';
 import { buildPrompt, promptHashInput } from '../tools/art/promptBuilder';
 import { publishApproved } from '../tools/art/publisher';
@@ -50,7 +50,8 @@ describe('Phase 4A-4.1 E1 formalization and Scout Injured canary contracts', () 
       'world_event/citywide_unrest/illustration': '1c239f17af048a803cebca4ab7e186bcee5cf05843b508531e6c313390a46bde',
     };
     for (const [taskId, hash] of Object.entries(expected)) {
-      expect(provenance.assets[taskId]).toMatchObject({ candidateHash: hash, contentHash: hash, promptHash: hash, publicPath: expect.stringContaining('/assets/world-events/') });
+      expect(provenance.assets[taskId]).toMatchObject({ candidateHash: hash, promptHash: hash, contentHash: expect.stringMatching(/^[a-f0-9]{64}$/), publicPath: expect.stringContaining('/assets/world-events/') });
+      expect(provenance.assets[taskId]?.contentHash).not.toBe(hash);
     }
   });
 
@@ -143,7 +144,7 @@ describe('Phase 4A-4.1 E1 formalization and Scout Injured canary contracts', () 
     const built = await buildPrompt(process.cwd(), await taskById(SCOUT_INJURED_CANARY_TASK_ID), 'agnes-image-2.1-flash');
     const input = promptHashInput(built);
     expect(input).toMatchObject({ promptStrategy: 'character-positive-only', positiveTraits: built.task.positiveTraits, positiveComposition: built.task.positiveComposition, revision: 2, prompt: built.prompt, styleProfileVersion: built.styleProfileVersion });
-    expect(contentHash(built)).toMatch(/^[a-f0-9]{64}$/);
+    expect(generationInputHash(built)).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it.each(FORBIDDEN_CHARACTER_TOKENS)('canary character audit rejects forbidden token %s', async (token) => {

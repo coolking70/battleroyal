@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { createArtConfig } from '../tools/art/config';
-import { contentHash } from '../tools/art/cache';
+import { generationInputHash } from '../tools/art/hash';
 import { runScoutCombatCanary, COMBAT_CANARY_STRATEGY, DYNAMIC_EQUIPMENT_POLICY, isCombatContentRejection } from '../tools/art/combatCanary';
 import { SCOUT_COMBAT_CANARY_TASK_ID, EXCLUDED_PHASE4A43_COMBAT_TASK_IDS, selectScoutCombatCanary } from '../tools/art/canary';
 import { generateImage } from '../tools/art/apiClient';
@@ -166,7 +166,7 @@ describe('Phase 4A-4.3.2 Scout Combat posture-only canary', () => {
   it('hashes strategy, identity, combat state, composition, revision, style and final prompt', async () => {
     const built = await buildPrompt(process.cwd(), await taskById(SCOUT_COMBAT_CANARY_TASK_ID), 'agnes-image-2.1-flash');
     expect(promptHashInput(built)).toMatchObject({ promptStrategy: 'character-combat-positive-only', positiveTraits: built.task.positiveTraits, positiveComposition: built.task.positiveComposition, postureOnly: true, signaturePropMode: 'static', handsEmpty: true, revision: 4, prompt: built.prompt, styleProfileVersion: built.styleProfileVersion });
-    expect(contentHash(built)).toMatch(/^[a-f0-9]{64}$/);
+    expect(generationInputHash(built)).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('passes the equipment-neutral Combat prompt audit', async () => {

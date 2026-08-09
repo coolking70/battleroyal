@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { contentHash } from './cache';
+import { generationInputHash } from './hash';
 import { COMBAT_BATCH_TASK_IDS } from './canary';
 import { generateTask, emptyReport, writePromptReport } from './generator';
 import { buildPrompt } from './promptBuilder';
@@ -154,7 +154,7 @@ export async function runCombatBatch(
       continue;
     }
     const built = await buildPrompt(config.rootDir, task, config.model);
-    const promptHash = contentHash(built);
+    const promptHash = generationInputHash(built);
     await writePromptReport(config.rootDir, built, promptHash);
     const audit = auditCombatProviderPrompt(task, built.prompt);
     if (!audit.passed || audit.postureOnlyContract !== true || audit.signaturePropContract !== true) {

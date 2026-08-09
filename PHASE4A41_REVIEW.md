@@ -14,7 +14,7 @@ Decision: __________
 
 Notes: __________
 
-Human checklist is exported in [README.md](/Users/coolking70/Documents/同步空间/battleroyal/output/art-review/phase4a41-scout-injured-canary/README.md):
+Human checklist is exported in [README.md](output/art-review/phase4a41-scout-injured-canary/README.md):
 
 - [ ] clearly reads as the same Scout visual identity
 - [ ] same age range

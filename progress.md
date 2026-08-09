@@ -114,3 +114,12 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Browser smoke rendered the real gameplay UI, reported `mode=playing`, time 0 and no console-error artifact. Screenshot evidence is in `output/phase4a45-browser/`.
 - Final reports: `PHASE4A45_REPORT.md`, `PHASE4A45_AUDIT_FIXES.md`, `reports/phase4a45-command-results.txt` and the four machine-readable audit reports.
 - Remaining handoff: commit and push this closure; keep the pre-existing `reports/save-validation-audit.json` and `.md` user changes unstaged.
+
+## Phase 4A-4.5.1 progress (2026-08-09)
+
+- Corrected hash semantics: `generationInputHash`/`promptHash` is canonical generation input, `contentHash` is exact image bytes, and `candidateHash` remains an immutable Candidate ID.
+- Added bytes-aware cache, approval, publisher staging, Manifest validation and Phase 4A audit checks. A valid same-size replacement now deterministically fails validation/audit.
+- Migrated the local 54-Candidate store with a complete preflight and atomic apply: approved 35, pending 10, rejected 9; 0 IDs/statuses/image files/Manifest paths changed; 35/35 Candidate/public byte matches; provider calls 0.
+- Migration dry-run and apply are idempotent and return `NO CHANGES` after the first apply. Public formal asset tree aggregate remains `24831019d5fbbecc004d7a8a77ba5b2e3796f5f69b8bdd1d2aca6aea8af7bfa5`.
+- Added 25 meaningful hash/migration/tamper/audit tests. Final local suite before commit: 57 files / 1236 tests PASS; typecheck/build, bytes audit, security scans, 500-game PHASE4A451 regression and production npm audit all PASS.
+- CI now runs the provenance content integrity audit; a clean-checkout simulation without ignored local Candidates passed the published-only CI gate. No Phase 4B or image generation was performed.

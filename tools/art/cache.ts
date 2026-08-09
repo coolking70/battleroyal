@@ -1,8 +1,7 @@
-import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ArtConfig, BuiltPrompt, ImageGenerationResult } from './types';
-import { promptHashInput } from './promptBuilder';
+import { sha256Bytes } from './hash';
 import { validateImageBytes } from './validator';
 
 export interface CacheEntry {
@@ -22,17 +21,12 @@ function extensionForMime(mimeType: string): string {
   return 'jpg';
 }
 
-export function contentHash(built: BuiltPrompt): string {
-  return crypto
-    .createHash('sha256')
-    .update(JSON.stringify(promptHashInput(built)))
-    .digest('hex');
-}
-
 export async function findCacheEntry(config: ArtConfig, hash: string, built?: BuiltPrompt): Promise<CacheEntry | null> {
   const dir = path.join(config.cacheDir, hash);
   try {
     const metadata = JSON.parse(await fs.readFile(path.join(dir, 'metadata.json'), 'utf8')) as {
+      hash?: string;
+      contentHash?: string;
       mimeType?: string;
       bytes?: number;
       requestedWidth?: number;
@@ -48,7 +42,7 @@ export async function findCacheEntry(config: ArtConfig, hash: string, built?: Bu
     const bytes = await fs.readFile(imagePath);
     if (!built || metadata.requestedWidth === undefined) return null;
     const validation = validateImageBytes(bytes, built.task);
-    if (validation.status !== 'passed' || metadata.requestedWidth !== built.width || metadata.requestedHeight !== built.height || metadata.requestedRatio !== built.requestedRatio || metadata.mimeType !== validation.mimeType || metadata.actualWidth !== validation.actualWidth || metadata.actualHeight !== validation.actualHeight || metadata.bytes !== bytes.byteLength) return null;
+    if (validation.status !== 'passed' || metadata.hash !== hash || metadata.contentHash !== sha256Bytes(bytes) || metadata.requestedWidth !== built.width || metadata.requestedHeight !== built.height || metadata.requestedRatio !== built.requestedRatio || metadata.mimeType !== validation.mimeType || metadata.actualWidth !== validation.actualWidth || metadata.actualHeight !== validation.actualHeight || metadata.bytes !== bytes.byteLength) return null;
     return {
       hash,
       imagePath,
@@ -92,6 +86,7 @@ export async function saveCache(
         requestedRatio: built.requestedRatio,
         actualWidth: validation.actualWidth,
         actualHeight: validation.actualHeight,
+        contentHash: sha256Bytes(result.bytes),
         prompt: built.prompt,
         negativePrompt: built.negativePrompt,
         styleProfileVersion: built.styleProfileVersion,

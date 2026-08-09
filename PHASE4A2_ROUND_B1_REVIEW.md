@@ -10,4 +10,4 @@ The first three character tasks were generated serially. All three produced clea
 
 The stop threshold was reached, so `zone/hospital/background`, `item/medkit/icon`, and `world_event/rain/illustration` were deliberately not called. There were 3 B1 API calls, all technically validated, and all three candidates remain `pending`.
 
-The exact machine-readable record is [reports/phase4a2-round-b1-report.json](/Users/coolking70/Documents/同步空间/battleroyal/reports/phase4a2-round-b1-report.json). The generated review package contains only the three attempted images and leaves every Decision/Notes field blank.
+The exact machine-readable record is [reports/phase4a2-round-b1-report.json](reports/phase4a2-round-b1-report.json). The generated review package contains only the three attempted images and leaves every Decision/Notes field blank.

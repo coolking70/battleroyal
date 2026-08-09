@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { sha256Bytes } from './hash';
 import type { ArtConfig, ArtReviewRecord, CandidateMetadata } from './types';
 
 async function walkMetadata(dir: string): Promise<CandidateMetadata[]> {
@@ -54,6 +55,18 @@ export async function reviewCandidate(
   if (!candidate) throw new Error(`candidate not found: ${taskId} / ${candidateHash}`);
   if (status === 'approved' && candidate.validationStatus !== 'passed') {
     throw new Error('cannot approve a candidate whose automatic validation failed');
+  }
+  if (status === 'approved') {
+    let bytes: Buffer;
+    try {
+      bytes = await fs.readFile(path.join(config.rootDir, candidate.imagePath));
+    } catch {
+      throw new Error(`cannot approve candidate with missing image: ${taskId} / ${candidateHash}`);
+    }
+    const actualContentHash = sha256Bytes(bytes);
+    if (actualContentHash !== candidate.contentHash) {
+      throw new Error(`candidate content hash mismatch: ${taskId} / ${candidateHash}`);
+    }
   }
   const reviews = await readReviews(config);
   const reviewedAt = new Date().toISOString();

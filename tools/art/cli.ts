@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createArtConfig, hasUsableApiConfig } from './config';
-import { contentHash } from './cache';
+import { generationInputHash } from './hash';
 import { generateTask, emptyReport, writePromptReport } from './generator';
 import { buildPrompt } from './promptBuilder';
 import { publishApproved, validatePublishedManifest } from './publisher';
@@ -15,6 +15,7 @@ import { runInjuredBatch } from './injuredBatch';
 import { runScoutCombatCanary } from './combatCanary';
 import { runCombatBatch } from './combatBatch';
 import { runPhase4A45Audit } from './phase4a45Audit';
+import { runProvenanceHashMigration } from './provenanceHashMigration';
 import type { ArtConfig, ArtTask } from './types';
 
 interface Args {
@@ -30,16 +31,18 @@ interface Args {
   force: boolean;
   dryRun: boolean;
   offline: boolean;
+  apply: boolean;
 }
 
 export function parseArgs(argv: string[]): Args {
   const [command = 'help', ...rest] = argv;
-  const args: Args = { command, force: false, dryRun: false, offline: false, debugRequest: false };
+  const args: Args = { command, force: false, dryRun: false, offline: false, debugRequest: false, apply: false };
   for (let i = 0; i < rest.length; i += 1) {
     const value = rest[i];
     if (value === '--force') args.force = true;
     else if (value === '--dry-run') args.dryRun = true;
     else if (value === '--offline') args.offline = true;
+    else if (value === '--apply') args.apply = true;
     else if (value === '--debug-request') args.debugRequest = true;
     else if (value === '--task') args.taskId = rest[++i];
     else if (value === '--category') args.category = rest[++i];
@@ -63,14 +66,15 @@ function printHelp(): void {
   art:combat-batch [--report-name name] (Fighter, Engineer, Medic once each, sequential, no rerolls)
   Scout Combat canary: art:generate --task character/scout/combat --concurrency 1 (one call, no rerolls)
   art:list
-  art:approve --task ... --candidate <contentHash>
-  art:reject --task ... --candidate <contentHash> --reason "..."
+  art:approve --task ... --candidate <candidateHash>
+  art:reject --task ... --candidate <candidateHash> --reason "..."
   art:publish
   art:validate
   art:api-check
   art:smoke
   art:review-export --round A|--report <round-report.json> [--output <dir>] [--suffix <text>]
   art:audit:phase4a (read-only Phase 4A base-art closure audit; no API calls)
+  art:migrate:provenance-hashes [--dry-run|--apply] (default: read-only)
   art:security:browser
   art:security:repo`);
 }
@@ -124,7 +128,7 @@ function errorMessage(error: unknown): string {
 
 async function promptCommand(config: ArtConfig, task: ArtTask): Promise<void> {
   const built = await buildPrompt(config.rootDir, task, config.model);
-  const hash = contentHash(built);
+  const hash = generationInputHash(built);
   await writePromptReport(config.rootDir, built, hash);
   console.log(`Task: ${task.id}\nModel: ${built.model}\nSize: ${built.width}x${built.height}\nRevision: ${task.revision}\nHash: ${hash}\n\nPrompt:\n${built.prompt}\n\nNegative prompt:\n${built.negativePrompt}`);
 }
@@ -172,13 +176,13 @@ async function generateCommand(config: ArtConfig, args: Args): Promise<number> {
   report.mode = args.dryRun ? 'dry-run' : 'provider';
   const runTask = async (task: ArtTask): Promise<void> => {
     const built = await buildPrompt(config.rootDir, task, config.model);
-    await writePromptReport(config.rootDir, built, contentHash(built));
+    await writePromptReport(config.rootDir, built, generationInputHash(built));
     try {
       await generateTask(config, task, { force: args.force, dryRun: args.dryRun }, report);
     } catch (error) {
       report.requested += 1;
       report.failed += 1;
-      report.tasks.push({ taskId: task.id, hash: contentHash(built), source: 'api', status: 'failed', errors: [errorMessage(error)] });
+      report.tasks.push({ taskId: task.id, hash: generationInputHash(built), source: 'api', status: 'failed', errors: [errorMessage(error)] });
       console.error(`FAIL ${task.id}: ${errorMessage(error)}`);
     }
   };
@@ -245,6 +249,12 @@ async function main(): Promise<number> {
     case 'audit:phase4a': {
       const result = await runPhase4A45Audit(config);
       console.log(JSON.stringify({ phase: result.phase, passed: result.passed, manifest: result.manifestCoverage.passed, provenance: result.provenance.passed, candidateHygiene: result.candidateHygiene.passed, runtimeUsage: result.runtimeUsage.passed }, null, 2));
+      return result.passed ? 0 : 1;
+    }
+    case 'migrate:provenance-hashes': {
+      const result = await runProvenanceHashMigration(config, { apply: args.apply });
+      console.log(JSON.stringify(result, null, 2));
+      if (result.passed && !result.changed) console.log('NO CHANGES');
       return result.passed ? 0 : 1;
     }
     case 'list': await listCommand(config); return 0;

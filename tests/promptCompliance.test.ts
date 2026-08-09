@@ -2,7 +2,8 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { contentHash, findCacheEntry } from '../tools/art/cache';
+import { findCacheEntry } from '../tools/art/cache';
+import { generationInputHash } from '../tools/art/hash';
 import { createArtConfig } from '../tools/art/config';
 import { buildPrompt } from '../tools/art/promptBuilder';
 import { loadTasks } from '../tools/art/taskPlanner';
@@ -131,13 +132,13 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
     const task = (await loadTasks(root)).find((item) => item.id === 'item/bandage/icon')!;
     await fs.appendFile(path.join(root, 'art/style/render-style.md'), '\nRevision marker for v2 test.');
     const changed = await buildPrompt(root, task, 'agnes-image-2.1-flash');
-    expect(contentHash(changed)).not.toBe(contentHash(prompts['item/bandage/icon']!));
+    expect(generationInputHash(changed)).not.toBe(generationInputHash(prompts['item/bandage/icon']!));
   });
 
   it('does not hit the old Scout v1 cache after the v2 prompt revision', async () => {
     const { prompts } = await tasksAndPrompts();
     const oldHash = '14511e9a5fb98a79962cc31732cf92d30903a0613f6a3e7141dad4809fbaf625';
-    const newHash = contentHash(prompts['character/scout/portrait']);
+    const newHash = generationInputHash(prompts['character/scout/portrait']);
     expect(newHash).not.toBe(oldHash);
     const cacheRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'battleroyal-prompt-v2-cache-'));
     roots.push(cacheRoot);
@@ -207,8 +208,8 @@ describe('Phase 4A-1.1 category prompt compliance', () => {
     const { root, prompts } = await tasksAndPrompts();
     const scout = (await loadTasks(root)).find((task) => task.id === 'character/scout/portrait')!;
     const blackout = (await loadTasks(root)).find((task) => task.id === 'world_event/blackout/illustration')!;
-    const scoutHash = contentHash(prompts['character/scout/portrait']!);
-    const blackoutHash = contentHash(prompts['world_event/blackout/illustration']!);
+    const scoutHash = generationInputHash(prompts['character/scout/portrait']!);
+    const blackoutHash = generationInputHash(prompts['world_event/blackout/illustration']!);
     expect(scoutHash).not.toBe('1d3efddc1e422e9e5ba4fcb0353ffb6853aa6b9a6a094436b15d802ddbdeb19f');
     expect(blackoutHash).not.toBe('0e1536f4df281f25ba3d36648aff049bab3d51ed71607f80eb18a31ef82b690b');
     const cacheRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'battleroyal-prompt-v3-cache-'));

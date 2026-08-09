@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { contentHash } from './cache';
+import { generationInputHash } from './hash';
 import { generateTask, emptyReport, writePromptReport } from './generator';
 import { buildPrompt } from './promptBuilder';
 import { ArtPipelineError, type ArtConfig, type ArtTask } from './types';
@@ -128,7 +128,7 @@ export async function runInjuredBatch(
     }
 
     const built = await buildPrompt(config.rootDir, task, config.model);
-    const hash = contentHash(built);
+    const hash = generationInputHash(built);
     await writePromptReport(config.rootDir, built, hash);
     const beforeApiCalls = generationReport.apiCalls;
     const beforeCacheHits = generationReport.cacheHits;

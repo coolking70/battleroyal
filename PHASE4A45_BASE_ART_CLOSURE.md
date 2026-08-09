@@ -1,5 +1,7 @@
 # Phase 4A Base Art Closure
 
+> Integrity note: This closure was finalized by Phase 4A-4.5.1, which added true image-byte provenance hashing.
+
 ## Final decisions
 
 | Closure area | Decision | Evidence |

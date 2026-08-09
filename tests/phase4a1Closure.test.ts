@@ -8,6 +8,7 @@ import { redactProviderMessage } from '../tools/art/providers/agnes';
 import { exportRoundAReview, selectCandidatesFromReport, selectPendingReviewCandidates } from '../tools/art/reviewExport';
 import { scanTextForSecrets } from '../tools/art/securityRepoAudit';
 import { parseArgs } from '../tools/simulateBalance';
+import { sha256Bytes } from '../tools/art/hash';
 import type { ArtConfig, CandidateMetadata } from '../tools/art/types';
 
 const roots: string[] = [];
@@ -97,8 +98,14 @@ describe('Phase 4A-1 provenance reverse integrity', () => {
     const { config } = await fixture();
     const manifest = { ...emptyManifest(), items: { bandage: '/assets/items/bandage/icon.png' } };
     await fs.mkdir(path.join(config.publicAssetsDir, 'items', 'bandage'), { recursive: true });
-    await fs.writeFile(path.join(config.publicAssetsDir, 'items', 'bandage', 'icon.png'), fakePng());
-    await writePublishedState(config, manifest, { version: 1, assets: { 'item/bandage/icon': { candidateHash: 'a'.repeat(64), contentHash: 'b'.repeat(64), promptHash: 'c'.repeat(64), model: 'agnes-image-2.1-flash', provider: 'agnes', approvedAt: '2026-08-08T00:00:00.000Z', publicPath: '/assets/items/bandage/icon.png' } } });
+    const bytes = fakePng();
+    await fs.writeFile(path.join(config.publicAssetsDir, 'items', 'bandage', 'icon.png'), bytes);
+    const candidateHash = 'a'.repeat(64);
+    const imagePath = `art/candidates/items/bandage/icon/${candidateHash}/${candidateHash}.png`;
+    await fs.mkdir(path.join(config.rootDir, path.dirname(imagePath)), { recursive: true });
+    await fs.writeFile(path.join(config.rootDir, imagePath), bytes);
+    await fs.writeFile(path.join(config.rootDir, imagePath.replace(/\.[^.]+$/, '.json')), JSON.stringify({ taskId: 'item/bandage/icon', hash: candidateHash, contentHash: sha256Bytes(bytes), promptHash: 'c'.repeat(64), provider: 'agnes', model: 'agnes-image-2.1-flash', generatedAt: '2026-08-08T00:00:00.000Z', requestedWidth: 512, requestedHeight: 512, requestedRatio: '1:1', actualWidth: 512, actualHeight: 512, prompt: 'test', negativePrompt: '', styleProfileVersion: 'v1', mimeType: 'image/png', actualMimeType: 'image/png', bytes: bytes.byteLength, imagePath, publicPath: '/assets/items/bandage/icon.png', validationStatus: 'passed', validationErrors: [], reviewStatus: 'approved', source: 'api' }));
+    await writePublishedState(config, manifest, { version: 1, assets: { 'item/bandage/icon': { candidateHash, contentHash: sha256Bytes(bytes), promptHash: 'c'.repeat(64), model: 'agnes-image-2.1-flash', provider: 'agnes', approvedAt: '2026-08-08T00:00:00.000Z', publicPath: '/assets/items/bandage/icon.png' } } });
     expect(await validatePublishedManifest(config)).toEqual([]);
   });
 });

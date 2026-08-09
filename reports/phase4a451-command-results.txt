@@ -1,0 +1,48 @@
+Phase 4A-4.5.1 command evidence
+Branch: agent/phase4-art-pipeline
+Baseline HEAD: ed707c342dc5013a469068f26855748900725336
+Image generation API calls: 0
+
+Migration
+  npm run art:migrate:provenance-hashes -- --dry-run
+    exit 0; preflight: total=54 approved=35 pending=10 rejected=9; IDs changed=0; statuses changed=0; missing/invalid/failures=0; publicCandidateHashMatches=35; changed=true
+  npm run art:migrate:provenance-hashes -- --apply
+    exit 0; applied after complete preflight; 54 content hashes recomputed; 35 provenance entries updated; 0 IDs/statuses/image files/Manifest paths changed; providerCalls=0
+  npm run art:migrate:provenance-hashes -- --dry-run
+    exit 0; NO CHANGES; total=54; approved=35; pending=10; rejected=9; provenanceEntriesUpdated=0; publicCandidateHashMatches=35
+  npm run art:migrate:provenance-hashes -- --apply
+    exit 0; NO CHANGES; idempotent apply
+
+Implementation and final gate
+  npm ci
+    exit 0; install completed; npm printed the existing dev-tree advisory summary
+  npm run typecheck
+    exit 0; PASS
+  npm test
+    exit 0; 57 test files, 1236/1236 tests PASS (final rerun after audit-tamper additions)
+  npm run build
+    exit 0; Vite production build PASS
+  npm run audit:save
+    exit 0; PASS; reports restored to the pre-existing user-owned versions and left unstaged
+  npm run audit:deps
+    exit 0; PASS; R1/R2/R3/R4 all zero
+  npm run art:doctor -- --offline
+    exit 0; PASS; 36 task definitions; offline check
+  npm run art:validate
+    exit 0; PASS; full local Candidate → provenance → public bytes chain
+  npm run art:security:browser
+    exit 0; PASS; browser secret boundary scan
+  npm run art:security:repo
+    exit 0; PASS; tracked repository secret scan
+  npm run art:audit:phase4a
+    exit 0; PASS; bytes-aware audit; candidateMetadataChecked=35; candidateBytesChecked=35; publicBytesChecked=35; publicCandidateHashMatches=35
+  npm run simulate -- --games 500 --seed-prefix PHASE4A451 --regression --output reports/phase4a451-balance.json
+    exit 0; requested=500 actual=500; engine/regression PASS; timeout=0 deadlock=0 illegal=0 hardlimit=0; role balance PASS
+  npm audit --omit=dev
+    exit 0; found 0 vulnerabilities
+
+CI
+  .github/workflows/ci.yml
+    Art provenance content integrity audit added after Art manifest validation; CI uses the published-only fallback because local Candidate files are intentionally ignored, while local final audit checks all 35 Candidate bytes.
+  clean-checkout simulation (`CI=true`, Candidate/cache excluded)
+    exit 0; `art:validate` PASS and `art:audit:phase4a` PASS using the published public-byte chain

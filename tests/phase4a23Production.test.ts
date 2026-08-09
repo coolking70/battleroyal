@@ -3,7 +3,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createArtConfig } from '../tools/art/config';
 import { generateImage } from '../tools/art/apiClient';
-import { contentHash } from '../tools/art/cache';
+import { generationInputHash } from '../tools/art/hash';
 import {
   auditEnvironmentProviderPrompt,
   auditItemProviderPrompt,
@@ -81,7 +81,7 @@ describe('Phase 4A-2.3 controlled production expansion contracts', () => {
     expect(input.revision).toBe(built.task.revision);
     expect(input.styleProfileVersion).toBe(built.styleProfileVersion);
     expect(input.prompt).toBe(built.prompt);
-    expect(contentHash(built)).toMatch(/^[a-f0-9]{64}$/);
+    expect(generationInputHash(built)).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it.each([

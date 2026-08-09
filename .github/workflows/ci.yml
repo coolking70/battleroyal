@@ -42,6 +42,9 @@ jobs:
       - name: Art manifest validation
         run: npm run art:validate
 
+      - name: Art provenance content integrity audit
+        run: npm run art:audit:phase4a
+
       - name: Browser secret boundary scan
         run: npm run art:security:browser
 

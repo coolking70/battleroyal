@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { contentHash } from './cache';
+import { generationInputHash } from './hash';
 import { generateTask, emptyReport, writePromptReport } from './generator';
 import { buildPrompt } from './promptBuilder';
 import { auditCombatProviderPrompt } from './promptAudit';
@@ -161,7 +161,7 @@ export async function runScoutCombatCanary(
   };
   const generationReport = emptyReport();
   const built = await buildPrompt(config.rootDir, task, config.model);
-  const hash = contentHash(built);
+  const hash = generationInputHash(built);
   const promptAudit = auditCombatProviderPrompt(task, built.prompt);
   if (!promptAudit.passed || promptAudit.postureOnlyContract !== true || promptAudit.handsEmptyContract !== true || promptAudit.staticSignaturePropContract !== true) {
     throw new Error(`Scout Combat posture-only prompt contract failed: ${promptAudit.failures.join('; ')}`);

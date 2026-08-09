@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createArtConfig } from '../tools/art/config';
-import { contentHash } from '../tools/art/cache';
+import { generationInputHash } from '../tools/art/hash';
 import { generateImage } from '../tools/art/apiClient';
 import {
   auditItemProviderPrompt,
@@ -110,7 +110,7 @@ describe('Phase 4A-3 Item Production Batch B3 contracts', () => {
     expect(input.itemProductionCategory).toBe(CATEGORIES[taskId]);
     expect(input.promptStrategy).toBe('item-positive-only');
     expect(input.prompt).toBe(built.prompt);
-    expect(contentHash(built)).toMatch(/^[a-f0-9]{64}$/);
+    expect(generationInputHash(built)).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it.each(B3_TASKS)('uses the correct category presentation for %s', async (taskId) => {

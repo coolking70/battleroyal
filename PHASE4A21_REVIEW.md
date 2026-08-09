@@ -14,5 +14,5 @@ Hospital, Medkit, and Rain were generated serially and are technically valid/pen
 
 Review packages:
 
-- [Character positive-only package](/Users/coolking70/Documents/同步空间/battleroyal/output/art-review/phase4a21-character-reset/README.md)
-- [Non-character B1 package](/Users/coolking70/Documents/同步空间/battleroyal/output/art-review/phase4a21-noncharacter-b1/README.md)
+- [Character positive-only package](output/art-review/phase4a21-character-reset/README.md)
+- [Non-character B1 package](output/art-review/phase4a21-noncharacter-b1/README.md)

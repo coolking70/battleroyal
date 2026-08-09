@@ -9,7 +9,7 @@ import {
   FORBIDDEN_ENVIRONMENT_TOKENS,
   FORBIDDEN_ITEM_MARKING_TOKENS,
 } from '../tools/art/promptAudit';
-import { contentHash } from '../tools/art/cache';
+import { generationInputHash } from '../tools/art/hash';
 import { buildPrompt, promptHashInput } from '../tools/art/promptBuilder';
 import { loadTasks } from '../tools/art/taskPlanner';
 import type { ArtTask } from '../tools/art/types';
@@ -111,7 +111,7 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
   it.each(RECOVERY_TASKS)('produces a new cache hash for %s', async (taskId) => {
     const task = await taskById(taskId);
     const built = await buildPrompt(process.cwd(), task, 'agnes-image-2.1-flash');
-    expect(contentHash(built)).not.toBe(taskId === 'zone/hospital/background'
+    expect(generationInputHash(built)).not.toBe(taskId === 'zone/hospital/background'
       ? '80d603bfd8124a44919ffc590313448511686c51f2648850527c71e8268e9354'
       : taskId === 'item/medkit/icon'
         ? 'c52f6ec3dd935448b766a090fe32513d6c6b5a9bde3710dee101edb087e09108'
@@ -122,14 +122,14 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
     const task = await taskById('zone/hospital/background');
     const original = await buildPrompt(process.cwd(), task, 'agnes-image-2.1-flash');
     const revised = await buildPrompt(process.cwd(), { ...task, positiveTraits: [...(task.positiveTraits ?? []), 'aged tiled floor'] }, 'agnes-image-2.1-flash');
-    expect(contentHash(revised)).not.toBe(contentHash(original));
+    expect(generationInputHash(revised)).not.toBe(generationInputHash(original));
   });
 
   it('changes the Medkit hash when the task revision changes', async () => {
     const task = await taskById('item/medkit/icon');
     const original = await buildPrompt(process.cwd(), task, 'agnes-image-2.1-flash');
     const revised = await buildPrompt(process.cwd(), { ...task, revision: 3 }, 'agnes-image-2.1-flash');
-    expect(contentHash(revised)).not.toBe(contentHash(original));
+    expect(generationInputHash(revised)).not.toBe(generationInputHash(original));
   });
 
   it.each(RECOVERY_TASKS)('sends an Agnes payload with no synthetic negative suffix for %s', async (taskId) => {

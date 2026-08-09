@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { generateImage } from './apiClient';
-import { findCacheEntry, contentHash, extensionForMime, saveCache } from './cache';
+import { findCacheEntry, extensionForMime, saveCache } from './cache';
+import { generationInputHash, sha256Bytes } from './hash';
 import { buildPrompt } from './promptBuilder';
 import { validateImageBytes } from './validator';
 import { SCOUT_INJURED_CANARY_TASK_ID } from './canary';
@@ -75,7 +76,7 @@ async function writeCandidate(
   config: ArtConfig,
   task: ArtTask,
   built: Awaited<ReturnType<typeof buildPrompt>>,
-  contentHashValue: string,
+  promptHashValue: string,
   candidateHash: string,
   result: ImageGenerationResult,
   source: 'api' | 'cache',
@@ -89,8 +90,8 @@ async function writeCandidate(
   const metadata: CandidateMetadata = {
     taskId: task.id,
     hash: candidateHash,
-    contentHash: contentHashValue,
-    promptHash: contentHashValue,
+    contentHash: sha256Bytes(result.bytes),
+    promptHash: promptHashValue,
     provider: 'agnes',
     model: built.model,
     generatedAt: new Date().toISOString(),
@@ -139,12 +140,12 @@ export async function generateTask(
   report: GenerationReport = emptyReport(),
 ): Promise<CandidateMetadata | null> {
   const built = await buildPrompt(config.rootDir, task, config.model);
-  const hash = contentHash(built);
-  const cache = await findCacheEntry(config, hash, built);
+  const promptHash = generationInputHash(built);
+  const cache = await findCacheEntry(config, promptHash, built);
   const cacheHit = !options.force && cache !== null;
   if (options.dryRun) {
     report.requested += 1;
-    report.tasks.push({ taskId: task.id, hash, source: 'dry-run', status: cacheHit ? 'CACHE HIT' : 'API REQUIRED' });
+    report.tasks.push({ taskId: task.id, hash: promptHash, source: 'dry-run', status: cacheHit ? 'CACHE HIT' : 'API REQUIRED' });
     return null;
   }
 
@@ -157,17 +158,17 @@ export async function generateTask(
   } else {
     result = await generateWithRetry(config, built, report, options.retryDelaysMs ?? [2000, 5000, 12000]);
     source = 'api';
-    await saveCache(config, hash, built, result);
+    await saveCache(config, promptHash, built, result);
   }
   const actualMimeType = validateImageBytes(result.bytes, task).mimeType;
   if (actualMimeType && actualMimeType !== result.mimeType) result = { ...result, mimeType: actualMimeType };
-  const candidateHash = await candidateHashFor(config, task, hash);
-  const metadata = await writeCandidate(config, task, built, hash, candidateHash, result, source);
+  const candidateHash = await candidateHashFor(config, task, promptHash);
+  const metadata = await writeCandidate(config, task, built, promptHash, candidateHash, result, source);
   report.requested += 1;
   report.totalBytes += result.bytes.byteLength;
   if (metadata.validationStatus === 'passed') report.successful += 1;
   else report.failed += 1;
-  report.tasks.push({ taskId: task.id, hash, source, status: metadata.validationStatus, errors: metadata.validationErrors });
+  report.tasks.push({ taskId: task.id, hash: promptHash, source, status: metadata.validationStatus, errors: metadata.validationErrors });
   return metadata;
 }
 

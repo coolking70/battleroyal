@@ -3,7 +3,7 @@
   "assets": {
     "character/scout/portrait": {
       "candidateHash": "2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd",
-      "contentHash": "2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd",
+      "contentHash": "0aba3ebbb1951e24032a09d8fc09bdb1f47f3030b34c9191128363cb562c3eca",
       "promptHash": "2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -12,7 +12,7 @@
     },
     "item/bandage/icon": {
       "candidateHash": "3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb",
-      "contentHash": "3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb",
+      "contentHash": "3b4166a34a2fa1bf08b3ca2c1eba8e929cc3ee1de609073af9a7ac815bb9ac94",
       "promptHash": "3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -21,7 +21,7 @@
     },
     "zone/school/background": {
       "candidateHash": "c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7",
-      "contentHash": "c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7",
+      "contentHash": "364a6d328bd0a8da465d961f06dd21663a6e849d085695f19423fa5d51233172",
       "promptHash": "c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -30,7 +30,7 @@
     },
     "world_event/blackout/illustration": {
       "candidateHash": "d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843",
-      "contentHash": "d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843",
+      "contentHash": "b079c439885b610d9712d1c46e7f38adc0270262f195a30cc1b5e67e48f8c107",
       "promptHash": "d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -39,7 +39,7 @@
     },
     "character/engineer/portrait": {
       "candidateHash": "12989865f752e70e7716b2881c3bfa5dbe5546a9c0ec7694705b38be30101979",
-      "contentHash": "12989865f752e70e7716b2881c3bfa5dbe5546a9c0ec7694705b38be30101979",
+      "contentHash": "76546e0cd91fb54b35f942d1afe7f26621b59101671f33dddeadc2347ace6214",
       "promptHash": "12989865f752e70e7716b2881c3bfa5dbe5546a9c0ec7694705b38be30101979",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -48,7 +48,7 @@
     },
     "character/fighter/portrait": {
       "candidateHash": "33b377a42b0a9a827fed7d3c8701dbe40e70893bc517a6500090a0e1febf8218",
-      "contentHash": "33b377a42b0a9a827fed7d3c8701dbe40e70893bc517a6500090a0e1febf8218",
+      "contentHash": "f9da5b119e8e5b24ef77b3a7e7ec872e393ed239d526fd61179b455013d6ae71",
       "promptHash": "33b377a42b0a9a827fed7d3c8701dbe40e70893bc517a6500090a0e1febf8218",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -57,7 +57,7 @@
     },
     "character/medic/portrait": {
       "candidateHash": "6a1d891c1597e51d3ea26cab3c63a514994a4ed3d026f3f5f5e675a47eb8ec59",
-      "contentHash": "6a1d891c1597e51d3ea26cab3c63a514994a4ed3d026f3f5f5e675a47eb8ec59",
+      "contentHash": "a07a8d79a2550b859f8a3e4c410c688b2b8ce77729d1d4f277c50d1910d41368",
       "promptHash": "6a1d891c1597e51d3ea26cab3c63a514994a4ed3d026f3f5f5e675a47eb8ec59",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -66,7 +66,7 @@
     },
     "item/medkit/icon": {
       "candidateHash": "56c73dde328a31f004dc449e0d1e1ac4af0d1f0b616de6906eca99757b5f829d",
-      "contentHash": "56c73dde328a31f004dc449e0d1e1ac4af0d1f0b616de6906eca99757b5f829d",
+      "contentHash": "8a3ce5e8fa46fea1d3d9f38767dda4336c78d3a935653dc7f15ff8fa0d84ab5f",
       "promptHash": "56c73dde328a31f004dc449e0d1e1ac4af0d1f0b616de6906eca99757b5f829d",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -75,7 +75,7 @@
     },
     "zone/hospital/background": {
       "candidateHash": "1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5",
-      "contentHash": "1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5",
+      "contentHash": "d18a9e488959dc6f8cdcb00fd4302b4a7c5a2cde1f225db59b9a03073a700f82",
       "promptHash": "1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -84,7 +84,7 @@
     },
     "item/energy_drink/icon": {
       "candidateHash": "795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b",
-      "contentHash": "795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b",
+      "contentHash": "34e8bfc4d1760f01e8bef906c9d6c86112c17b2c9d733b74c54229edcd386ee1",
       "promptHash": "795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -93,7 +93,7 @@
     },
     "item/water/icon": {
       "candidateHash": "ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38",
-      "contentHash": "ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38",
+      "contentHash": "174a2498acfbcf2a811a4fad089c68e42fba492d2b98f03f2ca221e06f8f2e71",
       "promptHash": "ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -102,7 +102,7 @@
     },
     "zone/factory/background": {
       "candidateHash": "94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4",
-      "contentHash": "94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4",
+      "contentHash": "68d1e391e8f5e735966fddf198e13a29fa2985bc3ce7c2db40f2b441450ca336",
       "promptHash": "94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -111,7 +111,7 @@
     },
     "zone/forest/background": {
       "candidateHash": "2126353261005efb99059bd7ab230408ab9aa1b3214732f6b20ebd3715951430",
-      "contentHash": "2126353261005efb99059bd7ab230408ab9aa1b3214732f6b20ebd3715951430",
+      "contentHash": "7e0d922ae985f89771d8b856249f561cf2785b9b2e47ca44faf22f1e76b90dfa",
       "promptHash": "2126353261005efb99059bd7ab230408ab9aa1b3214732f6b20ebd3715951430",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -120,7 +120,7 @@
     },
     "zone/lab/background": {
       "candidateHash": "16eb9bc6cff58880933a81eda9a837678201c672e509656f051d67551f97476e",
-      "contentHash": "16eb9bc6cff58880933a81eda9a837678201c672e509656f051d67551f97476e",
+      "contentHash": "bf5d437b1915a55cd55caa865ecb0b062f47e388ae974ee50ca9c597c685565b",
       "promptHash": "16eb9bc6cff58880933a81eda9a837678201c672e509656f051d67551f97476e",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -129,7 +129,7 @@
     },
     "zone/residential/background": {
       "candidateHash": "9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84",
-      "contentHash": "9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84",
+      "contentHash": "0d30b9bf27e57d42cf09742dc107c87f1bc86b6fa544c65c960b85b1f42d121f",
       "promptHash": "9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -138,7 +138,7 @@
     },
     "item/battery/icon": {
       "candidateHash": "1d7473b3470be8f86f43c2b76f21911cc2055153b7d09fa323acf901c42d5ee6",
-      "contentHash": "1d7473b3470be8f86f43c2b76f21911cc2055153b7d09fa323acf901c42d5ee6",
+      "contentHash": "c4d694c4aaca9193871b62993b4304de523d4afe7b2afe2ae5a08f82ca4d635e",
       "promptHash": "1d7473b3470be8f86f43c2b76f21911cc2055153b7d09fa323acf901c42d5ee6",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -147,7 +147,7 @@
     },
     "item/iron/icon": {
       "candidateHash": "d8aa7a6d3643de2ae2bdc3b7c363fbec6f72524eebf69a6ef043a55d3595f68c",
-      "contentHash": "d8aa7a6d3643de2ae2bdc3b7c363fbec6f72524eebf69a6ef043a55d3595f68c",
+      "contentHash": "ec8e18aa55c3cd856bb6fbb2d83881160076a4d2ec8307aed7bfbe1f8082b91e",
       "promptHash": "d8aa7a6d3643de2ae2bdc3b7c363fbec6f72524eebf69a6ef043a55d3595f68c",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -156,7 +156,7 @@
     },
     "item/iron_pipe/icon": {
       "candidateHash": "8d857fea4bd00318942cba3df985a1f7cc014978d9978c6a6acdfe126231c920",
-      "contentHash": "8d857fea4bd00318942cba3df985a1f7cc014978d9978c6a6acdfe126231c920",
+      "contentHash": "88632b65f6dfc539d911bd6eb65262e7bb965a9a577d014c749afa85c8e90aec",
       "promptHash": "8d857fea4bd00318942cba3df985a1f7cc014978d9978c6a6acdfe126231c920",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -165,7 +165,7 @@
     },
     "item/plate_armor/icon": {
       "candidateHash": "865f8fc5cdcad4eb81aba4a2e712afb47f0b6c11be75455408c5f7cfcafc0af5",
-      "contentHash": "865f8fc5cdcad4eb81aba4a2e712afb47f0b6c11be75455408c5f7cfcafc0af5",
+      "contentHash": "f8acfa03d668bb7ee261d14c66671d32ce82cdce75cecb20a0688b7e14d43d2a",
       "promptHash": "865f8fc5cdcad4eb81aba4a2e712afb47f0b6c11be75455408c5f7cfcafc0af5",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -174,7 +174,7 @@
     },
     "item/simple_armor/icon": {
       "candidateHash": "e7fb2c86d17c42d4745d3019ab3f188d13591b66dfe46244882cdd6bc2e695e5",
-      "contentHash": "e7fb2c86d17c42d4745d3019ab3f188d13591b66dfe46244882cdd6bc2e695e5",
+      "contentHash": "96e3915fc2a4bd9140cf145ffe3ea3b91f9e52085bca0acc163f70fd6d122881",
       "promptHash": "e7fb2c86d17c42d4745d3019ab3f188d13591b66dfe46244882cdd6bc2e695e5",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -183,7 +183,7 @@
     },
     "item/simple_bow/icon": {
       "candidateHash": "07db9c7697913d9ac8c24c09b255e6f9d72b54b1ed2df6369ae999a74eea028d",
-      "contentHash": "07db9c7697913d9ac8c24c09b255e6f9d72b54b1ed2df6369ae999a74eea028d",
+      "contentHash": "84a7ac6d535f5d2100f59c51218c227e0a4218f89c44d01354df2a79c137127c",
       "promptHash": "07db9c7697913d9ac8c24c09b255e6f9d72b54b1ed2df6369ae999a74eea028d",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -192,7 +192,7 @@
     },
     "item/stone_axe/icon": {
       "candidateHash": "07749b21843468547d12600a18a8add393e10f983dd3440e7ac528a641ec1d96",
-      "contentHash": "07749b21843468547d12600a18a8add393e10f983dd3440e7ac528a641ec1d96",
+      "contentHash": "9bada11a5b667ca296a92f26c0d369e84079c4769e4cf070ef998937464a3d71",
       "promptHash": "07749b21843468547d12600a18a8add393e10f983dd3440e7ac528a641ec1d96",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -201,7 +201,7 @@
     },
     "item/wood/icon": {
       "candidateHash": "88c4f10fdf7fb7267746ff391c3e5598df8bf5c08e4a4703fb1a8daeca1d0b56",
-      "contentHash": "88c4f10fdf7fb7267746ff391c3e5598df8bf5c08e4a4703fb1a8daeca1d0b56",
+      "contentHash": "38cedb373759b5cfbd2c8a7620d1175aff3e568bc8bc3c2c3285018a5e1caab0",
       "promptHash": "88c4f10fdf7fb7267746ff391c3e5598df8bf5c08e4a4703fb1a8daeca1d0b56",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -210,7 +210,7 @@
     },
     "world_event/citywide_unrest/illustration": {
       "candidateHash": "1c239f17af048a803cebca4ab7e186bcee5cf05843b508531e6c313390a46bde",
-      "contentHash": "1c239f17af048a803cebca4ab7e186bcee5cf05843b508531e6c313390a46bde",
+      "contentHash": "efeb3acb063a729e46d2426ab83a97b6ef2385da229636a61413a30ec7344b6d",
       "promptHash": "1c239f17af048a803cebca4ab7e186bcee5cf05843b508531e6c313390a46bde",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -219,7 +219,7 @@
     },
     "world_event/emergency_broadcast/illustration": {
       "candidateHash": "07eed3b78bbf16ae30572b61987dcc498a58e446f421508150b291edcac23787",
-      "contentHash": "07eed3b78bbf16ae30572b61987dcc498a58e446f421508150b291edcac23787",
+      "contentHash": "9c3316609024b54aeff2ece5a681965a0f9055dfa41b4796a33b41f0b4fd6c36",
       "promptHash": "07eed3b78bbf16ae30572b61987dcc498a58e446f421508150b291edcac23787",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -228,7 +228,7 @@
     },
     "world_event/medical_alert/illustration": {
       "candidateHash": "7950c827639922568f0a6f3949145ec60eb812734f847783dc7f3a1e4172c0c1",
-      "contentHash": "7950c827639922568f0a6f3949145ec60eb812734f847783dc7f3a1e4172c0c1",
+      "contentHash": "867473c58a5e0a701a6585e67437ef748fcbc828890d0f914cc06c2cb9c33e18",
       "promptHash": "7950c827639922568f0a6f3949145ec60eb812734f847783dc7f3a1e4172c0c1",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -237,7 +237,7 @@
     },
     "world_event/research_anomaly/illustration": {
       "candidateHash": "f5a2bc2592f94510aac588abf30d5435ff6ab8d0fafe0cb3d0e2617df89c18e5",
-      "contentHash": "f5a2bc2592f94510aac588abf30d5435ff6ab8d0fafe0cb3d0e2617df89c18e5",
+      "contentHash": "ce6f68ec8f4b45050d5bd2a51a21cd7a55b251a77dc315069140040ab3803808",
       "promptHash": "f5a2bc2592f94510aac588abf30d5435ff6ab8d0fafe0cb3d0e2617df89c18e5",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -246,7 +246,7 @@
     },
     "character/scout/injured": {
       "candidateHash": "ccb0f5d7e17d097f94e60a5109b898f9fc4bbcaf4ac82b74bb296a31f29c1b51",
-      "contentHash": "ccb0f5d7e17d097f94e60a5109b898f9fc4bbcaf4ac82b74bb296a31f29c1b51",
+      "contentHash": "0cad65c3d7b1b316ba366a0800618d661ca9fb251096f45352368c2298d1eaa4",
       "promptHash": "ccb0f5d7e17d097f94e60a5109b898f9fc4bbcaf4ac82b74bb296a31f29c1b51",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -255,7 +255,7 @@
     },
     "character/engineer/injured": {
       "candidateHash": "a696243e0873e7e44e352c27721a25e6ff558b5027482beffe89ca95792352d5",
-      "contentHash": "a696243e0873e7e44e352c27721a25e6ff558b5027482beffe89ca95792352d5",
+      "contentHash": "3b7163f044285a8124df867ace8e00e407f5496d4c87b0cce030758d2fa808cc",
       "promptHash": "a696243e0873e7e44e352c27721a25e6ff558b5027482beffe89ca95792352d5",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -264,7 +264,7 @@
     },
     "character/fighter/injured": {
       "candidateHash": "bdfbd88d5ad6b746586decb62227b5f4d92676dbded3ac16c624a1efc7d3e61e",
-      "contentHash": "bdfbd88d5ad6b746586decb62227b5f4d92676dbded3ac16c624a1efc7d3e61e",
+      "contentHash": "21c1a19d130a9d75174130f89d099b21061f23583b4257bd19f73ec35e37de99",
       "promptHash": "bdfbd88d5ad6b746586decb62227b5f4d92676dbded3ac16c624a1efc7d3e61e",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -273,7 +273,7 @@
     },
     "character/medic/injured": {
       "candidateHash": "804ea57b335ffd9b0f8557d3ce81e72e8b6071038aa396c8a244b7f97c8d8154",
-      "contentHash": "804ea57b335ffd9b0f8557d3ce81e72e8b6071038aa396c8a244b7f97c8d8154",
+      "contentHash": "7beda5d6f7d74b7ec0a144933447d377fece67bde8a0537ab1170e6cbadaa5a5",
       "promptHash": "804ea57b335ffd9b0f8557d3ce81e72e8b6071038aa396c8a244b7f97c8d8154",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -282,7 +282,7 @@
     },
     "character/scout/combat": {
       "candidateHash": "7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01",
-      "contentHash": "7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01",
+      "contentHash": "f58e9bfe05cf5379e102320f403bf2d07016a011066f1a5c0d32bb7fa7f61435",
       "promptHash": "7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -291,7 +291,7 @@
     },
     "character/engineer/combat": {
       "candidateHash": "771016954288f55552af415eaf25071a66d7906a1cf8a998997b4d1310f4509e",
-      "contentHash": "771016954288f55552af415eaf25071a66d7906a1cf8a998997b4d1310f4509e",
+      "contentHash": "f4fce5a9a9045257bd4914887a13872e8b953bbf16f841a8a453850af496b151",
       "promptHash": "771016954288f55552af415eaf25071a66d7906a1cf8a998997b4d1310f4509e",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -300,7 +300,7 @@
     },
     "character/fighter/combat": {
       "candidateHash": "e0add26bee2964f26a21df410662eed4500598b866b69eb53ab3b345980b2d7f",
-      "contentHash": "e0add26bee2964f26a21df410662eed4500598b866b69eb53ab3b345980b2d7f",
+      "contentHash": "b5903ebbea17581e722fc21662056ffc8013193152c18bcb1f2b46c53da09f5c",
       "promptHash": "e0add26bee2964f26a21df410662eed4500598b866b69eb53ab3b345980b2d7f",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",
@@ -309,7 +309,7 @@
     },
     "character/medic/combat": {
       "candidateHash": "46b13f1437678d9e0da8fe127513514fa965acb72a4b530e22e8d0feedad01c8",
-      "contentHash": "46b13f1437678d9e0da8fe127513514fa965acb72a4b530e22e8d0feedad01c8",
+      "contentHash": "bffc26d594c64d2d6e00dab24cf113639792e0f2cd0c8a498e4ff1da6c6616a2",
       "promptHash": "46b13f1437678d9e0da8fe127513514fa965acb72a4b530e22e8d0feedad01c8",
       "model": "agnes-image-2.1-flash",
       "provider": "agnes",

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { createArtConfig } from '../tools/art/config';
 import { generateImage } from '../tools/art/apiClient';
-import { contentHash } from '../tools/art/cache';
+import { generationInputHash } from '../tools/art/hash';
 import { EVENT_E1_TASK_IDS, isEventContentRejection, runEventE1Batch, shouldStopEventE1 } from '../tools/art/eventBatch';
 import { auditEventProviderPrompt, FORBIDDEN_EVENT_PERSON_TOKENS, FORBIDDEN_EVENT_UI_TOKENS } from '../tools/art/promptAudit';
 import { buildPrompt, promptHashInput } from '../tools/art/promptBuilder';
@@ -103,7 +103,7 @@ describe('Phase 4A-4 Event E1 provider-safe production contracts', () => {
     const built = await buildPrompt(process.cwd(), await taskById(taskId), 'agnes-image-2.1-flash');
     expect(promptHashInput(built)).toMatchObject({ promptStrategy: 'event-positive-only', prompt: built.prompt, revision: 2 });
     expect(promptHashInput(built).positiveComposition).toEqual(built.task.positiveComposition);
-    expect(contentHash(built)).toMatch(/^[a-f0-9]{64}$/);
+    expect(generationInputHash(built)).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it.each(EVENT_TASKS)('passes the event prompt audit for %s', async (taskId) => {

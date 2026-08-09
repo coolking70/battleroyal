@@ -16,4 +16,4 @@ Character IDs are `scout`, `fighter`, `engineer`, `medic`; every Portrait/Injure
 
 World Event status is: Blackout, Emergency Broadcast, Medical Alert, Research Anomaly and Citywide Unrest official; Rain has no official AI path, provider compatibility remains blocked, and the runtime fallback is active.
 
-Per-file details are recorded in [manifest coverage JSON](/Users/coolking70/Documents/同步空间/battleroyal/reports/phase4a45-manifest-coverage.json).
+Per-file details are recorded in [manifest coverage JSON](reports/phase4a45-manifest-coverage.json).

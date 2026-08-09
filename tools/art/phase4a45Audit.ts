@@ -7,6 +7,7 @@ import { WORLD_EVENT_IDS } from '../../src/core/worldEvents';
 import { listCandidates } from './reviewer';
 import { loadTasks } from './taskPlanner';
 import { readManifest, readProvenance } from './publisher';
+import { sha256Bytes } from './hash';
 import { inspectImageBytes } from './validator';
 import type { ArtConfig, ArtManifest, ArtTask, CandidateMetadata } from './types';
 
@@ -20,6 +21,7 @@ export interface AssetFileAudit {
   filePath: string;
   exists: boolean;
   sizeBytes: number;
+  sha256: string | null;
   mime: string | null;
   width: number | null;
   height: number | null;
@@ -28,12 +30,16 @@ export interface AssetFileAudit {
 
 export interface Phase4A45AuditResult {
   generatedAt: string;
-  phase: 'Phase 4A-4.5';
+  phase: 'Phase 4A-4.5.1';
   passed: boolean;
   manifestCoverage: Record<string, unknown>;
   provenance: Record<string, unknown>;
   candidateHygiene: Record<string, unknown>;
   runtimeUsage: Record<string, unknown>;
+}
+
+export interface Phase4A45AuditOptions {
+  publishedOnlyCi?: boolean;
 }
 
 function manifestPathForTask(manifest: ArtManifest, taskId: string): string | null {
@@ -69,6 +75,7 @@ async function inspectPublicFile(config: ArtConfig, task: ArtTask, publicPath: s
       filePath: path.relative(config.rootDir, filePath),
       exists: true,
       sizeBytes: bytes.byteLength,
+      sha256: sha256Bytes(bytes),
       mime: info?.mimeType ?? null,
       width: info?.width ?? null,
       height: info?.height ?? null,
@@ -81,6 +88,7 @@ async function inspectPublicFile(config: ArtConfig, task: ArtTask, publicPath: s
       filePath: path.relative(config.rootDir, filePath),
       exists: false,
       sizeBytes: 0,
+      sha256: null,
       mime: null,
       width: null,
       height: null,
@@ -155,21 +163,72 @@ async function buildManifestCoverage(config: ArtConfig, manifest: ArtManifest, t
   };
 }
 
-async function buildProvenanceAudit(config: ArtConfig, manifest: ArtManifest, candidates: readonly CandidateMetadata[]): Promise<Record<string, unknown>> {
+async function buildProvenanceAudit(config: ArtConfig, manifest: ArtManifest, tasks: readonly ArtTask[], candidates: readonly CandidateMetadata[], publishedOnlyCi: boolean): Promise<Record<string, unknown>> {
   const provenance = await readProvenance(config);
   const entries = manifestEntries(manifest);
   const byTask = new Map(candidates.map((candidate) => [`${candidate.taskId}:${candidate.hash}`, candidate]));
+  const taskById = new Map(tasks.map((task) => [task.id, task]));
   const missingProvenance: string[] = [];
   const pathMismatches: string[] = [];
   const missingCandidates: string[] = [];
+  const missingCandidateFiles: string[] = [];
+  const missingPublicFiles: string[] = [];
+  const candidateHashMismatches: string[] = [];
+  const promptHashMismatches: string[] = [];
+  const candidateContentHashMismatches: string[] = [];
+  const publicContentHashMismatches: string[] = [];
+  const candidatePublicByteMismatches: string[] = [];
   const unapprovedSources: string[] = [];
+  const failedValidationSources: string[] = [];
+  let candidateMetadataChecked = 0;
+  let candidateBytesChecked = 0;
+  let publicBytesChecked = 0;
+  let publicCandidateHashMatches = 0;
   for (const entry of entries) {
     const source = provenance.assets[entry.taskId];
     if (!source) { missingProvenance.push(entry.taskId); continue; }
     if (source.publicPath !== entry.publicPath) pathMismatches.push(entry.taskId);
     const candidate = byTask.get(`${entry.taskId}:${source.candidateHash}`);
-    if (!candidate) missingCandidates.push(entry.taskId);
-    else if (candidate.reviewStatus !== 'approved' || candidate.validationStatus !== 'passed') unapprovedSources.push(entry.taskId);
+    if (!candidate) {
+      if (!publishedOnlyCi) missingCandidates.push(entry.taskId);
+      else {
+        try {
+          const publicBytes = await fs.readFile(path.join(config.publicAssetsDir, entry.publicPath.slice('/assets/'.length)));
+          publicBytesChecked += 1;
+          if (sha256Bytes(publicBytes) !== source.contentHash) publicContentHashMismatches.push(entry.taskId);
+        } catch {
+          missingPublicFiles.push(entry.taskId);
+        }
+      }
+      continue;
+    }
+    candidateMetadataChecked += 1;
+    if (candidate.hash !== source.candidateHash) candidateHashMismatches.push(entry.taskId);
+    if (candidate.promptHash !== source.promptHash) promptHashMismatches.push(entry.taskId);
+    if (candidate.contentHash !== source.contentHash) candidateContentHashMismatches.push(`${entry.taskId}: provenance contentHash differs from candidate`);
+    if (candidate.reviewStatus !== 'approved') unapprovedSources.push(entry.taskId);
+    if (candidate.validationStatus !== 'passed') failedValidationSources.push(entry.taskId);
+    const task = taskById.get(entry.taskId);
+    try {
+      const candidateBytes = await fs.readFile(path.join(config.rootDir, candidate.imagePath));
+      if (!task) {
+        candidateContentHashMismatches.push(`${entry.taskId}: task definition missing`);
+      } else {
+        candidateBytesChecked += 1;
+        if (sha256Bytes(candidateBytes) !== candidate.contentHash) candidateContentHashMismatches.push(entry.taskId);
+      }
+      try {
+        const publicBytes = await fs.readFile(path.join(config.publicAssetsDir, entry.publicPath.slice('/assets/'.length)));
+        publicBytesChecked += 1;
+        if (sha256Bytes(publicBytes) !== source.contentHash) publicContentHashMismatches.push(entry.taskId);
+        if (!candidateBytes.equals(publicBytes)) candidatePublicByteMismatches.push(entry.taskId);
+        if (sha256Bytes(candidateBytes) === candidate.contentHash && sha256Bytes(publicBytes) === source.contentHash && candidateBytes.equals(publicBytes)) publicCandidateHashMatches += 1;
+      } catch {
+        missingPublicFiles.push(entry.taskId);
+      }
+    } catch {
+      missingCandidateFiles.push(entry.taskId);
+    }
   }
   const manifestTaskIds = new Set(entries.map((entry) => entry.taskId));
   const provenanceNotInManifest = Object.keys(provenance.assets).filter((taskId) => !manifestTaskIds.has(taskId));
@@ -181,11 +240,14 @@ async function buildProvenanceAudit(config: ArtConfig, manifest: ArtManifest, ca
   const approvedByTask = new Map<string, CandidateMetadata[]>();
   for (const candidate of candidates.filter((candidate) => candidate.reviewStatus === 'approved')) approvedByTask.set(candidate.taskId, [...(approvedByTask.get(candidate.taskId) ?? []), candidate]);
   const duplicateApprovedSources = [...approvedByTask.entries()].filter(([, values]) => values.length > 1).map(([taskId]) => taskId);
-  const passed = missingProvenance.length === 0 && pathMismatches.length === 0 && missingCandidates.length === 0 && unapprovedSources.length === 0 && provenanceNotInManifest.length === 0 && publicAiWithoutProvenance.length === 0 && duplicateApprovedSources.length === 0;
-  return { generatedAt: new Date().toISOString(), officialManifestEntries: entries.length, provenanceEntries: Object.keys(provenance.assets).length, reverseMapping: entries, missingProvenance, pathMismatches, missingCandidates, unapprovedSources, provenanceNotInManifest, publicAiWithoutProvenance, duplicateApprovedSources, legacyAllowlist: ['/assets/items/bandage.svg'], passed };
+  const fullLocalChain = entries.length === 35 && candidateMetadataChecked === 35 && candidateBytesChecked === 35 && publicBytesChecked === 35 && publicCandidateHashMatches === 35;
+  const ciPublishedChain = publishedOnlyCi && entries.length === 35 && candidateMetadataChecked === 0 && candidateBytesChecked === 0 && publicBytesChecked === 35;
+  const passed = (fullLocalChain || ciPublishedChain) && missingProvenance.length === 0 && pathMismatches.length === 0 && missingCandidates.length === 0 && missingCandidateFiles.length === 0 && missingPublicFiles.length === 0 && candidateHashMismatches.length === 0 && promptHashMismatches.length === 0 && candidateContentHashMismatches.length === 0 && publicContentHashMismatches.length === 0 && candidatePublicByteMismatches.length === 0 && unapprovedSources.length === 0 && failedValidationSources.length === 0 && provenanceNotInManifest.length === 0 && publicAiWithoutProvenance.length === 0 && duplicateApprovedSources.length === 0;
+  return { generatedAt: new Date().toISOString(), mode: publishedOnlyCi ? 'published-only-ci' : 'full-local-candidate-chain', officialManifestEntries: entries.length, provenanceEntries: Object.keys(provenance.assets).length, candidateMetadataChecked, candidateBytesChecked, publicBytesChecked, publicCandidateHashMatches, reverseMapping: entries, missingProvenance, missingCandidates, missingCandidateFiles, missingPublicFiles, pathMismatches, candidateHashMismatches, promptHashMismatches, candidateContentHashMismatches, publicContentHashMismatches, candidatePublicByteMismatches, unapprovedSources, failedValidationSources, provenanceNotInManifest, publicAiWithoutProvenance, duplicateApprovedSources, legacyAllowlist: ['/assets/items/bandage.svg'], passed };
 }
 
-function buildCandidateHygiene(manifest: ArtManifest, candidates: readonly CandidateMetadata[], provenance: { assets: Record<string, { candidateHash: string }> }): Record<string, unknown> {
+function buildCandidateHygiene(manifest: ArtManifest, candidates: readonly CandidateMetadata[], provenance: { assets: Record<string, { candidateHash: string }> }, publishedOnlyCi: boolean): Record<string, unknown> {
+  if (publishedOnlyCi && candidates.length === 0) return { generatedAt: new Date().toISOString(), mode: 'published-only-ci', statusCounts: {}, totalCandidates: 0, byTask: [], requiredHistoricalRejected: [], rejectedReferencedByManifest: [], pendingReferencedByManifest: [], passed: true, note: 'Candidate store is intentionally local/ignored; public/provenance bytes are checked by the provenance audit.' };
   const entries = manifestEntries(manifest);
   const manifestPaths = new Set(entries.map((entry) => entry.publicPath));
   const currentHashes = new Set(Object.values(provenance.assets).map((entry) => entry.candidateHash));
@@ -223,16 +285,17 @@ function buildRuntimeUsage(manifest: ArtManifest, tasks: readonly ArtTask[]): Re
   return { generatedAt: new Date().toISOString(), assetCategory: { characters: { manifestSlots: 12, official: officialCharacterSlots.length, getter: 'getCharacterVisual', uiConsumers: ['MenuScreen', 'StatusBar', 'EncounterPanel'] }, zones: { manifestSlots: 6, official: officialZones, getter: 'getZoneVisual', uiConsumers: ['ZoneMap', 'GameScreen'] }, items: { manifestSlots: 12, official: officialItems, getter: 'getItemVisual', uiConsumers: ['Inventory'] }, worldEvents: { manifestSlots: 6, official: officialEvents, fallbackOnly: ['rain'], getter: 'getWorldEventVisual', uiConsumers: ['GameScreen event banner'] } }, surfaces, resolver: { name: 'resolveCharacterVisualState', location: 'src/ui/characterVisualState.ts', derivedOnly: true, precedence: 'injured > combat > portrait', injuredThreshold: 0.35, activeEncounterSource: 'state.encounter', persisted: false }, fallback: { component: 'VisualImage', stages: ['formal AI', 'local SVG', 'emoji/color'], officialImageError: 'tested', unknownIds: 'tested', rain: 'fallback-only and tested' }, issues, passed: issues.length === 0 };
 }
 
-export async function runPhase4A45Audit(config: ArtConfig): Promise<Phase4A45AuditResult> {
+export async function runPhase4A45Audit(config: ArtConfig, options: Phase4A45AuditOptions = {}): Promise<Phase4A45AuditResult> {
   const [manifest, tasks, candidates, provenanceFile] = await Promise.all([readManifest(config), loadTasks(config.rootDir), listCandidates(config), readProvenance(config)]);
+  const publishedOnlyCi = options.publishedOnlyCi ?? (process.env.CI === 'true' && candidates.length === 0);
   const [manifestCoverage, provenance, candidateHygiene] = await Promise.all([
     buildManifestCoverage(config, manifest, tasks),
-    buildProvenanceAudit(config, manifest, candidates),
-  ]).then(async ([coverage, provenanceAudit]) => [coverage, provenanceAudit, buildCandidateHygiene(manifest, candidates, provenanceFile)] as const);
+    buildProvenanceAudit(config, manifest, tasks, candidates, publishedOnlyCi),
+  ]).then(async ([coverage, provenanceAudit]) => [coverage, provenanceAudit, buildCandidateHygiene(manifest, candidates, provenanceFile, publishedOnlyCi)] as const);
   const runtimeUsage = buildRuntimeUsage(manifest, tasks);
   const result: Phase4A45AuditResult = {
     generatedAt: new Date().toISOString(),
-    phase: 'Phase 4A-4.5',
+    phase: 'Phase 4A-4.5.1',
     passed: Boolean(manifestCoverage.passed && provenance.passed && candidateHygiene.passed && runtimeUsage.passed),
     manifestCoverage,
     provenance,
@@ -240,9 +303,9 @@ export async function runPhase4A45Audit(config: ArtConfig): Promise<Phase4A45Aud
     runtimeUsage,
   };
   await fs.mkdir(path.join(config.rootDir, 'reports'), { recursive: true });
-  await fs.writeFile(path.join(config.rootDir, 'reports/phase4a45-manifest-coverage.json'), `${JSON.stringify(manifestCoverage, null, 2)}\n`);
-  await fs.writeFile(path.join(config.rootDir, 'reports/phase4a45-provenance-audit.json'), `${JSON.stringify(provenance, null, 2)}\n`);
-  await fs.writeFile(path.join(config.rootDir, 'reports/phase4a45-candidate-hygiene.json'), `${JSON.stringify(candidateHygiene, null, 2)}\n`);
-  await fs.writeFile(path.join(config.rootDir, 'reports/phase4a45-runtime-usage.json'), `${JSON.stringify(runtimeUsage, null, 2)}\n`);
+  await fs.writeFile(path.join(config.rootDir, 'reports/phase4a451-manifest-coverage.json'), `${JSON.stringify(manifestCoverage, null, 2)}\n`);
+  await fs.writeFile(path.join(config.rootDir, 'reports/phase4a451-provenance-audit.json'), `${JSON.stringify(provenance, null, 2)}\n`);
+  await fs.writeFile(path.join(config.rootDir, 'reports/phase4a451-candidate-hygiene.json'), `${JSON.stringify(candidateHygiene, null, 2)}\n`);
+  await fs.writeFile(path.join(config.rootDir, 'reports/phase4a451-runtime-usage.json'), `${JSON.stringify(runtimeUsage, null, 2)}\n`);
   return result;
 }

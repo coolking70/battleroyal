@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createArtConfig } from '../tools/art/config';
 import { COMBAT_BATCH_TASK_IDS, selectCombatBatch } from '../tools/art/canary';
 import { runCombatBatch, COMBAT_PRODUCTION_STRATEGY, DYNAMIC_EQUIPMENT_POLICY } from '../tools/art/combatBatch';
-import { contentHash } from '../tools/art/cache';
+import { generationInputHash } from '../tools/art/hash';
 import { buildPrompt, promptHashInput } from '../tools/art/promptBuilder';
 import { auditCombatProviderPrompt } from '../tools/art/promptAudit';
 import { loadTasks } from '../tools/art/taskPlanner';
@@ -119,7 +119,7 @@ describe('Phase 4A-4.4 controlled combat batch', () => {
   it('hashes posture and signature mode into each prompt identity', async () => {
     const built = await buildPrompt(process.cwd(), await taskById('character/fighter/combat'), 'agnes-image-2.1-flash');
     expect(promptHashInput(built)).toMatchObject({ postureOnly: true, signaturePropMode: 'wearable', revision: 4, prompt: built.prompt });
-    expect(contentHash(built)).toMatch(/^[a-f0-9]{64}$/);
+    expect(generationInputHash(built)).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('sends three real provider-shaped requests sequentially and leaves all candidates pending', async () => {

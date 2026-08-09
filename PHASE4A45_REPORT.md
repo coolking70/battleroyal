@@ -1,5 +1,7 @@
 # Phase 4A-4.5 Report
 
+> Integrity note: This closure was finalized by Phase 4A-4.5.1, which added true image-byte provenance hashing.
+
 ## Scope and decision
 
 Phase 4A-4.5 closes the Base Art production track. No image generation was performed in this phase: provider/API calls = **0**. `src/core/**`, `src/data/**`, gameplay rules, save schema and balance were not changed.

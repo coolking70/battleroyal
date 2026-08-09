@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { sha256Bytes } from './hash';
 import { listCandidates } from './reviewer';
 import { loadTasks } from './taskPlanner';
 import { validateManifest, isSafePublishedPath } from './validator';
@@ -95,12 +96,19 @@ export async function publishApproved(
   if (approved.length === 0) {
     return { manifest, published: [], manifestHash: manifestHash(manifest), changed: false };
   }
+  const candidateBytes = new Map<string, Buffer>();
   for (const candidate of approved) {
+    let bytes: Buffer;
     try {
-      await fs.access(path.join(config.rootDir, candidate.imagePath));
+      bytes = await fs.readFile(path.join(config.rootDir, candidate.imagePath));
     } catch {
       throw new Error(`approved candidate image is missing: ${candidate.taskId}`);
     }
+    const actualContentHash = sha256Bytes(bytes);
+    if (actualContentHash !== candidate.contentHash) {
+      throw new Error(`approved candidate content hash mismatch: ${candidate.taskId}`);
+    }
+    candidateBytes.set(candidate.taskId, bytes);
     applyCandidate(manifest, candidate);
     const previous = existingProvenance.assets[candidate.taskId];
     provenance.assets[candidate.taskId] = {
@@ -131,7 +139,9 @@ export async function publishApproved(
     for (const candidate of approved) {
       const destination = path.join(stagingDir, candidate.publicPath.slice('/assets/'.length));
       await fs.mkdir(path.dirname(destination), { recursive: true });
-      await fs.copyFile(path.join(config.rootDir, candidate.imagePath), destination);
+      await fs.writeFile(destination, candidateBytes.get(candidate.taskId)!);
+      const stagedHash = sha256Bytes(await fs.readFile(destination));
+      if (stagedHash !== candidate.contentHash) throw new Error(`staged public content hash mismatch: ${candidate.taskId}`);
     }
     const stagedConfig = { ...config, publicAssetsDir: stagingDir };
     const errors = await validateManifest(stagedConfig, manifest);
@@ -180,6 +190,9 @@ export async function validatePublishedManifest(config: ArtConfig): Promise<stri
   const version = await readJsonFile<ArtVersion>(path.join(config.publicAssetsDir, 'art-version.json'));
   if (!version || version.manifestHash !== manifestHash(manifest)) errors.push('art-version manifestHash does not match manifest.json');
   const provenance = await readProvenance(config);
+  const candidates = await listCandidates(config);
+  const publishedOnlyCiValidation = process.env.CI === 'true' && candidates.length === 0;
+  const candidatesByKey = new Map(candidates.map((candidate) => [`${candidate.taskId}:${candidate.hash}`, candidate]));
   const tasks = await loadTasks(config.rootDir);
   const taskIds = new Set(tasks.map((task) => task.id));
   for (const taskId of Object.keys(provenance.assets)) {
@@ -190,6 +203,35 @@ export async function validatePublishedManifest(config: ArtConfig): Promise<stri
     if (!entry.candidateHash.match(/^[a-f0-9]{64}(?:-[0-9-]+)?$/)) errors.push(`provenance ${taskId} has invalid candidateHash`);
     const manifestPath = manifestPathForTask(manifest, taskId);
     if (manifestPath !== entry.publicPath) errors.push(`provenance ${taskId} does not match manifest`);
+    const candidate = candidatesByKey.get(`${taskId}:${entry.candidateHash}`);
+    if (!candidate) {
+      if (!publishedOnlyCiValidation) {
+        errors.push(`provenance ${taskId} candidate metadata is missing`);
+      } else {
+        try {
+          const publicBytes = await fs.readFile(path.join(config.publicAssetsDir, entry.publicPath.slice('/assets/'.length)));
+          if (sha256Bytes(publicBytes) !== entry.contentHash) errors.push(`provenance ${taskId} public content bytes mismatch`);
+          if (!/^[a-f0-9]{64}$/.test(entry.promptHash)) errors.push(`provenance ${taskId} promptHash is invalid`);
+        } catch {
+          errors.push(`provenance ${taskId} public file is missing`);
+        }
+      }
+    } else {
+      if (candidate.reviewStatus !== 'approved') errors.push(`provenance ${taskId} source is not approved`);
+      if (candidate.validationStatus !== 'passed') errors.push(`provenance ${taskId} source validation is not passed`);
+      if (candidate.publicPath !== entry.publicPath) errors.push(`provenance ${taskId} candidate publicPath mismatch`);
+      if (candidate.promptHash !== entry.promptHash) errors.push(`provenance ${taskId} promptHash mismatch`);
+      if (candidate.contentHash !== entry.contentHash) errors.push(`provenance ${taskId} contentHash mismatch`);
+      try {
+        const candidateBytes = await fs.readFile(path.join(config.rootDir, candidate.imagePath));
+        if (sha256Bytes(candidateBytes) !== candidate.contentHash) errors.push(`provenance ${taskId} candidate content bytes mismatch`);
+        const publicBytes = await fs.readFile(path.join(config.publicAssetsDir, entry.publicPath.slice('/assets/'.length)));
+        if (sha256Bytes(publicBytes) !== entry.contentHash) errors.push(`provenance ${taskId} public content bytes mismatch`);
+        if (!candidateBytes.equals(publicBytes)) errors.push(`provenance ${taskId} candidate/public bytes differ`);
+      } catch {
+        errors.push(`provenance ${taskId} candidate or public file is missing`);
+      }
+    }
     if (!(await fileExists(path.join(config.publicAssetsDir, entry.publicPath.slice('/assets/'.length))))) errors.push(`provenance ${taskId} file is missing`);
   }
   for (const [taskId, publicPath] of manifestAssetEntries(manifest)) {

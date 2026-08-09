@@ -1,0 +1,703 @@
+{
+  "generatedAt": "2026-08-09T04:42:05.519Z",
+  "statusCounts": {
+    "approved": 35,
+    "rejected": 9,
+    "pending": 10
+  },
+  "totalCandidates": 54,
+  "byTask": [
+    {
+      "taskId": "character/engineer/combat",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "771016954288f55552af415eaf25071a66d7906a1cf8a998997b4d1310f4509e",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/characters/engineer/combat.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "character/engineer/injured",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "a696243e0873e7e44e352c27721a25e6ff558b5027482beffe89ca95792352d5",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/characters/engineer/injured.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "character/engineer/portrait",
+      "counts": {
+        "approved": 1,
+        "rejected": 1
+      },
+      "candidates": [
+        {
+          "hash": "12989865f752e70e7716b2881c3bfa5dbe5546a9c0ec7694705b38be30101979",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/characters/engineer/portrait.png",
+          "classification": "current approved source or historical approved record"
+        },
+        {
+          "hash": "77e02599e4b4798ff6d4668b26423bc37c6b1c7bfe7a2a5def2b48d2cdb52934",
+          "status": "rejected",
+          "validation": "passed",
+          "publicPath": "/assets/characters/engineer/portrait.png",
+          "classification": "historical rejected candidate retained for audit"
+        }
+      ]
+    },
+    {
+      "taskId": "character/fighter/combat",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "e0add26bee2964f26a21df410662eed4500598b866b69eb53ab3b345980b2d7f",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/characters/fighter/combat.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "character/fighter/injured",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "bdfbd88d5ad6b746586decb62227b5f4d92676dbded3ac16c624a1efc7d3e61e",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/characters/fighter/injured.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "character/fighter/portrait",
+      "counts": {
+        "approved": 1,
+        "rejected": 1
+      },
+      "candidates": [
+        {
+          "hash": "33b377a42b0a9a827fed7d3c8701dbe40e70893bc517a6500090a0e1febf8218",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/characters/fighter/portrait.png",
+          "classification": "current approved source or historical approved record"
+        },
+        {
+          "hash": "f749da45350da7a2d069cb5b8ffdaab2815268dc558c3e8c43563189912c9b6c",
+          "status": "rejected",
+          "validation": "passed",
+          "publicPath": "/assets/characters/fighter/portrait.png",
+          "classification": "historical rejected candidate retained for audit"
+        }
+      ]
+    },
+    {
+      "taskId": "character/medic/combat",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "46b13f1437678d9e0da8fe127513514fa965acb72a4b530e22e8d0feedad01c8",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/characters/medic/combat.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "character/medic/injured",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "804ea57b335ffd9b0f8557d3ce81e72e8b6071038aa396c8a244b7f97c8d8154",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/characters/medic/injured.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "character/medic/portrait",
+      "counts": {
+        "rejected": 1,
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "63d01e7c952da6d1bec5d7880afdcd828e7a5cb10acf2defd677e6e4f0f8ea7c",
+          "status": "rejected",
+          "validation": "passed",
+          "publicPath": "/assets/characters/medic/portrait.png",
+          "classification": "historical rejected candidate retained for audit"
+        },
+        {
+          "hash": "6a1d891c1597e51d3ea26cab3c63a514994a4ed3d026f3f5f5e675a47eb8ec59",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/characters/medic/portrait.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "character/scout/combat",
+      "counts": {
+        "rejected": 2,
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "752052e828e7708ebc010457bb9eca11e718a7ec91e18e63dd8b133ad11f6159",
+          "status": "rejected",
+          "validation": "passed",
+          "publicPath": "/assets/characters/scout/combat.png",
+          "classification": "historical rejected candidate retained for audit"
+        },
+        {
+          "hash": "7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/characters/scout/combat.png",
+          "classification": "current approved source or historical approved record"
+        },
+        {
+          "hash": "80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1",
+          "status": "rejected",
+          "validation": "passed",
+          "publicPath": "/assets/characters/scout/combat.png",
+          "classification": "historical rejected candidate retained for audit"
+        }
+      ]
+    },
+    {
+      "taskId": "character/scout/injured",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "ccb0f5d7e17d097f94e60a5109b898f9fc4bbcaf4ac82b74bb296a31f29c1b51",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/characters/scout/injured.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "character/scout/portrait",
+      "counts": {
+        "pending": 5,
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "14511e9a5fb98a79962cc31732cf92d30903a0613f6a3e7141dad4809fbaf625",
+          "status": "pending",
+          "validation": "passed",
+          "publicPath": "/assets/characters/scout/portrait.png",
+          "classification": "pending candidate superseded by current approved source; retained for history"
+        },
+        {
+          "hash": "14511e9a5fb98a79962cc31732cf92d30903a0613f6a3e7141dad4809fbaf625-1786203607641",
+          "status": "pending",
+          "validation": "passed",
+          "publicPath": "/assets/characters/scout/portrait.png",
+          "classification": "pending candidate superseded by current approved source; retained for history"
+        },
+        {
+          "hash": "14511e9a5fb98a79962cc31732cf92d30903a0613f6a3e7141dad4809fbaf625-1786204599363",
+          "status": "pending",
+          "validation": "passed",
+          "publicPath": "/assets/characters/scout/portrait.png",
+          "classification": "pending candidate superseded by current approved source; retained for history"
+        },
+        {
+          "hash": "1d3efddc1e422e9e5ba4fcb0353ffb6853aa6b9a6a094436b15d802ddbdeb19f",
+          "status": "pending",
+          "validation": "passed",
+          "publicPath": "/assets/characters/scout/portrait.png",
+          "classification": "pending candidate superseded by current approved source; retained for history"
+        },
+        {
+          "hash": "2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/characters/scout/portrait.png",
+          "classification": "current approved source or historical approved record"
+        },
+        {
+          "hash": "d47e96af060e6357e8d513ee79056b3b7f701c8add0332f8ae9d3b61bdaaee0a",
+          "status": "pending",
+          "validation": "passed",
+          "publicPath": "/assets/characters/scout/portrait.png",
+          "classification": "pending candidate superseded by current approved source; retained for history"
+        }
+      ]
+    },
+    {
+      "taskId": "item/bandage/icon",
+      "counts": {
+        "approved": 1,
+        "pending": 1
+      },
+      "candidates": [
+        {
+          "hash": "3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/items/bandage/icon.png",
+          "classification": "current approved source or historical approved record"
+        },
+        {
+          "hash": "fa8b8d8b6fc778c085592ab0d5e3a53d20002d6da8c99bc42cf9fbde388794bf",
+          "status": "pending",
+          "validation": "passed",
+          "publicPath": "/assets/items/bandage/icon.png",
+          "classification": "pending candidate superseded by current approved source; retained for history"
+        }
+      ]
+    },
+    {
+      "taskId": "item/battery/icon",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "1d7473b3470be8f86f43c2b76f21911cc2055153b7d09fa323acf901c42d5ee6",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/items/battery/icon.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "item/energy_drink/icon",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/items/energy_drink/icon.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "item/iron_pipe/icon",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "8d857fea4bd00318942cba3df985a1f7cc014978d9978c6a6acdfe126231c920",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/items/iron_pipe/icon.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "item/iron/icon",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "d8aa7a6d3643de2ae2bdc3b7c363fbec6f72524eebf69a6ef043a55d3595f68c",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/items/iron/icon.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "item/medkit/icon",
+      "counts": {
+        "approved": 1,
+        "rejected": 1
+      },
+      "candidates": [
+        {
+          "hash": "56c73dde328a31f004dc449e0d1e1ac4af0d1f0b616de6906eca99757b5f829d",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/items/medkit/icon.png",
+          "classification": "current approved source or historical approved record"
+        },
+        {
+          "hash": "c52f6ec3dd935448b766a090fe32513d6c6b5a9bde3710dee101edb087e09108",
+          "status": "rejected",
+          "validation": "passed",
+          "publicPath": "/assets/items/medkit/icon.png",
+          "classification": "historical rejected candidate retained for audit"
+        }
+      ]
+    },
+    {
+      "taskId": "item/plate_armor/icon",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "865f8fc5cdcad4eb81aba4a2e712afb47f0b6c11be75455408c5f7cfcafc0af5",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/items/plate_armor/icon.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "item/simple_armor/icon",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "e7fb2c86d17c42d4745d3019ab3f188d13591b66dfe46244882cdd6bc2e695e5",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/items/simple_armor/icon.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "item/simple_bow/icon",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "07db9c7697913d9ac8c24c09b255e6f9d72b54b1ed2df6369ae999a74eea028d",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/items/simple_bow/icon.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "item/stone_axe/icon",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "07749b21843468547d12600a18a8add393e10f983dd3440e7ac528a641ec1d96",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/items/stone_axe/icon.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "item/water/icon",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/items/water/icon.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "item/wood/icon",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "88c4f10fdf7fb7267746ff391c3e5598df8bf5c08e4a4703fb1a8daeca1d0b56",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/items/wood/icon.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "world_event/blackout/illustration",
+      "counts": {
+        "pending": 3,
+        "rejected": 1,
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "004497ade1bb934a4c80addfefcea9256327edcc1aa4edc067a8ec51dac0a78c",
+          "status": "pending",
+          "validation": "passed",
+          "publicPath": "/assets/world-events/blackout/illustration.png",
+          "classification": "pending candidate superseded by current approved source; retained for history"
+        },
+        {
+          "hash": "0e1536f4df281f25ba3d36648aff049bab3d51ed71607f80eb18a31ef82b690b",
+          "status": "pending",
+          "validation": "passed",
+          "publicPath": "/assets/world-events/blackout/illustration.png",
+          "classification": "pending candidate superseded by current approved source; retained for history"
+        },
+        {
+          "hash": "48af21a453ef44f2103779f634851607eb3be1377d96b11bf5619043c97b664d",
+          "status": "pending",
+          "validation": "passed",
+          "publicPath": "/assets/world-events/blackout/illustration.png",
+          "classification": "pending candidate superseded by current approved source; retained for history"
+        },
+        {
+          "hash": "bbf6b831c8cf9ec9548c82269e2be6f03a9821d8c80b631615e0e9a5a02d2671",
+          "status": "rejected",
+          "validation": "passed",
+          "publicPath": "/assets/world-events/blackout/illustration.png",
+          "classification": "historical rejected candidate retained for audit"
+        },
+        {
+          "hash": "d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/world-events/blackout/illustration.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "world_event/citywide_unrest/illustration",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "1c239f17af048a803cebca4ab7e186bcee5cf05843b508531e6c313390a46bde",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/world-events/citywide_unrest/illustration.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "world_event/emergency_broadcast/illustration",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "07eed3b78bbf16ae30572b61987dcc498a58e446f421508150b291edcac23787",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/world-events/emergency_broadcast/illustration.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "world_event/medical_alert/illustration",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "7950c827639922568f0a6f3949145ec60eb812734f847783dc7f3a1e4172c0c1",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/world-events/medical_alert/illustration.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "world_event/rain/illustration",
+      "counts": {
+        "rejected": 1
+      },
+      "candidates": [
+        {
+          "hash": "5804105a6f017924222fa112126db9fc8d482dd0707ef0141c0ea09da0f83313",
+          "status": "rejected",
+          "validation": "passed",
+          "publicPath": "/assets/world-events/rain/illustration.png",
+          "classification": "historical rejected candidate retained for audit"
+        }
+      ]
+    },
+    {
+      "taskId": "world_event/research_anomaly/illustration",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "f5a2bc2592f94510aac588abf30d5435ff6ab8d0fafe0cb3d0e2617df89c18e5",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/world-events/research_anomaly/illustration.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "zone/factory/background",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/zones/factory/background.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "zone/forest/background",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "2126353261005efb99059bd7ab230408ab9aa1b3214732f6b20ebd3715951430",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/zones/forest/background.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "zone/hospital/background",
+      "counts": {
+        "approved": 1,
+        "rejected": 1
+      },
+      "candidates": [
+        {
+          "hash": "1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/zones/hospital/background.png",
+          "classification": "current approved source or historical approved record"
+        },
+        {
+          "hash": "80d603bfd8124a44919ffc590313448511686c51f2648850527c71e8268e9354",
+          "status": "rejected",
+          "validation": "passed",
+          "publicPath": "/assets/zones/hospital/background.png",
+          "classification": "historical rejected candidate retained for audit"
+        }
+      ]
+    },
+    {
+      "taskId": "zone/lab/background",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "16eb9bc6cff58880933a81eda9a837678201c672e509656f051d67551f97476e",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/zones/lab/background.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "zone/residential/background",
+      "counts": {
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/zones/residential/background.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    },
+    {
+      "taskId": "zone/school/background",
+      "counts": {
+        "pending": 1,
+        "approved": 1
+      },
+      "candidates": [
+        {
+          "hash": "0256c79e2c5a9e0ad48378e16e74849e7da3d0d864f056ab75697dc4043be1d1",
+          "status": "pending",
+          "validation": "passed",
+          "publicPath": "/assets/zones/school/background.png",
+          "classification": "pending candidate superseded by current approved source; retained for history"
+        },
+        {
+          "hash": "c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7",
+          "status": "approved",
+          "validation": "passed",
+          "publicPath": "/assets/zones/school/background.png",
+          "classification": "current approved source or historical approved record"
+        }
+      ]
+    }
+  ],
+  "requiredHistoricalRejected": [
+    {
+      "hash": "80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1",
+      "present": true,
+      "rejected": true
+    },
+    {
+      "hash": "752052e828e7708ebc010457bb9eca11e718a7ec91e18e63dd8b133ad11f6159",
+      "present": true,
+      "rejected": true
+    }
+  ],
+  "rejectedReferencedByManifest": [],
+  "pendingReferencedByManifest": [],
+  "passed": true
+}

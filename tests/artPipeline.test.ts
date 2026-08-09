@@ -4,7 +4,8 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createArtConfig } from '../tools/art/config';
 import { parseArgs, sanitizeReportName } from '../tools/art/cli';
-import { contentHash, findCacheEntry, saveCache } from '../tools/art/cache';
+import { findCacheEntry, saveCache } from '../tools/art/cache';
+import { generationInputHash } from '../tools/art/hash';
 import { generateImage } from '../tools/art/apiClient';
 import { generateTask } from '../tools/art/generator';
 import { buildPrompt, promptHashInput } from '../tools/art/promptBuilder';
@@ -67,14 +68,14 @@ describe('Phase 4 task and prompt contracts', () => {
     const task = tasks[0]!;
     const first = await buildPrompt(root, task, 'test-model');
     const second = await buildPrompt(root, task, 'test-model');
-    expect(contentHash(first)).toBe(contentHash(second));
+    expect(generationInputHash(first)).toBe(generationInputHash(second));
     expect(first.prompt).toContain('Semi-realistic anime illustration');
     expect(first.styleProfileVersion).toMatch(/^phase4-style-v2-/);
     expect(first.negativePrompt).toContain('watermark');
 
     await fs.appendFile(path.join(root, 'art', 'style', 'render-style.md'), '\nrevision marker');
     const changed = await buildPrompt(root, task, 'test-model');
-    expect(contentHash(changed)).not.toBe(contentHash(first));
+    expect(generationInputHash(changed)).not.toBe(generationInputHash(first));
   });
 
   it('validation enforces image signature, dimensions, aspect ratio and alpha', () => {
@@ -137,7 +138,7 @@ describe('Phase 4 API and cache boundary', () => {
     const { root, config } = await fixture();
     const task = (await loadTasks(root)).find((item) => item.id === 'character/scout/portrait')!;
     const built = await buildPrompt(root, task, config.model);
-    const hash = contentHash(built);
+    const hash = generationInputHash(built);
     await saveCache(config, hash, built, { mimeType: 'image/png', bytes: fakePng(768, 1024) });
     const report = { mode: 'provider' as const, provider: 'agnes' as const, requested: 0, cacheHits: 0, apiCalls: 0, successful: 0, failed: 0, retryCount: 0, totalBytes: 0, tasks: [] as Array<{ taskId: string; hash: string; source: 'api' | 'cache' | 'dry-run'; status: string; errors?: string[] }> };
     const candidate = await generateTask(config, task, { retryDelaysMs: [0, 0, 0] }, report);
@@ -187,7 +188,7 @@ describe('Phase 4 API and cache boundary', () => {
     const { root, config } = await fixture();
     const task = (await loadTasks(root)).find((item) => item.id === 'item/bandage/icon')!;
     const built = await buildPrompt(root, task, config.model);
-    const hash = contentHash(built);
+    const hash = generationInputHash(built);
     await saveCache(config, hash, built, { mimeType: 'image/png', bytes: fakePng(512, 512) });
     const first = await generateTask(config, task);
     await reviewCandidate(config, task.id, first!.hash, 'approved');
@@ -211,7 +212,7 @@ describe('Phase 4 API and cache boundary', () => {
     const { root, config } = await fixture();
     const task = (await loadTasks(root)).find((item) => item.id === 'item/bandage/icon')!;
     const built = await buildPrompt(root, task, config.model);
-    const hash = contentHash(built);
+    const hash = generationInputHash(built);
     await saveCache(config, hash, built, { mimeType: 'image/png', bytes: fakePng(512, 512) });
     expect(await findCacheEntry(config, hash, built)).not.toBeNull();
     await fs.rm(path.join(config.cacheDir, hash, 'image.png'));
@@ -233,7 +234,7 @@ describe('Phase 4 API and cache boundary', () => {
     const { root, config } = await fixture();
     const task = (await loadTasks(root)).find((item) => item.id === 'item/bandage/icon')!;
     const built = await buildPrompt(root, task, config.model);
-    const hash = contentHash(built);
+    const hash = generationInputHash(built);
     const entry = await saveCache(config, hash, built, { mimeType: 'image/png', bytes: fakeWebp(512, 512) });
     expect(entry.mimeType).toBe('image/webp');
     expect(entry.imagePath.endsWith('image.webp')).toBe(true);
@@ -246,7 +247,7 @@ describe('Phase 4 review and publish contracts', () => {
     const { root, config } = await fixture();
     const task = (await loadTasks(root)).find((item) => item.id === taskId)!;
     const built = await buildPrompt(root, task, config.model);
-    const hash = contentHash(built);
+    const hash = generationInputHash(built);
     await saveCache(config, hash, built, { mimeType: 'image/png', bytes: fakePng(task.width, task.height) });
     await generateTask(config, task, { retryDelaysMs: [0] });
     return { config, task, hash };
@@ -364,7 +365,7 @@ describe('Phase 4 review and publish contracts', () => {
     for (const taskId of taskIds) {
       const task = (await loadTasks(root)).find((item) => item.id === taskId)!;
       const built = await buildPrompt(root, task, config.model);
-      const hash = contentHash(built);
+    const hash = generationInputHash(built);
       await saveCache(config, hash, built, { mimeType: 'image/png', bytes: fakePng(task.width, task.height) });
       await generateTask(config, task, { retryDelaysMs: [0] });
       await reviewCandidate(config, task.id, hash, 'approved');

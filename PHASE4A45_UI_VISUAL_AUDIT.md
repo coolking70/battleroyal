@@ -17,4 +17,4 @@ The Combat image is now consumed by the real StatusBar and EncounterPanel paths.
 
 `VisualImage` removes the failed `<img>` and advances one-way to local SVG and then emoji/color. Unknown character, zone, item and event IDs return safe fallback specs. Formal-image error behavior is covered by the existing component tests and the Phase 4A-4.5 coverage tests. Zone warning/restricted remain CSS/status presentation concerns and do not trigger new asset production.
 
-Detailed machine-readable usage evidence: [runtime usage JSON](/Users/coolking70/Documents/同步空间/battleroyal/reports/phase4a45-runtime-usage.json).
+Detailed machine-readable usage evidence: [runtime usage JSON](reports/phase4a45-runtime-usage.json).

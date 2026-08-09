@@ -61,7 +61,7 @@ describe('Phase 4A-2.1 character-positive-only strategy', () => {
     const input = promptHashInput(built);
     expect(input.promptStrategy).toBe('character-positive-only');
     expect(input.positiveTraits).toEqual(task.positiveTraits);
-    expect((await import('../tools/art/cache')).contentHash(built)).not.toBe('77e02599e4b4798ff6d4668b26423bc37c6b1c7bfe7a2a5def2b48d2cdb52934');
+    expect((await import('../tools/art/hash')).generationInputHash(built)).not.toBe('77e02599e4b4798ff6d4668b26423bc37c6b1c7bfe7a2a5def2b48d2cdb52934');
   });
 
   it('assigns the new positive-only recovery strategies only to Hospital, Medkit and Rain', async () => {
@@ -137,7 +137,7 @@ describe('Phase 4A-2.1 character-positive-only strategy', () => {
     const task = (await tasksById()).get('character/engineer/portrait')!;
     const original = await buildPrompt(process.cwd(), task, 'agnes-image-2.1-flash');
     const revised = await buildPrompt(process.cwd(), { ...task, positiveTraits: [...(task.positiveTraits ?? []), 'warm workshop lighting'] }, 'agnes-image-2.1-flash');
-    const { contentHash } = await import('../tools/art/cache');
-    expect(contentHash(revised)).not.toBe(contentHash(original));
+    const { generationInputHash } = await import('../tools/art/hash');
+    expect(generationInputHash(revised)).not.toBe(generationInputHash(original));
   });
 });
