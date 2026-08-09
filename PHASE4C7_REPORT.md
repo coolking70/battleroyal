@@ -142,7 +142,7 @@
 | `npm audit --omit=dev` | PASS，0 vulnerabilities |
 | 20 条半自动路线观察健康检查 | PASS，20 / 20 |
 | C6 clean production preview evidence | PASS，1 test；桌面/移动端 console/page errors 0 |
-| GitHub Actions CI `31332200795` | PASS，verify job 全绿 |
+| GitHub Actions CI `31332418477` | PASS，verify job 全绿 |
 
 用户原有的 `reports/save-validation-audit.json/.md` 改动保留在工作区，没有纳入本阶段
 提交；艺术审计产生的历史 `generatedAt` 变化已恢复，未混入无关报告。
