@@ -1,6 +1,6 @@
 import { getActionStaminaCost, getAttackStyleStaminaCost } from '../../core/actionCosts';
 import { ATTACK_STYLE_LABEL, fleeChanceIn, hitChanceIn } from '../../core/combat';
-import { hasExposed, EXPOSED_LABEL } from '../../core/exposed';
+import { hasExposed } from '../../core/exposed';
 import { getEquippedWeapon, totalAttack, totalDefense } from '../../core/inventory';
 import {
   SKILLS,
@@ -17,6 +17,12 @@ import { Bar } from './Bar';
 import { VisualImage } from './VisualImage';
 import { getCharacterVisual } from '../visualAssets';
 import { resolveCharacterVisualState } from '../characterVisualState';
+import {
+  COMBAT_ACTION_GROUP_META,
+  COMBAT_STATUS_META,
+  combatModeMeta,
+  combatVisualStateMeta,
+} from '../combatPresentation';
 
 interface EncounterPanelProps {
   state: GameState;
@@ -57,6 +63,11 @@ export function EncounterPanel({
   const playerExposed = hasExposed(player);
   const enemyExposed = hasExposed(enemy);
   const enemyVisualState = resolveCharacterVisualState(enemy, { activeEncounter: !resolved });
+  const playerVisualState = resolveCharacterVisualState(player, { activeEncounter: !resolved });
+  const modeMeta = combatModeMeta(resolved);
+  const playerVisualMeta = combatVisualStateMeta(playerVisualState);
+  const enemyVisualMeta = combatVisualStateMeta(enemyVisualState);
+  const latestFeedback = encounter.log[encounter.log.length - 1] ?? (resolved ? '遭遇已结束，等待确认结果。' : '尚未交手，选择一项行动。');
 
   const ATTACK_STYLES: AttackStyle[] = ['quick', 'normal', 'heavy'];
 
@@ -68,120 +79,216 @@ export function EncounterPanel({
   const skillCooldown = skillId ? player.skillCooldowns[skillId] ?? 0 : 0;
 
   return (
-    <div className="encounter">
-      <h4>
-        {resolved ? '遭遇结束' : '遭遇战'}
-        {player.guarding && <span className="tag tag-guard" style={{ marginLeft: 8 }}>防御中</span>}
-        {playerExposed && <span className="tag tag-exposed" style={{ marginLeft: 8 }}>{EXPOSED_LABEL}</span>}
-      </h4>
+    <section
+      className={cx('encounter', resolved && 'encounter-resolved')}
+      data-encounter-state={resolved ? 'resolved' : 'active'}
+      aria-label={modeMeta.label}
+    >
+      <header className="encounter-heading">
+        <div className="encounter-heading-main">
+          <span className="encounter-mode-badge">
+            <span className="combat-cue-icon" aria-hidden="true">{modeMeta.icon}</span>
+            {modeMeta.label}
+          </span>
+          <h4>{resolved ? '结果确认' : '当前对手'}</h4>
+        </div>
+        <span className="encounter-heading-note">{modeMeta.description}</span>
+      </header>
 
-      <div className="encounter-body">
-        <div className="encounter-enemy">
-          <div className="nm">
+      <div className="encounter-composition">
+        <section
+          className="combatant-card combatant-player"
+          data-side="player"
+          data-visual-state={playerVisualState}
+          aria-label={`玩家${playerVisualMeta.label}`}
+        >
+          <div className="combatant-card-kicker">PLAYER · 你</div>
+          <div className="combatant-visual-frame">
             <VisualImage
-              visual={getCharacterVisual(enemy.characterId, enemyVisualState)}
-              alt={`${enemy.name}角色图`}
-              className="encounter-character-visual"
+              visual={getCharacterVisual(player.characterId, playerVisualState)}
+              alt={`${getCharacterDef(player.characterId).name}${playerVisualMeta.label}角色图`}
+              className="encounter-combat-visual encounter-player-visual"
             />
-            <span className="badge badge-enemy">敌</span>
-            {enemy.name}
-            {enemyExposed && (
-              <span className="tag tag-exposed" style={{ marginLeft: 6 }}>{EXPOSED_LABEL}</span>
+          </div>
+          <div className="combatant-name-line">
+            <span className="badge badge-you">你</span>
+            <strong>{getCharacterDef(player.characterId).name}</strong>
+          </div>
+          <div className={`combat-visual-state state-player state-${playerVisualState}`}>
+            <span className="combat-cue-icon" aria-hidden="true">{playerVisualMeta.icon}</span>
+            <span>{playerVisualMeta.label}</span>
+          </div>
+          <p className="combat-visual-description">{playerVisualMeta.description}</p>
+          <div className="combat-resource-row">
+            <span>生命</span>
+            <Bar value={player.hp} max={player.maxHp} kind="hp" />
+            <b>{player.hp}/{player.maxHp}</b>
+          </div>
+          <div className="combat-resource-row">
+            <span>体力</span>
+            <Bar value={player.stamina} max={player.maxStamina} kind="stamina" />
+            <b>{player.stamina}/{player.maxStamina}</b>
+          </div>
+          <div className="combat-stat-line">攻 {totalAttack(player)} · 防 {totalDefense(player)}</div>
+          <div className="combat-status-row">
+            {player.guarding && (
+              <span className="tag tag-guard"><span className="combat-cue-icon" aria-hidden="true">{COMBAT_STATUS_META.guard.icon}</span>{COMBAT_STATUS_META.guard.label}</span>
+            )}
+            {playerExposed && (
+              <span className="tag tag-exposed"><span className="combat-cue-icon" aria-hidden="true">{COMBAT_STATUS_META.exposed.icon}</span>{COMBAT_STATUS_META.exposed.label}</span>
+            )}
+            {!player.guarding && !playerExposed && <span className="faint combat-status-empty">无额外状态</span>}
+          </div>
+        </section>
+
+        <section className="encounter-center" aria-label="遭遇反馈与行动">
+          <div className="encounter-focus" aria-live="polite">
+            <div className="encounter-focus-kicker">即时反馈 · LAST RESULT</div>
+            <strong>{latestFeedback}</strong>
+            <span className="encounter-focus-note">{resolved ? '确认后将恢复探索焦点。' : '结果会在这里突出显示，同时保留最近战斗记录。'}</span>
+          </div>
+
+          <div className="encounter-log" aria-label="本次遭遇战斗记录">
+            {encounter.log.length === 0 ? (
+              <p className="faint">尚未交手。</p>
+            ) : (
+              encounter.log.map((line, i) => <p key={i}>{line}</p>)
             )}
           </div>
-          <div className="faint mono" style={{ fontSize: 11, marginBottom: 6 }}>
-            {getCharacterDef(enemy.characterId).name} · {hpDescriptor(enemy)}
-          </div>
-          <Bar value={enemy.hp} max={enemy.maxHp} kind="hp" />
-          <div className="dim mono" style={{ fontSize: 11, marginTop: 6 }}>
-            武器：{weapon ? getItem(weapon.itemId).name : '徒手'}
-          </div>
-          <div className="dim mono" style={{ fontSize: 11 }}>
-            你 攻 {totalAttack(player)} / 防 {totalDefense(player)}
-          </div>
-          {!resolved && (
-            <div className="dim mono" style={{ fontSize: 11 }}>
-              脱离 {flee}%
-            </div>
-          )}
-        </div>
 
-        <div className="encounter-log">
-          {encounter.log.length === 0 ? (
-            <p className="faint">尚未交手。</p>
-          ) : (
-            encounter.log.map((line, i) => <p key={i}>{line}</p>)
-          )}
-        </div>
-      </div>
+          <div className="encounter-actions">
+            {resolved ? (
+              <button className="btn btn-primary encounter-continue" onClick={onClose}>
+                继续探索
+              </button>
+            ) : (
+              <>
+                <div className="action-group attack-group">
+                  <div className="action-group-heading">
+                    <span><span className="combat-cue-icon" aria-hidden="true">{COMBAT_ACTION_GROUP_META.attack.icon}</span>{COMBAT_ACTION_GROUP_META.attack.label}</span>
+                    <small>{COMBAT_ACTION_GROUP_META.attack.description}</small>
+                  </div>
+                  <div className="attack-styles">
+                    {ATTACK_STYLES.map((style) => {
+                      const cost = getAttackStyleStaminaCost(style);
+                      // Phase 3A 不变量：UI 展示的命中率必须与核心结算同源（含世界事件修正）
+                      const hit = Math.round(hitChanceIn(state, player, enemy, style) * 100);
+                      const disabled = player.stamina < cost;
+                      const isHeavy = style === 'heavy';
+                      return (
+                        <button
+                          key={style}
+                          className={cx('btn', isHeavy && 'btn-danger-heavy')}
+                          disabled={disabled}
+                          data-attack-style={style}
+                          title={`${ATTACK_STYLE_LABEL[style]}：命中 ${hit}%，消耗 ${cost} 点体力${isHeavy ? '；挥空会露出破绽' : ''}`}
+                          onClick={() => onAttack(style)}
+                        >
+                          <span>{ATTACK_STYLE_LABEL[style]}</span>
+                          <span className="action-button-detail">命中 {hit}% · 体力 {cost}</span>
+                          {isHeavy && <span className="heavy-risk">挥空会露出破绽</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-      <div className="encounter-actions">
-        {resolved ? (
-          <button className="btn btn-primary" onClick={onClose}>
-            继续
-          </button>
-        ) : (
-          <>
-            <div className="attack-styles">
-              {ATTACK_STYLES.map((style) => {
-                const cost = getAttackStyleStaminaCost(style);
-                // Phase 3A 不变量：UI 展示的命中率必须与核心结算同源（含世界事件修正）
-                const hit = Math.round(hitChanceIn(state, player, enemy, style) * 100);
-                const disabled = player.stamina < cost;
-                const isHeavy = style === 'heavy';
-                return (
-                  <button
-                    key={style}
-                    className={cx('btn', isHeavy && 'btn-danger-heavy')}
-                    disabled={disabled}
-                    title={`${ATTACK_STYLE_LABEL[style]}：命中 ${hit}%，消耗 ${cost} 点体力${isHeavy ? '；挥空会露出破绽' : ''}`}
-                    onClick={() => onAttack(style)}
-                  >
-                    {ATTACK_STYLE_LABEL[style]}（命中 {hit}% · 体力 {cost}）
-                    {isHeavy && <span className="heavy-risk">挥空破绽</span>}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="encounter-side-actions">
-              {skillDef && (
-                <button
-                  className="btn"
-                  disabled={!skillUsable}
-                  onClick={onSkill}
-                  title={
-                    skillReady
-                      ? `${skillDef.name}：${skillDef.description}（消耗 ${skillDef.staminaCost} 点体力）`
-                      : `${skillDef.name}冷却中（剩余 ${skillCooldown} 回合）`
-                  }
-                >
-                  {skillDef.name}（{skillReady ? `体力 ${skillDef.staminaCost}` : `冷却 ${skillCooldown}`}）
-                </button>
-              )}
-              <button
-                className="btn"
-                disabled={player.stamina < guardCost}
-                onClick={onGuard}
-                title={`防御姿态：下一击伤害减免，消耗 ${guardCost} 点体力`}
-              >
-                防御（{guardCost === 0 ? '免费' : `体力 ${guardCost}`}）
-              </button>
-              <button
-                className="btn"
-                onClick={onFlee}
-                title="脱离是免费行动，但仍会消耗 1 个时间单位，失败还会被追击"
-              >
-                逃跑（{fleeCost === 0 ? '免费' : `体力 ${fleeCost}`}）
-              </button>
-            </div>
-            <span className="faint mono" style={{ fontSize: 11, alignSelf: 'center' }}>
-              {player.stamina >= getAttackStyleStaminaCost('normal')
-                ? '遭遇中仍可在右侧使用消耗品或更换装备'
-                : '体力不足以普通攻击 —— 速攻或防御仍可用，或逃跑'}
-            </span>
-          </>
-        )}
+                <div className="action-group response-group">
+                  <div className="action-group-heading">
+                    <span><span className="combat-cue-icon" aria-hidden="true">{COMBAT_ACTION_GROUP_META.response.icon}</span>{COMBAT_ACTION_GROUP_META.response.label}</span>
+                    <small>{COMBAT_ACTION_GROUP_META.response.description}</small>
+                  </div>
+                  <div className="encounter-side-actions">
+                    {skillDef && (
+                      <button
+                        className="btn"
+                        disabled={!skillUsable}
+                        data-action="skill"
+                        onClick={onSkill}
+                        title={
+                          skillReady
+                            ? `${skillDef.name}：${skillDef.description}（消耗 ${skillDef.staminaCost} 点体力）`
+                            : `${skillDef.name}冷却中（剩余 ${skillCooldown} 回合）`
+                        }
+                      >
+                        <span>{skillDef.name}</span>
+                        <span className="action-button-detail">
+                          <span className="combat-cue-icon" aria-hidden="true">{skillReady ? COMBAT_STATUS_META.skillReady.icon : COMBAT_STATUS_META.skillCooldown.icon}</span>
+                          {skillReady ? `技能就绪 · 体力 ${skillDef.staminaCost}` : `技能冷却 · ${skillCooldown} 回合`}
+                        </span>
+                      </button>
+                    )}
+                    <button
+                      className="btn"
+                      disabled={player.stamina < guardCost}
+                      data-action="guard"
+                      onClick={onGuard}
+                      title={`防御姿态：下一击伤害减免，消耗 ${guardCost} 点体力`}
+                    >
+                      <span>防御</span>
+                      <span className="action-button-detail"><span className="combat-cue-icon" aria-hidden="true">{COMBAT_STATUS_META.guard.icon}</span>{guardCost === 0 ? '免费' : `体力 ${guardCost}`}</span>
+                    </button>
+                    <button
+                      className="btn"
+                      data-action="flee"
+                      onClick={onFlee}
+                      title="脱离是免费行动，但仍会消耗 1 个时间单位，失败还会被追击"
+                    >
+                      <span>逃跑</span>
+                      <span className="action-button-detail">脱离 {flee}% · {fleeCost === 0 ? '免费' : `体力 ${fleeCost}`}</span>
+                    </button>
+                  </div>
+                </div>
+                <span className="encounter-legal-note">
+                  {player.stamina >= getAttackStyleStaminaCost('normal')
+                    ? '遭遇中仍可在右侧使用消耗品或更换装备。'
+                    : '体力不足以普通攻击 —— 速攻或防御仍可用，或逃跑。'}
+                </span>
+              </>
+            )}
+          </div>
+        </section>
+
+        <section
+          className="combatant-card combatant-enemy"
+          data-side="enemy"
+          data-visual-state={enemyVisualState}
+          aria-label={`敌方${enemyVisualMeta.label}`}
+        >
+          <div className="combatant-card-kicker">ENEMY · 当前可见目标</div>
+          <div className="combatant-visual-frame">
+            <VisualImage
+              visual={getCharacterVisual(enemy.characterId, enemyVisualState)}
+              alt={`${enemy.name}${enemyVisualMeta.label}角色图`}
+              className="encounter-combat-visual encounter-character-visual encounter-enemy-visual"
+            />
+          </div>
+          <div className="combatant-name-line">
+            <span className="badge badge-enemy">敌</span>
+            <strong>{enemy.name}</strong>
+          </div>
+          <div className={`combat-visual-state state-enemy state-${enemyVisualState}`}>
+            <span className="combat-cue-icon" aria-hidden="true">{enemyVisualMeta.icon}</span>
+            <span>{enemyVisualMeta.label}</span>
+          </div>
+          <p className="combat-visual-description">{getCharacterDef(enemy.characterId).name} · {hpDescriptor(enemy)}</p>
+          <div className="enemy-health-summary">
+            <span>敌方生命状态</span>
+            <Bar value={enemy.hp} max={enemy.maxHp} kind="hp" />
+            <b>{hpDescriptor(enemy)}</b>
+          </div>
+          <div className="combat-status-row">
+            {enemyExposed ? (
+              <span className="tag tag-exposed"><span className="combat-cue-icon" aria-hidden="true">{COMBAT_STATUS_META.exposed.icon}</span>{COMBAT_STATUS_META.exposed.label}</span>
+            ) : (
+              <span className="faint combat-status-empty">未见额外状态</span>
+            )}
+          </div>
+          <div className="combat-stat-line">武器：{weapon ? getItem(weapon.itemId).name : '徒手'}</div>
+          <div className="combat-stat-line">你 攻 {totalAttack(player)} / 防 {totalDefense(player)}</div>
+          {!resolved && <div className="combat-stat-line flee-line">脱离 {flee}%</div>}
+        </section>
       </div>
-    </div>
+    </section>
   );
 }
