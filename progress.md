@@ -463,3 +463,20 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   regression, and both npm audits at 0 vulnerabilities. Human touch,
   screen-reader, long-session and full result-experience validation remain
   HUMAN-PLAYTEST-NEEDED; `HUMAN_PLAYTEST_CHECKLIST.md` remains untouched.
+
+## Phase 4C-13 progress (2026-08-10)
+
+- Audited the remaining mobile candidate and found a concrete code gap: the
+  fixed action rail, planning drawer and drawer trigger used hard-coded bottom
+  offsets and did not consume `safe-area-inset-*` values.
+- Added top/right/bottom/left safe-area CSS variables, `100dvh` minimums,
+  safe-area-aware top/action rails and safe-area-aware drawer bounds/triggers.
+  Existing responsive information architecture and touch target sizes remain
+  unchanged.
+- Added a `hasTouch` clean-production Playwright spec across 1280×720,
+  1024×768, 768×1024, 844×390 and 390×844. It injects a 24px safe-area
+  contract, taps the drawer open/close controls, checks panel/actionbar
+  separation and asserts no horizontal overflow; console/page errors are 0.
+- Real-device safe-area behavior, touch feel, screen-reader phrasing and
+  long-session comfort remain HUMAN-PLAYTEST-NEEDED; the human checklist is
+  untouched.
