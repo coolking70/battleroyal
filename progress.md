@@ -274,4 +274,35 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Implemented the minimal core fix for the zero-stamina deadlock: when every adjacent zone is restricted, FLEE now succeeds as a stationary disengagement and records a successful `no_exit` escape event, so the pursuit branch is not entered.
 - Made GUARD free only at exactly 0 stamina; a character with 1 stamina still needs the configured 2-point cost. This uses the existing shared action-cost path, with no new state field or passive recovery.
 - Updated EncounterPanel’s zero/partial-stamina guidance and flee accessibility text, and added focused player/NPC symmetry and last-safe-zone regression tests. Targeted suite: 4 files / 45 tests PASS.
-- Ran the required develop-web-game Playwright client against the current UI after the change; the production-style exploration shell rendered with no reported console/page errors. Remaining: full gates, dedicated clean-preview zero-stamina evidence, report, commit/push and CI confirmation.
+- Ran the required develop-web-game Playwright client against the current UI after the change; the production-style exploration shell rendered with no reported console/page errors. The Phase 4C-3 implementation is included in the pushed baseline; its focused evidence and report remain available for the handoff.
+
+## Phase 4C-4 progress (2026-08-10)
+
+- Started the core-loop diagnosis before considering any economy adjustment. No
+  gameplay rules, values, `src/core/**`, `src/data/**`, assets, manifests,
+  version, or Save schema were changed.
+- Extended the deterministic auto-player diagnostics with optional full event
+  traces, first-weapon/death-equipment inputs, and zero-stamina emergency-action
+  counters. Added `tools/observeCoreLoopDiagnosis.ts` for a reproducible
+  character × policy × seed matrix, with health checks separated from
+  win-rate/balance observations.
+- Added two regression tests proving diagnostic mode is non-invasive and its
+  counters/snapshots remain within the formal command/event output.
+- Typecheck, the Phase 4C-3 targeted suite (18 tests), and the new Phase 4C-4
+  diagnostic suite (2 tests) pass. The required browser smoke and multi-seed
+  diagnosis plus clean-preview evidence are next.
+- Completed the 400-game core-loop matrix: requested=actual 400, healthy 400,
+  timeout/deadlock/illegal/hard-limit 0. First-weapon acquisition was 40.0%
+  (93 craft / 67 pickup among 160 weapon games), player high-tier completion
+  was 8.0%, and combat caused 313 of 383 player deaths. The report records that
+  the auto-player does not issue EQUIP, so carried-item and equipped-item
+  observations are kept separate.
+- Added `PHASE4C4_REPORT.md` and a clean production-preview evidence spec;
+  1280×720 exploration/crafting and 390×844 zero-stamina encounter snapshots
+  pass with zero console/page errors. Economy tuning is deferred pending a
+  representative goal-adoption/equip loop and human playtest.
+- Final gates pass after clean `npm ci`: 68 files / 1283 tests, typecheck/build,
+  save/dependency/art/provenance/security audits, 500-game health regression,
+  production `npm audit --omit=dev` (0 vulnerabilities), and the final clean
+  preview evidence. Remaining handoff is intentional commit/push and CI check;
+  real-device/AT playtest items stay classified as HUMAN-PLAYTEST-NEEDED.

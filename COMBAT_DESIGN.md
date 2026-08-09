@@ -61,7 +61,8 @@
 
 ## 5. 防御姿态
 
-- `GUARD` 消耗体力（Phase 2A 起免费），下一击伤害减免 `guardDamageReduction`，被命中或自己出手后解除。
+- `GUARD` 通常消耗配置中的体力；角色恰好为 0 体力时由共享成本层提供一次应急免费防御，
+  体力为 1 时仍不足以支付完整成本。防御下一击减免 `guardDamageReduction`，被命中或自己出手后解除。
 - 事件 `ATTACK_HIT.metadata.guarded` 记录是否成功减免，供模拟统计 `guardResolves`。
 
 ## 6. 肾上腺素自伤（斗士技能联动）

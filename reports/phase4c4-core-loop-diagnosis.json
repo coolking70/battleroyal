@@ -1,0 +1,1845 @@
+{
+  "phase": "Phase 4C-4",
+  "generatedAt": "2026-08-09T18:24:23.533Z",
+  "interpretation": "观察数据 only；不对胜率、存活率或角色平衡作 PASS/FAIL 判定。玩家目标设定为模拟器命令通道指标，不等同于真实玩家采纳 UI 建议。",
+  "method": {
+    "seedCount": 20,
+    "matrix": "4 characters × 5 policies",
+    "seedPrefix": "PHASE4C4-CORE",
+    "requestedGames": 400,
+    "actualGames": 400,
+    "source": "tools/autoPlayer.ts via executeCommand"
+  },
+  "health": {
+    "requestedEqualsActual": true,
+    "healthyGames": 400,
+    "timeoutOrDeadlockOrIllegal": 0,
+    "pass": true
+  },
+  "overall": {
+    "games": 400,
+    "healthyGames": 400,
+    "healthyRate": 1,
+    "firstWeapon": {
+      "games": 160,
+      "rate": 0.4,
+      "neverWeaponGames": 240,
+      "bySource": {
+        "craft": 93,
+        "pickup": 67
+      },
+      "medianTime": 9,
+      "averageTime": 10.7875
+    },
+    "craftGoal": {
+      "setGames": 0,
+      "setRate": 0,
+      "setEvents": 0,
+      "completedGames": 0,
+      "completedRate": 0,
+      "completedEvents": 0
+    },
+    "intermediateCrafting": {
+      "games": 113,
+      "rate": 0.2825,
+      "craftEvents": 146
+    },
+    "highTierWeapons": {
+      "field_spear": {
+        "name": "野外长矛",
+        "playerGames": 1,
+        "playerRate": 0.0025,
+        "allActorCraftEvents": 2
+      },
+      "steel_axe": {
+        "name": "钢刃斧",
+        "playerGames": 5,
+        "playerRate": 0.0125,
+        "allActorCraftEvents": 21
+      },
+      "composite_bow": {
+        "name": "复合弓",
+        "playerGames": 11,
+        "playerRate": 0.0275,
+        "allActorCraftEvents": 32
+      },
+      "insulated_pipe": {
+        "name": "绝缘铁管",
+        "playerGames": 12,
+        "playerRate": 0.03,
+        "allActorCraftEvents": 18
+      },
+      "insulated_stun_rod": {
+        "name": "绝缘电击棒",
+        "playerGames": 3,
+        "playerRate": 0.0075,
+        "allActorCraftEvents": 13
+      }
+    },
+    "highTierPlayerGames": 32,
+    "highTierPlayerRate": 0.08,
+    "encounter": {
+      "games": 36,
+      "gameRate": 0.09,
+      "starts": 39,
+      "attacks": 4675,
+      "guards": 1082,
+      "escapes": 6762,
+      "stationaryEscapes": 2198,
+      "zeroStaminaGuards": 0,
+      "zeroStaminaFlees": 0
+    },
+    "deaths": {
+      "causes": {
+        "禁区侵蚀": 33,
+        "战斗": 313,
+        "衰竭": 34,
+        "研究设施异常": 3
+      },
+      "withWeapon": 0,
+      "withoutWeapon": 383,
+      "withArmor": 0,
+      "withoutArmor": 383,
+      "withCarriedWeapon": 149,
+      "withCarriedArmor": 128
+    }
+  },
+  "matrix": {
+    "scout:aggressive": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 8,
+        "rate": 0.4,
+        "neverWeaponGames": 12,
+        "bySource": {
+          "craft": 5,
+          "pickup": 3
+        },
+        "medianTime": 13.5,
+        "averageTime": 13.25
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 6,
+        "rate": 0.3,
+        "craftEvents": 10
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        }
+      },
+      "highTierPlayerGames": 1,
+      "highTierPlayerRate": 0.05,
+      "encounter": {
+        "games": 5,
+        "gameRate": 0.25,
+        "starts": 5,
+        "attacks": 248,
+        "guards": 118,
+        "escapes": 198,
+        "stationaryEscapes": 58,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "禁区侵蚀": 4,
+          "战斗": 15
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 19,
+        "withArmor": 0,
+        "withoutArmor": 19,
+        "withCarriedWeapon": 7,
+        "withCarriedArmor": 6
+      }
+    },
+    "scout:cautious": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 5,
+        "rate": 0.25,
+        "neverWeaponGames": 15,
+        "bySource": {
+          "craft": 5,
+          "pickup": 0
+        },
+        "medianTime": 17,
+        "averageTime": 13
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 5,
+        "rate": 0.25,
+        "craftEvents": 7
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 2
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        }
+      },
+      "highTierPlayerGames": 1,
+      "highTierPlayerRate": 0.05,
+      "encounter": {
+        "games": 0,
+        "gameRate": 0,
+        "starts": 0,
+        "attacks": 240,
+        "guards": 44,
+        "escapes": 427,
+        "stationaryEscapes": 164,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 14,
+          "衰竭": 3,
+          "禁区侵蚀": 1
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 18,
+        "withArmor": 0,
+        "withoutArmor": 18,
+        "withCarriedWeapon": 3,
+        "withCarriedArmor": 4
+      }
+    },
+    "scout:collector": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 12,
+        "rate": 0.6,
+        "neverWeaponGames": 8,
+        "bySource": {
+          "craft": 6,
+          "pickup": 6
+        },
+        "medianTime": 8.5,
+        "averageTime": 11.25
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 8,
+        "rate": 0.4,
+        "craftEvents": 12
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 3
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 2
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        }
+      },
+      "highTierPlayerGames": 2,
+      "highTierPlayerRate": 0.1,
+      "encounter": {
+        "games": 0,
+        "gameRate": 0,
+        "starts": 0,
+        "attacks": 234,
+        "guards": 32,
+        "escapes": 405,
+        "stationaryEscapes": 145,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 17,
+          "衰竭": 2
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 19,
+        "withArmor": 0,
+        "withoutArmor": 19,
+        "withCarriedWeapon": 11,
+        "withCarriedArmor": 12
+      }
+    },
+    "scout:opportunist": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 8,
+        "rate": 0.4,
+        "neverWeaponGames": 12,
+        "bySource": {
+          "craft": 3,
+          "pickup": 5
+        },
+        "medianTime": 6,
+        "averageTime": 6.5
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 4,
+        "rate": 0.2,
+        "craftEvents": 5
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 4
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 4
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        }
+      },
+      "highTierPlayerGames": 2,
+      "highTierPlayerRate": 0.1,
+      "encounter": {
+        "games": 5,
+        "gameRate": 0.25,
+        "starts": 5,
+        "attacks": 254,
+        "guards": 45,
+        "escapes": 290,
+        "stationaryEscapes": 83,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 17,
+          "衰竭": 3
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 20,
+        "withArmor": 0,
+        "withoutArmor": 20,
+        "withCarriedWeapon": 8,
+        "withCarriedArmor": 5
+      }
+    },
+    "scout:random": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 10,
+        "rate": 0.5,
+        "neverWeaponGames": 10,
+        "bySource": {
+          "craft": 6,
+          "pickup": 4
+        },
+        "medianTime": 11,
+        "averageTime": 11.7
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 7,
+        "rate": 0.35,
+        "craftEvents": 9
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 2
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 2
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        }
+      },
+      "highTierPlayerGames": 2,
+      "highTierPlayerRate": 0.1,
+      "encounter": {
+        "games": 2,
+        "gameRate": 0.1,
+        "starts": 2,
+        "attacks": 235,
+        "guards": 54,
+        "escapes": 269,
+        "stationaryEscapes": 71,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 13,
+          "衰竭": 4,
+          "禁区侵蚀": 2,
+          "研究设施异常": 1
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 20,
+        "withArmor": 0,
+        "withoutArmor": 20,
+        "withCarriedWeapon": 10,
+        "withCarriedArmor": 5
+      }
+    },
+    "fighter:aggressive": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 6,
+        "rate": 0.3,
+        "neverWeaponGames": 14,
+        "bySource": {
+          "craft": 5,
+          "pickup": 1
+        },
+        "medianTime": 10,
+        "averageTime": 10.5
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 5,
+        "rate": 0.25,
+        "craftEvents": 6
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 2,
+          "playerRate": 0.1,
+          "allActorCraftEvents": 4
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        }
+      },
+      "highTierPlayerGames": 2,
+      "highTierPlayerRate": 0.1,
+      "encounter": {
+        "games": 4,
+        "gameRate": 0.2,
+        "starts": 5,
+        "attacks": 281,
+        "guards": 130,
+        "escapes": 266,
+        "stationaryEscapes": 116,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 17,
+          "衰竭": 2,
+          "禁区侵蚀": 1
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 20,
+        "withArmor": 0,
+        "withoutArmor": 20,
+        "withCarriedWeapon": 6,
+        "withCarriedArmor": 8
+      }
+    },
+    "fighter:cautious": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 8,
+        "rate": 0.4,
+        "neverWeaponGames": 12,
+        "bySource": {
+          "craft": 3,
+          "pickup": 5
+        },
+        "medianTime": 6,
+        "averageTime": 6
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 6,
+        "rate": 0.3,
+        "craftEvents": 7
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 2
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 2,
+          "playerRate": 0.1,
+          "allActorCraftEvents": 2
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        }
+      },
+      "highTierPlayerGames": 3,
+      "highTierPlayerRate": 0.15,
+      "encounter": {
+        "games": 0,
+        "gameRate": 0,
+        "starts": 0,
+        "attacks": 175,
+        "guards": 25,
+        "escapes": 351,
+        "stationaryEscapes": 75,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 16,
+          "衰竭": 3,
+          "禁区侵蚀": 1
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 20,
+        "withArmor": 0,
+        "withoutArmor": 20,
+        "withCarriedWeapon": 8,
+        "withCarriedArmor": 11
+      }
+    },
+    "fighter:collector": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 8,
+        "rate": 0.4,
+        "neverWeaponGames": 12,
+        "bySource": {
+          "craft": 3,
+          "pickup": 5
+        },
+        "medianTime": 8,
+        "averageTime": 10.375
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 4,
+        "rate": 0.2,
+        "craftEvents": 7
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        }
+      },
+      "highTierPlayerGames": 1,
+      "highTierPlayerRate": 0.05,
+      "encounter": {
+        "games": 0,
+        "gameRate": 0,
+        "starts": 0,
+        "attacks": 154,
+        "guards": 25,
+        "escapes": 361,
+        "stationaryEscapes": 74,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 15,
+          "禁区侵蚀": 3,
+          "衰竭": 1
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 19,
+        "withArmor": 0,
+        "withoutArmor": 19,
+        "withCarriedWeapon": 7,
+        "withCarriedArmor": 9
+      }
+    },
+    "fighter:opportunist": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 6,
+        "rate": 0.3,
+        "neverWeaponGames": 14,
+        "bySource": {
+          "craft": 3,
+          "pickup": 3
+        },
+        "medianTime": 12,
+        "averageTime": 11.833333333333334
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 4,
+        "rate": 0.2,
+        "craftEvents": 4
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        }
+      },
+      "highTierPlayerGames": 1,
+      "highTierPlayerRate": 0.05,
+      "encounter": {
+        "games": 6,
+        "gameRate": 0.3,
+        "starts": 7,
+        "attacks": 264,
+        "guards": 61,
+        "escapes": 309,
+        "stationaryEscapes": 113,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 15,
+          "衰竭": 3,
+          "禁区侵蚀": 2
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 20,
+        "withArmor": 0,
+        "withoutArmor": 20,
+        "withCarriedWeapon": 6,
+        "withCarriedArmor": 7
+      }
+    },
+    "fighter:random": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 7,
+        "rate": 0.35,
+        "neverWeaponGames": 13,
+        "bySource": {
+          "craft": 4,
+          "pickup": 3
+        },
+        "medianTime": 11,
+        "averageTime": 10.714285714285714
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 6,
+        "rate": 0.3,
+        "craftEvents": 6
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 4
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        }
+      },
+      "highTierPlayerGames": 0,
+      "highTierPlayerRate": 0,
+      "encounter": {
+        "games": 3,
+        "gameRate": 0.15,
+        "starts": 3,
+        "attacks": 215,
+        "guards": 49,
+        "escapes": 293,
+        "stationaryEscapes": 70,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 16,
+          "研究设施异常": 2,
+          "禁区侵蚀": 2
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 20,
+        "withArmor": 0,
+        "withoutArmor": 20,
+        "withCarriedWeapon": 7,
+        "withCarriedArmor": 6
+      }
+    },
+    "engineer:aggressive": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 10,
+        "rate": 0.5,
+        "neverWeaponGames": 10,
+        "bySource": {
+          "craft": 5,
+          "pickup": 5
+        },
+        "medianTime": 8.5,
+        "averageTime": 12
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 5,
+        "rate": 0.25,
+        "craftEvents": 6
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 2
+        }
+      },
+      "highTierPlayerGames": 2,
+      "highTierPlayerRate": 0.1,
+      "encounter": {
+        "games": 1,
+        "gameRate": 0.05,
+        "starts": 1,
+        "attacks": 271,
+        "guards": 139,
+        "escapes": 294,
+        "stationaryEscapes": 118,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 15,
+          "衰竭": 2,
+          "禁区侵蚀": 2
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 19,
+        "withArmor": 0,
+        "withoutArmor": 19,
+        "withCarriedWeapon": 9,
+        "withCarriedArmor": 5
+      }
+    },
+    "engineer:cautious": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 11,
+        "rate": 0.55,
+        "neverWeaponGames": 9,
+        "bySource": {
+          "craft": 7,
+          "pickup": 4
+        },
+        "medianTime": 7,
+        "averageTime": 10.090909090909092
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 9,
+        "rate": 0.45,
+        "craftEvents": 12
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 2
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 2
+        }
+      },
+      "highTierPlayerGames": 2,
+      "highTierPlayerRate": 0.1,
+      "encounter": {
+        "games": 0,
+        "gameRate": 0,
+        "starts": 0,
+        "attacks": 222,
+        "guards": 31,
+        "escapes": 546,
+        "stationaryEscapes": 233,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 14,
+          "禁区侵蚀": 2,
+          "衰竭": 3
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 19,
+        "withArmor": 0,
+        "withoutArmor": 19,
+        "withCarriedWeapon": 10,
+        "withCarriedArmor": 2
+      }
+    },
+    "engineer:collector": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 13,
+        "rate": 0.65,
+        "neverWeaponGames": 7,
+        "bySource": {
+          "craft": 10,
+          "pickup": 3
+        },
+        "medianTime": 9,
+        "averageTime": 9.153846153846153
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 10,
+        "rate": 0.5,
+        "craftEvents": 16
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 2
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 2,
+          "playerRate": 0.1,
+          "allActorCraftEvents": 2
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        }
+      },
+      "highTierPlayerGames": 4,
+      "highTierPlayerRate": 0.2,
+      "encounter": {
+        "games": 0,
+        "gameRate": 0,
+        "starts": 0,
+        "attacks": 169,
+        "guards": 13,
+        "escapes": 377,
+        "stationaryEscapes": 95,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 14,
+          "禁区侵蚀": 3,
+          "衰竭": 2
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 19,
+        "withArmor": 0,
+        "withoutArmor": 19,
+        "withCarriedWeapon": 12,
+        "withCarriedArmor": 8
+      }
+    },
+    "engineer:opportunist": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 8,
+        "rate": 0.4,
+        "neverWeaponGames": 12,
+        "bySource": {
+          "craft": 5,
+          "pickup": 3
+        },
+        "medianTime": 15.5,
+        "averageTime": 21.5
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 6,
+        "rate": 0.3,
+        "craftEvents": 6
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 2
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 2
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        }
+      },
+      "highTierPlayerGames": 1,
+      "highTierPlayerRate": 0.05,
+      "encounter": {
+        "games": 1,
+        "gameRate": 0.05,
+        "starts": 1,
+        "attacks": 243,
+        "guards": 44,
+        "escapes": 323,
+        "stationaryEscapes": 125,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 18,
+          "衰竭": 1,
+          "禁区侵蚀": 1
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 20,
+        "withArmor": 0,
+        "withoutArmor": 20,
+        "withCarriedWeapon": 8,
+        "withCarriedArmor": 8
+      }
+    },
+    "engineer:random": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 7,
+        "rate": 0.35,
+        "neverWeaponGames": 13,
+        "bySource": {
+          "craft": 5,
+          "pickup": 2
+        },
+        "medianTime": 6,
+        "averageTime": 6.285714285714286
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 6,
+        "rate": 0.3,
+        "craftEvents": 6
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 4
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        }
+      },
+      "highTierPlayerGames": 1,
+      "highTierPlayerRate": 0.05,
+      "encounter": {
+        "games": 4,
+        "gameRate": 0.2,
+        "starts": 5,
+        "attacks": 215,
+        "guards": 47,
+        "escapes": 261,
+        "stationaryEscapes": 59,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 16,
+          "衰竭": 1,
+          "禁区侵蚀": 1
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 18,
+        "withArmor": 0,
+        "withoutArmor": 18,
+        "withCarriedWeapon": 7,
+        "withCarriedArmor": 5
+      }
+    },
+    "medic:aggressive": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 4,
+        "rate": 0.2,
+        "neverWeaponGames": 16,
+        "bySource": {
+          "craft": 2,
+          "pickup": 2
+        },
+        "medianTime": 5.5,
+        "averageTime": 7.25
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 2,
+        "rate": 0.1,
+        "craftEvents": 3
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 4
+        }
+      },
+      "highTierPlayerGames": 1,
+      "highTierPlayerRate": 0.05,
+      "encounter": {
+        "games": 1,
+        "gameRate": 0.05,
+        "starts": 1,
+        "attacks": 321,
+        "guards": 86,
+        "escapes": 239,
+        "stationaryEscapes": 81,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "禁区侵蚀": 2,
+          "战斗": 15,
+          "衰竭": 1
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 18,
+        "withArmor": 0,
+        "withoutArmor": 18,
+        "withCarriedWeapon": 4,
+        "withCarriedArmor": 6
+      }
+    },
+    "medic:cautious": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 9,
+        "rate": 0.45,
+        "neverWeaponGames": 11,
+        "bySource": {
+          "craft": 3,
+          "pickup": 6
+        },
+        "medianTime": 11,
+        "averageTime": 10.11111111111111
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 5,
+        "rate": 0.25,
+        "craftEvents": 7
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        }
+      },
+      "highTierPlayerGames": 2,
+      "highTierPlayerRate": 0.1,
+      "encounter": {
+        "games": 0,
+        "gameRate": 0,
+        "starts": 0,
+        "attacks": 181,
+        "guards": 20,
+        "escapes": 430,
+        "stationaryEscapes": 136,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 16,
+          "禁区侵蚀": 1,
+          "衰竭": 1
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 18,
+        "withArmor": 0,
+        "withoutArmor": 18,
+        "withCarriedWeapon": 8,
+        "withCarriedArmor": 5
+      }
+    },
+    "medic:collector": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 10,
+        "rate": 0.5,
+        "neverWeaponGames": 10,
+        "bySource": {
+          "craft": 5,
+          "pickup": 5
+        },
+        "medianTime": 6.5,
+        "averageTime": 8
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 7,
+        "rate": 0.35,
+        "craftEvents": 9
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        }
+      },
+      "highTierPlayerGames": 2,
+      "highTierPlayerRate": 0.1,
+      "encounter": {
+        "games": 0,
+        "gameRate": 0,
+        "starts": 0,
+        "attacks": 221,
+        "guards": 21,
+        "escapes": 460,
+        "stationaryEscapes": 173,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 15,
+          "衰竭": 2,
+          "禁区侵蚀": 1
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 18,
+        "withArmor": 0,
+        "withoutArmor": 18,
+        "withCarriedWeapon": 8,
+        "withCarriedArmor": 10
+      }
+    },
+    "medic:opportunist": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 6,
+        "rate": 0.3,
+        "neverWeaponGames": 14,
+        "bySource": {
+          "craft": 5,
+          "pickup": 1
+        },
+        "medianTime": 14,
+        "averageTime": 15
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 5,
+        "rate": 0.25,
+        "craftEvents": 5
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        }
+      },
+      "highTierPlayerGames": 1,
+      "highTierPlayerRate": 0.05,
+      "encounter": {
+        "games": 1,
+        "gameRate": 0.05,
+        "starts": 1,
+        "attacks": 259,
+        "guards": 45,
+        "escapes": 374,
+        "stationaryEscapes": 119,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 17,
+          "禁区侵蚀": 3
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 20,
+        "withArmor": 0,
+        "withoutArmor": 20,
+        "withCarriedWeapon": 6,
+        "withCarriedArmor": 2
+      }
+    },
+    "medic:random": {
+      "games": 20,
+      "healthyGames": 20,
+      "healthyRate": 1,
+      "firstWeapon": {
+        "games": 4,
+        "rate": 0.2,
+        "neverWeaponGames": 16,
+        "bySource": {
+          "craft": 3,
+          "pickup": 1
+        },
+        "medianTime": 11.5,
+        "averageTime": 13.75
+      },
+      "craftGoal": {
+        "setGames": 0,
+        "setRate": 0,
+        "setEvents": 0,
+        "completedGames": 0,
+        "completedRate": 0,
+        "completedEvents": 0
+      },
+      "intermediateCrafting": {
+        "games": 3,
+        "rate": 0.15,
+        "craftEvents": 3
+      },
+      "highTierWeapons": {
+        "field_spear": {
+          "name": "野外长矛",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        },
+        "steel_axe": {
+          "name": "钢刃斧",
+          "playerGames": 1,
+          "playerRate": 0.05,
+          "allActorCraftEvents": 1
+        },
+        "composite_bow": {
+          "name": "复合弓",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "insulated_pipe": {
+          "name": "绝缘铁管",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 1
+        },
+        "insulated_stun_rod": {
+          "name": "绝缘电击棒",
+          "playerGames": 0,
+          "playerRate": 0,
+          "allActorCraftEvents": 0
+        }
+      },
+      "highTierPlayerGames": 1,
+      "highTierPlayerRate": 0.05,
+      "encounter": {
+        "games": 3,
+        "gameRate": 0.15,
+        "starts": 3,
+        "attacks": 273,
+        "guards": 53,
+        "escapes": 289,
+        "stationaryEscapes": 90,
+        "zeroStaminaGuards": 0,
+        "zeroStaminaFlees": 0
+      },
+      "deaths": {
+        "causes": {
+          "战斗": 18,
+          "禁区侵蚀": 1
+        },
+        "withWeapon": 0,
+        "withoutWeapon": 19,
+        "withArmor": 0,
+        "withoutArmor": 19,
+        "withCarriedWeapon": 4,
+        "withCarriedArmor": 4
+      }
+    }
+  }
+}

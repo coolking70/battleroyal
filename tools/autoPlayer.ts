@@ -30,6 +30,7 @@ import {
   type LegalAction,
   type LegalActionCategory,
 } from '../src/core/legalActions';
+import { getEquippedArmor, getEquippedWeapon } from '../src/core/inventory';
 import { tryGetItem } from '../src/data/items';
 import type { Command, Combatant, GameEvent, GameState, Personality } from '../src/core/types';
 
@@ -84,6 +85,23 @@ export interface AutoGameOptions {
   stallLimit?: number;
   /** 是否保留最终状态引用（批量模拟时关掉可省内存），默认 false */
   keepFinalState?: boolean;
+  /** 是否保留未被事件裁剪的完整事件流（仅诊断工具使用） */
+  keepEventTrace?: boolean;
+}
+
+/** 玩家死亡瞬间的只读诊断快照，不参与任何规则结算。 */
+export interface PlayerDeathSnapshot {
+  time: number;
+  cause: string | null;
+  killerId: string | null;
+  zoneId: string;
+  equippedWeaponId: string | null;
+  equippedArmorId: string | null;
+  carriedWeaponIds: string[];
+  carriedArmorIds: string[];
+  inventorySize: number;
+  stamina: number;
+  hp: number;
 }
 
 export interface AutoGameResult {
@@ -191,6 +209,13 @@ export interface AutoGameResult {
 
   /** 仅在 keepFinalState 为 true 时存在 */
   finalState?: GameState;
+  /** 仅在 keepEventTrace 为 true 时存在；不写入游戏存档或浏览器状态 */
+  eventTrace?: GameEvent[];
+  /** 自动玩家命令执行前玩家恰好 0 体力时的应急动作次数 */
+  zeroStaminaGuardCommands: number;
+  zeroStaminaFleeCommands: number;
+  /** 玩家死亡前最后一次可观察到的装备/资源快照 */
+  playerDeathSnapshot: PlayerDeathSnapshot | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -360,7 +385,8 @@ export function decideAutoPlayerCommand(
       return { command: { type: 'ATTACK_NEARBY', style }, reason: d.reason };
     }
     case 'guard':
-      // 摆出防御姿态：消耗体力但减免下一击，与 NPC 共用同一套规则
+      // 摆出防御姿态：通常消耗体力；恰好 0 体力由共享成本层提供应急免费防御。
+      // 玩家与 NPC 共用同一套规则。
       return { command: { type: 'GUARD' }, reason: d.reason };
     case 'use_skill':
       // 释放角色技能：与 NPC 共用同一套规则（Phase 3 Step 3）
@@ -478,6 +504,9 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
   let fallbackSteps = 0;
   let stallCounter = 0;
   let lastTime = s.time;
+  let zeroStaminaGuardCommands = 0;
+  let zeroStaminaFleeCommands = 0;
+  let playerDeathSnapshot: PlayerDeathSnapshot | null = null;
   // Phase 3A-1：事件日志会被 pruneEvents 裁剪（miss 是 minor 会被优先丢弃），
   // 统计必须基于**全量事件流**，否则命中率会被系统性高估。
   // 注意：pruneEvents 会从数组头部裁剪旧事件，按长度切片会被打乱，
@@ -530,6 +559,8 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
     }
 
     // ---- 只走正式命令通道 ----
+    const playerBeforeAction = getPlayer(s);
+    const playerBeforeActionStamina = playerBeforeAction.stamina;
     let res = executeCommand(s, chosen.command);
 
     if (!res.ok) {
@@ -562,6 +593,15 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
       chosen = fb;
     }
 
+    if (res.ok) {
+      if (chosen.command.type === 'GUARD' && playerBeforeActionStamina === 0) {
+        zeroStaminaGuardCommands += 1;
+      }
+      if (chosen.command.type === 'FLEE' && playerBeforeActionStamina === 0) {
+        zeroStaminaFleeCommands += 1;
+      }
+    }
+
     bump(commandCounts, chosen.command.type);
     if (chosen.advancesTime) timeAdvancingSteps += 1;
     if (chosen.category === 'resolution') resolutionSteps += 1;
@@ -569,6 +609,28 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
     s = res.state;
     // 增量收集全量事件（不受 pruneEvents 影响）
     captureNewEvents();
+    if (!playerDeathSnapshot && !getPlayer(s).alive) {
+      const deathEvent = [...fullEvents]
+        .reverse()
+        .find((event) => event.type === 'CHARACTER_DIED' && event.targetId === s.playerId);
+      playerDeathSnapshot = {
+        time: s.time,
+        cause: typeof deathEvent?.metadata?.cause === 'string' ? deathEvent.metadata.cause : null,
+        killerId: deathEvent?.actorId ?? getPlayer(s).killedBy,
+        zoneId: playerBeforeAction.currentZoneId,
+        equippedWeaponId: getEquippedWeapon(playerBeforeAction)?.itemId ?? null,
+        equippedArmorId: getEquippedArmor(playerBeforeAction)?.itemId ?? null,
+        carriedWeaponIds: playerBeforeAction.inventory
+          .filter((stack) => tryGetItem(stack.itemId)?.category === 'weapon')
+          .map((stack) => stack.itemId),
+        carriedArmorIds: playerBeforeAction.inventory
+          .filter((stack) => tryGetItem(stack.itemId)?.category === 'armor')
+          .map((stack) => stack.itemId),
+        inventorySize: playerBeforeAction.inventory.length,
+        stamina: playerBeforeAction.stamina,
+        hp: playerBeforeAction.hp,
+      };
+    }
     steps += 1;
 
     // ---- 每步体检 2：时间停滞 ----
@@ -597,7 +659,11 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
     resolutionSteps,
     fallbackSteps,
     commandCounts,
+    zeroStaminaGuardCommands,
+    zeroStaminaFleeCommands,
+    playerDeathSnapshot,
     keepFinalState: options.keepFinalState ?? false,
+    keepEventTrace: options.keepEventTrace ?? false,
     fullEvents,
   });
 }
@@ -615,6 +681,10 @@ interface ResultContext {
   resolutionSteps: number;
   fallbackSteps: number;
   commandCounts: Record<string, number>;
+  zeroStaminaGuardCommands: number;
+  zeroStaminaFleeCommands: number;
+  playerDeathSnapshot: PlayerDeathSnapshot | null;
+  keepEventTrace: boolean;
   keepFinalState: boolean;
   fullEvents: GameEvent[];
 }
@@ -690,6 +760,9 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
     resolutionSteps: ctx.resolutionSteps,
     fallbackSteps: ctx.fallbackSteps,
     commandCounts: ctx.commandCounts,
+    zeroStaminaGuardCommands: ctx.zeroStaminaGuardCommands,
+    zeroStaminaFleeCommands: ctx.zeroStaminaFleeCommands,
+    playerDeathSnapshot: ctx.playerDeathSnapshot,
 
     ...scanPhase3aCounters(
       { ...s, events: ctx.fullEvents.length > 0 ? ctx.fullEvents : s.events },
@@ -698,6 +771,7 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
   };
 
   if (ctx.keepFinalState) result.finalState = s;
+  if (ctx.keepEventTrace) result.eventTrace = ctx.fullEvents.slice();
   return result;
 }
 
