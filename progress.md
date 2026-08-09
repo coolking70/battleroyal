@@ -232,3 +232,251 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   `reports/phase4b-final-ux-debt.json`, `PHASE4B_PR_DESCRIPTION.md` and the
   Phase 4C candidate list. Human real-device/screen-reader review remains
   explicitly classified as `HUMAN-PLAYTEST-NEEDED`.
+
+## Phase 4C-1 progress (2026-08-10)
+
+- Started `codex/phase4c1-synthesis-weapons` from `main` merge `bf6e810`.
+- Expanded the data layer from 23 to 29 items and 11 to 17 recipes. Added
+  intermediate weapon components and five cross-zone high-tier paths; every
+  rare pool now contains at least one weapon and hospital has a stick fallback
+  in both base and rare pools.
+- Added the presentation-only `craftPathPresentation.ts` and CraftPanel guidance
+  for “weapons mainly come from crafting”, intermediate steps, raw material
+  gaps, static source zones, and expected emoji fallback for new no-art items.
+- Confirmed the existing NPC `findUpgradeRecipe` can complete the chain without
+  touching `src/core/**`; added item-integrity, deterministic-RNG fixture,
+  information-boundary, NPC-chain, fallback, and browser evidence coverage.
+- Local suite is 65 files / 1272 tests PASS. Clean production preview evidence
+  covers 1280×720 and 390×844 with zero console/page errors. The required 500
+  game regression and 200-game craft reachability observation are recorded in
+  `reports/phase4c1-balance.*` and `reports/phase4c1-craft-reachability.json`.
+
+## Phase 4C-2 Step 1 progress (2026-08-10)
+
+- Moved hospital `stick` out of `basePool` while retaining it in `rarePool`,
+  restoring the hospital direct-weapon estimate below the forest baseline.
+- Corrected the CraftPanel recommendation label to distinguish static source
+  coverage from the existing publicly visible runtime supply band.
+- Step 1 targeted tests and typecheck pass; the production preview/client run
+  shows a playable hospital start with no console errors. The small fix is
+  ready for its isolated commit before the main 4C-2 work.
+## Phase 4C-2 progress (2026-08-10)
+
+- Completed the isolated first fix in commit `3e6bebc`: hospital `stick` remains only in `rarePool`, and the CraftPanel source label now distinguishes static source coverage from the public runtime supply band.
+- Added a data-layer recipe visibility seam with all 17 current recipes explicitly `visible`; no hidden/unlock behavior or core changes were introduced.
+- Added pure presentation logic for automatic weapon-goal suggestions, persistent dependency-step status, current subgoal progression, and the player-only latest craft feedback.
+- Added the PlanningDrawer `图鉴` tab and a full dependency-tree codex with static material source zones, item summaries, missing-material display, and VisualImage fallback for new items.
+- Added unit/UI coverage and a clean production Playwright evidence spec. Targeted tests, typecheck, production build, runtime client smoke, and the new browser evidence pass; browser evidence records zero console/page errors.
+- Updating the fixed Phase 3A-1 observation seed from `STAT-11` to `STAT-1` preserves the research-anomaly assertion after the required hospital pool change altered the deterministic loot/RNG stream.
+
+## Phase 4C-3 progress (2026-08-10)
+
+- Implemented the minimal core fix for the zero-stamina deadlock: when every adjacent zone is restricted, FLEE now succeeds as a stationary disengagement and records a successful `no_exit` escape event, so the pursuit branch is not entered.
+- Made GUARD free only at exactly 0 stamina; a character with 1 stamina still needs the configured 2-point cost. This uses the existing shared action-cost path, with no new state field or passive recovery.
+- Updated EncounterPanel’s zero/partial-stamina guidance and flee accessibility text, and added focused player/NPC symmetry and last-safe-zone regression tests. Targeted suite: 4 files / 45 tests PASS.
+- Ran the required develop-web-game Playwright client against the current UI after the change; the production-style exploration shell rendered with no reported console/page errors. The Phase 4C-3 implementation is included in the pushed baseline; its focused evidence and report remain available for the handoff.
+
+## Phase 4C-4 progress (2026-08-10)
+
+- Started the core-loop diagnosis before considering any economy adjustment. No
+  gameplay rules, values, `src/core/**`, `src/data/**`, assets, manifests,
+  version, or Save schema were changed.
+- Extended the deterministic auto-player diagnostics with optional full event
+  traces, first-weapon/death-equipment inputs, and zero-stamina emergency-action
+  counters. Added `tools/observeCoreLoopDiagnosis.ts` for a reproducible
+  character × policy × seed matrix, with health checks separated from
+  win-rate/balance observations.
+- Added two regression tests proving diagnostic mode is non-invasive and its
+  counters/snapshots remain within the formal command/event output.
+- Typecheck, the Phase 4C-3 targeted suite (18 tests), and the new Phase 4C-4
+  diagnostic suite (2 tests) pass. The required browser smoke and multi-seed
+  diagnosis plus clean-preview evidence are next.
+- Completed the 400-game core-loop matrix: requested=actual 400, healthy 400,
+  timeout/deadlock/illegal/hard-limit 0. First-weapon acquisition was 40.0%
+  (93 craft / 67 pickup among 160 weapon games), player high-tier completion
+  was 8.0%, and combat caused 313 of 383 player deaths. The report records that
+  the auto-player does not issue EQUIP, so carried-item and equipped-item
+  observations are kept separate.
+- Added `PHASE4C4_REPORT.md` and a clean production-preview evidence spec;
+  1280×720 exploration/crafting and 390×844 zero-stamina encounter snapshots
+  pass with zero console/page errors. Economy tuning is deferred pending a
+  representative goal-adoption/equip loop and human playtest.
+- Final gates pass after clean `npm ci`: 68 files / 1283 tests, typecheck/build,
+  save/dependency/art/provenance/security audits, 500-game health regression,
+  production `npm audit --omit=dev` (0 vulnerabilities), and the final clean
+  preview evidence. Remaining handoff is intentional commit/push and CI check;
+  real-device/AT playtest items stay classified as HUMAN-PLAYTEST-NEEDED.
+
+## Phase 4C-5 progress (2026-08-10)
+
+- Added the presentation-only equipment handoff layer. Search and craft result
+  cards now expose the player's own “装备 / 立即装备” action and preserve a
+  visible “已装备” result after the parent dispatches the formal `EQUIP`
+  command. Inventory equipment candidates now choose the strongest item in the
+  player's own slot rather than the first stack.
+- Added regression coverage for search/craft handoff callbacks, strongest
+  candidate selection, result lifecycle after `ITEM_EQUIPPED`, and a
+  representative command-channel build loop. No component directly mutates
+  equipment state.
+- Added an optional representative diagnostic mode to `tools/autoPlayer.ts` and
+  `tools/observeCoreLoopDiagnosis.ts`. Across two 400-game matrices, both had
+  requested=actual 400 and healthy 400; the representative mode set a goal in
+  400/400 games and produced player equipment events in 100/400 games. Its lower
+  weapon rate is recorded as strategy-calibration evidence, not a balance verdict.
+- Added `PHASE4C5_REPORT.md`, clean production-preview evidence for 1280×720 and
+  390×844, and `reports/phase4c5-balance.json` plus the two diagnosis reports.
+  Final local suite is 69 files / 1287 tests; typecheck/build, clean `npm ci`,
+  save/dependency/art/provenance/security gates, 500-game health regression,
+  production `npm audit --omit=dev`, and browser evidence all pass with zero
+  console/page errors. Human touch/screen-reader/long-session validation remains
+  HUMAN-PLAYTEST-NEEDED.
+
+## Phase 4C-6 progress (2026-08-10)
+
+- Audited the Phase 4C-5 representative route and found a real guidance defect:
+  core recommendations only inspected direct recipe ingredients, so a target
+  such as 野外长矛 recommended the unsearchable intermediate 加固握把 instead of
+  its public raw materials.
+- Fixed the read-only route guide in `src/core/craftGuide.ts` to expand visible
+  recipe dependencies to raw materials while consuming the player's own held
+  intermediates first. It still never reads `zone.loot`; hidden recipe seams are
+  not recursively exposed.
+- Stabilized the optional representative diagnostic policy: it retains a route
+  target, searches after arrival, and rotates only after two no-yield searches.
+  This removes residential/factory oscillation without changing gameplay rules.
+- Same-seed paired observation (`PHASE4C5-REP`) improved goal completion from
+  13/400 to 140/400, first-weapon acquisition from 59/400 to 315/400, and player
+  equipment-event games from 100/400 to 341/400; both runs were 400/400 healthy.
+- Added nested-route unit and information-boundary regressions plus clean
+  production-preview evidence for 1280×720 and 390×844. Screenshots visibly
+  show raw-material gaps, public source zones and the current subgoal; preview
+  console/page errors are 0. Phase 4C-6 report, gates, commit, push and CI
+  confirmation are complete; CI run `31331617407` is green.
+
+## Phase 4C-7 progress (2026-08-10)
+
+- Added `tools/observeRoutePlaytest.ts`, an explicitly labelled
+  `SEMI_AUTOMATED_ROUTE_OBSERVATION`. It records only player milestones through
+  the existing representative command loop: target adoption, raw material found
+  vs picked, dependency craft, high-tier weapon, equipment, encounter, goal
+  completion and player death cause/time.
+- Added two regression tests for deterministic health, player-only data scope and
+  the explicit `NOT_PERFORMED` human-playtest marker. `HUMAN_PLAYTEST_CHECKLIST.md`
+  remains untouched and blank.
+- Full 20-route observation is complete: requested=actual 20, trustworthy 20/20;
+  target adoption 20, raw-material observation 20, dependency craft 15, weapon
+  obtained 19, equipment 19, first encounter 18 and target completion 9.
+  These are diagnostic observations, not win-rate or economy gates.
+- Current finding: the formal route is executable and supply is observed in all
+  20 routes, so no loot/prescription/combat tuning is justified by this sample.
+  The remaining 8 routes classified as `weapon-not-converted` need human review
+  to distinguish target choice, encounter pressure and route comprehension.
+- Final local gates are green: clean `npm ci`, 70 files / 1292 tests, typecheck,
+  build, save/dependency/art/security audits, 500-game engine health regression,
+  production dependency audit and clean production-preview evidence. The
+  generated historical audit timestamps were restored and the pre-existing save
+  audit edits remain unstaged. Final GitHub Actions CI run `31332418477` is also green.
+- Next handoff: complete a real human playtest using a copied checklist before
+  considering any local economy adjustment; do not treat this semi-automated
+  report as human evidence.
+
+## Phase 4C-8 progress (2026-08-10)
+
+- Audited the post-game surface and found that `ResultScreen` bypassed the existing
+  player visibility filter for its key-event timeline, while ranking rows exposed
+  NPC planner personality labels.
+- Fixed both at the presentation layer only: the timeline now reuses
+  `visibleEventsForPlayer`, and NPC personality labels are omitted while the
+  player's own strategy summary remains. No core/data/rules/assets/save changes.
+- Added a regression covering hidden NPC goal/encounter events, retained player and
+  public death events, and the absence of NPC planner labels.
+- Targeted tests (6) and typecheck pass; production build and the required
+  develop-web-game client smoke pass with no reported console/page errors.
+- Human result-screen, touch, screen-reader and long-session review remain
+  HUMAN-PLAYTEST-NEEDED; `HUMAN_PLAYTEST_CHECKLIST.md` remains untouched.
+
+## Phase 4C-9 progress (2026-08-10)
+
+- Audited existing information-boundary paths and found `ZoneMap` exposed
+  `groundItems.length` for every zone, including remote zones. This leaked the
+  existence/count of undiscovered ground drops despite the 4C-2 boundary.
+- Restricted the map cue to the current zone only; current-zone ground item
+  details and pickup commands remain available, while DebugPanel retains the
+  complete debug view.
+- Added unit coverage plus clean production-preview browser evidence proving
+  current-vs-remote behavior, no horizontal overflow and zero console/page errors.
+- Full suite is now 70 files / 1294 tests; clean `npm ci`, typecheck, build,
+  save/dependency/art/security gates, 500-game engine-health regression and
+  production `npm audit --omit=dev` all pass. Human touch, screen-reader and
+  route-comprehension review remain HUMAN-PLAYTEST-NEEDED.
+
+## Phase 4C-10 progress (2026-08-10)
+
+- Cleared the development-toolchain security debt: upgraded Vite to 8.2.1,
+  Vitest to 4.1.10 and `@vitejs/plugin-react` to 6.0.5. The app version remains
+  `0.3.2`; no core/data/rule/save/art changes were made.
+- Adapted the explicit Node type inclusion and `VisualImage` fallback tests to
+  Vite 8's small-SVG data-URL behavior without weakening the fallback contract.
+- Clean `npm ci`, typecheck, build, 70 files / 1294 tests, save/dependency/art/
+  security gates, 500-game engine-health regression and both full/production
+  npm audits pass. Full and production audit totals are 0 vulnerabilities.
+- Re-ran clean production-preview browser evidence with zero console/page
+  errors, including the Phase 4C-9 remote-ground-drop information boundary and
+  the Web Game smoke snapshot. Human touch, screen-reader, and long-session
+  validation remain HUMAN-PLAYTEST-NEEDED.
+
+## Phase 4C-11 progress (2026-08-10)
+
+- Audited all production browser evidence and found two stale evidence defects:
+  the old `PENDING-0` live-search path could reach the result screen before a
+  pending pickup, and the responsive evidence still expected the pre-codex
+  two-tab planning UI. Neither was valid proof of the current product state.
+- Added a valid deterministic pending-pickup save fixture and updated the old
+  evidence to cover the current three-tab planning surface.
+- Closed the remaining code-verifiable drawer accessibility gap: open-drawer
+  Tab/Shift+Tab focus cycling, Escape close, trigger focus return,
+  `aria-labelledby`, and tab-to-tabpanel relationships. CSS wrappers preserve
+  the existing desktop/mobile layout.
+- Full production browser evidence is green at 14/14 with zero console/page
+  errors. The local suite is 70 files / 1295 tests; typecheck/build, save/
+  dependency/art/security audits and 500-game engine-health regression pass.
+  Human touch, screen-reader, and long-session validation remain
+  HUMAN-PLAYTEST-NEEDED.
+
+## Phase 4C-12 progress (2026-08-10)
+
+- Audited the result surface and found a real layout/accessibility gap: the
+  result content exceeded the viewport while `.result` vertically centered it,
+  placing the Hero and verdict above the initial viewport even though they were
+  present in the DOM.
+- Closed the gap with a semantic `main`/`h1` result heading, initial focus with
+  `preventScroll`, labelled result sections/table/timeline, and a top-aligned
+  scrollable result container. Existing `visibleEventsForPlayer` filtering and
+  the 4B/4C information boundary remain unchanged.
+- Added victory/defeat/draw unit assertions and a clean production-preview
+  evidence spec. The result evidence covers 1280×720 victory/draw and 390×844
+  defeat; all snapshots have scrollY=0, matching scroll widths, focused
+  `result-title`, and zero console/page errors. The complete browser suite is
+  15/15 green.
+- Final local gates are green: clean `npm ci`, 70 files / 1296 tests,
+  typecheck/build, save/dependency/art/security audits, 500-game engine-health
+  regression, and both npm audits at 0 vulnerabilities. Human touch,
+  screen-reader, long-session and full result-experience validation remain
+  HUMAN-PLAYTEST-NEEDED; `HUMAN_PLAYTEST_CHECKLIST.md` remains untouched.
+
+## Phase 4C-13 progress (2026-08-10)
+
+- Audited the remaining mobile candidate and found a concrete code gap: the
+  fixed action rail, planning drawer and drawer trigger used hard-coded bottom
+  offsets and did not consume `safe-area-inset-*` values.
+- Added top/right/bottom/left safe-area CSS variables, `100dvh` minimums,
+  safe-area-aware top/action rails and safe-area-aware drawer bounds/triggers.
+  Existing responsive information architecture and touch target sizes remain
+  unchanged.
+- Added a `hasTouch` clean-production Playwright spec across 1280×720,
+  1024×768, 768×1024, 844×390 and 390×844. It injects a 24px safe-area
+  contract, taps the drawer open/close controls, checks panel/actionbar
+  separation and asserts no horizontal overflow; console/page errors are 0.
+- Real-device safe-area behavior, touch feel, screen-reader phrasing and
+  long-session comfort remain HUMAN-PLAYTEST-NEEDED; the human checklist is
+  untouched.

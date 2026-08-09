@@ -163,8 +163,9 @@ export interface FleeActorResult extends ActorActionResult {
  *
  * 免费不等于无代价：
  * 1. 调用方仍会推进 1 个时间单位；
- * 2. 逃跑失败时敌人获得一次**追击**（同样要过体力闸门）；
+ * 2. 有可退区域但逃跑失败时敌人可能获得一次**追击**（同样要过体力闸门）；
  * 3. 追击伤害走正常结算，可以直接把人打死。
+ * 最后一个安全区没有可退区域时，`attemptFlee` 会成功原地脱离，不进入追击分支。
  */
 export function fleeActor(
   state: GameState,

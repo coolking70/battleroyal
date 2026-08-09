@@ -19,6 +19,7 @@ import { LOG_DISPLAY_COUNT } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { cx, stackLabel } from '../../utils/format';
 import { stackPresentation } from '../itemPresentation';
+import { getCraftGoalSuggestion, latestPlayerCraftFeedback } from '../craftPathPresentation';
 import { latestPlayerSearchFeedback } from '../searchPresentation';
 import { getZoneVisual } from '../visualAssets';
 import { zoneStatusMeta } from '../zonePresentation';
@@ -26,6 +27,7 @@ import { warningRemaining, zoneUrgencyMeta } from '../zonePresentation';
 import { latestInstantWorldEvent, sortWorldEvents } from '../worldEventPresentation';
 import { ActionBar } from '../components/ActionBar';
 import { CraftPanel } from '../components/CraftPanel';
+import { CraftingCodex } from '../components/CraftingCodex';
 import { EncounterPanel } from '../components/EncounterPanel';
 import { EventLog } from '../components/EventLog';
 import { Inventory } from '../components/Inventory';
@@ -44,7 +46,7 @@ interface GameScreenProps {
   onQuit: () => void;
 }
 
-type Tab = 'inventory' | 'craft';
+type Tab = 'inventory' | 'craft' | 'codex';
 
 /**
  * 世界事件横幅（Phase 3A Step 6）。
@@ -104,6 +106,14 @@ export function GameScreen({
   const recipeViews = useMemo(() => listRecipes(state, player), [state, player]);
   const craftGoalRecs = useMemo(
     () => getCraftGoalRecommendations(state, player),
+    [state, player],
+  );
+  const craftGoalSuggestion = useMemo(
+    () => getCraftGoalSuggestion(state, player),
+    [state, player],
+  );
+  const latestCraftFeedback = useMemo(
+    () => latestPlayerCraftFeedback(state, player),
     [state, player],
   );
   const logEvents = useMemo(
@@ -219,7 +229,13 @@ export function GameScreen({
               </div>
             )}
 
-            {searchFeedback && <SearchResultFeedback feedback={searchFeedback} />}
+            {searchFeedback && (
+              <SearchResultFeedback
+                feedback={searchFeedback}
+                player={player}
+                onEquip={(uid) => dispatch({ type: 'EQUIP', uid })}
+              />
+            )}
 
             {pending && (
               <PendingPickupPanel
@@ -350,50 +366,84 @@ export function GameScreen({
           <section className="panel planning-panel">
             <div className="panel-title">
               <span>规划区</span>
-              <span className="faint">背包 · 合成</span>
+              <span className="faint">背包 · 合成 · 图鉴</span>
             </div>
             <div className="tabs planning-tabs" role="tablist" aria-label="规划面板">
               <button
+                id="planning-tab-inventory"
                 role="tab"
                 aria-selected={tab === 'inventory'}
+                aria-controls="planning-tabpanel-inventory"
                 className={cx(tab === 'inventory' && 'active')}
                 onClick={() => setTab('inventory')}
               >
                 背包
               </button>
               <button
+                id="planning-tab-craft"
                 role="tab"
                 aria-selected={tab === 'craft'}
+                aria-controls="planning-tabpanel-craft"
                 className={cx(tab === 'craft' && 'active')}
                 onClick={() => setTab('craft')}
               >
                 合成
               </button>
+              <button
+                id="planning-tab-codex"
+                role="tab"
+                aria-selected={tab === 'codex'}
+                aria-controls="planning-tabpanel-codex"
+                className={cx(tab === 'codex' && 'active')}
+                onClick={() => setTab('codex')}
+              >
+                图鉴
+              </button>
             </div>
 
             {tab === 'inventory' && (
-              <Inventory
-                player={player}
-                disabled={lockedAll}
-                onUse={(uid) => dispatch({ type: 'USE_ITEM', uid })}
-                onEquip={(uid) => dispatch({ type: 'EQUIP', uid })}
-                onUnequip={(slot) => dispatch({ type: 'UNEQUIP', slot })}
-                onDrop={(uid) => dispatch({ type: 'DROP_ITEM', uid })}
-              />
+              <div className="planning-tabpanel" role="tabpanel" id="planning-tabpanel-inventory" aria-labelledby="planning-tab-inventory">
+                <Inventory
+                  player={player}
+                  disabled={lockedAll}
+                  onUse={(uid) => dispatch({ type: 'USE_ITEM', uid })}
+                  onEquip={(uid) => dispatch({ type: 'EQUIP', uid })}
+                  onUnequip={(slot) => dispatch({ type: 'UNEQUIP', slot })}
+                  onDrop={(uid) => dispatch({ type: 'DROP_ITEM', uid })}
+                />
+              </div>
             )}
 
             {tab === 'craft' && (
-              <CraftPanel
-                views={recipeViews}
-                disabled={lockedGeneral}
-                goalRecipeId={state.craftGoalRecipeId}
-                goalCompleted={state.craftGoalCompleted}
-                recommendations={craftGoalRecs}
-                onSetGoal={(recipeId) =>
-                  dispatch({ type: 'SET_CRAFT_GOAL', recipeId })
-                }
-                onCraft={(recipeId) => dispatch({ type: 'CRAFT', recipeId })}
-              />
+              <div className="planning-tabpanel" role="tabpanel" id="planning-tabpanel-craft" aria-labelledby="planning-tab-craft">
+                <CraftPanel
+                  views={recipeViews}
+                  state={state}
+                  player={player}
+                  disabled={lockedGeneral}
+                  goalRecipeId={state.craftGoalRecipeId}
+                  goalCompleted={state.craftGoalCompleted}
+                  recommendations={craftGoalRecs}
+                  onSetGoal={(recipeId) =>
+                    dispatch({ type: 'SET_CRAFT_GOAL', recipeId })
+                  }
+                  onCraft={(recipeId) => dispatch({ type: 'CRAFT', recipeId })}
+                  suggestion={craftGoalSuggestion}
+                  latestCraftFeedback={latestCraftFeedback}
+                  onEquip={(uid) => dispatch({ type: 'EQUIP', uid })}
+                />
+              </div>
+            )}
+
+            {tab === 'codex' && (
+              <div className="planning-tabpanel" role="tabpanel" id="planning-tabpanel-codex" aria-labelledby="planning-tab-codex">
+                <CraftingCodex
+                  state={state}
+                  player={player}
+                  disabled={lockedGeneral}
+                  onSetGoal={(recipeId) => dispatch({ type: 'SET_CRAFT_GOAL', recipeId })}
+                />
+              </div>
             )}
 
           </section>

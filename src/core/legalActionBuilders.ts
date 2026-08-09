@@ -110,7 +110,8 @@ export function inventoryActions(player: Combatant): LegalAction[] {
  *   泛化的「袭击附近目标」（ATTACK_NEARBY），由引擎按种子随机数从同区域的
  *   未识别目标中确定对象，出手后立即建立正式遭遇；
  * - **已进入遭遇**：对手已被识别，攻击精确指定 `encounter.enemyId`（模态战斗）；
- * - FLEE 保持免费，只要同区域有敌人就在合法集合里（反死锁最后一道保险）。
+ * - FLEE 保持免费，只要同区域有敌人就在合法集合里（反死锁最后一道保险）；
+ * - 恰好 0 体力时 GUARD 通过共享成本层作为应急防守选择开放。
  */
 export function combatActions(state: GameState, player: Combatant): LegalAction[] {
   const out: LegalAction[] = [];

@@ -117,7 +117,8 @@ describe('界面冒烟', () => {
   it('规划区移除冗余日志 tab，但历史日志仍常驻可见', () => {
     render();
     click('开始新对局');
-    expect(container.querySelectorAll('.planning-tabs button')).toHaveLength(2);
+    expect(container.querySelectorAll('.planning-tabs button')).toHaveLength(3);
+    expect(container.textContent).toContain('图鉴');
     expect(container.textContent).toContain('对局开始');
     expect(container.querySelector('.log-panel')).not.toBeNull();
   });

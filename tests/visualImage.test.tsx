@@ -38,6 +38,13 @@ function update(visual: VisualSpec): void {
   });
 }
 
+function expectLocalSvg(src: string | null | undefined, assetPath: string): void {
+  expect(src).toBeTruthy();
+  // Vite 5 emits a URL while Vite 8 may inline small SVGs as data URLs; both
+  // are the same local SVG fallback and neither is the official raster asset.
+  expect(src?.includes(assetPath) || src?.startsWith('data:image/svg+xml')).toBe(true);
+}
+
 describe('VisualImage 三级 fallback', () => {
   it('正式图片成功时只渲染正式图片', () => {
     render(official);
@@ -46,19 +53,25 @@ describe('VisualImage 三级 fallback', () => {
     expect(container.textContent).not.toContain('🔭');
   });
 
-  it('正式图片失败后只降级到 SVG，不重试正式图', () => {
+  it('正式图片失败后只降级到 SVG，不重试正式图', async () => {
     render(official);
     const first = container.querySelector('img');
-    act(() => first?.dispatchEvent(new Event('error')));
+    await act(async () => {
+      first?.dispatchEvent(new Event('error'));
+    });
     const fallback = container.querySelector('img');
-    expect(fallback?.getAttribute('src')).toContain('characters/scout.svg');
+    expectLocalSvg(fallback?.getAttribute('src'), 'characters/scout.svg');
     expect(fallback?.getAttribute('src')).not.toContain('portrait.webp');
   });
 
-  it('SVG 失败后降级到 emoji，且不再保留 broken img', () => {
+  it('SVG 失败后降级到 emoji，且不再保留 broken img', async () => {
     render(official);
-    act(() => container.querySelector('img')?.dispatchEvent(new Event('error')));
-    act(() => container.querySelector('img')?.dispatchEvent(new Event('error')));
+    await act(async () => {
+      container.querySelector('img')?.dispatchEvent(new Event('error'));
+    });
+    await act(async () => {
+      container.querySelector('img')?.dispatchEvent(new Event('error'));
+    });
     expect(container.querySelector('img')).toBeNull();
     expect(container.textContent).toContain('🔭');
   });
@@ -71,8 +84,10 @@ describe('VisualImage 三级 fallback', () => {
 
   it('official 失败后切换到新资源时会重新尝试新资源的 official 图片', async () => {
     render(official);
-    act(() => container.querySelector('img')?.dispatchEvent(new Event('error')));
-    expect(container.querySelector('img')?.getAttribute('src')).toContain('characters/scout.svg');
+    await act(async () => {
+      container.querySelector('img')?.dispatchEvent(new Event('error'));
+    });
+    expectLocalSvg(container.querySelector('img')?.getAttribute('src'), 'characters/scout.svg');
 
     const next: VisualSpec = {
       emoji: '🧪',
@@ -91,8 +106,12 @@ describe('VisualImage 三级 fallback', () => {
 
   it('emoji 阶段切换到带 official 图片的新资源时会恢复图片阶段', async () => {
     render(official);
-    act(() => container.querySelector('img')?.dispatchEvent(new Event('error')));
-    act(() => container.querySelector('img')?.dispatchEvent(new Event('error')));
+    await act(async () => {
+      container.querySelector('img')?.dispatchEvent(new Event('error'));
+    });
+    await act(async () => {
+      container.querySelector('img')?.dispatchEvent(new Event('error'));
+    });
     expect(container.querySelector('img')).toBeNull();
 
     update({

@@ -88,6 +88,33 @@ describe('Phase 4B-3 search, loot, inventory and craft presentation', () => {
       metadata: {},
     });
     expect(latestPlayerSearchFeedback(state)?.kind).toBe('encounter');
+
+    const equipState = createGame({ seed: 'PHASE4B3-SEARCH-EQUIP-FEEDBACK', playerCharacterId: 'scout', playerName: '测试者' });
+    const equipPlayer = getPlayer(equipState);
+    const pipe = createStack(equipState, 'iron_pipe');
+    addItem(equipPlayer, pipe);
+    pushEvent(equipState, {
+      type: 'ITEM_FOUND',
+      actorId: equipPlayer.id,
+      zoneId: equipPlayer.currentZoneId,
+      message: '你找到了铁管。',
+      metadata: { itemId: 'iron_pipe' },
+    });
+    pushEvent(equipState, {
+      type: 'ITEM_PICKED',
+      actorId: equipPlayer.id,
+      zoneId: equipPlayer.currentZoneId,
+      message: '你收下了铁管。',
+      metadata: { itemId: 'iron_pipe' },
+    });
+    pushEvent(equipState, {
+      type: 'ITEM_EQUIPPED',
+      actorId: equipPlayer.id,
+      zoneId: equipPlayer.currentZoneId,
+      message: '你装备了铁管。',
+      metadata: { itemId: 'iron_pipe', slot: 'weapon' },
+    });
+    expect(latestPlayerSearchFeedback(equipState)?.kind).toBe('item');
   });
 
   it('uses official item art in inventory rows and equipped slots', () => {
@@ -121,6 +148,8 @@ describe('Phase 4B-3 search, loot, inventory and craft presentation', () => {
     render(
       <CraftPanel
         views={views}
+        state={state}
+        player={player}
         disabled={false}
         goalRecipeId={views[0]?.recipe.id ?? null}
         goalCompleted={false}

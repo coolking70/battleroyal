@@ -235,7 +235,7 @@ export function EncounterPanel({
                       className="btn"
                       data-action="flee"
                       onClick={onFlee}
-                      aria-label={`逃跑：脱离 ${flee}%${fleeCost === 0 ? '，免费' : `，消耗 ${fleeCost} 点体力`}；仍会消耗 1 个时间单位，失败还会被追击`}
+                      aria-label={`逃跑：脱离 ${flee}%${fleeCost === 0 ? '，免费' : `，消耗 ${fleeCost} 点体力`}；仍会消耗 1 个时间单位${fleeCost === 0 ? '，有可退区域时失败可能被追击，无可退区域时原地脱离' : ''}`}
                       aria-describedby="encounter-legal-note"
                     >
                       <span>逃跑</span>
@@ -246,7 +246,11 @@ export function EncounterPanel({
                 <span className="encounter-legal-note" id="encounter-legal-note">
                   {player.stamina >= getAttackStyleStaminaCost('normal')
                     ? '遭遇中仍可在右侧使用消耗品或更换装备。'
-                    : '体力不足以普通攻击 —— 速攻或防御仍可用，或逃跑。'}
+                    : player.stamina === 0
+                      ? '体力耗尽：防御本回合免费，或免费原地脱离；也可使用消耗品或更换装备。'
+                      : player.stamina < guardCost
+                        ? `体力不足：速攻或免费脱离仍可用；防御需要 ${guardCost} 点体力。`
+                        : '体力不足以普通攻击 —— 速攻、防御或免费脱离仍可用。'}
                 </span>
               </>
             )}

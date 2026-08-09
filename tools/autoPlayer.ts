@@ -30,8 +30,11 @@ import {
   type LegalAction,
   type LegalActionCategory,
 } from '../src/core/legalActions';
+import { getEquippedArmor, getEquippedWeapon } from '../src/core/inventory';
+import { getCraftGoalRecommendations, getZoneDistance } from '../src/core/craftGuide';
 import { tryGetItem } from '../src/data/items';
 import type { Command, Combatant, GameEvent, GameState, Personality } from '../src/core/types';
+import { craftPathSummary, getCraftGoalSuggestion } from '../src/ui/craftPathPresentation';
 
 /* ------------------------------------------------------------------ */
 /* 对外类型                                                            */
@@ -84,6 +87,25 @@ export interface AutoGameOptions {
   stallLimit?: number;
   /** 是否保留最终状态引用（批量模拟时关掉可省内存），默认 false */
   keepFinalState?: boolean;
+  /** 是否保留未被事件裁剪的完整事件流（仅诊断工具使用） */
+  keepEventTrace?: boolean;
+  /** 可选的玩家式闭环：采纳公开建议、优先当前子目标、合成后装备。 */
+  representativeBuildLoop?: boolean;
+}
+
+/** 玩家死亡瞬间的只读诊断快照，不参与任何规则结算。 */
+export interface PlayerDeathSnapshot {
+  time: number;
+  cause: string | null;
+  killerId: string | null;
+  zoneId: string;
+  equippedWeaponId: string | null;
+  equippedArmorId: string | null;
+  carriedWeaponIds: string[];
+  carriedArmorIds: string[];
+  inventorySize: number;
+  stamina: number;
+  hp: number;
 }
 
 export interface AutoGameResult {
@@ -191,6 +213,13 @@ export interface AutoGameResult {
 
   /** 仅在 keepFinalState 为 true 时存在 */
   finalState?: GameState;
+  /** 仅在 keepEventTrace 为 true 时存在；不写入游戏存档或浏览器状态 */
+  eventTrace?: GameEvent[];
+  /** 自动玩家命令执行前玩家恰好 0 体力时的应急动作次数 */
+  zeroStaminaGuardCommands: number;
+  zeroStaminaFleeCommands: number;
+  /** 玩家死亡前最后一次可观察到的装备/资源快照 */
+  playerDeathSnapshot: PlayerDeathSnapshot | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -360,7 +389,8 @@ export function decideAutoPlayerCommand(
       return { command: { type: 'ATTACK_NEARBY', style }, reason: d.reason };
     }
     case 'guard':
-      // 摆出防御姿态：消耗体力但减免下一击，与 NPC 共用同一套规则
+      // 摆出防御姿态：通常消耗体力；恰好 0 体力由共享成本层提供应急免费防御。
+      // 玩家与 NPC 共用同一套规则。
       return { command: { type: 'GUARD' }, reason: d.reason };
     case 'use_skill':
       // 释放角色技能：与 NPC 共用同一套规则（Phase 3 Step 3）
@@ -431,6 +461,130 @@ function weightedPick(
   return entries[entries.length - 1]!.action;
 }
 
+function equipmentScore(itemId: string): number {
+  const item = tryGetItem(itemId);
+  return item?.category === 'weapon'
+    ? item.attack ?? 0
+    : item?.category === 'armor'
+      ? item.defense ?? 0
+      : 0;
+}
+
+/**
+ * 诊断用的玩家闭环偏好：只从合法命令中选择，不改变引擎规则。
+ * 公开建议与路线来自现有 presentation/core 查询；所有实际动作仍走
+ * SET_CRAFT_GOAL / CRAFT / EQUIP 正式命令。
+ */
+interface RepresentativeRouteContext {
+  targetZoneId: string | null;
+  searchNoYield: number;
+  lastSearch: { zoneId: string; time: number } | null;
+}
+
+function chooseEquipmentUpgradeAction(
+  player: Combatant,
+  legal: LegalAction[],
+): LegalAction | null {
+  const currentWeapon = getEquippedWeapon(player);
+  const currentArmor = getEquippedArmor(player);
+  const currentWeaponScore = currentWeapon ? equipmentScore(currentWeapon.itemId) : 0;
+  const currentArmorScore = currentArmor ? equipmentScore(currentArmor.itemId) : 0;
+  const equipment = legal
+    .map((action) => {
+      const command = action.command;
+      if (command.type !== 'EQUIP') return null;
+      const stack = player.inventory.find((item) => item.uid === command.uid);
+      if (!stack) return null;
+      const item = tryGetItem(stack.itemId);
+      if (!item || (item.category !== 'weapon' && item.category !== 'armor')) return null;
+      const current = item.category === 'weapon' ? currentWeaponScore : currentArmorScore;
+      return { action, itemId: stack.itemId, score: equipmentScore(stack.itemId), current };
+    })
+    .filter((item): item is { action: LegalAction; itemId: string; score: number; current: number } => Boolean(item))
+    .sort((a, b) => b.score - a.score || a.itemId.localeCompare(b.itemId));
+  return equipment.find((item) => item.score > item.current)?.action ?? null;
+}
+
+/**
+ * 诊断用的玩家闭环偏好：只从合法命令中选择，不改变引擎规则。
+ * 路线目标在一局内保持稳定，到达推荐区后先搜索；连续两次没有玩家可见的
+ * ITEM_FOUND 才轮换目标，避免因距离评分变化在相邻区域间来回摆动。
+ */
+function chooseRepresentativeBuildAction(
+  state: GameState,
+  player: Combatant,
+  legal: LegalAction[],
+  route: RepresentativeRouteContext,
+): LegalAction | null {
+  if (!state.craftGoalRecipeId) {
+    const suggestion = getCraftGoalSuggestion(state, player);
+    const adopt = legal.find(
+      (action) =>
+        action.command.type === 'SET_CRAFT_GOAL' &&
+        action.command.recipeId === suggestion?.recipeId,
+    );
+    if (adopt) {
+      route.targetZoneId = null;
+      route.searchNoYield = 0;
+      return adopt;
+    }
+  } else {
+    const path = craftPathSummary(state.craftGoalRecipeId, state, player);
+    const nextRecipeId = path?.nextStep?.recipeId;
+    if (nextRecipeId) {
+      const craft = legal.find(
+        (action) => action.command.type === 'CRAFT' && action.command.recipeId === nextRecipeId,
+      );
+      if (craft) return craft;
+    }
+  }
+
+  // 拾取/合成后的装备交接优先于下一次移动；仍只装备玩家自己的合法候选。
+  const equipmentUpgrade = chooseEquipmentUpgradeAction(player, legal);
+  if (equipmentUpgrade) return equipmentUpgrade;
+
+  if (!state.craftGoalRecipeId) return null;
+  const recommendations = getCraftGoalRecommendations(state, player);
+  if (recommendations.length === 0) {
+    route.targetZoneId = null;
+    route.searchNoYield = 0;
+    return null;
+  }
+
+  // 保持路线目标稳定，避免“按当前位置重新评分”导致两个区域之间来回摆动。
+  const targetStillValid = recommendations.some(
+    (recommendation) => recommendation.zoneId === route.targetZoneId,
+  );
+  if (!targetStillValid || route.searchNoYield >= 2) {
+    const nextTarget = recommendations.find(
+      (recommendation) => recommendation.zoneId !== player.currentZoneId,
+    ) ?? recommendations[0];
+    route.targetZoneId = nextTarget?.zoneId ?? null;
+    route.searchNoYield = 0;
+  }
+
+  const target = recommendations.find(
+    (recommendation) => recommendation.zoneId === route.targetZoneId,
+  );
+  if (!target) return null;
+  if (target.zoneId === player.currentZoneId) {
+    return legal.find((action) => action.command.type === 'SEARCH') ?? null;
+  }
+
+  const currentDistance = getZoneDistance(player.currentZoneId, target.zoneId);
+  const moves = legal
+    .map((action) => {
+      if (action.command.type !== 'MOVE') return null;
+      return {
+        action,
+        distance: getZoneDistance(action.command.zoneId, target.zoneId),
+      };
+    })
+    .filter((move): move is { action: LegalAction; distance: number } => Boolean(move))
+    .sort((a, b) => a.distance - b.distance);
+  return moves.find((move) => move.distance < currentDistance)?.action ?? moves[0]?.action ?? null;
+}
+
 /* ------------------------------------------------------------------ */
 /* 主循环                                                              */
 /* ------------------------------------------------------------------ */
@@ -478,6 +632,14 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
   let fallbackSteps = 0;
   let stallCounter = 0;
   let lastTime = s.time;
+  let zeroStaminaGuardCommands = 0;
+  let zeroStaminaFleeCommands = 0;
+  let playerDeathSnapshot: PlayerDeathSnapshot | null = null;
+  const representativeRoute: RepresentativeRouteContext = {
+    targetZoneId: null,
+    searchNoYield: 0,
+    lastSearch: null,
+  };
   // Phase 3A-1：事件日志会被 pruneEvents 裁剪（miss 是 minor 会被优先丢弃），
   // 统计必须基于**全量事件流**，否则命中率会被系统性高估。
   // 注意：pruneEvents 会从数组头部裁剪旧事件，按长度切片会被打乱，
@@ -512,9 +674,14 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
       // 阻塞态只有一条出路：先把待决拾取处理掉
       chosen = choosePickupResolution(s, player, legal, policy);
     } else {
-      const preferred = decideAutoPlayerCommand(s, player, policy, policyRng);
-      const matched = preferred.command
-        ? legal.find((a) => sameCommand(a.command, preferred.command!))
+      const preferred = options.representativeBuildLoop
+        ? chooseRepresentativeBuildAction(s, player, legal, representativeRoute)
+        : null;
+      const decision = preferred
+        ? { command: preferred.command, reason: '代表玩家闭环：目标 / 合成 / 装备' }
+        : decideAutoPlayerCommand(s, player, policy, policyRng);
+      const matched = decision.command
+        ? legal.find((a) => sameCommand(a.command, decision.command!))
         : undefined;
       if (matched) {
         chosen = matched;
@@ -530,6 +697,11 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
     }
 
     // ---- 只走正式命令通道 ----
+    const playerBeforeAction = getPlayer(s);
+    const playerBeforeActionStamina = playerBeforeAction.stamina;
+    const searchBeforeAction = chosen.command.type === 'SEARCH'
+      ? { zoneId: playerBeforeAction.currentZoneId, time: s.time }
+      : null;
     let res = executeCommand(s, chosen.command);
 
     if (!res.ok) {
@@ -562,13 +734,61 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
       chosen = fb;
     }
 
+    if (res.ok) {
+      if (chosen.command.type === 'GUARD' && playerBeforeActionStamina === 0) {
+        zeroStaminaGuardCommands += 1;
+      }
+      if (chosen.command.type === 'FLEE' && playerBeforeActionStamina === 0) {
+        zeroStaminaFleeCommands += 1;
+      }
+    }
+
     bump(commandCounts, chosen.command.type);
     if (chosen.advancesTime) timeAdvancingSteps += 1;
     if (chosen.category === 'resolution') resolutionSteps += 1;
 
     s = res.state;
+    if (options.representativeBuildLoop && representativeRoute.lastSearch) {
+      const previousSearch = representativeRoute.lastSearch;
+      const yielded = s.events.some(
+        (event) =>
+          event.type === 'ITEM_FOUND' &&
+          event.actorId === player.id &&
+          event.zoneId === previousSearch.zoneId &&
+          event.time === previousSearch.time,
+      );
+      representativeRoute.searchNoYield = yielded
+        ? 0
+        : representativeRoute.searchNoYield + 1;
+      representativeRoute.lastSearch = null;
+    }
+    if (options.representativeBuildLoop && searchBeforeAction) {
+      representativeRoute.lastSearch = searchBeforeAction;
+    }
     // 增量收集全量事件（不受 pruneEvents 影响）
     captureNewEvents();
+    if (!playerDeathSnapshot && !getPlayer(s).alive) {
+      const deathEvent = [...fullEvents]
+        .reverse()
+        .find((event) => event.type === 'CHARACTER_DIED' && event.targetId === s.playerId);
+      playerDeathSnapshot = {
+        time: s.time,
+        cause: typeof deathEvent?.metadata?.cause === 'string' ? deathEvent.metadata.cause : null,
+        killerId: deathEvent?.actorId ?? getPlayer(s).killedBy,
+        zoneId: playerBeforeAction.currentZoneId,
+        equippedWeaponId: getEquippedWeapon(playerBeforeAction)?.itemId ?? null,
+        equippedArmorId: getEquippedArmor(playerBeforeAction)?.itemId ?? null,
+        carriedWeaponIds: playerBeforeAction.inventory
+          .filter((stack) => tryGetItem(stack.itemId)?.category === 'weapon')
+          .map((stack) => stack.itemId),
+        carriedArmorIds: playerBeforeAction.inventory
+          .filter((stack) => tryGetItem(stack.itemId)?.category === 'armor')
+          .map((stack) => stack.itemId),
+        inventorySize: playerBeforeAction.inventory.length,
+        stamina: playerBeforeAction.stamina,
+        hp: playerBeforeAction.hp,
+      };
+    }
     steps += 1;
 
     // ---- 每步体检 2：时间停滞 ----
@@ -597,7 +817,11 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
     resolutionSteps,
     fallbackSteps,
     commandCounts,
+    zeroStaminaGuardCommands,
+    zeroStaminaFleeCommands,
+    playerDeathSnapshot,
     keepFinalState: options.keepFinalState ?? false,
+    keepEventTrace: options.keepEventTrace ?? false,
     fullEvents,
   });
 }
@@ -615,6 +839,10 @@ interface ResultContext {
   resolutionSteps: number;
   fallbackSteps: number;
   commandCounts: Record<string, number>;
+  zeroStaminaGuardCommands: number;
+  zeroStaminaFleeCommands: number;
+  playerDeathSnapshot: PlayerDeathSnapshot | null;
+  keepEventTrace: boolean;
   keepFinalState: boolean;
   fullEvents: GameEvent[];
 }
@@ -690,6 +918,9 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
     resolutionSteps: ctx.resolutionSteps,
     fallbackSteps: ctx.fallbackSteps,
     commandCounts: ctx.commandCounts,
+    zeroStaminaGuardCommands: ctx.zeroStaminaGuardCommands,
+    zeroStaminaFleeCommands: ctx.zeroStaminaFleeCommands,
+    playerDeathSnapshot: ctx.playerDeathSnapshot,
 
     ...scanPhase3aCounters(
       { ...s, events: ctx.fullEvents.length > 0 ? ctx.fullEvents : s.events },
@@ -698,6 +929,7 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
   };
 
   if (ctx.keepFinalState) result.finalState = s;
+  if (ctx.keepEventTrace) result.eventTrace = ctx.fullEvents.slice();
   return result;
 }
 

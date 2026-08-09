@@ -24,6 +24,7 @@ interface ZoneMapProps {
  * 第二阶段起地图不再泄露"每个区域有几个人"：
  * - 取而代之显示**噪音等级**（安静 / 有动静 / 嘈杂），由搜索、战斗、死亡产生并衰减；
  * - 对拥有「最后已知位置」情报的区域打上"情报"标记，但仅对新鲜情报生效。
+ * - 地面掉落只在当前所在区域显示数量；远处地面库存属于未发现信息。
  * 精确的对手位置仍然只在遭遇或被亲眼看见时揭示。
  */
 export function ZoneMap({
@@ -54,6 +55,9 @@ export function ZoneMap({
             ? warningRemaining(zs?.warningAtTime, state.time, GAME_CONFIG.zoneWarningDuration)
             : null;
           const urgency = zoneUrgencyMeta(warningTimeRemaining);
+          // 地面掉落不是全局公开情报：远处区域的库存只能留在 DebugPanel，
+          // 玩家地图最多确认自己当前所在区域的可拾取物。
+          const showGroundDropCue = isCurrent && (zs?.groundItems.length ?? 0) > 0;
 
           return (
             <button
@@ -96,7 +100,7 @@ export function ZoneMap({
                     <span aria-hidden="true">☠</span> 每回合 −{zoneDamagePerTick(state)} 生命
                   </span>
                 )}
-                {(zs?.groundItems.length ?? 0) > 0 && (
+                {showGroundDropCue && (
                   <span>掉落 {zs?.groundItems.length}</span>
                 )}
               </span>

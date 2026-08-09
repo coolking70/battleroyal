@@ -15,7 +15,7 @@ import {
   getCraftGoalRecommendations,
   getZoneDistance,
 } from '../src/core/craftGuide';
-import { newGame, player } from './helpers';
+import { clearInventory, give, newGame, player } from './helpers';
 
 function goalOf(state: ReturnType<typeof newGame>, recipeId: string): void {
   state.craftGoalRecipeId = recipeId;
@@ -109,6 +109,46 @@ describe('[Phase 2A-1] 路线推荐评分', () => {
     p.inventory.push({ uid: 'w1', itemId: 'wood', count: 1 });
     p.inventory.push({ uid: 's1', itemId: 'stone', count: 1 });
     expect(getCraftGoalRecommendations(state, p).length).toBe(0);
+  });
+
+  it('多步目标推荐展开到可公开搜索的原始材料', () => {
+    const state = newGame();
+    goalOf(state, 'r_field_spear');
+    clearInventory(player(state));
+    const recs = getCraftGoalRecommendations(state, player(state));
+    const ids = new Set(recs.flatMap((rec) => rec.itemIds));
+
+    expect(ids).toEqual(new Set(['wood', 'stone', 'rope', 'iron']));
+    expect(recs.every((rec) => !rec.itemIds.includes('reinforced_handle'))).toBe(true);
+    expect(describeCraftGoal(state, player(state))).toContain('木材 ×1');
+    expect(describeCraftGoal(state, player(state))).toContain('铁块 ×1');
+  });
+
+  it('已持有中间部件时只推荐剩余原始材料', () => {
+    const state = newGame();
+    goalOf(state, 'r_field_spear');
+    clearInventory(player(state));
+    give(state, player(state), 'stick');
+    const recs = getCraftGoalRecommendations(state, player(state));
+    const ids = new Set(recs.flatMap((rec) => rec.itemIds));
+
+    expect(ids).toEqual(new Set(['rope', 'iron']));
+    expect(ids.has('wood')).toBe(false);
+    expect(ids.has('stone')).toBe(false);
+  });
+
+  it('多步路线推荐不读取隐藏区域库存', () => {
+    const a = newGame('BR-CG-NESTED-ANTI');
+    const b = newGame('BR-CG-NESTED-ANTI');
+    goalOf(a, 'r_field_spear');
+    goalOf(b, 'r_field_spear');
+    clearInventory(player(a));
+    clearInventory(player(b));
+    for (const zone of Object.values(b.zones)) zone.loot = [];
+
+    expect(getCraftGoalRecommendations(b, player(b))).toEqual(
+      getCraftGoalRecommendations(a, player(a)),
+    );
   });
 
   it('describeCraftGoal 包含建议区域', () => {

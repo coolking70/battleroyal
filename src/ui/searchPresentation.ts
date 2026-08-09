@@ -80,16 +80,29 @@ function hasMatchingFoundEvent(
   );
 }
 
+/** 装备是对当前搜索结果的非阻塞后续动作，不应抹掉刚刚发现的物品反馈。 */
+function latestSearchChainIndex(events: GameEvent[], playerId: string): number | undefined {
+  const latestPlayerEvent = [...events]
+    .map((event, index) => ({ event, index }))
+    .reverse()
+    .find(({ event }) => event.actorId === playerId && PLAYER_ACTION_TYPES.has(event.type));
+  if (!latestPlayerEvent) return undefined;
+  if (SEARCH_CHAIN_TYPES.has(latestPlayerEvent.event.type)) return latestPlayerEvent.index;
+  if (latestPlayerEvent.event.type !== 'ITEM_EQUIPPED') return undefined;
+  return [...events]
+    .map((event, index) => ({ event, index }))
+    .slice(0, latestPlayerEvent.index)
+    .reverse()
+    .find(({ event }) => event.actorId === playerId && SEARCH_CHAIN_TYPES.has(event.type))?.index;
+}
+
 /**
  * 只读取玩家最近一次结构化行动事件，避免把旧搜索结果伪装成当前结果。
  * 该函数不重算概率、库存或合法性，只把 core 已记录的事实映射为展示状态。
  */
 export function latestPlayerSearchFeedback(state: GameState): SearchFeedback | null {
   const events = state.events;
-  const latestIndex = [...events]
-    .map((event, index) => ({ event, index }))
-    .reverse()
-    .find(({ event }) => event.actorId === state.playerId && PLAYER_ACTION_TYPES.has(event.type))?.index;
+  const latestIndex = latestSearchChainIndex(events, state.playerId);
   if (latestIndex === undefined) return null;
 
   const latest = events[latestIndex];

@@ -1,13 +1,18 @@
 import type { SearchFeedback } from '../searchPresentation';
 import { ITEM_CATEGORY_META, presentItem } from '../itemPresentation';
+import type { Combatant } from '../../core/types';
+import { equipmentHandoffFor } from '../equipmentPresentation';
 import { VisualImage } from './VisualImage';
 
 interface SearchResultFeedbackProps {
   feedback: SearchFeedback;
+  /** 仅用于玩家自己的装备交接，不读取其他角色状态。 */
+  player?: Combatant;
+  onEquip?: (uid: string) => void;
 }
 
 /** 搜索结果的非阻塞原地焦点；遭遇结果由 EncounterPanel 接管视觉焦点。 */
-export function SearchResultFeedback({ feedback }: SearchResultFeedbackProps): JSX.Element | null {
+export function SearchResultFeedback({ feedback, player, onEquip }: SearchResultFeedbackProps): JSX.Element | null {
   if (feedback.kind === 'encounter') return null;
 
   if (feedback.kind === 'nothing') {
@@ -34,6 +39,8 @@ export function SearchResultFeedback({ feedback }: SearchResultFeedbackProps): J
 
   const item = presentItem(feedback.itemId);
   const categoryMeta = ITEM_CATEGORY_META[item.category];
+  const handoff = !feedback.pending && player ? equipmentHandoffFor(player, item.itemId) : null;
+  const canQuickEquip = Boolean(handoff?.candidate && handoff.status !== 'equipped' && onEquip);
   return (
     <aside
       className="search-result search-result-item"
@@ -61,6 +68,23 @@ export function SearchResultFeedback({ feedback }: SearchResultFeedbackProps): J
         </div>
         {feedback.modifiers.length > 0 && (
           <div className="search-result-modifiers">{feedback.modifiers.join(' · ')}</div>
+        )}
+        {handoff?.status === 'equipped' && (
+          <div className="equipment-handoff equipment-handoff-equipped">
+            <span aria-hidden="true">✓</span> 已装备 · {handoff.slot === 'weapon' ? '武器位' : '防具位'}
+          </div>
+        )}
+        {canQuickEquip && handoff?.candidate && (
+          <div className="equipment-handoff">
+            <span>{handoff.status === 'ready' ? '装备位可升级' : '可作为备用装备'}</span>
+            <button
+              className="btn btn-sm btn-primary"
+              data-search-equip-output="true"
+              onClick={() => onEquip?.(handoff.candidate!.uid)}
+            >
+              装备
+            </button>
+          </div>
         )}
       </div>
     </aside>

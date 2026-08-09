@@ -21,8 +21,10 @@ export const ZONES: ZoneDef[] = [
     description:
       '走廊灯管间歇性闪烁，消毒水味道压不住底下的血腥味。药品柜大多被翻过了。',
     adjacent: ['school', 'lab'],
+    // 医院保留医疗特色；rarePool 的 stick 只提供低概率直接武器保底，
+    // 避免“这里永远出不了武器”的死角，而不抢占普通医疗物资权重。
     basePool: ['herb', 'alcohol', 'cloth', 'bandage', 'water'],
-    rarePool: ['medkit', 'herb_remedy', 'simple_armor'],
+    rarePool: ['medkit', 'herb_remedy', 'simple_armor', 'stick'],
     color: '#3f8f7a',
   },
   {

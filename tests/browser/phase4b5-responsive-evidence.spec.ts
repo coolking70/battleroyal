@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
+import { SAVE_KEY } from '../../src/data/gameConfig';
+import { pendingPickupFixture } from './pendingPickupFixture';
 
 const baseUrl = process.env.PHASE4B5_BASE_URL ?? 'http://127.0.0.1:4173';
 const evidenceDir = path.resolve('output/phase4b5-browser');
@@ -23,6 +25,20 @@ async function startGame(page: import('@playwright/test').Page, seed: string): P
   await page.locator('#seed').fill(seed);
   await page.locator('.char-card').filter({ hasText: '侦察员' }).click();
   await page.getByRole('button', { name: '开始新对局' }).click();
+  await expect(page.locator('.game')).toHaveCount(1);
+}
+
+async function loadFixture(
+  page: import('@playwright/test').Page,
+  fixture: Record<string, unknown>,
+): Promise<void> {
+  await page.goto(`${baseUrl}/?fixture=phase4b5`, { waitUntil: 'networkidle' });
+  await page.evaluate(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), {
+    key: SAVE_KEY,
+    value: fixture,
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: '继续上次对局' }).click();
   await expect(page.locator('.game')).toHaveCount(1);
 }
 
@@ -170,10 +186,10 @@ test('Phase 4B-5 production responsive closure across five viewports', async ({ 
       await planningTrigger.click();
       await expect(page.locator('.planning-slot-open')).toHaveCount(1);
       await expect(page.locator('.planning-drawer-panel')).toBeVisible();
-      await expect(page.locator('.planning-tabs button')).toHaveCount(2);
+      await expect(page.locator('.planning-tabs button')).toHaveCount(3);
       await expect(page.locator('.log-panel')).toBeVisible();
       await snapshot(page, `${viewport.name}-planning-open`);
-      await page.getByRole('button', { name: '关闭', exact: true }).click();
+      await page.locator('.planning-drawer-close').click();
       await expect(page.locator('.planning-slot-open')).toHaveCount(0);
     } else {
       await expect(page.locator('.planning-drawer-panel')).toBeVisible();
@@ -194,7 +210,7 @@ test('Phase 4B-5 production responsive closure across five viewports', async ({ 
   // Pending pickup is a modal-free decision surface: it must be completable on
   // the narrowest shape without reopening the planning drawer.
   await page.setViewportSize({ width: 390, height: 844 });
-  await startGame(page, 'PENDING-0');
+  await loadFixture(page, pendingPickupFixture('PHASE4B5-PENDING'));
   await findPendingPickup(page);
   await expect(page.locator('.pending')).toBeVisible();
   await snapshot(page, 'phone-portrait-pending');

@@ -24,6 +24,10 @@
   --stamina: #6ea8c7;
 
   --radius: 4px;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
   --mono: 'SFMono-Regular', 'JetBrains Mono', 'Cascadia Mono', Consolas,
     'Liberation Mono', Menlo, monospace;
   --sans: 'Inter', 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
@@ -82,6 +86,7 @@ input {
 
 .app {
   height: 100%;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -467,6 +472,7 @@ input {
 
 .game {
   height: 100%;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -477,7 +483,7 @@ input {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 9px 14px;
+  padding: max(9px, var(--safe-area-top)) max(14px, var(--safe-area-right)) 9px max(14px, var(--safe-area-left));
   background: linear-gradient(180deg, #171e26, #12171d);
   border-bottom: 1px solid var(--line);
   flex-wrap: wrap;
@@ -1200,6 +1206,21 @@ input {
   font-family: var(--mono);
 }
 
+.equipment-handoff {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  color: #d9f0e4;
+  font-size: 10.5px;
+}
+
+.equipment-handoff-equipped {
+  color: var(--ok);
+  font-family: var(--mono);
+}
+
 .tag-item-category {
   display: inline-flex;
   align-items: center;
@@ -1695,7 +1716,7 @@ input {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 9px 14px 10px;
+  padding: 9px max(14px, var(--safe-area-right)) max(10px, var(--safe-area-bottom)) max(14px, var(--safe-area-left));
   background: linear-gradient(180deg, #18232c, #12191f);
   border-top: 1px solid var(--line);
   flex-wrap: wrap;
@@ -2045,8 +2066,15 @@ input {
   flex: 0.75 1 0;
 }
 
-.planning-panel > .inv-list,
-.planning-panel > .recipe-list {
+.planning-tabpanel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.planning-tabpanel > .inv-list,
+.planning-tabpanel > .recipe-list {
   flex: 1;
 }
 
@@ -2070,10 +2098,301 @@ input {
     min-height: 280px;
   }
 
-  .col-right.planning-rail .planning-panel > .inv-list,
-  .col-right.planning-rail .planning-panel > .recipe-list,
+  .col-right.planning-rail .planning-tabpanel > .inv-list,
+  .col-right.planning-rail .planning-tabpanel > .recipe-list,
   .col-right.planning-rail .log-panel .log-list {
     max-height: 235px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Phase 4C-2：自动目标、子目标追踪与公开合成图鉴                       */
+/* ------------------------------------------------------------------ */
+
+.craft-auto-suggestion,
+.craft-progress-feedback {
+  margin: 0 0 10px;
+  padding: 9px 10px;
+  border: 1px solid rgba(109, 185, 158, 0.55);
+  border-left: 3px solid var(--ok, #4a9);
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(34, 75, 64, 0.48), rgba(17, 24, 30, 0.88));
+}
+
+.craft-auto-suggestion-head,
+.craft-progress-feedback {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.craft-auto-suggestion-icon {
+  color: #f2c56c;
+  font-size: 16px;
+}
+
+.craft-auto-suggestion p {
+  margin: 5px 0 3px 23px;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.craft-auto-suggestion-meta {
+  margin: 0 0 7px 23px;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.craft-progress-feedback {
+  border-color: rgba(110, 168, 199, 0.48);
+  border-left-color: var(--accent);
+  background: linear-gradient(90deg, rgba(38, 75, 94, 0.52), rgba(20, 28, 35, 0.82));
+  font-size: 11px;
+}
+
+.craft-progress-feedback-visual {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  object-fit: cover;
+  font-size: 24px;
+  border-radius: 3px;
+}
+
+.craft-progress-feedback strong {
+  color: #d9f0f7;
+}
+
+.craft-progress-feedback div div {
+  margin-top: 2px;
+  color: var(--text-dim);
+}
+
+.craft-progress-feedback .equipment-handoff {
+  margin-top: 6px;
+}
+
+.cg-subgoal-tracker {
+  margin-top: 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(109, 185, 158, 0.38);
+  border-radius: 3px;
+  background: rgba(19, 42, 37, 0.44);
+}
+
+.cg-subgoal-current {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  color: #d9f0e4;
+  font-size: 12px;
+}
+
+.cg-subgoal-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.cg-subgoal-step {
+  padding: 3px 5px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+.cg-subgoal-complete {
+  border-color: rgba(109, 185, 158, 0.55);
+  color: #a8dfc4;
+}
+
+.cg-subgoal-ready {
+  border-color: rgba(110, 168, 199, 0.6);
+  color: #cce7f2;
+}
+
+.cg-subgoal-blocked {
+  border-style: dashed;
+}
+
+.craft-codex {
+  max-height: min(66vh, 720px);
+  padding-right: 2px;
+}
+
+.craft-codex-intro {
+  margin-bottom: 9px;
+  padding: 9px 10px;
+  border: 1px solid rgba(110, 168, 199, 0.42);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  background: rgba(24, 44, 54, 0.55);
+}
+
+.craft-codex-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #e8f1f5;
+}
+
+.craft-codex-title > span:first-child {
+  color: #f2c56c;
+  font-size: 16px;
+}
+
+.craft-codex-intro p {
+  margin: 5px 0 0;
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.craft-codex-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.craft-codex-root {
+  padding: 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: rgba(16, 24, 30, 0.58);
+}
+
+.craft-codex-root-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.craft-codex-visual {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  object-fit: cover;
+  font-size: 24px;
+  border-radius: 3px;
+}
+
+.craft-codex-root-name {
+  min-width: 0;
+  flex: 1;
+}
+
+.craft-codex-root-name > strong {
+  margin-right: 5px;
+  color: #e8f1f5;
+  font-size: 12px;
+}
+
+.craft-codex-summary,
+.craft-codex-step-recipe,
+.craft-codex-source {
+  color: var(--text-faint);
+  font-size: 10px;
+}
+
+.craft-codex-relation {
+  margin: 6px 0 5px 41px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.craft-codex-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.craft-codex-step {
+  display: grid;
+  grid-template-columns: 15px minmax(70px, max-content) auto 1fr;
+  align-items: baseline;
+  gap: 5px;
+  margin-left: calc((var(--codex-depth) - 1) * 12px);
+  padding: 3px 5px;
+  border-left: 2px solid var(--line);
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 10px;
+}
+
+.craft-codex-step-marker {
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.craft-codex-step-complete .craft-codex-step-marker {
+  color: var(--ok, #4a9);
+}
+
+.craft-codex-step-ready {
+  border-left-color: var(--accent);
+}
+
+.craft-codex-step-ready .craft-codex-step-marker {
+  color: var(--accent);
+}
+
+.craft-codex-step-depth {
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.craft-codex-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 6px 0 0 41px;
+}
+
+.craft-codex-gaps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px 0 0 41px;
+  color: var(--text-faint);
+  font-size: 10px;
+}
+
+.craft-codex-gaps strong {
+  color: var(--text-dim);
+}
+
+.craft-codex-source {
+  padding: 2px 4px;
+  border: 1px dashed rgba(110, 168, 199, 0.32);
+  border-radius: 3px;
+}
+
+@media (max-width: 760px) {
+  .craft-codex {
+    max-height: 58vh;
+  }
+
+  .craft-codex-step {
+    grid-template-columns: 15px minmax(0, 1fr);
+  }
+
+  .craft-codex-step-depth,
+  .craft-codex-step-recipe {
+    grid-column: 2;
+  }
+
+  .craft-codex-root-head .btn {
+    min-height: 34px;
+    padding-inline: 7px;
   }
 }
 
@@ -2093,7 +2412,10 @@ input {
   .planning-slot-open .planning-drawer-panel {
     position: fixed;
     z-index: 70;
-    inset: 8px 8px 76px;
+    top: 8px;
+    bottom: calc(76px + var(--safe-area-bottom));
+    left: calc(8px + var(--safe-area-left));
+    right: calc(8px + var(--safe-area-right));
     display: flex;
     width: auto;
     max-height: none;
@@ -2118,8 +2440,8 @@ input {
 
   .planning-drawer-trigger {
     position: fixed;
-    right: 10px;
-    bottom: 82px;
+    right: calc(10px + var(--safe-area-right));
+    bottom: calc(82px + var(--safe-area-bottom));
     z-index: 75;
     display: inline-flex;
     align-items: center;
@@ -2133,8 +2455,8 @@ input {
   }
 
   .planning-slot-open .planning-drawer-trigger {
-    right: 18px;
-    bottom: 84px;
+    right: calc(18px + var(--safe-area-right));
+    bottom: calc(84px + var(--safe-area-bottom));
     z-index: 90;
   }
 
@@ -2167,8 +2489,8 @@ input {
     min-height: 190px;
   }
 
-  .planning-drawer-panel .planning-panel > .inv-list,
-  .planning-drawer-panel .planning-panel > .recipe-list,
+  .planning-drawer-panel .planning-tabpanel > .inv-list,
+  .planning-drawer-panel .planning-tabpanel > .recipe-list,
   .planning-drawer-panel .log-panel .log-list {
     max-height: 290px;
     overflow-y: auto;
@@ -2241,9 +2563,10 @@ input {
 .result {
   min-height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 32px 20px;
+  overflow-y: auto;
 }
 
 .result-inner {
@@ -2257,6 +2580,7 @@ input {
 }
 
 .result-head .verdict {
+  margin: 0;
   font-size: 30px;
   letter-spacing: 0.2em;
   font-weight: 600;
@@ -2780,16 +3104,16 @@ input {
     margin: 2px 0 0;
   }
   .planning-drawer-trigger {
-    bottom: 106px;
+    bottom: calc(106px + var(--safe-area-bottom));
   }
 
   .planning-slot-open .planning-drawer-panel {
     /* 竖屏行动栏会换成两行，给它完整留出触控空间。 */
-    bottom: 132px;
+    bottom: calc(132px + var(--safe-area-bottom));
   }
 
   .planning-slot-open .planning-drawer-trigger {
-    bottom: 108px;
+    bottom: calc(108px + var(--safe-area-bottom));
   }
   .debug {
     width: calc(100vw - 24px);
@@ -2800,7 +3124,7 @@ input {
 @media (max-width: 900px) and (max-height: 500px) {
   .topbar {
     gap: 6px;
-    padding: 5px 8px;
+    padding: max(5px, var(--safe-area-top)) max(8px, var(--safe-area-right)) 5px max(8px, var(--safe-area-left));
   }
 
   .topbar-brand-block {
@@ -3082,7 +3406,7 @@ input {
 
   .actionbar {
     gap: 6px;
-    padding: 5px 8px 6px;
+    padding: max(5px, var(--safe-area-top)) max(8px, var(--safe-area-right)) max(6px, var(--safe-area-bottom)) max(8px, var(--safe-area-left));
   }
 
   .actionbar .btn {
@@ -3782,5 +4106,107 @@ input {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Phase 4C-1：合成路线引导（不改变 4B 布局，只增加路径说明）           */
+/* ------------------------------------------------------------------ */
+
+.craft-route-guide {
+  margin: 0 0 10px;
+  padding: 10px 11px;
+  border: 1px solid rgba(110, 168, 199, 0.4);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(39, 66, 80, 0.42), rgba(17, 24, 30, 0.86));
+}
+
+.craft-route-guide-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: #e8f1f5;
+}
+
+.craft-route-guide-icon {
+  color: #f2c56c;
+  font-size: 16px;
+}
+
+.craft-route-guide p {
+  margin: 6px 0 4px;
+  color: rgba(235, 242, 247, 0.78);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.craft-route-guide-meta,
+.cg-path-depth,
+.recipe-chain-note {
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.cg-path,
+.cg-raw-materials {
+  margin-top: 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(110, 168, 199, 0.3);
+  border-radius: 3px;
+  background: rgba(16, 24, 30, 0.54);
+}
+
+.cg-path-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 5px 0;
+}
+
+.cg-path-step {
+  padding: 3px 5px;
+  border: 1px solid rgba(110, 168, 199, 0.42);
+  border-radius: 3px;
+  color: #cce7f2;
+  font-size: 11px;
+}
+
+.cg-path-step + .cg-path-step::before {
+  content: '→';
+  margin-right: 4px;
+  color: var(--text-faint);
+}
+
+.cg-raw-material {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(110, 126, 138, 0.2);
+  font-size: 11px;
+}
+
+.cg-raw-material:last-child {
+  border-bottom: 0;
+}
+
+.recipe-chain-note {
+  margin: -2px 0 6px;
+  color: #b8d8e5;
+}
+
+@media (max-width: 760px) {
+  .craft-route-guide {
+    padding: 8px 9px;
+  }
+
+  .cg-raw-material {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
   }
 }

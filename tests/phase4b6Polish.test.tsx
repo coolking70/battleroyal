@@ -45,7 +45,8 @@ describe('Phase 4B-6 polish and accessibility closure', () => {
     const search = container.querySelector('.actionbar-actions button');
     expect(search?.getAttribute('aria-label')).toContain('体力');
     expect(search?.getAttribute('aria-describedby')).toBe('actionbar-hint');
-    expect(container.querySelectorAll('.planning-tabs button')).toHaveLength(2);
+    expect(container.querySelectorAll('.planning-tabs button')).toHaveLength(3);
+    expect(container.textContent).toContain('图鉴');
     expect(container.querySelector('.log-panel')).not.toBeNull();
   });
 
@@ -61,6 +62,41 @@ describe('Phase 4B-6 polish and accessibility closure', () => {
     act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
     expect(container.querySelector('.planning-slot-open')).toBeNull();
     expect(document.activeElement).toBe(trigger);
+  });
+
+  it('keeps keyboard focus inside the open drawer and exposes tabpanel relationships', () => {
+    const state = createGame({ seed: 'PHASE4C11-DRAWER-A11Y', playerCharacterId: 'scout', playerName: '测试者' });
+    const player = getPlayer(state);
+    act(() => root.render(<GameScreen state={state} player={player} dispatch={() => undefined} onQuit={() => undefined} />));
+
+    const trigger = container.querySelector('.planning-drawer-trigger') as HTMLButtonElement;
+    act(() => trigger.click());
+
+    const drawer = container.querySelector('.planning-drawer-panel') as HTMLElement;
+    const close = container.querySelector('.planning-drawer-close') as HTMLButtonElement;
+    expect(drawer.getAttribute('aria-labelledby')).toBe('planning-drawer-title');
+
+    const activeTab = container.querySelector('[role="tab"][aria-selected="true"]') as HTMLElement;
+    expect(activeTab.getAttribute('aria-controls')).toBe('planning-tabpanel-inventory');
+    const tabpanel = container.querySelector('#planning-tabpanel-inventory') as HTMLElement;
+    expect(tabpanel.getAttribute('role')).toBe('tabpanel');
+    expect(tabpanel.getAttribute('aria-labelledby')).toBe(activeTab.id);
+
+    const focusable = Array.from(drawer.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ));
+    const last = focusable[focusable.length - 1]!;
+    act(() => last.focus());
+    const forward = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    act(() => window.dispatchEvent(forward));
+    expect(forward.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(close);
+
+    act(() => close.focus());
+    const backward = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+    act(() => window.dispatchEvent(backward));
+    expect(backward.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(last);
   });
 
   it('renders existing character and zone assets on the result surface only', () => {
@@ -85,6 +121,38 @@ describe('Phase 4B-6 polish and accessibility closure', () => {
     expect(container.querySelector('.result-zone-visual')?.getAttribute('src')).toBe('/assets/zones/forest/background.png');
     expect(container.textContent).toContain('森林');
     expect(container.textContent).toContain('最后生还');
+    expect(container.querySelector('main.result')).not.toBeNull();
+    expect(container.querySelector('h1#result-title')?.textContent).toContain('最后生还');
+    expect(document.activeElement).toBe(container.querySelector('h1#result-title'));
+    expect(container.querySelectorAll('.result-inner > section[aria-labelledby]').length).toBe(3);
+    expect(container.querySelector('.rank-table')?.getAttribute('aria-label')).toBe('最终排名表');
+  });
+
+  it('announces victory, defeat, and draw through one stable result heading', () => {
+    const cases = [
+      { status: 'won' as const, endReason: 'player_won' as const, label: '最后生还' },
+      { status: 'lost' as const, endReason: 'player_died' as const, label: '淘汰出局' },
+      { status: 'draw' as const, endReason: 'time_limit' as const, label: '平局 · 时间耗尽' },
+    ];
+
+    for (const outcome of cases) {
+      const state = createGame({ seed: `PHASE4C12-${outcome.status}`, playerCharacterId: 'scout', playerName: '测试者' });
+      const player = getPlayer(state);
+      state.status = outcome.status;
+      state.endReason = outcome.endReason;
+      state.endedAtTime = state.time;
+      if (outcome.status === 'lost') {
+        player.alive = false;
+        player.hp = 0;
+        player.diedAtTime = state.time;
+        state.deathOrder = [player.id];
+      }
+
+      act(() => root.render(<ResultScreen key={outcome.status} state={state} player={player} onRestart={() => undefined} onBackToMenu={() => undefined} />));
+
+      expect(container.querySelector('h1#result-title')?.textContent).toContain(outcome.label);
+      expect(document.activeElement).toBe(container.querySelector('h1#result-title'));
+    }
   });
 
   it('keeps the default information boundary intact after the polish pass', () => {
@@ -111,5 +179,74 @@ describe('Phase 4B-6 polish and accessibility closure', () => {
     expect(visible.map((item) => item.id)).toEqual(['phase4b6-own-action']);
     expect(visible.map((item) => item.message).join('\n')).not.toContain('物资 100%');
     expect(visible.map((item) => item.message).join('\n')).not.toContain('（search）');
+  });
+
+  it('applies the player visibility boundary to the result timeline and hides NPC planner labels', () => {
+    const state = createGame({ seed: 'PHASE4C8-RESULT-BOUNDARY', playerCharacterId: 'scout', playerName: '测试者' });
+    const player = getPlayer(state);
+    Object.values(state.characters)
+      .filter((character) => !character.isPlayer)
+      .forEach((character) => {
+        character.personality = 'aggressive';
+      });
+    const npc = Object.values(state.characters).find((character) => !character.isPlayer)!;
+    state.status = 'draw';
+    state.endReason = 'time_limit';
+    state.endedAtTime = 4;
+    state.events = [
+      {
+        id: 'result-hidden-goal',
+        type: 'CRAFT_GOAL_SET',
+        time: 1,
+        actorId: npc.id,
+        targetId: null,
+        zoneId: npc.currentZoneId,
+        message: 'NPC_SECRET_GOAL 不应出现在结算时间线。',
+        importance: 'major',
+        metadata: { recipeId: 'r_field_spear', completed: false },
+      },
+      {
+        id: 'result-hidden-encounter',
+        type: 'ENCOUNTER_STARTED',
+        time: 2,
+        actorId: npc.id,
+        targetId: 'n2',
+        zoneId: npc.currentZoneId,
+        message: 'NPC_SECRET_ENCOUNTER 不应出现在结算时间线。',
+        importance: 'major',
+        metadata: {},
+      },
+      {
+        id: 'result-own-goal',
+        type: 'CRAFT_GOAL_SET',
+        time: 3,
+        actorId: player.id,
+        targetId: null,
+        zoneId: player.currentZoneId,
+        message: '你的公开制作目标仍应保留。',
+        importance: 'major',
+        metadata: { recipeId: 'r_field_spear', completed: false },
+      },
+      {
+        id: 'result-public-death',
+        type: 'CHARACTER_DIED',
+        time: 4,
+        actorId: npc.id,
+        targetId: 'n2',
+        zoneId: npc.currentZoneId,
+        message: '公开播报：有人出局。',
+        importance: 'critical',
+        metadata: { cause: 'combat', killerId: npc.id, dropCount: 0 },
+      },
+    ];
+
+    act(() => root.render(<ResultScreen state={state} player={player} onRestart={() => undefined} onBackToMenu={() => undefined} />));
+
+    const text = container.textContent ?? '';
+    expect(text).toContain('你的公开制作目标仍应保留。');
+    expect(text).toContain('公开播报：有人出局。');
+    expect(text).not.toContain('NPC_SECRET_GOAL');
+    expect(text).not.toContain('NPC_SECRET_ENCOUNTER');
+    expect(container.querySelector('.rank-table')?.textContent).not.toContain('激进');
   });
 });

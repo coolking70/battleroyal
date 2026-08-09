@@ -131,7 +131,7 @@ describe('战斗风格（Phase 3 Step 1）', () => {
     );
   });
 
-  it('GUARD 命令：摆出防御姿态、扣体力、体力不足则失败', () => {
+  it('GUARD 命令：正常扣体力，恰好零体力时免费，部分体力不足仍失败', () => {
     const state = newGame();
     const p = player(state);
     const before = p.stamina;
@@ -141,9 +141,15 @@ describe('战斗风格（Phase 3 Step 1）', () => {
     expect(player(ok.state).guarding).toBe(true);
     expect(player(ok.state).stamina).toBe(before - GAME_CONFIG.guardStaminaCost);
 
-    // 体力清零后再防御应失败
+    // 恰好清零后仍保留一次有意义的防御选择，且不恢复/扣除体力
     player(ok.state).stamina = 0;
-    const fail = executeCommand(ok.state, { type: 'GUARD' });
+    const emergency = executeCommand(ok.state, { type: 'GUARD' });
+    expect(emergency.ok).toBe(true);
+    expect(player(emergency.state).stamina).toBe(0);
+
+    // 1 点体力不足以支付完整防御成本，不享受零体力应急例外
+    player(emergency.state).stamina = 1;
+    const fail = executeCommand(emergency.state, { type: 'GUARD' });
     expect(fail.ok).toBe(false);
     expect(fail.message ?? '').toContain('体力');
   });
