@@ -2018,6 +2018,25 @@ input {
   gap: 10px;
 }
 
+.planning-slot {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.planning-slot > .planning-drawer-panel {
+  flex: 1;
+  min-width: 0;
+}
+
+.planning-drawer-trigger,
+.planning-drawer-backdrop,
+.planning-drawer-header {
+  display: none;
+}
+
+
 .planning-panel {
   flex: 1.25 1 0;
 }
@@ -2055,6 +2074,109 @@ input {
   .col-right.planning-rail .planning-panel > .recipe-list,
   .col-right.planning-rail .log-panel .log-list {
     max-height: 235px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Phase 4B-5：平板 / 手机将规划区移出主滚动流，改为可关闭抽屉        */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 1099px) {
+  .planning-slot {
+    display: contents;
+  }
+
+  .planning-drawer-panel {
+    display: none;
+  }
+
+  .planning-slot-open .planning-drawer-panel {
+    position: fixed;
+    z-index: 70;
+    inset: 8px 8px 76px;
+    display: flex;
+    width: auto;
+    max-height: none;
+    overflow-y: auto;
+    padding: 8px;
+    border: 1px solid var(--accent-dim);
+    background: linear-gradient(180deg, #1b2731, #11181e);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.62);
+  }
+
+  .planning-drawer-backdrop {
+    position: fixed;
+    z-index: 60;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: rgba(3, 7, 10, 0.72);
+    cursor: default;
+  }
+
+  .planning-drawer-trigger {
+    position: fixed;
+    right: 10px;
+    bottom: 82px;
+    z-index: 75;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 76px;
+    min-height: 44px;
+    padding: 8px 12px;
+    border-color: var(--accent-dim);
+    background: #1b303c;
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.4);
+  }
+
+  .planning-slot-open .planning-drawer-trigger {
+    right: 18px;
+    bottom: 84px;
+    z-index: 90;
+  }
+
+  .planning-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex: none;
+    padding: 3px 2px 9px;
+    color: var(--text);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .planning-drawer-header .btn {
+    min-height: 44px;
+  }
+
+  .planning-drawer-panel .planning-panel,
+  .planning-drawer-panel .log-panel {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+
+  .planning-drawer-panel .planning-panel {
+    min-height: 220px;
+  }
+
+  .planning-drawer-panel .log-panel {
+    min-height: 190px;
+  }
+
+  .planning-drawer-panel .planning-panel > .inv-list,
+  .planning-drawer-panel .planning-panel > .recipe-list,
+  .planning-drawer-panel .log-panel .log-list {
+    max-height: 290px;
+    overflow-y: auto;
+  }
+
+  .planning-drawer-panel .log-wrap {
+    max-height: 250px;
+    overflow-y: auto;
   }
 }
 
@@ -2432,10 +2554,6 @@ input {
   .board {
     grid-template-columns: 200px minmax(0, 1fr);
   }
-  .col-right {
-    grid-column: 1 / -1;
-    max-height: 420px;
-  }
   .topbar-danger {
     max-width: 250px;
   }
@@ -2458,16 +2576,34 @@ input {
   .col-right {
     max-height: 340px;
   }
+  .col-left {
+    overflow-y: auto;
+  }
   .board > .col:nth-child(2),
   .col > .stage {
     min-height: 320px;
   }
   .zone-hero,
   .zone-hero-content {
-    min-height: 220px;
+    min-height: 180px;
   }
   .zone-hero-content {
-    padding: 20px 18px 18px;
+    padding: 16px 18px 16px;
+  }
+
+  /* 遭遇中左栏仍可由桌面/平板导航提供，但手机视口优先保证战斗行动可达。 */
+  .game-encounter-active .col-left {
+    display: none;
+  }
+
+  .game-encounter-active .zone-hero,
+  .game-encounter-active .zone-hero-content {
+    min-height: 126px;
+  }
+
+  .game-encounter-active .zone-hero-content p,
+  .game-encounter-active .zone-hero-state-note {
+    display: none;
   }
   .zone-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2628,8 +2764,342 @@ input {
     border-left: 0;
     border-top: 1px solid var(--line);
   }
+  .actionbar-actions {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .actionbar .btn {
+    min-width: 0;
+    min-height: 44px;
+    padding: 7px 5px;
+  }
+  .actionbar .action-cost {
+    display: block;
+    margin: 2px 0 0;
+  }
+  .planning-drawer-trigger {
+    bottom: 106px;
+  }
+
+  .planning-slot-open .planning-drawer-panel {
+    /* 竖屏行动栏会换成两行，给它完整留出触控空间。 */
+    bottom: 132px;
+  }
+
+  .planning-slot-open .planning-drawer-trigger {
+    bottom: 108px;
+  }
   .debug {
     width: calc(100vw - 24px);
+  }
+}
+
+/* 横屏手机：把 Hero 仍保留为场景入口，但压缩为可用高度内的视觉层。 */
+@media (max-width: 900px) and (max-height: 500px) {
+  .topbar {
+    gap: 6px;
+    padding: 5px 8px;
+  }
+
+  .topbar-brand-block {
+    display: none;
+  }
+
+  .topbar .spacer {
+    display: none;
+  }
+
+  .survival-metrics {
+    flex: 0 1 250px;
+    min-width: 230px;
+    gap: 4px;
+  }
+
+  .survival-metric {
+    gap: 4px;
+    padding: 4px 5px;
+  }
+
+  .run-metrics {
+    gap: 5px;
+  }
+
+  .topbar-danger {
+    min-width: 145px;
+    max-width: 190px;
+    padding: 4px 6px;
+  }
+
+  .player-chip {
+    max-width: 115px;
+  }
+
+  .topbar > .btn {
+    min-height: 40px;
+    padding: 5px 8px;
+  }
+
+  .board {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    padding: 6px;
+    overflow-y: auto;
+    align-content: start;
+    grid-auto-rows: max-content;
+  }
+
+  .col-left {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 172px;
+    gap: 6px;
+    max-height: 132px;
+    overflow: hidden;
+  }
+
+  .zone-nav-panel,
+  .intel-panel {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .zone-nav-panel .panel-title,
+  .intel-panel .panel-title {
+    min-height: 25px;
+    padding: 5px 7px;
+    font-size: 10px;
+  }
+
+  .zone-list {
+    padding: 3px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3px;
+    overflow: hidden;
+  }
+
+  .zone-item {
+    padding: 3px 4px;
+    font-size: 9px;
+  }
+
+  .zone-item .name {
+    font-size: 9px;
+  }
+
+  .zone-item .row2 {
+    margin-top: 1px;
+    gap: 3px;
+    font-size: 8px;
+    line-height: 1.05;
+  }
+
+  .zone-state-cue {
+    padding: 1px 2px;
+    font-size: 8px;
+  }
+
+  .zone-state-icon {
+    width: 11px;
+    min-width: 11px;
+  }
+
+  .map-legend {
+    gap: 4px;
+    padding: 3px 5px;
+    font-size: 8px;
+  }
+
+  .intel-list {
+    max-height: 77px;
+    padding: 2px 6px;
+  }
+
+  .intel-item {
+    padding: 3px 0;
+    font-size: 9px;
+  }
+
+  .zone-hero,
+  .zone-hero-content {
+    min-height: 104px;
+  }
+
+  .zone-hero-content {
+    padding: 8px 12px 9px;
+  }
+
+  .zone-hero-kicker {
+    margin-bottom: 2px;
+    font-size: 8px;
+  }
+
+  .zone-hero h2 {
+    font-size: 20px;
+  }
+
+  .zone-hero-status {
+    padding: 3px 5px;
+    font-size: 9px;
+  }
+
+  .zone-hero-content p {
+    max-width: 520px;
+    margin: 3px 0 0;
+    font-size: 9px;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .zone-hero-state-note {
+    gap: 3px;
+    margin-top: 4px;
+    padding: 3px 5px;
+    font-size: 9px;
+  }
+
+  .stage-content {
+    padding: 7px 10px 10px;
+  }
+
+  .game-encounter-active .col-left {
+    display: none;
+  }
+
+  .game-encounter-active .zone-hero,
+  .game-encounter-active .zone-hero-content {
+    min-height: 74px;
+  }
+
+  .game-encounter-active .zone-hero-content p,
+  .game-encounter-active .zone-hero-state-note {
+    display: none;
+  }
+
+  .encounter {
+    padding: 6px;
+    margin-bottom: 6px;
+  }
+
+  .encounter-heading {
+    gap: 5px;
+    margin-bottom: 5px;
+    padding-bottom: 4px;
+  }
+
+  .encounter-composition {
+    grid-template-columns: minmax(70px, 0.78fr) minmax(0, 1.45fr) minmax(70px, 0.78fr);
+    gap: 4px;
+  }
+
+  .combatant-card {
+    padding: 5px 4px 6px;
+  }
+
+  .combatant-visual-frame {
+    min-height: 68px;
+    margin: 3px 0;
+  }
+
+  .encounter-combat-visual {
+    width: 50px;
+    height: 66px;
+  }
+
+  .combatant-name-line {
+    min-height: 17px;
+    font-size: 10px;
+  }
+
+  .combat-visual-description {
+    min-height: 22px;
+    margin: 2px 0 3px;
+    font-size: 8px;
+    line-height: 1.2;
+  }
+
+  .combat-visual-state,
+  .combat-resource-row,
+  .enemy-health-summary,
+  .combat-stat-line {
+    margin-top: 2px;
+    font-size: 8px;
+  }
+
+  .combat-status-row {
+    min-height: 16px;
+    margin-top: 2px;
+  }
+
+  .encounter-center {
+    gap: 4px;
+    padding: 5px;
+  }
+
+  .encounter-focus {
+    min-height: 46px;
+    padding: 5px;
+  }
+
+  .encounter-focus strong {
+    font-size: 9px;
+  }
+
+  .encounter-focus-note,
+  .encounter-log {
+    font-size: 8px;
+  }
+
+  .encounter-log {
+    min-height: 42px;
+    max-height: 55px;
+    padding: 4px;
+  }
+
+  .encounter-actions {
+    gap: 4px;
+  }
+
+  .action-group {
+    gap: 3px;
+  }
+
+  .attack-styles .btn,
+  .encounter-side-actions .btn {
+    min-height: 38px;
+    padding: 3px 3px;
+    font-size: 9px;
+  }
+
+  .action-button-detail,
+  .heavy-risk,
+  .encounter-legal-note {
+    font-size: 7px;
+  }
+
+  .actionbar {
+    gap: 6px;
+    padding: 5px 8px 6px;
+  }
+
+  .actionbar .btn {
+    min-height: 40px;
+    min-width: 104px;
+    padding: 5px 7px;
+  }
+
+  .actionbar-route-note {
+    display: none;
+  }
+
+  .actionbar .hint {
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

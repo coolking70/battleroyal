@@ -30,6 +30,7 @@ import { EncounterPanel } from '../components/EncounterPanel';
 import { EventLog } from '../components/EventLog';
 import { Inventory } from '../components/Inventory';
 import { PendingPickupPanel } from '../components/PendingPickupPanel';
+import { PlanningDrawer } from '../components/PlanningDrawer';
 import { SearchResultFeedback } from '../components/SearchResultFeedback';
 import { StatusBar } from '../components/StatusBar';
 import { ZoneMap } from '../components/ZoneMap';
@@ -59,6 +60,7 @@ export function GameScreen({
   onQuit,
 }: GameScreenProps): JSX.Element {
   const [tab, setTab] = useState<Tab>('inventory');
+  const [planningOpen, setPlanningOpen] = useState(false);
 
   const zoneDef = getZoneDef(player.currentZoneId);
   const zoneState = state.zones[player.currentZoneId];
@@ -339,8 +341,12 @@ export function GameScreen({
           </section>
         </div>
 
-        {/* ---------- 右栏 ---------- */}
-        <div className="col col-right planning-rail">
+        {/* ---------- 规划 / 历史：桌面右栏，平板与手机抽屉 ---------- */}
+        <PlanningDrawer
+          open={planningOpen}
+          onOpen={() => setPlanningOpen(true)}
+          onClose={() => setPlanningOpen(false)}
+        >
           <section className="panel planning-panel">
             <div className="panel-title">
               <span>规划区</span>
@@ -403,7 +409,7 @@ export function GameScreen({
             </div>
             <EventLog events={logEvents} playerId={state.playerId} />
           </section>
-        </div>
+        </PlanningDrawer>
       </div>
 
       <ActionBar

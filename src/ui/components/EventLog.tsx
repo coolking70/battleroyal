@@ -37,6 +37,7 @@ const PLAYER_ACTION_TYPES = new Set<GameEventType>([
   'ITEM_USED',
   'ITEM_CRAFTED',
   'ITEM_EQUIPPED',
+  'CRAFT_GOAL_SET',
   'REST',
   'GUARD',
   'SKILL_USED',

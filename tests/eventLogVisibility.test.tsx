@@ -60,6 +60,7 @@ describe('default event-log information boundary', () => {
       event({ id: 'self-search', type: 'SEARCH_STARTED', actorId: 'p0', message: '你在森林搜索。' }),
       event({ id: 'self-hit', type: 'ATTACK_HIT', actorId: 'npc-1', targetId: 'p0', message: '你被击中。' }),
       event({ id: 'self-damage', type: 'ZONE_DAMAGE', actorId: 'p0', message: '你在禁区受伤。' }),
+      event({ id: 'self-goal', type: 'CRAFT_GOAL_SET', actorId: 'p0', message: '你设定了合成目标。' }),
       event({ id: 'warning', type: 'ZONE_WARNING', actorId: null, message: '广播：学校将封锁。' }),
       event({ id: 'death', type: 'CHARACTER_DIED', actorId: 'npc-2', targetId: 'npc-3', message: '公开播报：有人出局。' }),
     ];
@@ -69,6 +70,7 @@ describe('default event-log information boundary', () => {
       'self-search',
       'self-hit',
       'self-damage',
+      'self-goal',
       'warning',
       'death',
     ]);
