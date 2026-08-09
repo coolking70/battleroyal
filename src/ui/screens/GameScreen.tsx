@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react';
 import { getCraftGoalRecommendations } from '../../core/craftGuide';
 import { listRecipes } from '../../core/crafting';
 import { recentEvents } from '../../core/events';
+import { canPayActionCost, getActionStaminaCost } from '../../core/actionCosts';
+import { GAME_CONFIG } from '../../data/gameConfig';
 import { listIntel, PRESENCE_TEXT, zonePresence } from '../../core/info';
 import { aliveCharacters } from '../../core/gameState';
 import { activeWorldEvents } from '../../core/worldEvents';
-import { canPayActionCost } from '../../core/actionCosts';
+import { zoneDamagePerTick } from '../../core/restrictedZones';
 import {
   SKILLS,
   canUseSkill,
@@ -15,16 +17,25 @@ import {
 import type { Combatant, Command, GameState } from '../../core/types';
 import { LOG_DISPLAY_COUNT } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
-import { ZONE_STATUS_LABEL, cx, stackLabel } from '../../utils/format';
-import { getWorldEventVisual } from '../visualAssets';
+import { cx, stackLabel } from '../../utils/format';
+import { stackPresentation } from '../itemPresentation';
+import { latestPlayerSearchFeedback } from '../searchPresentation';
+import { getZoneVisual } from '../visualAssets';
+import { zoneStatusMeta } from '../zonePresentation';
+import { warningRemaining, zoneUrgencyMeta } from '../zonePresentation';
+import { latestInstantWorldEvent, sortWorldEvents } from '../worldEventPresentation';
 import { ActionBar } from '../components/ActionBar';
 import { CraftPanel } from '../components/CraftPanel';
 import { EncounterPanel } from '../components/EncounterPanel';
 import { EventLog } from '../components/EventLog';
 import { Inventory } from '../components/Inventory';
 import { PendingPickupPanel } from '../components/PendingPickupPanel';
+import { PlanningDrawer } from '../components/PlanningDrawer';
+import { SearchResultFeedback } from '../components/SearchResultFeedback';
 import { StatusBar } from '../components/StatusBar';
 import { ZoneMap } from '../components/ZoneMap';
+import { VisualImage } from '../components/VisualImage';
+import { InstantWorldEventAnnouncement, WorldEventBanner } from '../components/WorldEventFeedback';
 
 interface GameScreenProps {
   state: GameState;
@@ -33,7 +44,7 @@ interface GameScreenProps {
   onQuit: () => void;
 }
 
-type Tab = 'inventory' | 'craft' | 'log';
+type Tab = 'inventory' | 'craft';
 
 /**
  * 世界事件横幅（Phase 3A Step 6）。
@@ -49,9 +60,16 @@ export function GameScreen({
   onQuit,
 }: GameScreenProps): JSX.Element {
   const [tab, setTab] = useState<Tab>('inventory');
+  const [planningOpen, setPlanningOpen] = useState(false);
 
   const zoneDef = getZoneDef(player.currentZoneId);
   const zoneState = state.zones[player.currentZoneId];
+  const zoneStatus = zoneState?.status ?? 'safe';
+  const zoneMeta = zoneStatusMeta(zoneStatus);
+  const warningTimeRemaining = zoneStatus === 'warning'
+    ? warningRemaining(zoneState?.warningAtTime, state.time, GAME_CONFIG.zoneWarningDuration)
+    : null;
+  const zoneUrgency = zoneUrgencyMeta(warningTimeRemaining);
   const alive = aliveCharacters(state);
 
   // 信息不完全：同区域只给"存在感"分档，精确数值只在遭遇中揭示
@@ -70,7 +88,8 @@ export function GameScreen({
   const pending = state.pendingPickup;
 
   // 世界事件横幅（Phase 3A Step 6）：展示当前生效中的事件
-  const bannerEvents = activeWorldEvents(state);
+  const bannerEvents = sortWorldEvents(activeWorldEvents(state));
+  const instantEvent = useMemo(() => latestInstantWorldEvent(state.events), [state.events]);
 
   // 有待处理拾取时锁定一切；遭遇战中只锁定通用行动
   const lockedAll = Boolean(pending);
@@ -91,9 +110,17 @@ export function GameScreen({
     () => recentEvents(state, LOG_DISPLAY_COUNT),
     [state],
   );
+  const searchFeedback = useMemo(() => latestPlayerSearchFeedback(state), [state]);
 
   return (
-    <div className="game">
+    <div
+      className={cx(
+        'game',
+        inActiveEncounter && 'game-encounter-active',
+        encounter?.resolved && 'game-encounter-resolved',
+      )}
+      data-encounter-mode={inActiveEncounter ? 'active' : encounter?.resolved ? 'resolved' : 'none'}
+    >
       <StatusBar
         state={state}
         player={player}
@@ -140,36 +167,59 @@ export function GameScreen({
 
         {/* ---------- 中栏 ---------- */}
         <div className="col">
-          <section className="panel stage scroll">
-            <h2>
-              {zoneDef.name}{' '}
-              <span className={`tag tag-${zoneState?.status ?? 'safe'}`}>
-                {ZONE_STATUS_LABEL[zoneState?.status ?? 'safe']}
-              </span>
-            </h2>
-            <p className="zone-desc">{zoneDef.description}</p>
+          <section
+            className="panel stage scroll"
+            data-stage-focus={inActiveEncounter ? 'encounter' : 'exploration'}
+          >
+            <div className={`zone-hero zone-hero-${zoneStatus}`} data-zone-status={zoneStatus}>
+              <VisualImage
+                visual={getZoneVisual(player.currentZoneId)}
+                alt={`${zoneDef.name}区域背景`}
+                className="zone-hero-image"
+              />
+              <div className="zone-hero-scrim" aria-hidden="true" />
+              <div className="zone-hero-pattern" aria-hidden="true" />
+              <div className="zone-hero-content">
+                <div className="zone-hero-kicker">CURRENT ZONE · {player.currentZoneId.toUpperCase()}</div>
+                <div className="zone-hero-heading">
+                  <h2>{zoneDef.name}</h2>
+                  <span className={`zone-hero-status status-${zoneStatus}`}>
+                    <span className="zone-state-icon" aria-hidden="true">{zoneMeta.icon}</span>
+                    <span>{zoneMeta.label}</span>
+                  </span>
+                </div>
+                <p>{zoneDef.description}</p>
+                <div className={`zone-hero-state-note zone-hero-urgency-${zoneUrgency.urgency}`}>
+                  <span className="zone-state-icon" aria-hidden="true">{zoneMeta.icon}</span>
+                  <span>{zoneMeta.description}</span>
+                  {zoneStatus === 'warning' && warningTimeRemaining !== null && (
+                    <strong className="zone-hero-countdown">
+                      {zoneUrgency.icon} {zoneUrgency.label} · 剩余 {warningTimeRemaining} 回合
+                    </strong>
+                  )}
+                  {zoneStatus === 'restricted' && (
+                    <strong className="zone-hero-hazard">
+                      ☠ 禁区侵蚀 · 每回合 −{zoneDamagePerTick(state)} 生命
+                    </strong>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="stage-content"
+              data-search-feedback={searchFeedback?.kind ?? 'none'}
+            >
+
+            <InstantWorldEventAnnouncement event={instantEvent} />
 
             {bannerEvents.length > 0 && (
               <div className="event-banner-wrap">
-                {bannerEvents.map((ev) => (
-                  <div className={`event-banner event-${ev.eventId}`} key={ev.id}>
-                    <span className="event-banner-icon" aria-hidden>
-                      {getWorldEventVisual(ev.eventId).emoji}
-                    </span>
-                    <div className="event-banner-body">
-                      <div className="event-banner-title">
-                        {ev.label}
-                        {`（剩余 ${ev.remaining} 回合）`}
-                        {ev.zoneId
-                          ? ` · ${getZoneDef(ev.zoneId).name}`
-                          : ' · 全城'}
-                      </div>
-                      <div className="event-banner-desc">{ev.description}</div>
-                    </div>
-                  </div>
-                ))}
+                {bannerEvents.map((ev) => <WorldEventBanner event={ev} key={ev.id} />)}
               </div>
             )}
+
+            {searchFeedback && <SearchResultFeedback feedback={searchFeedback} />}
 
             {pending && (
               <PendingPickupPanel
@@ -210,7 +260,7 @@ export function GameScreen({
                       className="btn btn-sm btn-danger"
                       disabled={lockedAll}
                       onClick={() => dispatch({ type: 'ATTACK_NEARBY', style: 'normal' })}
-                      title="从同区域的未识别目标中选一个出手"
+                      aria-label="尝试袭击同区域的未识别目标"
                     >
                       尝试袭击附近目标
                     </button>
@@ -218,7 +268,7 @@ export function GameScreen({
                       className="btn btn-sm"
                       disabled={lockedAll || !canPayActionCost(player, 'GUARD').ok}
                       onClick={() => dispatch({ type: 'GUARD' })}
-                      title="摆出防御姿态：下一击伤害减免，消耗体力"
+                      aria-label={`防御姿态：下一击伤害减免，消耗 ${getActionStaminaCost(player, 'GUARD')} 点体力`}
                     >
                       防御
                     </button>
@@ -243,7 +293,7 @@ export function GameScreen({
                   className="btn btn-sm"
                   disabled={lockedAll || !playerSkillUsable}
                   onClick={() => dispatch({ type: 'USE_SKILL', skillId: playerSkillId })}
-                  title={
+                  aria-label={
                     playerSkillReady
                       ? `${SKILLS[playerSkillId].name}：${SKILLS[playerSkillId].description}（消耗 ${SKILLS[playerSkillId].staminaCost} 点体力）`
                       : `${SKILLS[playerSkillId].name}冷却中（剩余 ${playerSkillCooldown} 回合）`
@@ -263,8 +313,13 @@ export function GameScreen({
               ) : (
                 <div className="ground-list">
                   {zoneState?.groundItems.map((stack) => (
-                    <span className="ground-item" key={stack.uid}>
-                      {stackLabel(stack)}
+                    <span className="ground-item" key={stack.uid} data-item-id={stack.itemId}>
+                      <VisualImage
+                        visual={stackPresentation(stack).visual}
+                        alt={`${stackLabel(stack)}地面图标`}
+                        className="ground-item-visual"
+                      />
+                      <span className="ground-item-name">{stackLabel(stack)}</span>
                       <button
                         className="btn btn-sm"
                         disabled={lockedAll}
@@ -282,30 +337,37 @@ export function GameScreen({
                 拾取不消耗时间单位。
               </div>
             </div>
+            </div>
           </section>
         </div>
 
-        {/* ---------- 右栏 ---------- */}
-        <div className="col col-right">
-          <section className="panel" style={{ flex: 1 }}>
-            <div className="tabs">
+        {/* ---------- 规划 / 历史：桌面右栏，平板与手机抽屉 ---------- */}
+        <PlanningDrawer
+          open={planningOpen}
+          onOpen={() => setPlanningOpen(true)}
+          onClose={() => setPlanningOpen(false)}
+        >
+          <section className="panel planning-panel">
+            <div className="panel-title">
+              <span>规划区</span>
+              <span className="faint">背包 · 合成</span>
+            </div>
+            <div className="tabs planning-tabs" role="tablist" aria-label="规划面板">
               <button
+                role="tab"
+                aria-selected={tab === 'inventory'}
                 className={cx(tab === 'inventory' && 'active')}
                 onClick={() => setTab('inventory')}
               >
                 背包
               </button>
               <button
+                role="tab"
+                aria-selected={tab === 'craft'}
                 className={cx(tab === 'craft' && 'active')}
                 onClick={() => setTab('craft')}
               >
                 合成
-              </button>
-              <button
-                className={cx(tab === 'log' && 'active')}
-                onClick={() => setTab('log')}
-              >
-                日志
               </button>
             </div>
 
@@ -334,11 +396,15 @@ export function GameScreen({
               />
             )}
 
-            {tab === 'log' && (
-              <EventLog events={logEvents} playerId={state.playerId} />
-            )}
           </section>
-        </div>
+          <section className="panel log-panel">
+            <div className="panel-title">
+              <span>历史日志</span>
+              <span className="faint">最近 {logEvents.length} 条</span>
+            </div>
+            <EventLog events={logEvents} playerId={state.playerId} />
+          </section>
+        </PlanningDrawer>
       </div>
 
       <ActionBar

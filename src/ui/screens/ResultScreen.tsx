@@ -7,6 +7,9 @@ import { getItem, tryGetItem } from '../../data/items';
 import { tryGetRecipe } from '../../data/recipes';
 import { getZoneDef } from '../../data/zones';
 import { personalityLabel } from '../../utils/format';
+import { resolveCharacterVisualState } from '../characterVisualState';
+import { VisualImage } from '../components/VisualImage';
+import { getCharacterVisual, getZoneVisual } from '../visualAssets';
 
 /** 结束原因的展示文案 */
 function endReasonLabel(reason: GameState['endReason']): string {
@@ -135,10 +138,30 @@ export function ResultScreen({
     player.alive || deathPos < 0
       ? '存活'
       : `第 ${deathPos + 1} / ${state.turnOrder.length}`;
+  const resultVisualState = resolveCharacterVisualState(player);
+  const resultZone = getZoneDef(player.currentZoneId);
 
   return (
     <div className="result">
       <div className="result-inner">
+        <section className={`result-hero result-hero-${won ? 'won' : draw ? 'draw' : 'lost'}`} aria-label="对局视觉收束">
+          <VisualImage
+            visual={getZoneVisual(player.currentZoneId)}
+            alt={`${resultZone.name}区域背景`}
+            className="result-zone-visual"
+          />
+          <div className="result-hero-scrim" aria-hidden="true" />
+          <div className="result-hero-copy">
+            <span className="result-hero-kicker">FINAL ZONE · {player.currentZoneId.toUpperCase()}</span>
+            <strong>{resultZone.name}</strong>
+            <span>{won ? '你在这里结束了这场生存竞赛。' : draw ? '时间耗尽，所有人都停在这片城市里。' : '这片区域记录了你的最后一段行动。'}</span>
+          </div>
+          <VisualImage
+            visual={getCharacterVisual(player.characterId, resultVisualState)}
+            alt={`${getCharacterDef(player.characterId).name}结算角色图`}
+            className="result-character-visual"
+          />
+        </section>
         <div className="result-head">
           <div className={`verdict ${won ? 'won' : draw ? 'draw' : 'lost'}`}>
             {won ? '最后生还' : draw ? '平局 · 时间耗尽' : '淘汰出局'}

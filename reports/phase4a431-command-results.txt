@@ -1,0 +1,70 @@
+Phase 4A-4.3.1 command evidence
+Branch: agent/phase4-art-pipeline
+Baseline HEAD: 232d9c0d0ce05bf6232ac9191fcb525fdafd9e39
+
+1. npm run art:list
+   EXIT 0
+   Old Scout Combat candidate read from candidate store/report: 80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1; review=pending before this phase.
+
+2. npm run art:reject -- --task character/scout/combat --candidate 80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1 --reason "Human review: duplicated binocular prop; one pair is raised near the face while another remains on the chest."
+   EXIT 0
+   REJECTED old candidate; no other historical candidate changed.
+
+3. npm run typecheck
+   EXIT 0 — PASS
+
+4. npm ci
+   EXIT 0 — dependencies installed; npm reported dev dependency advisories only.
+
+5. npm test -- --run
+   EXIT 0 — 54 files, 1167/1167 tests PASS.
+
+6. npm run build
+   EXIT 0 — Vite production build PASS.
+
+7. npm run audit:save
+   EXIT 0 — 74/74 PASS, 0 construction failures. Existing user-owned report timestamp changes were preserved and not staged.
+
+8. npm run audit:deps
+   EXIT 0 — PASS; R1/R2/R3/R4 violations 0.
+
+9. npm run art:doctor -- --offline
+   EXIT 0 — PASS; 33 task definitions.
+
+10. npm run art:validate
+    EXIT 0 — PASS published manifest.
+
+11. npm run art:security:browser
+    EXIT 0 — PASS browser secret boundary scan.
+
+12. npm run art:security:repo
+    EXIT 0 — PASS tracked repository secret scan.
+
+13. npm run art:prompt-audit -- --task character/scout/combat
+    EXIT 0 — singlePropContract=true; dynamicEquipmentForbiddenTokenCount=0; negativePrompt empty; internal IDs absent.
+
+14. npm run simulate -- --games 500 --seed-prefix PHASE4A431 --regression --output reports/phase4a431-balance.json
+    EXIT 0 — actualTotalGames=500; timeout/deadlock/illegal/hardlimit=0; overall regression PASS.
+
+15. npm audit --omit=dev --audit-level=high
+    EXIT 0 — 0 vulnerabilities.
+
+16. Prompt hash preflight
+    EXIT 0 — new prompt hash 752052e828e7708ebc010457bb9eca11e718a7ec91e18e63dd8b133ad11f6159 differs from old hash 80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1; single-prop audit PASS.
+
+17. IMAGE_API_KEY=(local environment only) npm run art:generate -- --task character/scout/combat --concurrency 1 --report-name phase4a431-scout-combat-single-prop
+    EXIT 0 — requested=1 attempted=1 generated=1 apiCalls=1 cacheHits=0; new hash 752052e828e7708ebc010457bb9eca11e718a7ec91e18e63dd8b133ad11f6159; validation passed; review pending.
+
+18. Visual review
+    EXIT 0 — objective observation recorded: the new image still shows two binocular pairs. No auto-reject and no reroll.
+
+19. npm run art:review-export -- --report reports/phase4a431-scout-combat-single-prop.json --output output/art-review/phase4a431-scout-combat
+    EXIT 0 — exported 1 pending candidate; Decision/Notes blank.
+
+20. npm run art:publish
+    EXIT 0 — NO CHANGES; no Combat candidate published.
+
+21. npm run art:validate
+    EXIT 0 — PASS; Manifest unchanged.
+
+Secret handling: the provider credential was passed only as a local process environment value for the single real call. It was not written to source, prompt reports, candidate metadata, Manifest or this evidence file.

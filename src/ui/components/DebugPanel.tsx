@@ -33,6 +33,8 @@ import type { AttackStyle, Combatant, Command, GameState } from '../../core/type
 import { GAME_VERSION } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { ZONE_STATUS_LABEL, personalityLabel } from '../../utils/format';
+import { getAssetManifest, getAssetManifestHash, getCharacterVisual, getZoneVisual } from '../visualAssets';
+import { resolveCharacterVisualState } from '../characterVisualState';
 
 /** 触发一个浏览器下载（非浏览器环境静默忽略） */
 function downloadJson(filename: string, data: unknown): void {
@@ -188,7 +190,7 @@ export function DebugPanel({
               className="btn btn-sm btn-ghost"
               style={{ marginLeft: 6, padding: '0 6px' }}
               onClick={copySeed}
-              title="复制种子到剪贴板"
+              aria-label="复制种子到剪贴板"
             >
               {copied ? '已复制' : '复制'}
             </button>
@@ -209,6 +211,18 @@ export function DebugPanel({
           <span>{state.engagedWithPlayer.join(',') || '—'}</span>
           <span>save</span>
           <span>{saveError ? `失败：${saveError}` : '已写入 localStorage'}</span>
+        </div>
+
+        <h5>资产</h5>
+        <div className="debug-kv">
+          <span>Manifest</span>
+          <span>{getAssetManifest() ? `loaded v${getAssetManifest()!.version}` : 'fallback'}</span>
+          <span>Manifest hash</span>
+          <span>{getAssetManifestHash() ?? '—'}</span>
+          <span>character source</span>
+          <span>{getCharacterVisual(player.characterId, resolveCharacterVisualState(player, { activeEncounter: Boolean(state.encounter && !state.encounter.resolved) })).source}</span>
+          <span>zone source</span>
+          <span>{getZoneVisual(player.currentZoneId).source}</span>
         </div>
 
         <h5>玩家</h5>

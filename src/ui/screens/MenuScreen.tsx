@@ -4,6 +4,8 @@ import type { LegacySaveInfo } from '../../core/saveLoad';
 import { CHARACTERS } from '../../data/characters';
 import { DEFAULT_SEED, GAME_CONFIG, GAME_VERSION } from '../../data/gameConfig';
 import { cx, normalizeSeed } from '../../utils/format';
+import { getCharacterVisual } from '../visualAssets';
+import { VisualImage } from '../components/VisualImage';
 
 interface MenuScreenProps {
   resumable: boolean;
@@ -107,7 +109,10 @@ export function MenuScreen({
               className={cx('char-card', characterId === c.id && 'selected')}
               onClick={() => setCharacterId(c.id)}
             >
-              <h3>{c.name}</h3>
+              <div className="char-heading">
+                <VisualImage visual={getCharacterVisual(c.id)} alt={`${c.name}头像`} className="char-visual" />
+                <h3>{c.name}</h3>
+              </div>
               <div className="desc">{c.description}</div>
               <div className="char-stats">
                 <span>生命 {c.maxHp}</span>

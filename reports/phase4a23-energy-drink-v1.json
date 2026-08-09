@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1096623,
+  "tasks": [
+    {
+      "taskId": "item/energy_drink/icon",
+      "hash": "795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

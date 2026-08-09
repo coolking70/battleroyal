@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1442343,
+  "tasks": [
+    {
+      "taskId": "item/bandage/icon",
+      "hash": "fa8b8d8b6fc778c085592ab0d5e3a53d20002d6da8c99bc42cf9fbde388794bf",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

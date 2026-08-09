@@ -1,0 +1,58 @@
+{
+  "phase": "Phase 4A-1.3",
+  "round": "A4-targeted",
+  "styleRevision": "phase4-style-v2",
+  "promptChanged": true,
+  "requested": 2,
+  "generated": 2,
+  "apiCalls": 2,
+  "cacheHits": 0,
+  "approved": 0,
+  "published": 0,
+  "tasks": [
+    {
+      "taskId": "character/scout/portrait",
+      "historyCandidateHashes": [
+        "14511e9a5fb98a79962cc31732cf92d30903a0613f6a3e7141dad4809fbaf625",
+        "d47e96af060e6357e8d513ee79056b3b7f701c8add0332f8ae9d3b61bdaaee0a",
+        "1d3efddc1e422e9e5ba4fcb0353ffb6853aa6b9a6a094436b15d802ddbdeb19f"
+      ],
+      "previousCandidateHash": "1d3efddc1e422e9e5ba4fcb0353ffb6853aa6b9a6a094436b15d802ddbdeb19f",
+      "candidateHash": "2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd",
+      "contentHash": "2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd",
+      "promptChanged": true,
+      "requestedWidth": 768,
+      "requestedHeight": 1024,
+      "actualWidth": 864,
+      "actualHeight": 1152,
+      "mimeType": "image/png",
+      "validation": "passed",
+      "review": "pending",
+      "source": "api",
+      "apiCalls": 1,
+      "cacheHits": 0
+    },
+    {
+      "taskId": "world_event/blackout/illustration",
+      "historyCandidateHashes": [
+        "004497ade1bb934a4c80addfefcea9256327edcc1aa4edc067a8ec51dac0a78c",
+        "48af21a453ef44f2103779f634851607eb3be1377d96b11bf5619043c97b664d",
+        "0e1536f4df281f25ba3d36648aff049bab3d51ed71607f80eb18a31ef82b690b"
+      ],
+      "previousCandidateHash": "0e1536f4df281f25ba3d36648aff049bab3d51ed71607f80eb18a31ef82b690b",
+      "candidateHash": "bbf6b831c8cf9ec9548c82269e2be6f03a9821d8c80b631615e0e9a5a02d2671",
+      "contentHash": "bbf6b831c8cf9ec9548c82269e2be6f03a9821d8c80b631615e0e9a5a02d2671",
+      "promptChanged": true,
+      "requestedWidth": 768,
+      "requestedHeight": 432,
+      "actualWidth": 1312,
+      "actualHeight": 736,
+      "mimeType": "image/png",
+      "validation": "passed",
+      "review": "pending",
+      "source": "api",
+      "apiCalls": 1,
+      "cacheHits": 0
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "strategy": "descriptor-locked-text-only-dynamic-equipment-neutral",
+  "requested": 1,
+  "attempted": 1,
+  "generated": 1,
+  "apiCalls": 1,
+  "cacheHits": 0,
+  "rainApiCalls": 0,
+  "otherCombatCalls": 0,
+  "tasks": [
+    {
+      "taskId": "character/scout/combat",
+      "basePortraitTask": "character/scout/portrait",
+      "injuredTask": "character/scout/injured",
+      "candidateHash": "80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1",
+      "contentHash": "80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1",
+      "width": 864,
+      "height": 1152,
+      "validation": {
+        "status": "passed",
+        "actualWidth": 864,
+        "actualHeight": 1152,
+        "mimeType": "image/png",
+        "errors": []
+      },
+      "review": "pending",
+      "apiCalls": 1,
+      "cacheHits": 0,
+      "source": "api",
+      "providerStatus": "generated",
+      "identityDescriptorVersion": 3,
+      "combatDescriptorVersion": 2,
+      "dynamicEquipmentPolicy": "weapon visuals belong to item/equipment systems; character combat state art remains equipment-neutral",
+      "hardVisualObservation": "Observed: short dark hair, slate-blue jacket, charcoal shirt, khaki trousers and side pouch remain recognizable; active forward-leaning stance and focused expression are clear, with no fixed weapon or military/tactical equipment visible. The image visibly shows binoculars held near the face while another binocular set remains on the chest; this is recorded for human review only and did not trigger auto-reject or reroll."
+    }
+  ]
+}

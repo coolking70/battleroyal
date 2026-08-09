@@ -1,0 +1,17 @@
+{
+  "round": "A",
+  "status": "blocked_by_credential",
+  "order": [
+    "character/scout/portrait",
+    "zone/school/background",
+    "item/bandage/icon",
+    "world_event/blackout/illustration"
+  ],
+  "attempted": 1,
+  "successful": 0,
+  "notAttempted": 3,
+  "generatedCandidates": 0,
+  "approvedCandidates": 0,
+  "publishedAssets": 0,
+  "stopReason": "Scout returned HTTP 401 invalid token"
+}

@@ -17,6 +17,7 @@
  *                        余数依次分给前几个 cell（1003 → 前 3 个 cell 各 51 局，
  *                        其余 17 个各 50 局，合计恰好 1003）。
  *   --ci                    只守规模无关健康门槛（CI 100 局用）\n  --games-per-cell N   保留旧行为：每个 cell 各 N 局（总数 = N × cell 数）。
+ *   --regression              只守引擎健康和请求/实际局数一致，角色平衡仅作观察。
  * 两者互斥；都不给时默认 `--games-per-cell 50`。
  * 报告 `meta.config` 必须同时给出：
  *   requestedTotalGames / actualTotalGames / gamesPerCell / distribution
@@ -73,6 +74,7 @@ const __dirname = dirname(__filename);
  * - `'per-cell'` ：games = **每个 cell** 的局数，由 `--games-per-cell` 指定
  */
 export type GamesMode = 'total' | 'per-cell';
+export type SimulationMode = 'formal' | 'ci' | 'regression';
 
 interface CliOptions {
   /** games 数字的语义，见 {@link GamesMode} */
@@ -87,6 +89,7 @@ interface CliOptions {
    * （引擎健康 + 风格使用率 + 命中差 + 技能玩家侧），
    * 不判胜率比与事件覆盖（需要 3000 局规模才有统计意义）。 */
   ci?: boolean;
+  regression?: boolean;
 }
 
 const DEFAULT_GAMES_PER_CELL = 50;
@@ -109,6 +112,7 @@ function printHelp(): void {
 说明：
   · 默认（两个局数参数都不给）= --games-per-cell ${DEFAULT_GAMES_PER_CELL}
   · --games 与 --games-per-cell 互斥，同时给出会报错
+  · --regression 只守引擎健康和请求/实际局数一致，角色平衡仅作观察
   · 全矩阵 = 4 角色 × 5 策略 = 20 个 cell，故 --games 2000 → 每格 100 局`);
 }
 
@@ -120,6 +124,7 @@ function parseArgs(argv: string[]): CliOptions {
     character: null,
     policy: null,
     ci: false,
+    regression: false,
     output: DEFAULT_OUTPUT,
   };
   /** 记录用户显式指定过哪个局数参数，用于互斥检测 */
@@ -175,6 +180,9 @@ function parseArgs(argv: string[]): CliOptions {
       }
       case '--ci':
         opts.ci = true;
+        break;
+      case '--regression':
+        opts.regression = true;
         break;
       case '--policy': {
         const p = take();
@@ -619,6 +627,7 @@ export interface GlobalSummary {
 interface BalanceReport {
   meta: {
     tool: 'phase3-balance';
+    mode: SimulationMode;
     version: string;
     generatedAt: string;
     config: {
@@ -698,6 +707,8 @@ interface BalanceReport {
     overallPassed: boolean;
     /** Phase 3A-1：CI 门槛（100 局规模无关项） */
     ciGate: boolean;
+    /** Phase 4A-1：跨阶段回归只守引擎健康和请求/实际局数一致。 */
+    regressionGate: boolean;
     summary: GlobalSummary;
   };
   characterSummary: Record<string, CellStats>;
@@ -1006,10 +1017,13 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
     engineHealthy && quickPassed && heavyPassed && guardPassed && deltaPPPassed && skillPlayerUsesAll;
 
   const dist = distributionFromCells(opts, cells);
+  const regressionGate = engineHealthy && dist.requestedTotalGames === dist.actualTotalGames;
+  const mode: SimulationMode = opts.regression ? 'regression' : opts.ci ? 'ci' : 'formal';
 
   return {
     meta: {
       tool: 'phase3-balance',
+      mode,
       version: GAME_VERSION,
       generatedAt: new Date().toISOString(),
       config: {
@@ -1078,6 +1092,7 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
       overallPassed: engineHealthy && characterBalancePassed && phase3aPassed,
       /** Phase 3A-1：CI 门槛（100 局规模无关项） */
       ciGate,
+      regressionGate,
       summary: global,
     },
     characterSummary,
@@ -1183,6 +1198,7 @@ function renderMarkdown(report: BalanceReport): string {
   L.push('# Phase 3 平衡模拟报告');
   L.push('');
   L.push(`- 版本：${meta.version}`);
+  L.push(`- mode：${meta.mode}`);
   L.push(`- 生成时间：${meta.generatedAt}`);
   L.push(
     `- 矩阵：${meta.config.characters.length} 角色 × ${meta.config.policies.length} 策略 = ${meta.config.cellCount} 格`,
@@ -1228,7 +1244,7 @@ function renderMarkdown(report: BalanceReport): string {
   L.push(`**引擎整体判定：${h.engineHealthy ? 'PASS' : 'FAIL'}**`);
   L.push('');
   L.push('> 说明：timeout 在 Step 13 的 `enforceTimeLimit` 落地后会由 `playing → draw` 收束而归零；');
-  L.push('> illegalState 与 hardLimitReached 必须始终为 0。本报告**不设胜率门槛**——低胜率属结构性。');
+  L.push('> 引擎健康、角色平衡与 Phase 3A 玩法门槛分别验收；总体判定要求三者同时 PASS。');
   L.push('');
 
   // ---- 角色平衡验收（Phase 2A-1） ----
@@ -1553,9 +1569,13 @@ function main(): void {
         ? ''
         : `（quick=${p3.quickPassed ? '✓' : '✗'} heavy=${p3.heavyPassed ? '✓' : '✗'} guard=${p3.guardPassed ? '✓' : '✗'} 事件覆盖=${p3.worldEventCoveragePassed ? '✓' : '✗'}）`),
   );
-  const verdict = opts.ci ? report.meta.ciGate : report.meta.overallPassed;
+  const verdict = opts.regression
+    ? report.meta.regressionGate
+    : opts.ci
+      ? report.meta.ciGate
+      : report.meta.overallPassed;
   // eslint-disable-next-line no-console
-  console.log(`[phase3-balance] 整体判定：${verdict ? 'PASS' : 'FAIL'}${opts.ci ? '（CI 门槛：引擎健康+风格+命中差+技能玩家侧）' : ''}`);
+  console.log(`[phase3-balance] 整体判定：${verdict ? 'PASS' : 'FAIL'}${opts.ci ? '（CI 门槛：引擎健康+风格+命中差+技能玩家侧）' : opts.regression ? '（Regression 门槛：请求/实际局数一致+引擎健康；角色平衡仅观察）' : ''}`);
   // eslint-disable-next-line no-console
   console.log(`[phase3-balance] 报告已写入：\n  ${jsonPath}\n  ${mdPath}`);
   if (!verdict) {

@@ -1,8 +1,12 @@
 import type { Combatant, GameState } from '../../core/types';
+import { GAME_CONFIG } from '../../data/gameConfig';
 import { noiseLevelOf, NOISE_LABEL } from '../../core/info';
+import { zoneDamagePerTick } from '../../core/restrictedZones';
 import { ZONES, areAdjacent } from '../../data/zones';
-import { ZONE_STATUS_LABEL, cx } from '../../utils/format';
+import { cx } from '../../utils/format';
 import { getZoneVisual } from '../visualAssets';
+import { warningRemaining, zoneStatusMeta, zoneUrgencyMeta } from '../zonePresentation';
+import { VisualImage } from './VisualImage';
 
 interface ZoneMapProps {
   state: GameState;
@@ -30,10 +34,10 @@ export function ZoneMap({
   onMove,
 }: ZoneMapProps): JSX.Element {
   return (
-    <section className="panel col-grow">
+    <section className="panel zone-nav-panel col-grow">
       <div className="panel-title">
-        <span>区域地图</span>
-        <span className="faint">相邻可移动</span>
+        <span>路线规划</span>
+        <span className="faint">六区 · 相邻可移动</span>
       </div>
 
       <div className="zone-list scroll">
@@ -45,6 +49,11 @@ export function ZoneMap({
           const noise = noiseLevelOf(zs);
           const hasIntel = freshIntelZones?.has(def.id) ?? false;
           const zoneVisual = getZoneVisual(def.id);
+          const statusMeta = zoneStatusMeta(status);
+          const warningTimeRemaining = status === 'warning'
+            ? warningRemaining(zs?.warningAtTime, state.time, GAME_CONFIG.zoneWarningDuration)
+            : null;
+          const urgency = zoneUrgencyMeta(warningTimeRemaining);
 
           return (
             <button
@@ -53,23 +62,22 @@ export function ZoneMap({
               style={{ ['--zone-color' as string]: zoneVisual.color }}
               disabled={disabled || isCurrent || !adjacent}
               onClick={() => onMove(def.id)}
-              title={
+              aria-label={
                 isCurrent
-                  ? '当前所在区域'
+                  ? `${def.name}，当前所在区域`
                   : adjacent
-                    ? `移动到${def.name}（消耗 3 体力）`
-                    : '不与当前区域相邻'
+                    ? `移动到${def.name}，消耗 3 体力`
+                    : `${def.name}，不与当前区域相邻`
               }
             >
               <span className="row1">
                 <span className="name">
-                  <span className="zone-emoji" aria-hidden>
-                    {zoneVisual.emoji}
-                  </span>{' '}
+                  <VisualImage visual={zoneVisual} alt={`${def.name}图标`} className="zone-visual" />{' '}
                   {def.name}
                 </span>
-                <span className={`tag tag-${status}`}>
-                  {ZONE_STATUS_LABEL[status]}
+                <span className={`zone-state-cue cue-${status}`}>
+                  <span className="zone-state-icon" aria-hidden="true">{statusMeta.icon}</span>
+                  <span>{statusMeta.label}</span>
                 </span>
               </span>
               <span className="row2">
@@ -78,6 +86,16 @@ export function ZoneMap({
                   噪音：{NOISE_LABEL[noise]}
                 </span>
                 {hasIntel && <span className="intel-tag">情报</span>}
+                {status === 'warning' && warningTimeRemaining !== null && (
+                  <span className={`zone-urgency zone-urgency-${urgency.urgency}`}>
+                    <span aria-hidden="true">{urgency.icon}</span> {urgency.label} · {warningTimeRemaining} 回合
+                  </span>
+                )}
+                {status === 'restricted' && (
+                  <span className="zone-urgency zone-urgency-imminent">
+                    <span aria-hidden="true">☠</span> 每回合 −{zoneDamagePerTick(state)} 生命
+                  </span>
+                )}
                 {(zs?.groundItems.length ?? 0) > 0 && (
                   <span>掉落 {zs?.groundItems.length}</span>
                 )}

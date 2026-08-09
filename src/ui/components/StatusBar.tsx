@@ -1,11 +1,16 @@
 import { nextZoneCountdown } from '../../core/restrictedZones';
+import { zoneDamagePerTick } from '../../core/restrictedZones';
+import { GAME_CONFIG } from '../../data/gameConfig';
 import type { Combatant, GameState } from '../../core/types';
 import { hasExposed, EXPOSED_LABEL } from '../../core/exposed';
 import { totalAttack, totalDefense } from '../../core/inventory';
 import { getCharacterDef } from '../../data/characters';
 import { getZoneDef } from '../../data/zones';
 import { getCharacterVisual } from '../visualAssets';
+import { resolveCharacterVisualState } from '../characterVisualState';
+import { latestPlayerHazardFeedback, warningRemaining, zoneStatusMeta, zoneUrgencyMeta } from '../zonePresentation';
 import { Bar } from './Bar';
+import { VisualImage } from './VisualImage';
 
 interface StatusBarProps {
   state: GameState;
@@ -24,71 +29,95 @@ export function StatusBar({
   const countdown = nextZoneCountdown(state);
   const zone = state.zones[player.currentZoneId];
   const zoneName = getZoneDef(player.currentZoneId).name;
+  const characterVisualState = resolveCharacterVisualState(player, {
+    activeEncounter: Boolean(state.encounter && !state.encounter.resolved),
+  });
 
+  const zoneStatus = zone?.status ?? 'safe';
+  const zoneMeta = zoneStatusMeta(zoneStatus);
+  const warningTimeRemaining = zoneStatus === 'warning'
+    ? warningRemaining(zone?.warningAtTime, state.time, GAME_CONFIG.zoneWarningDuration)
+    : null;
+  const zoneUrgency = zoneUrgencyMeta(warningTimeRemaining);
+  const hazardFeedback = latestPlayerHazardFeedback(state.events, state.playerId, state.time);
   let alert: { text: string; danger: boolean } | null = null;
   if (zone?.status === 'restricted') {
-    alert = { text: `${zoneName} 已是禁区 · 每回合 -20 生命`, danger: true };
+    alert = { text: `${zoneName} 已是禁区 · 每回合 -${zoneDamagePerTick(state)} 生命`, danger: true };
   } else if (zone?.status === 'warning') {
-    alert = { text: `${zoneName} 即将封锁 · 尽快撤离`, danger: false };
+    alert = {
+      text: `${zoneName} ${zoneUrgency.label} · 剩余 ${warningTimeRemaining ?? 0} 回合`,
+      danger: warningTimeRemaining === 0,
+    };
   } else if (countdown !== null && countdown <= 2) {
     alert = { text: `${countdown} 时间单位后公布新禁区`, danger: false };
   }
 
   return (
     <header className="topbar">
-      <span className="brand">区域大逃杀</span>
+      <div className="topbar-brand-block">
+        <span className="brand">区域大逃杀</span>
+        <span className="topbar-context">生存状态</span>
+      </div>
 
-      <span className="stat">
-        时间 <b>{state.time}</b>
-      </span>
-      <span className="stat">
-        存活 <b>{aliveCount}</b>/{state.turnOrder.length}
-      </span>
+      <div className="survival-metrics" aria-label="生存资源">
+        <div className="survival-metric survival-metric-hp">
+          <span className="metric-label">生命</span>
+          <Bar value={player.hp} max={player.maxHp} kind="hp" />
+          <b>{player.hp}/{player.maxHp}</b>
+        </div>
+        <div className="survival-metric survival-metric-stamina">
+          <span className="metric-label">体力</span>
+          <Bar value={player.stamina} max={player.maxStamina} kind="stamina" />
+          <b>{player.stamina}/{player.maxStamina}</b>
+        </div>
+      </div>
 
-      <span className="stat">
-        生命
-        <Bar value={player.hp} max={player.maxHp} kind="hp" />
-        <b>
-          {player.hp}/{player.maxHp}
-        </b>
-      </span>
-      <span className="stat">
-        体力
-        <Bar value={player.stamina} max={player.maxStamina} kind="stamina" />
-        <b>
-          {player.stamina}/{player.maxStamina}
-        </b>
-      </span>
+      <div className="run-metrics">
+        <span className="stat">时间 <b>{state.time}</b></span>
+        <span className="stat">存活 <b>{aliveCount}</b>/{state.turnOrder.length}</span>
+        <span className="stat">攻 <b>{totalAttack(player)}</b> / 防 <b>{totalDefense(player)}</b></span>
+      </div>
 
-      <span className="stat">
-        攻 <b>{totalAttack(player)}</b> / 防 <b>{totalDefense(player)}</b>
-      </span>
+      <div
+        className={`topbar-danger topbar-danger-${zoneStatus}${alert?.danger ? ' is-critical' : ''} topbar-zone-urgency-${zoneUrgency.urgency}`}
+        data-zone-urgency={zoneUrgency.urgency}
+        data-zone-hazard-feedback={hazardFeedback?.eventId ?? 'none'}
+      >
+        <span className="zone-state-icon" aria-hidden="true">{zoneMeta.icon}</span>
+        <span className="topbar-danger-copy">
+          <b>{zoneName} · {zoneMeta.label}</b>
+          <span>{alert?.text ?? (countdown !== null ? `下次禁区 T+${countdown}` : zoneMeta.description)}</span>
+          {hazardFeedback && (
+            <span className="topbar-hazard-feedback" role="status">
+              <span aria-hidden="true">↘</span> {hazardFeedback.source} −{hazardFeedback.damage} 生命
+            </span>
+          )}
+        </span>
+      </div>
+
+      {state.encounter && (
+        <div className={`topbar-encounter-cue${state.encounter.resolved ? ' is-resolved' : ''}`}>
+          <span className="combat-cue-icon" aria-hidden="true">{state.encounter.resolved ? '✓' : '⚔'}</span>
+          <span>{state.encounter.resolved ? '遭遇已结束' : '遭遇战进行中'}</span>
+        </div>
+      )}
 
       <span className="spacer" />
 
-      {alert && (
-        <span className={`zone-alert${alert.danger ? ' danger' : ''}`}>
-          {alert.text}
-        </span>
-      )}
-      {!alert && countdown !== null && (
-        <span className="stat faint">下次禁区 T+{countdown}</span>
-      )}
-      {countdown === null && <span className="stat faint">禁区已停止扩张</span>}
+      <div className="player-chip">
+        <span className="badge badge-you">你</span>
+        <VisualImage
+          visual={getCharacterVisual(player.characterId, characterVisualState)}
+          alt={`${getCharacterDef(player.characterId).name}头像`}
+          className="status-visual"
+        />
+        <span>{getCharacterDef(player.characterId).name}</span>
+        {player.guarding && <span className="tag tag-guard">防御</span>}
+        {hasExposed(player) && <span className="tag tag-exposed">{EXPOSED_LABEL}</span>}
+        <span className="faint mono seed-chip">{state.seed}</span>
+      </div>
 
-      <span className="stat faint">
-        <span className="badge badge-you">你</span>{' '}
-        {getCharacterVisual(player.characterId).emoji} {getCharacterDef(player.characterId).name}
-        {player.guarding && <span className="tag tag-guard" style={{ marginLeft: 6 }}>防御</span>}
-        {hasExposed(player) && (
-          <span className="tag tag-exposed" style={{ marginLeft: 6 }}>{EXPOSED_LABEL}</span>
-        )}
-        <span className="faint">· {state.seed}</span>
-      </span>
-
-      <button className="btn btn-sm btn-danger" onClick={onQuit}>
-        退出
-      </button>
+      <button className="btn btn-sm btn-danger" onClick={onQuit}>退出</button>
     </header>
   );
 }

@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1117672,
+  "tasks": [
+    {
+      "taskId": "item/battery/icon",
+      "hash": "1d7473b3470be8f86f43c2b76f21911cc2055153b7d09fa323acf901c42d5ee6",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

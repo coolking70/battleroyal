@@ -3,7 +3,7 @@ import { getItem } from '../data/items';
 import { tryGetRecipe } from '../data/recipes';
 import { getZoneDef } from '../data/zones';
 import { canPayActionCost } from './actionCosts';
-import { SKILLS } from './skills';
+import { hasFieldCraftCharge, SKILLS } from './skills';
 import { estimatePower } from './combat';
 import { isZoneExhausted } from './zoneLoot';
 import { findBestHealItem, findBestStaminaItem } from './consumables';
@@ -280,16 +280,10 @@ export function decideNpcAction(
     }
   }
 
-  // 4. 体力过低 -> 使用恢复品或休息
-  if (npc.stamina < GAME_CONFIG.npcRestThreshold) {
-    const drink = findBestStaminaItem(npc);
-    if (drink) {
-      return { kind: 'heal', reason: '体力不足，补充体力', uid: drink.uid };
-    }
-    return { kind: 'rest', reason: '体力不足，原地休整' };
-  }
-
-  // 4.5 战略技能：处置 / 工造 / 侦察（Phase 3A Step 4，触发条件贴各自维度）
+  // 4.5 战略技能：处置 / 工造 / 侦察（Phase 3A-2）
+  // 工程师的 field_craft 机会必须先于低体力 REST 判断：技能本身只需 2 点体力，
+  // 而它的价值正是让「材料已齐但正常合成付不起体力」的下一次 CRAFT 免费。
+  // 这不是免费体力：readySkill 仍会检查技能冷却与技能自身成本。
   const survivalSkill = npcSurvivalSkill(state, npc);
   if (survivalSkill) {
     return {
@@ -297,6 +291,31 @@ export function decideNpcAction(
       reason: `释放生存技能（${SKILLS[survivalSkill].name}）`,
       skillId: survivalSkill,
     };
+  }
+
+  // field_craft 已经成功释放后，下一次行动即使体力为 0 也必须先完成这次
+  // 合成；技能只免除 CRAFT 成本，不给 NPC 额外体力。
+  const chargedRecipe = npc.plannedRecipeId ? tryGetRecipe(npc.plannedRecipeId) : null;
+  if (
+    hasFieldCraftCharge(npc) &&
+    chargedRecipe &&
+    hasIngredients(npc, chargedRecipe.ingredients) &&
+    hasRoomForOutput(npc, chargedRecipe)
+  ) {
+    return {
+      kind: 'craft',
+      reason: npc.planReason ?? `执行现场加工：${getItem(chargedRecipe.outputItemId).name}`,
+      recipeId: chargedRecipe.id,
+    };
+  }
+
+  // 4.75 体力过低 -> 使用恢复品或休息
+  if (npc.stamina < GAME_CONFIG.npcRestThreshold) {
+    const drink = findBestStaminaItem(npc);
+    if (drink) {
+      return { kind: 'heal', reason: '体力不足，补充体力', uid: drink.uid };
+    }
+    return { kind: 'rest', reason: '体力不足，原地休整' };
   }
 
   // 5. 执行既定制作目标 / 能合成明显更强的装备 -> 合成

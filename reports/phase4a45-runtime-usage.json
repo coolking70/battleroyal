@@ -1,0 +1,125 @@
+{
+  "generatedAt": "2026-08-09T03:57:40.150Z",
+  "assetCategory": {
+    "characters": {
+      "manifestSlots": 12,
+      "official": 12,
+      "getter": "getCharacterVisual",
+      "uiConsumers": [
+        "MenuScreen",
+        "StatusBar",
+        "EncounterPanel"
+      ]
+    },
+    "zones": {
+      "manifestSlots": 6,
+      "official": 6,
+      "getter": "getZoneVisual",
+      "uiConsumers": [
+        "ZoneMap",
+        "GameScreen"
+      ]
+    },
+    "items": {
+      "manifestSlots": 12,
+      "official": 12,
+      "getter": "getItemVisual",
+      "uiConsumers": [
+        "Inventory"
+      ]
+    },
+    "worldEvents": {
+      "manifestSlots": 6,
+      "official": 5,
+      "fallbackOnly": [
+        "rain"
+      ],
+      "getter": "getWorldEventVisual",
+      "uiConsumers": [
+        "GameScreen event banner"
+      ]
+    }
+  },
+  "surfaces": [
+    {
+      "component": "MenuScreen",
+      "getter": "getCharacterVisual",
+      "variants": [
+        "portrait"
+      ],
+      "condition": "character selection cards",
+      "fallback": "VisualImage formal → SVG → emoji"
+    },
+    {
+      "component": "StatusBar",
+      "getter": "getCharacterVisual + resolveCharacterVisualState",
+      "variants": [
+        "portrait",
+        "injured",
+        "combat"
+      ],
+      "condition": "derived from HP and active encounter; injured > combat > portrait",
+      "fallback": "VisualImage formal → SVG → emoji"
+    },
+    {
+      "component": "EncounterPanel",
+      "getter": "getCharacterVisual + resolveCharacterVisualState",
+      "variants": [
+        "portrait",
+        "injured",
+        "combat"
+      ],
+      "condition": "visible opponent during encounter; no hidden remote NPC state",
+      "fallback": "VisualImage formal → SVG → emoji"
+    },
+    {
+      "component": "ZoneMap/GameScreen",
+      "getter": "getZoneVisual",
+      "variants": [
+        "background"
+      ],
+      "condition": "zone map and current stage/event context",
+      "fallback": "VisualImage formal → SVG → emoji"
+    },
+    {
+      "component": "Inventory",
+      "getter": "getItemVisual",
+      "variants": [
+        "icon"
+      ],
+      "condition": "visible item inventory rows",
+      "fallback": "category emoji"
+    },
+    {
+      "component": "GameScreen event banner",
+      "getter": "getWorldEventVisual",
+      "variants": [
+        "illustration"
+      ],
+      "condition": "active relevant world event",
+      "fallback": "event SVG → emoji; Rain remains fallback-only"
+    }
+  ],
+  "resolver": {
+    "name": "resolveCharacterVisualState",
+    "location": "src/ui/characterVisualState.ts",
+    "derivedOnly": true,
+    "precedence": "injured > combat > portrait",
+    "injuredThreshold": 0.35,
+    "activeEncounterSource": "state.encounter",
+    "persisted": false
+  },
+  "fallback": {
+    "component": "VisualImage",
+    "stages": [
+      "formal AI",
+      "local SVG",
+      "emoji/color"
+    ],
+    "officialImageError": "tested",
+    "unknownIds": "tested",
+    "rain": "fallback-only and tested"
+  },
+  "issues": [],
+  "passed": true
+}

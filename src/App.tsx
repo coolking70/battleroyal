@@ -15,6 +15,12 @@ import { MenuScreen } from './ui/screens/MenuScreen';
 import { ResultScreen } from './ui/screens/ResultScreen';
 import { useGame } from './utils/useGame';
 
+declare global {
+  interface Window {
+    render_game_to_text?: () => string;
+  }
+}
+
 /** 是否开启调试模式：URL 带 ?debug=1 */
 function readDebugFlag(): boolean {
   if (typeof window === 'undefined') return false;
@@ -65,6 +71,38 @@ export default function App(): JSX.Element {
   useEffect(() => {
     if (state) return;
     setMenuInfo(inspectSave());
+  }, [state]);
+
+  // 给自动化试玩与调试提供紧凑的可读状态；React UI 不依赖 canvas，
+  // 因此这里直接暴露当前菜单 / 对局状态而不伪造渲染坐标。
+  useEffect(() => {
+    window.render_game_to_text = () => {
+      if (!state) return JSON.stringify({ mode: 'menu' });
+      const player = getPlayer(state);
+      return JSON.stringify({
+        mode: state.status,
+        time: state.time,
+        player: {
+          id: player.id,
+          characterId: player.characterId,
+          zoneId: player.currentZoneId,
+          hp: player.hp,
+          stamina: player.stamina,
+          alive: player.alive,
+        },
+        encounter: state.encounter
+          ? { enemyId: state.encounter.enemyId, resolved: state.encounter.resolved }
+          : null,
+        activeWorldEvents: state.activeWorldEvents.map((event) => ({
+          id: event.eventId,
+          zoneId: event.zoneId,
+          remaining: event.remaining,
+        })),
+      });
+    };
+    return () => {
+      delete window.render_game_to_text;
+    };
   }, [state]);
 
   const handleDeleteSave = (): void => {

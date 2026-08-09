@@ -3,7 +3,8 @@ import { getItem } from '../../data/items';
 import { getEquippedArmor, getEquippedWeapon } from '../../core/inventory';
 import type { Combatant, ItemStack } from '../../core/types';
 import { CATEGORY_LABEL, itemSummary, stackLabel } from '../../utils/format';
-import { getItemVisual } from '../visualAssets';
+import { ITEM_CATEGORY_META, presentItem, stackPresentation } from '../itemPresentation';
+import { VisualImage } from './VisualImage';
 
 interface InventoryProps {
   player: Combatant;
@@ -18,21 +19,48 @@ interface InventoryProps {
 function EquipSlot({
   label,
   stack,
+  candidate,
   onUnequip,
   disabled,
 }: {
   label: string;
   stack: ItemStack | null;
+  candidate: ItemStack | null;
   onUnequip: () => void;
   disabled: boolean;
 }): JSX.Element {
-  const def = stack ? getItem(stack.itemId) : null;
+  const presented = stack ? stackPresentation(stack) : null;
+  const candidatePresented = candidate ? stackPresentation(candidate) : null;
   return (
-    <div className="equip-slot">
-      <div className="lbl">{label}</div>
-      <div className="nm">{def ? def.name : <span className="faint">空</span>}</div>
-      <div className="meta">{def ? itemSummary(def, stack ?? undefined) : '—'}</div>
-      {def && (
+    <div className="equip-slot" data-slot={label} data-equipped={presented ? 'true' : 'false'}>
+      <div className="lbl"><span aria-hidden="true">{label === '武器' ? '⚔' : '▣'}</span> {label}</div>
+      {presented ? (
+        <div className="equip-item-main">
+          <VisualImage
+            visual={presented.visual}
+            alt={`${presented.name}装备图标`}
+            className="equip-item-visual"
+          />
+          <div className="nm">{presented.name}</div>
+        </div>
+      ) : (
+        <div className="equip-empty">
+          <div className="nm"><span className="faint">空槽</span></div>
+          <div className="meta">{candidatePresented ? '有可装备候选' : '暂无可装备候选'}</div>
+        </div>
+      )}
+      <div className="meta">{presented ? presented.summary : '—'}</div>
+      {!presented && candidatePresented && (
+        <div className="equip-candidate" data-candidate-item-id={candidatePresented.itemId}>
+          <VisualImage
+            visual={candidatePresented.visual}
+            alt={`${candidatePresented.name}候选图标`}
+            className="equip-candidate-visual"
+          />
+          <span>候选：{candidatePresented.name}</span>
+        </div>
+      )}
+      {presented && (
         <button
           className="btn btn-sm"
           style={{ marginTop: 6 }}
@@ -57,6 +85,8 @@ export function Inventory({
 }: InventoryProps): JSX.Element {
   const weapon = getEquippedWeapon(player);
   const armor = getEquippedArmor(player);
+  const weaponCandidate = player.inventory.find((stack) => getItem(stack.itemId).category === 'weapon') ?? null;
+  const armorCandidate = player.inventory.find((stack) => getItem(stack.itemId).category === 'armor') ?? null;
 
   return (
     <>
@@ -64,12 +94,14 @@ export function Inventory({
         <EquipSlot
           label="武器"
           stack={weapon}
+          candidate={weaponCandidate}
           disabled={disabled}
           onUnequip={() => onUnequip('weapon')}
         />
         <EquipSlot
           label="防具"
           stack={armor}
+          candidate={armorCandidate}
           disabled={disabled}
           onUnequip={() => onUnequip('armor')}
         />
@@ -84,19 +116,19 @@ export function Inventory({
 
         {player.inventory.map((stack) => {
           const def = getItem(stack.itemId);
+          const presented = presentItem(stack.itemId, stack);
+          const categoryMeta = ITEM_CATEGORY_META[def.category];
           const equipable = def.category === 'weapon' || def.category === 'armor';
           const usable = def.category === 'consumable';
           return (
-            <div className="inv-item" key={stack.uid}>
+            <div className="inv-item" key={stack.uid} data-item-id={stack.itemId}>
               <div className="row1">
                 <span className="nm">
-                  <span className="item-emoji" aria-hidden>
-                    {getItemVisual(stack.itemId).emoji}
-                  </span>{' '}
+                  <VisualImage visual={presented.visual} alt={`${def.name}图标`} className="item-visual" />{' '}
                   {stackLabel(stack)}
                 </span>
                 <span className={`tag tag-${def.category}`}>
-                  {CATEGORY_LABEL[def.category]}
+                  <span aria-hidden="true">{categoryMeta.icon}</span> {CATEGORY_LABEL[def.category]}
                 </span>
               </div>
               <div className="meta">{itemSummary(def, stack)}</div>
@@ -123,7 +155,7 @@ export function Inventory({
                   className="btn btn-sm"
                   disabled={disabled}
                   onClick={() => onDrop(stack.uid)}
-                  title="丢到当前区域地面"
+                  aria-label={`丢弃${stackLabel(stack)}到当前区域地面`}
                 >
                   丢弃
                 </button>

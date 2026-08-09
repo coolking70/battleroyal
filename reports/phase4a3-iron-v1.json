@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1169134,
+  "tasks": [
+    {
+      "taskId": "item/iron/icon",
+      "hash": "d8aa7a6d3643de2ae2bdc3b7c363fbec6f72524eebf69a6ef043a55d3595f68c",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

@@ -11,7 +11,7 @@
  *    空着背包开等于浪费一个行动和一次冷却。
  *  - 工程师「野外工造」：**马上就要合成、但体力刚好不够**时开，
  *    这正是「免体力合成」唯一有价值的时刻。
- *  - 侦察员「战场侦察」：**两眼一抹黑**（不知道任何对手在哪）时开，
+ *  - 侦察员「警觉侦察」：**两眼一抹黑**（不知道任何对手在哪）时开，
  *    信息本身就是它的产出。
  *  - 斗士「肾上腺素」：纯战斗节奏技能，见 `npcCombatSkill` —— 它买的是
  *    **连续出手的体力**，只有在「打得动、但体力见底」时才划算；血量太低时
@@ -46,8 +46,9 @@ export function npcSurvivalSkill(state: GameState, npc: Combatant): SkillId | nu
 
   switch (skillId) {
     case 'emergency_treatment': {
-      const bleeding = npc.statusEffects.some((e) => (e.hpPerTick ?? 0) < 0);
-      if (bleeding) return skillId;
+      // emergency_treatment does not clear DoT; bleeding alone is not a valid
+      // trigger. The skill is useful when the NPC is actually low on HP and
+      // has a healing consumable to amplify afterward.
       return hpRatio < 0.6 && hasHealingConsumable(npc) ? skillId : null;
     }
 

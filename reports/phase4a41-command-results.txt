@@ -1,0 +1,55 @@
+Phase 4A-4.1 command evidence
+
+COMMAND: npm run art:approve -- --task world_event/emergency_broadcast/illustration --candidate 07eed3b78bbf16ae30572b61987dcc498a58e446f421508150b291edcac23787
+EXIT CODE: 0
+SUMMARY: exact E1 Emergency Broadcast candidate approved
+
+COMMAND: npm run art:approve -- --task world_event/medical_alert/illustration --candidate 7950c827639922568f0a6f3949145ec60eb812734f847783dc7f3a1e4172c0c1
+EXIT CODE: 0
+SUMMARY: exact E1 Medical Alert candidate approved
+
+COMMAND: npm run art:approve -- --task world_event/research_anomaly/illustration --candidate f5a2bc2592f94510aac588abf30d5435ff6ab8d0fafe0cb3d0e2617df89c18e5
+EXIT CODE: 0
+SUMMARY: exact E1 Research Anomaly candidate approved
+
+COMMAND: npm run art:approve -- --task world_event/citywide_unrest/illustration --candidate 1c239f17af048a803cebca4ab7e186bcee5cf05843b508531e6c313390a46bde
+EXIT CODE: 0
+SUMMARY: exact E1 Citywide Unrest candidate approved
+
+COMMAND: npm run art:list
+EXIT CODE: 0
+SUMMARY: four E1 candidates approved; Rain rejected; all injured variants planned with no candidates
+
+COMMAND: npm run art:publish
+EXIT CODE: 0
+SUMMARY: four E1 slots published; formal Manifest increased from 23 to 27
+
+COMMAND: npm run art:validate
+EXIT CODE: 0
+SUMMARY: 4 portraits, 6 zones, 12 items and 5 World Events official; Rain absent
+
+COMMAND: npm run art:publish (second publish)
+EXIT CODE: 0
+SUMMARY: NO CHANGES
+
+COMMAND: npm run art:prompt-audit -- --task character/scout/injured
+EXIT CODE: 0
+SUMMARY: PASS; character-positive-only; forbiddenTokenCount=0; internal task/entity IDs absent
+
+COMMAND: npm run typecheck; npm test; npm run build; npm run audit:save; npm run audit:deps; npm run art:doctor -- --offline; npm run art:validate; npm run art:security:browser; npm run art:security:repo; npm run simulate -- --games 500 --seed-prefix PHASE4A41 --regression --output reports/phase4a41-balance.json; npm audit --omit=dev
+EXIT CODE: 0
+SUMMARY: Offline Gate passed sequentially; full suite 1022/1022; save 74/74 malformed cases rejected; PHASE4A41 requested=500 actual=500; production dependency audit 0 vulnerabilities
+
+COMMAND: mock Agnes payload contract for character/scout/injured
+EXIT CODE: 0
+SUMMARY: actual body.prompt contains full Scout descriptor, has no Avoid suffix, forbiddenTokenCount=0 and no internal task ID
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:generate -- --task character/scout/injured --concurrency 1 --report-name phase4a41-scout-injured-canary
+EXIT CODE: 0
+SUMMARY: requested=1 apiCalls=1 cacheHits=0 source=api validation=passed review=pending; no retry
+
+COMMAND: npm run art:review-export -- --report reports/phase4a41-scout-injured-canary.json --output output/art-review/phase4a41-scout-injured-canary --suffix -canary
+EXIT CODE: 0
+SUMMARY: exported exactly one pending Scout Injured image plus index.json and README.md with blank Decision/Notes
+
+API BUDGET: E1 formalization=0 API calls; Scout Injured=1; Fighter Injured=0; Engineer Injured=0; Medic Injured=0; Rain=0; no force or reroll.

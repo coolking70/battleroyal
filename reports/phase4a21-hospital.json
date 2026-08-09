@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1265559,
+  "tasks": [
+    {
+      "taskId": "zone/hospital/background",
+      "hash": "80d603bfd8124a44919ffc590313448511686c51f2648850527c71e8268e9354",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

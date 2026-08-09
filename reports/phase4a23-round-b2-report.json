@@ -1,0 +1,90 @@
+{
+  "phase": "4A-2.3",
+  "round": "B2",
+  "provider": "agnes",
+  "model": "agnes-image-2.1-flash",
+  "requested": 6,
+  "attempted": 6,
+  "generated": 6,
+  "apiCalls": 6,
+  "cacheHits": 0,
+  "concurrency": 1,
+  "stoppedEarly": false,
+  "stopReason": null,
+  "approvals": 0,
+  "published": 0,
+  "tasks": [
+    {
+      "taskId": "zone/residential/background",
+      "candidateHash": "9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84",
+      "contentHash": "9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84",
+      "actualWidth": 1312,
+      "actualHeight": 736,
+      "mimeType": "image/png",
+      "source": "api",
+      "validation": "passed",
+      "review": "pending",
+      "hardVisualObservation": "Vacant residential courtyard with apartment entrances, balconies, bicycles and mailboxes; no visible people; lower center remains open."
+    },
+    {
+      "taskId": "zone/factory/background",
+      "candidateHash": "94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4",
+      "contentHash": "94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4",
+      "actualWidth": 1312,
+      "actualHeight": 736,
+      "mimeType": "image/png",
+      "source": "api",
+      "validation": "passed",
+      "review": "pending",
+      "hardVisualObservation": "Idle industrial workshop with workbenches, machinery, racks and pipes; no visible workers; central lane remains readable. Small non-readable warning marks should be checked by human review."
+    },
+    {
+      "taskId": "zone/forest/background",
+      "candidateHash": "2126353261005efb99059bd7ab230408ab9aa1b3214732f6b20ebd3715951430",
+      "contentHash": "2126353261005efb99059bd7ab230408ab9aa1b3214732f6b20ebd3715951430",
+      "actualWidth": 1312,
+      "actualHeight": 736,
+      "mimeType": "image/png",
+      "source": "api",
+      "validation": "passed",
+      "review": "pending",
+      "hardVisualObservation": "Overgrown woodland trail with trees, ferns, moss, fallen branches and damp stones; no characters or creatures; path depth is clear."
+    },
+    {
+      "taskId": "zone/lab/background",
+      "candidateHash": "16eb9bc6cff58880933a81eda9a837678201c672e509656f051d67551f97476e",
+      "contentHash": "16eb9bc6cff58880933a81eda9a837678201c672e509656f051d67551f97476e",
+      "actualWidth": 1312,
+      "actualHeight": 736,
+      "mimeType": "image/png",
+      "source": "api",
+      "validation": "passed",
+      "review": "pending",
+      "hardVisualObservation": "Inactive research laboratory with workbenches, sealed glass equipment, consoles and cabinets; no personnel; open central aisle; distinct from Hospital."
+    },
+    {
+      "taskId": "item/water/icon",
+      "candidateHash": "ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38",
+      "contentHash": "ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38",
+      "actualWidth": 1024,
+      "actualHeight": 1024,
+      "mimeType": "image/png",
+      "source": "api",
+      "validation": "passed",
+      "review": "pending",
+      "hardVisualObservation": "Exactly one transparent water bottle with clear water, muted-blue cap and condensation on an isolated dark-gray backdrop; no visible brand or text."
+    },
+    {
+      "taskId": "item/energy_drink/icon",
+      "candidateHash": "795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b",
+      "contentHash": "795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b",
+      "actualWidth": 1024,
+      "actualHeight": 1024,
+      "mimeType": "image/png",
+      "source": "api",
+      "validation": "passed",
+      "review": "pending",
+      "hardVisualObservation": "Exactly one generic charcoal-and-amber beverage can on an isolated dark-gray backdrop; no readable text or real brand; clear silhouette."
+    }
+  ]
+}

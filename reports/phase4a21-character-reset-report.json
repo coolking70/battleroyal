@@ -1,0 +1,45 @@
+{
+  "strategy": "character-positive-only",
+  "forbiddenTokenAudit": "passed",
+  "stoppedEarly": false,
+  "apiCalls": 3,
+  "cacheHits": 0,
+  "tasks": [
+    {
+      "taskId": "character/engineer/portrait",
+      "previousCandidateHash": "77e02599e4b4798ff6d4668b26423bc37c6b1c7bfe7a2a5def2b48d2cdb52934",
+      "candidateHash": "12989865f752e70e7716b2881c3bfa5dbe5546a9c0ec7694705b38be30101979",
+      "promptStrategy": "character-positive-only",
+      "forbiddenTokenCount": 0,
+      "apiCalls": 1,
+      "cacheHits": 0,
+      "validation": "passed",
+      "review": "pending",
+      "hardContaminationObservation": "No obvious gun, long gun, tactical chest rig, or military uniform visible in the generated image."
+    },
+    {
+      "taskId": "character/fighter/portrait",
+      "previousCandidateHash": "f749da45350da7a2d069cb5b8ffdaab2815268dc558c3e8c43563189912c9b6c",
+      "candidateHash": "33b377a42b0a9a827fed7d3c8701dbe40e70893bc517a6500090a0e1febf8218",
+      "promptStrategy": "character-positive-only",
+      "forbiddenTokenCount": 0,
+      "apiCalls": 1,
+      "cacheHits": 0,
+      "validation": "passed",
+      "review": "pending",
+      "hardContaminationObservation": "No obvious gun, long gun, tactical chest rig, or military uniform visible in the generated image."
+    },
+    {
+      "taskId": "character/medic/portrait",
+      "previousCandidateHash": "63d01e7c952da6d1bec5d7880afdcd828e7a5cb10acf2defd677e6e4f0f8ea7c",
+      "candidateHash": "6a1d891c1597e51d3ea26cab3c63a514994a4ed3d026f3f5f5e675a47eb8ec59",
+      "promptStrategy": "character-positive-only",
+      "forbiddenTokenCount": 0,
+      "apiCalls": 1,
+      "cacheHits": 0,
+      "validation": "passed",
+      "review": "pending",
+      "hardContaminationObservation": "No obvious gun, long gun, tactical chest rig, or military uniform visible in the generated image; visible medical-cross marking remains for human review."
+    }
+  ]
+}

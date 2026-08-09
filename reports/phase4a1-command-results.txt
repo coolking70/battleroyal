@@ -1,0 +1,90 @@
+Phase 4A-1 command evidence
+Date: 2026-08-08
+Branch: agent/phase4-art-pipeline
+Pre-phase baseline commit: 59610868f2fbbfc492f4fd5482fda3faecd7a402
+
+COMMAND: npm ci
+EXIT: 0
+SUMMARY: added 161 packages; npm reported 5 dev dependency vulnerabilities (recorded, no force fix).
+
+COMMAND: npm run typecheck
+EXIT: 0
+SUMMARY: tsc -b --force completed without diagnostics.
+
+COMMAND: npm test
+EXIT: 0
+SUMMARY: 44 files / 625 tests passed.
+
+COMMAND: npm run build
+EXIT: 0
+SUMMARY: Vite built 112 modules; dist bundle generated.
+
+COMMAND: npm run audit:save
+EXIT: 0
+SUMMARY: 74 corrupt cases rejected; 74 passed; construction failures 0; 判定 PASS.
+
+COMMAND: npm run audit:deps
+EXIT: 0
+SUMMARY: R1/R2/R3/R4 violations and warnings all 0; 判定 PASS.
+
+COMMAND: npm run art:doctor -- --offline
+EXIT: 0
+SUMMARY: 32 tasks, style files, manifest, approved-assets, candidate/cache directories all PASS; offline API check.
+
+COMMAND: npm run art:validate
+EXIT: 0
+SUMMARY: PASS published manifest; legacy baseline asset remains valid without AI provenance.
+
+COMMAND: npm run art:security:browser
+EXIT: 0
+SUMMARY: PASS browser secret boundary scan (108 files).
+
+COMMAND: npm run art:security:repo
+EXIT: 0
+SUMMARY: PASS tracked repository secret scan (324 tracked files), including .env.example.
+
+COMMAND: npm run art:generate -- --dry-run --report-name phase4a1-dry-run-report
+EXIT: 0
+SUMMARY: mode=dry-run, requested=32, apiCalls=0, failed=0; Scout reported CACHE HIT and remaining ungenerated tasks API REQUIRED.
+
+COMMAND: npm run simulate -- --games 500 --seed-prefix PHASE4A1 --regression --output reports/phase4a1-balance.json
+EXIT: 0
+SUMMARY: requestedTotalGames=500, actualTotalGames=500, engine PASS, regression PASS; character balance is observation only.
+
+COMMAND: npm audit --omit=dev
+EXIT: 0
+SUMMARY: found 0 vulnerabilities.
+
+COMMAND: IMAGE_API_KEY=<local-only> npm run art:api-check
+EXIT: 0
+SUMMARY: endpoint and model matched; API key configured (value hidden); no network generation performed.
+
+COMMAND: npm run art:prompt -- --task character/scout/portrait
+EXIT: 0
+SUMMARY: Scout prompt/hash emitted; model agnes-image-2.1-flash, requested 768x1024, ratio 3:4.
+
+COMMAND: IMAGE_API_KEY=<local-only> npm run art:generate -- --task zone/school/background --concurrency 1 --report-name phase4a1-round-a-school
+EXIT: 0
+SUMMARY: provider=agnes, apiCalls=1, source=api, validation=passed, actual=1312x736 PNG.
+
+COMMAND: IMAGE_API_KEY=<local-only> npm run art:generate -- --task item/bandage/icon --concurrency 1 --report-name phase4a1-round-a-bandage
+EXIT: 0
+SUMMARY: provider=agnes, apiCalls=1, source=api, validation=passed, actual=1024x1024 PNG; legacy bandage.svg untouched.
+
+COMMAND: IMAGE_API_KEY=<local-only> npm run art:generate -- --task world_event/blackout/illustration --concurrency 1 --report-name phase4a1-round-a-blackout
+EXIT: 0
+SUMMARY: provider=agnes, apiCalls=1, source=api, validation=passed, actual=1312x736 PNG.
+
+COMMAND: npm run art:generate -- --task character/scout/portrait --concurrency 1 --report-name phase4a1-cache-verification
+EXIT: 0
+SUMMARY: provider=agnes, cacheHits=1, apiCalls=0, source=cache, validation=passed.
+
+COMMAND: npm run art:review-export -- --round A
+EXIT: 0
+SUMMARY: exported 4 pending candidates to output/art-review/phase4a1-round-a; no review status changed.
+
+Live Scout evidence is preserved in phase4a1-round-a-scout.json and the prior provider confirmation reports. No API key or image base64 is present in reports.
+
+COMMAND: gh run watch 31265918529 --exit-status
+EXIT: 0
+SUMMARY: GitHub Actions verify job PASS; typecheck, 625-test unit suite, build, audits, manifest validation, both secret scans, dry-run, and CI 100-game simulation all succeeded.

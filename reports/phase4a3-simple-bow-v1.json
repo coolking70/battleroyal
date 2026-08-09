@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1297996,
+  "tasks": [
+    {
+      "taskId": "item/simple_bow/icon",
+      "hash": "07db9c7697913d9ac8c24c09b255e6f9d72b54b1ed2df6369ae999a74eea028d",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

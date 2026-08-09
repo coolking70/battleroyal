@@ -1,0 +1,47 @@
+Phase 4A-4 command evidence
+
+COMMAND: npm run art:approve -- --task item/battery/icon --candidate 1d7473b3470be8f86f43c2b76f21911cc2055153b7d09fa323acf901c42d5ee6; ... iron; ... wood; ... iron_pipe; ... stone_axe; ... simple_bow; ... simple_armor; ... plate_armor
+EXIT CODE: 0
+SUMMARY: eight exact user-approved B3 hashes became approved; no unrelated candidate was approved
+
+COMMAND: npm run art:list
+EXIT CODE: 0
+SUMMARY: B3 eight approved; E1 four planned; Rain remained rejected; no E1 candidate existed before generation
+
+COMMAND: npm run art:publish
+EXIT CODE: 0
+SUMMARY: published eight B3 candidates; formal Manifest increased from 15 to 23
+
+COMMAND: npm run art:validate
+EXIT CODE: 0
+SUMMARY: published Manifest valid; 4 Characters, 6 Zones, 12 Items and 1 Blackout official
+
+COMMAND: npm run art:publish (second publish)
+EXIT CODE: 0
+SUMMARY: NO CHANGES
+
+COMMAND: npm run typecheck; npm test; npm run build; npm run audit:save; npm run audit:deps; npm run art:doctor -- --offline; npm run art:validate; npm run art:security:browser; npm run art:security:repo; npm audit --omit=dev
+EXIT CODE: 0
+SUMMARY: Offline Gate passed; full suite 972/972; save 74/74 malformed cases rejected; security scans passed; production dependency audit 0 vulnerabilities
+
+COMMAND: npm run simulate -- --games 500 --seed-prefix PHASE4A4 --ci --output reports/phase4a4-balance.json
+EXIT CODE: 0
+SUMMARY: requested=500 actual=500; engine health PASS; balance PASS; reports/phase4a4-balance.json and .md written
+
+COMMAND: npm run art:prompt-audit -- --task world_event/emergency_broadcast/illustration; ... medical_alert; ... research_anomaly; ... citywide_unrest
+EXIT CODE: 0
+SUMMARY: all four E1 preflight audits passed; forbidden-token count 0; no internal task/entity IDs
+
+COMMAND: IMAGE_API_KEY=(local environment only) npm run art:event-e1 -- --concurrency 1 --report-name phase4a4-event-e1
+EXIT CODE: 0
+SUMMARY: requested=4 attempted=4 generated=4 apiCalls=4 cacheHits=0 stoppedEarly=false rainApiCalls=0; all validation passed and review remained pending
+
+COMMAND: npm run art:review-export -- --report reports/phase4a4-event-e1-report.json --output output/art-review/phase4a4-event-e1 --suffix -e1
+EXIT CODE: 0
+SUMMARY: exported four pending validated E1 candidates; all human Decision and Notes fields remain blank
+
+COMMAND: npm run art:list; npm run art:publish; npm run art:validate
+EXIT CODE: 0
+SUMMARY: all four E1 candidates remain pending; second publish returned NO CHANGES; published Manifest validation passed
+
+API BUDGET: E1=4 real first-generation calls; Rain=0; cache hits=0; no force, reroll, approval or E1 publish.

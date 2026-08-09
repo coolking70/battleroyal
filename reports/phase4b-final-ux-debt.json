@@ -1,0 +1,27 @@
+{
+  "phase": "Phase 4B closure",
+  "status": "resolved",
+  "resolvedBy": "Phase 4B-6",
+  "issues": [
+    {"id":"UX-001","status":"resolved","resolvedPhase":"4B-1","evidence":"CODE-VERIFIED + RUNTIME-VERIFIED"},
+    {"id":"UX-002","status":"resolved","resolvedPhase":"4B-1","evidence":"CODE-VERIFIED + RUNTIME-VERIFIED"},
+    {"id":"UX-003","status":"resolved","resolvedPhase":"4B-2","evidence":"CODE-VERIFIED + RUNTIME-VERIFIED"},
+    {"id":"UX-004","status":"resolved","resolvedPhase":"4B-2","evidence":"CODE-VERIFIED + RUNTIME-VERIFIED"},
+    {"id":"UX-005","status":"resolved","resolvedPhase":"4B-3","evidence":"CODE-VERIFIED + RUNTIME-VERIFIED"},
+    {"id":"UX-006","status":"resolved","resolvedPhase":"4B-4","evidence":"CODE-VERIFIED + RUNTIME-VERIFIED"},
+    {"id":"UX-007","status":"resolved","resolvedPhase":"4B-4","evidence":"CODE-VERIFIED + RUNTIME-VERIFIED"},
+    {"id":"UX-008","status":"resolved","resolvedPhase":"4B-1","evidence":"CODE-VERIFIED + RUNTIME-VERIFIED"},
+    {"id":"UX-009","status":"resolved","resolvedPhase":"4B-3","evidence":"CODE-VERIFIED + RUNTIME-VERIFIED"},
+    {"id":"UX-010","status":"resolved","resolvedPhase":"4B-3","evidence":"CODE-VERIFIED + RUNTIME-VERIFIED"},
+    {"id":"UX-011","status":"resolved","resolvedPhase":"4B-6","evidence":"CODE-VERIFIED + RUNTIME-VERIFIED"},
+    {"id":"UX-012","status":"resolved","resolvedPhase":"4B-5","evidence":"CODE-VERIFIED + RUNTIME-VERIFIED"},
+    {"id":"UX-013","status":"resolved","resolvedPhase":"4B-6","evidence":"CODE-VERIFIED + UNIT-VERIFIED"},
+    {"id":"UX-014","status":"resolved","resolvedPhase":"4B-6","evidence":"CODE-VERIFIED + HUMAN-PLAYTEST-NEEDED"},
+    {"id":"UX-015","status":"resolved","resolvedPhase":"4B-6","evidence":"CODE-VERIFIED + RUNTIME-VERIFIED"}
+  ],
+  "remainingHumanValidation": [
+    "real-device touch and safe-area behavior",
+    "screen-reader phrasing and announcement timing",
+    "long-session panel density and reduced-motion comfort"
+  ]
+}

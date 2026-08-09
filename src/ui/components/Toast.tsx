@@ -11,8 +11,15 @@ export function Toast({ toast, onDismiss }: ToastProps): JSX.Element {
     <div
       className={`toast ${toast.tone}`}
       role="status"
+      tabIndex={0}
+      aria-label="操作提示，按 Enter 或空格关闭"
       onClick={onDismiss}
-      title="点击关闭"
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onDismiss();
+        }
+      }}
     >
       {toast.text}
     </div>

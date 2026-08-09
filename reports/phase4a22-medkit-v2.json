@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1115497,
+  "tasks": [
+    {
+      "taskId": "item/medkit/icon",
+      "hash": "56c73dde328a31f004dc449e0d1e1ac4af0d1f0b616de6906eca99757b5f829d",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

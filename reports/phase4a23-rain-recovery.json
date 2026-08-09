@@ -1,0 +1,13 @@
+{
+  "status": "provider_rejected",
+  "taskId": "world_event/rain/illustration",
+  "candidateHash": null,
+  "promptHash": "1f97bc209fbbc6fc0debdf6675e3959f0d3c355db28f1ca235b5ef31797a2e2d",
+  "previousPromptHash": "871d1b146011fb7747ca52665d9a152992c87d1a343f23d21807259b506ae95c",
+  "apiCalls": 1,
+  "cacheHits": 0,
+  "retryScheduled": false,
+  "validation": "not_attempted",
+  "review": "not_applicable",
+  "error": "Unable to generate this content. Please modify your prompt and try again."
+}

@@ -1,0 +1,65 @@
+Phase 4A-4.4 command evidence
+Branch: agent/phase4-art-pipeline
+Baseline HEAD: 1e82ef12c3360e0ba1e18c8f4dc2384bb416882b
+
+1. npm ci
+   EXIT 0 — dependencies installed; npm reported development advisories.
+
+2. npm run typecheck
+   EXIT 0 — PASS.
+
+3. npm test
+   EXIT 0 — 55 files, 1190/1190 tests PASS.
+
+4. npm run build
+   EXIT 0 — Vite production build PASS.
+
+5. npm run art:doctor -- --offline
+   EXIT 0 — PASS; 36 task definitions.
+
+6. npm run art:validate
+   EXIT 0 — PASS published manifest.
+
+7. npm run audit:deps
+   EXIT 0 — PASS; R1/R2/R3/R4 violations 0.
+
+8. npm run art:security:browser && npm run art:security:repo
+   EXIT 0 — browser boundary and tracked repository secret scans PASS.
+
+9. npm audit --omit=dev
+   EXIT 0 — 0 production vulnerabilities.
+
+10. npm run audit:save
+    EXIT 0 — 74/74 passed; existing user-owned save reports were restored unchanged and not staged.
+
+11. npm run simulate -- --games 500 --seed-prefix PHASE4A44 --output reports/phase4a44-balance.json
+    EXIT 0 — requestedTotalGames=500; actualTotalGames=500; engine, balance and Phase 3A PASS.
+
+12. npm run art:prompt-audit -- --task character/fighter/combat
+    EXIT 0 — postureOnlyContract/signaturePropContract PASS; injury/military/dynamic/interaction counts 0.
+
+13. npm run art:prompt-audit -- --task character/engineer/combat
+    EXIT 0 — postureOnlyContract/handsEmptyContract/staticSignaturePropContract PASS; forbidden counts 0.
+
+14. npm run art:prompt-audit -- --task character/medic/combat
+    EXIT 0 — postureOnlyContract/handsEmptyContract/staticSignaturePropContract PASS; forbidden counts 0.
+
+15. Scout Track A approval/publication
+    EXIT 0 — approved 7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01; published manifest 31→32; second publish NO CHANGES; validate PASS.
+
+16. IMAGE_API_KEY=(local process environment only) npm run art:combat-batch -- --concurrency 1 --report-name phase4a44-combat-batch
+    EXIT 0 — requested=3 attempted=3 generated=3 apiCalls=3 cacheHits=0; order Fighter → Engineer → Medic; all validation passed; all review statuses pending.
+
+17. Visual review
+    EXIT 0 — Fighter guard/gloves clear; Engineer posture/empty hand clear with wrench identity left for human confirmation; Medic posture/identity clear with waist pouch requiring explicit human review; no rerolls.
+
+18. npm run art:review-export -- --report reports/phase4a44-combat-batch.json --output output/art-review/phase4a44-combat-batch
+    EXIT 0 — exported 3 pending candidates; Decision/Notes blank.
+
+19. npm run art:publish
+    EXIT 0 — NO CHANGES; no pending batch candidate published.
+
+20. npm run art:validate
+    EXIT 0 — PASS; Manifest unchanged after batch generation.
+
+Secret handling: the provider credential was passed only as a local process environment value for the real batch call. It was not written to source, prompts, candidate metadata, reports, Manifest or this evidence file.

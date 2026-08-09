@@ -1,0 +1,49 @@
+{
+  "strategy": "descriptor-locked-text-only-dynamic-equipment-neutral-posture-only",
+  "requested": 1,
+  "attempted": 1,
+  "generated": 1,
+  "apiCalls": 1,
+  "cacheHits": 0,
+  "rainApiCalls": 0,
+  "otherCombatCalls": 0,
+  "tasks": [
+    {
+      "taskId": "character/scout/combat",
+      "basePortraitTask": "character/scout/portrait",
+      "injuredTask": "character/scout/injured",
+      "v1CandidateHash": "80109ee0510cc4132aa26518dfa1d37d59b0ebb4df5daddc57e1a88bb6fed7c1",
+      "v1Decision": "rejected",
+      "v2CandidateHash": "752052e828e7708ebc010457bb9eca11e718a7ec91e18e63dd8b133ad11f6159",
+      "v2Decision": "rejected",
+      "candidateHash": "7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01",
+      "contentHash": "7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01",
+      "promptHash": "7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01",
+      "previousPromptHash": "752052e828e7708ebc010457bb9eca11e718a7ec91e18e63dd8b133ad11f6159",
+      "width": 864,
+      "height": 1152,
+      "validation": {
+        "status": "passed",
+        "actualWidth": 864,
+        "actualHeight": 1152,
+        "mimeType": "image/png",
+        "errors": []
+      },
+      "review": "pending",
+      "apiCalls": 1,
+      "cacheHits": 0,
+      "source": "api",
+      "providerStatus": "generated",
+      "identityDescriptorVersion": 3,
+      "combatDescriptorVersion": 4,
+      "dynamicEquipmentPolicy": "weapon visuals belong to item/equipment systems; character combat state art remains equipment-neutral",
+      "postureOnly": true,
+      "signaturePropMode": "static",
+      "handsEmpty": true,
+      "postureOnlyContract": true,
+      "handsEmptyContract": true,
+      "staticSignaturePropContract": true,
+      "hardVisualObservation": "Human visual review observation: Scout identity, short dark hair, slate-blue jacket, charcoal shirt, khaki trousers and tan-brown side pouch remain recognizable. One compact binocular pair remains static at the center of the chest on its neck strap; both hands are visibly empty and separated from the binoculars. Forward torso lean, raised tense shoulders, alert eyes, open raised palm and focused expression clearly communicate an active threat-response state distinct from Portrait and Injured. No duplicate binocular prop, fixed weapon or military/tactical contamination was observed. This remains pending human approval; no automatic similarity decision or reroll occurred."
+    }
+  ]
+}

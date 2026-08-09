@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1463106,
+  "tasks": [
+    {
+      "taskId": "character/scout/portrait",
+      "hash": "d47e96af060e6357e8d513ee79056b3b7f701c8add0332f8ae9d3b61bdaaee0a",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

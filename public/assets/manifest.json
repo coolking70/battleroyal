@@ -1,19 +1,78 @@
 {
   "version": 1,
   "characters": {
-    "scout": { "portrait": null, "injured": null, "combat": null },
-    "fighter": { "portrait": null, "injured": null, "combat": null },
-    "engineer": { "portrait": null, "injured": null, "combat": null },
-    "medic": { "portrait": null, "injured": null, "combat": null }
+    "scout": {
+      "portrait": "/assets/characters/scout/portrait.png",
+      "injured": "/assets/characters/scout/injured.png",
+      "combat": "/assets/characters/scout/combat.png"
+    },
+    "fighter": {
+      "portrait": "/assets/characters/fighter/portrait.png",
+      "injured": "/assets/characters/fighter/injured.png",
+      "combat": "/assets/characters/fighter/combat.png"
+    },
+    "engineer": {
+      "portrait": "/assets/characters/engineer/portrait.png",
+      "injured": "/assets/characters/engineer/injured.png",
+      "combat": "/assets/characters/engineer/combat.png"
+    },
+    "medic": {
+      "portrait": "/assets/characters/medic/portrait.png",
+      "injured": "/assets/characters/medic/injured.png",
+      "combat": "/assets/characters/medic/combat.png"
+    }
   },
   "zones": {
-    "school": { "background": null, "warning": null, "restricted": null },
-    "hospital": { "background": null, "warning": null, "restricted": null },
-    "residential": { "background": null, "warning": null, "restricted": null },
-    "factory": { "background": null, "warning": null, "restricted": null },
-    "forest": { "background": null, "warning": null, "restricted": null },
-    "lab": { "background": null, "warning": null, "restricted": null }
+    "school": {
+      "background": "/assets/zones/school/background.png",
+      "warning": null,
+      "restricted": null
+    },
+    "hospital": {
+      "background": "/assets/zones/hospital/background.png",
+      "warning": null,
+      "restricted": null
+    },
+    "residential": {
+      "background": "/assets/zones/residential/background.png",
+      "warning": null,
+      "restricted": null
+    },
+    "factory": {
+      "background": "/assets/zones/factory/background.png",
+      "warning": null,
+      "restricted": null
+    },
+    "forest": {
+      "background": "/assets/zones/forest/background.png",
+      "warning": null,
+      "restricted": null
+    },
+    "lab": {
+      "background": "/assets/zones/lab/background.png",
+      "warning": null,
+      "restricted": null
+    }
   },
-  "items": {},
-  "worldEvents": {}
+  "items": {
+    "bandage": "/assets/items/bandage/icon.png",
+    "medkit": "/assets/items/medkit/icon.png",
+    "energy_drink": "/assets/items/energy_drink/icon.png",
+    "water": "/assets/items/water/icon.png",
+    "battery": "/assets/items/battery/icon.png",
+    "iron": "/assets/items/iron/icon.png",
+    "iron_pipe": "/assets/items/iron_pipe/icon.png",
+    "plate_armor": "/assets/items/plate_armor/icon.png",
+    "simple_armor": "/assets/items/simple_armor/icon.png",
+    "simple_bow": "/assets/items/simple_bow/icon.png",
+    "stone_axe": "/assets/items/stone_axe/icon.png",
+    "wood": "/assets/items/wood/icon.png"
+  },
+  "worldEvents": {
+    "blackout": "/assets/world-events/blackout/illustration.png",
+    "citywide_unrest": "/assets/world-events/citywide_unrest/illustration.png",
+    "emergency_broadcast": "/assets/world-events/emergency_broadcast/illustration.png",
+    "medical_alert": "/assets/world-events/medical_alert/illustration.png",
+    "research_anomaly": "/assets/world-events/research_anomaly/illustration.png"
+  }
 }

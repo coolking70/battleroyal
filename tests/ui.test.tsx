@@ -22,6 +22,18 @@ declare global {
 
 beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  if (typeof localStorage.clear !== 'function') {
+    const values = new Map<string, string>();
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      value: {
+        clear: () => values.clear(),
+        getItem: (key: string) => values.get(key) ?? null,
+        setItem: (key: string, value: string) => values.set(key, String(value)),
+        removeItem: (key: string) => values.delete(key),
+      },
+    });
+  }
   localStorage.clear();
   container = document.createElement('div');
   document.body.appendChild(container);
@@ -74,7 +86,7 @@ describe('界面冒烟', () => {
     click('开始新对局');
 
     expect(container.querySelector('.game')).not.toBeNull();
-    expect(container.textContent).toContain('区域地图');
+    expect(container.textContent).toContain('路线规划');
     expect(container.textContent).toContain('同区域');
     expect(localStorage.getItem(SAVE_KEY)).not.toBeNull();
   });
@@ -102,11 +114,12 @@ describe('界面冒烟', () => {
     expect(container.querySelectorAll('.recipe').length).toBeGreaterThan(0);
   });
 
-  it('切到日志页能看到开局事件', () => {
+  it('规划区移除冗余日志 tab，但历史日志仍常驻可见', () => {
     render();
     click('开始新对局');
-    click('日志');
+    expect(container.querySelectorAll('.planning-tabs button')).toHaveLength(2);
     expect(container.textContent).toContain('对局开始');
+    expect(container.querySelector('.log-panel')).not.toBeNull();
   });
 
   it('重新挂载后可以从存档继续', () => {
@@ -136,5 +149,14 @@ describe('界面冒烟', () => {
     expect(text).toContain('事件');
     expect(text).toContain('RNG 状态');
     expect(text).toContain('同种子可完全重放');
+  });
+
+  it('暴露紧凑的 render_game_to_text 状态供自动化试玩读取', () => {
+    render();
+    expect(window.render_game_to_text?.()).toContain('"mode":"menu"');
+    click('开始新对局');
+    const state = JSON.parse(window.render_game_to_text?.() ?? '{}') as { mode: string; player: { zoneId: string } };
+    expect(state.mode).toBe('playing');
+    expect(state.player.zoneId).toBeTruthy();
   });
 });

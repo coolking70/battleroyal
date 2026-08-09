@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1179560,
+  "tasks": [
+    {
+      "taskId": "character/medic/portrait",
+      "hash": "6a1d891c1597e51d3ea26cab3c63a514994a4ed3d026f3f5f5e675a47eb8ec59",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

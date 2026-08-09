@@ -19,7 +19,7 @@
  *   3. 之后每一回合从 getLegalPlayerCommands 合法集合里选动作并 executeCommand
  *      （决策内核与自动对局控制器共用，绝不绕过规则）；
  *   4. 对局结束（won / lost / draw / timeout）后，从**真实最终状态**提取
- *      每一个字段，写入 reports/phase3a1-scripted-playthroughs.md。
+ *      每一个字段，写入 reports/phase3a2-scripted-playthroughs.md。
  *
  * 用法：
  *   npm run scripted:playthroughs
@@ -437,7 +437,7 @@ function main(): void {
     __dirname,
     '..',
     'reports',
-    'phase3a1-scripted-playthroughs.md',
+    'phase3a2-scripted-playthroughs.md',
   );
   mkdirSync(dirname(mdPath), { recursive: true });
   writeFileSync(mdPath, renderMarkdown(records), 'utf8');

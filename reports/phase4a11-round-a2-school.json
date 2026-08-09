@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1464929,
+  "tasks": [
+    {
+      "taskId": "zone/school/background",
+      "hash": "c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

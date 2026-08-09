@@ -1,0 +1,20 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1276009,
+  "tasks": [
+    {
+      "taskId": "character/fighter/portrait",
+      "hash": "33b377a42b0a9a827fed7d3c8701dbe40e70893bc517a6500090a0e1febf8218",
+      "source": "api",
+      "status": "passed",
+      "errors": []
+    }
+  ]
+}

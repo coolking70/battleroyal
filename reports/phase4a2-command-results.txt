@@ -1,0 +1,30 @@
+Phase 4A-2 command results
+==========================
+
+Round A review decisions:
+PASS approve item/bandage/icon 3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb
+PASS approve zone/school/background c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7
+PASS approve character/scout/portrait 2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd
+PASS reject world_event/blackout/illustration bbf6b831c8cf9ec9548c82269e2be6f03a9821d8c80b631615e0e9a5a02d2671
+
+Formal publish:
+PASS npm run art:publish — PUBLISHED 3 approved candidates
+PASS npm run art:validate — PASS published manifest
+PASS second npm run art:publish — NO CHANGES
+PASS second npm run art:validate — PASS published manifest
+
+Prompt preflight:
+PASS Blackout v5 plus exactly six B1 task prompts generated and recorded
+
+Live generation budget:
+PASS Blackout v5 — 1 API call, validation passed, review pending
+PASS B1 Fighter — 1 API call, validation passed, review pending
+PASS B1 Engineer — 1 API call, validation passed, review pending
+PASS B1 Medic — 1 API call, validation passed, review pending
+STOP B1 after three character calls — contamination threshold reached
+NOT CALLED B1 Hospital, Medkit, Rain
+
+Runtime:
+PASS official Scout/School/Bandage selectors
+PASS unapproved Blackout SVG fallback
+PASS official → SVG → emoji failure chain
