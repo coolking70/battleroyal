@@ -409,3 +409,18 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   save/dependency/art/security gates, 500-game engine-health regression and
   production `npm audit --omit=dev` all pass. Human touch, screen-reader and
   route-comprehension review remain HUMAN-PLAYTEST-NEEDED.
+
+## Phase 4C-10 progress (2026-08-10)
+
+- Cleared the development-toolchain security debt: upgraded Vite to 8.2.1,
+  Vitest to 4.1.10 and `@vitejs/plugin-react` to 6.0.5. The app version remains
+  `0.3.2`; no core/data/rule/save/art changes were made.
+- Adapted the explicit Node type inclusion and `VisualImage` fallback tests to
+  Vite 8's small-SVG data-URL behavior without weakening the fallback contract.
+- Clean `npm ci`, typecheck, build, 70 files / 1294 tests, save/dependency/art/
+  security gates, 500-game engine-health regression and both full/production
+  npm audits pass. Full and production audit totals are 0 vulnerabilities.
+- Re-ran clean production-preview browser evidence with zero console/page
+  errors, including the Phase 4C-9 remote-ground-drop information boundary and
+  the Web Game smoke snapshot. Human touch, screen-reader, and long-session
+  validation remain HUMAN-PLAYTEST-NEEDED.
