@@ -250,3 +250,13 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   covers 1280×720 and 390×844 with zero console/page errors. The required 500
   game regression and 200-game craft reachability observation are recorded in
   `reports/phase4c1-balance.*` and `reports/phase4c1-craft-reachability.json`.
+
+## Phase 4C-2 Step 1 progress (2026-08-10)
+
+- Moved hospital `stick` out of `basePool` while retaining it in `rarePool`,
+  restoring the hospital direct-weapon estimate below the forest baseline.
+- Corrected the CraftPanel recommendation label to distinguish static source
+  coverage from the existing publicly visible runtime supply band.
+- Step 1 targeted tests and typecheck pass; the production preview/client run
+  shows a playable hospital start with no console errors. The small fix is
+  ready for its isolated commit before the main 4C-2 work.

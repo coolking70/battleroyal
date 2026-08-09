@@ -107,7 +107,7 @@ export function CraftPanel({
 
           {!goalCompleted && recommendations.length > 0 && (
             <div className="cg-recs">
-              <div className="cg-recs-head">建议搜索区域（仅基于公开物资池）</div>
+              <div className="cg-recs-head">建议搜索区域（静态来源 + 已公开物资分档）</div>
               <ol className="cg-recs-list">
                 {recommendations.slice(0, 3).map((rec) => (
                   <li key={rec.zoneId}>

@@ -42,7 +42,7 @@ describe('Phase 4C-1 合成树与武器获取路径', () => {
       ).toBe(true);
     }
     const hospital = ZONES.find((zone) => zone.id === 'hospital')!;
-    expect(hospital.basePool).toContain('stick');
+    expect(hospital.basePool).not.toContain('stick');
     expect(hospital.rarePool).toContain('stick');
   });
 
