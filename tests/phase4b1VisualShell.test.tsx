@@ -4,9 +4,11 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createGame, getPlayer } from '../src/core/gameState';
+import { createStack } from '../src/core/inventory';
 import { ZoneMap } from '../src/ui/components/ZoneMap';
 import { StatusBar } from '../src/ui/components/StatusBar';
 import { GameScreen } from '../src/ui/screens/GameScreen';
+import { getZoneDef } from '../src/data/zones';
 import { zoneStatusMeta } from '../src/ui/zonePresentation';
 
 let root: Root;
@@ -51,6 +53,29 @@ describe('Phase 4B-1 visual shell', () => {
     expect(container.querySelector('.cue-restricted')?.textContent).toContain('禁区');
     expect(container.querySelector('.cue-restricted .zone-state-icon')?.textContent).toBe('✕');
     expect(container.querySelector('.cue-safe .zone-state-icon')?.textContent).toBe('◇');
+  });
+
+  it('does not expose remote ground-drop counts on the player map', () => {
+    const state = createGame({ seed: 'PHASE4C9-GROUND-BOUNDARY', playerCharacterId: 'scout', playerName: '测试者' });
+    const player = getPlayer(state);
+    const remoteZoneId = Object.keys(state.zones).find((id) => id !== player.currentZoneId)!;
+    state.zones[remoteZoneId]!.groundItems.push(createStack(state, 'iron'));
+    state.zones[player.currentZoneId]!.groundItems.push(createStack(state, 'wood'));
+
+    act(() => root.render(
+      <ZoneMap state={state} player={player} disabled={false} freshIntelZones={new Set()} onMove={() => undefined} />,
+    ));
+
+    const currentName = getZoneDef(player.currentZoneId).name;
+    const remoteName = getZoneDef(remoteZoneId).name;
+    const currentButton = Array.from(container.querySelectorAll('.zone-item')).find((node) =>
+      node.textContent?.includes(currentName),
+    );
+    const remoteButton = Array.from(container.querySelectorAll('.zone-item')).find((node) =>
+      node.textContent?.includes(remoteName),
+    );
+    expect(currentButton?.textContent).toContain('掉落 1');
+    expect(remoteButton?.textContent).not.toContain('掉落');
   });
 
   it('defines Safe/Warning/Restricted with label, icon and distinct pattern cues', () => {

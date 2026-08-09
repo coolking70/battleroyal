@@ -394,3 +394,18 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   develop-web-game client smoke pass with no reported console/page errors.
 - Human result-screen, touch, screen-reader and long-session review remain
   HUMAN-PLAYTEST-NEEDED; `HUMAN_PLAYTEST_CHECKLIST.md` remains untouched.
+
+## Phase 4C-9 progress (2026-08-10)
+
+- Audited existing information-boundary paths and found `ZoneMap` exposed
+  `groundItems.length` for every zone, including remote zones. This leaked the
+  existence/count of undiscovered ground drops despite the 4C-2 boundary.
+- Restricted the map cue to the current zone only; current-zone ground item
+  details and pickup commands remain available, while DebugPanel retains the
+  complete debug view.
+- Added unit coverage plus clean production-preview browser evidence proving
+  current-vs-remote behavior, no horizontal overflow and zero console/page errors.
+- Full suite is now 70 files / 1294 tests; clean `npm ci`, typecheck, build,
+  save/dependency/art/security gates, 500-game engine-health regression and
+  production `npm audit --omit=dev` all pass. Human touch, screen-reader and
+  route-comprehension review remain HUMAN-PLAYTEST-NEEDED.
