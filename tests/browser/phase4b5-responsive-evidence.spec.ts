@@ -170,7 +170,7 @@ test('Phase 4B-5 production responsive closure across five viewports', async ({ 
       await planningTrigger.click();
       await expect(page.locator('.planning-slot-open')).toHaveCount(1);
       await expect(page.locator('.planning-drawer-panel')).toBeVisible();
-      await expect(page.locator('.planning-tabs button')).toHaveCount(3);
+      await expect(page.locator('.planning-tabs button')).toHaveCount(2);
       await expect(page.locator('.log-panel')).toBeVisible();
       await snapshot(page, `${viewport.name}-planning-open`);
       await page.getByRole('button', { name: '关闭', exact: true }).click();

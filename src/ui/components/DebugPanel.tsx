@@ -190,7 +190,7 @@ export function DebugPanel({
               className="btn btn-sm btn-ghost"
               style={{ marginLeft: 6, padding: '0 6px' }}
               onClick={copySeed}
-              title="复制种子到剪贴板"
+              aria-label="复制种子到剪贴板"
             >
               {copied ? '已复制' : '复制'}
             </button>

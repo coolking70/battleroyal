@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react';
 import { getCraftGoalRecommendations } from '../../core/craftGuide';
 import { listRecipes } from '../../core/crafting';
 import { recentEvents } from '../../core/events';
+import { canPayActionCost, getActionStaminaCost } from '../../core/actionCosts';
 import { GAME_CONFIG } from '../../data/gameConfig';
 import { listIntel, PRESENCE_TEXT, zonePresence } from '../../core/info';
 import { aliveCharacters } from '../../core/gameState';
 import { activeWorldEvents } from '../../core/worldEvents';
 import { zoneDamagePerTick } from '../../core/restrictedZones';
-import { canPayActionCost } from '../../core/actionCosts';
 import {
   SKILLS,
   canUseSkill,
@@ -44,7 +44,7 @@ interface GameScreenProps {
   onQuit: () => void;
 }
 
-type Tab = 'inventory' | 'craft' | 'log';
+type Tab = 'inventory' | 'craft';
 
 /**
  * 世界事件横幅（Phase 3A Step 6）。
@@ -260,7 +260,7 @@ export function GameScreen({
                       className="btn btn-sm btn-danger"
                       disabled={lockedAll}
                       onClick={() => dispatch({ type: 'ATTACK_NEARBY', style: 'normal' })}
-                      title="从同区域的未识别目标中选一个出手"
+                      aria-label="尝试袭击同区域的未识别目标"
                     >
                       尝试袭击附近目标
                     </button>
@@ -268,7 +268,7 @@ export function GameScreen({
                       className="btn btn-sm"
                       disabled={lockedAll || !canPayActionCost(player, 'GUARD').ok}
                       onClick={() => dispatch({ type: 'GUARD' })}
-                      title="摆出防御姿态：下一击伤害减免，消耗体力"
+                      aria-label={`防御姿态：下一击伤害减免，消耗 ${getActionStaminaCost(player, 'GUARD')} 点体力`}
                     >
                       防御
                     </button>
@@ -293,7 +293,7 @@ export function GameScreen({
                   className="btn btn-sm"
                   disabled={lockedAll || !playerSkillUsable}
                   onClick={() => dispatch({ type: 'USE_SKILL', skillId: playerSkillId })}
-                  title={
+                  aria-label={
                     playerSkillReady
                       ? `${SKILLS[playerSkillId].name}：${SKILLS[playerSkillId].description}（消耗 ${SKILLS[playerSkillId].staminaCost} 点体力）`
                       : `${SKILLS[playerSkillId].name}冷却中（剩余 ${playerSkillCooldown} 回合）`
@@ -352,24 +352,22 @@ export function GameScreen({
               <span>规划区</span>
               <span className="faint">背包 · 合成</span>
             </div>
-            <div className="tabs planning-tabs">
+            <div className="tabs planning-tabs" role="tablist" aria-label="规划面板">
               <button
+                role="tab"
+                aria-selected={tab === 'inventory'}
                 className={cx(tab === 'inventory' && 'active')}
                 onClick={() => setTab('inventory')}
               >
                 背包
               </button>
               <button
+                role="tab"
+                aria-selected={tab === 'craft'}
                 className={cx(tab === 'craft' && 'active')}
                 onClick={() => setTab('craft')}
               >
                 合成
-              </button>
-              <button
-                className={cx(tab === 'log' && 'active')}
-                onClick={() => setTab('log')}
-              >
-                日志
               </button>
             </div>
 
@@ -398,9 +396,6 @@ export function GameScreen({
               />
             )}
 
-            {tab === 'log' && (
-              <div className="faint">日志已移至下方历史面板。</div>
-            )}
           </section>
           <section className="panel log-panel">
             <div className="panel-title">

@@ -155,7 +155,7 @@ export function Inventory({
                   className="btn btn-sm"
                   disabled={disabled}
                   onClick={() => onDrop(stack.uid)}
-                  title="丢到当前区域地面"
+                  aria-label={`丢弃${stackLabel(stack)}到当前区域地面`}
                 >
                   丢弃
                 </button>

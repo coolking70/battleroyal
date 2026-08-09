@@ -181,7 +181,8 @@ export function EncounterPanel({
                           className={cx('btn', isHeavy && 'btn-danger-heavy')}
                           disabled={disabled}
                           data-attack-style={style}
-                          title={`${ATTACK_STYLE_LABEL[style]}：命中 ${hit}%，消耗 ${cost} 点体力${isHeavy ? '；挥空会露出破绽' : ''}`}
+                          aria-label={`${ATTACK_STYLE_LABEL[style]}：命中 ${hit}%，消耗 ${cost} 点体力${disabled ? '，当前体力不足' : ''}${isHeavy ? '；挥空会露出破绽' : ''}`}
+                          aria-describedby="encounter-legal-note"
                           onClick={() => onAttack(style)}
                         >
                           <span>{ATTACK_STYLE_LABEL[style]}</span>
@@ -205,11 +206,12 @@ export function EncounterPanel({
                         disabled={!skillUsable}
                         data-action="skill"
                         onClick={onSkill}
-                        title={
+                        aria-label={
                           skillReady
                             ? `${skillDef.name}：${skillDef.description}（消耗 ${skillDef.staminaCost} 点体力）`
                             : `${skillDef.name}冷却中（剩余 ${skillCooldown} 回合）`
                         }
+                        aria-describedby="encounter-legal-note"
                       >
                         <span>{skillDef.name}</span>
                         <span className="action-button-detail">
@@ -223,7 +225,8 @@ export function EncounterPanel({
                       disabled={player.stamina < guardCost}
                       data-action="guard"
                       onClick={onGuard}
-                      title={`防御姿态：下一击伤害减免，消耗 ${guardCost} 点体力`}
+                      aria-label={`防御姿态：下一击伤害减免，消耗 ${guardCost} 点体力${player.stamina < guardCost ? '，当前体力不足' : ''}`}
+                      aria-describedby="encounter-legal-note"
                     >
                       <span>防御</span>
                       <span className="action-button-detail"><span className="combat-cue-icon" aria-hidden="true">{COMBAT_STATUS_META.guard.icon}</span>{guardCost === 0 ? '免费' : `体力 ${guardCost}`}</span>
@@ -232,14 +235,15 @@ export function EncounterPanel({
                       className="btn"
                       data-action="flee"
                       onClick={onFlee}
-                      title="脱离是免费行动，但仍会消耗 1 个时间单位，失败还会被追击"
+                      aria-label={`逃跑：脱离 ${flee}%${fleeCost === 0 ? '，免费' : `，消耗 ${fleeCost} 点体力`}；仍会消耗 1 个时间单位，失败还会被追击`}
+                      aria-describedby="encounter-legal-note"
                     >
                       <span>逃跑</span>
                       <span className="action-button-detail">脱离 {flee}% · {fleeCost === 0 ? '免费' : `体力 ${fleeCost}`}</span>
                     </button>
                   </div>
                 </div>
-                <span className="encounter-legal-note">
+                <span className="encounter-legal-note" id="encounter-legal-note">
                   {player.stamina >= getAttackStyleStaminaCost('normal')
                     ? '遭遇中仍可在右侧使用消耗品或更换装备。'
                     : '体力不足以普通攻击 —— 速攻或防御仍可用，或逃跑。'}

@@ -43,7 +43,7 @@ export function PendingPickupPanel({
             key={stack.uid}
             data-replace-item-id={stack.itemId}
             onClick={() => onResolve(true, stack.uid)}
-            title={`丢弃 ${stackLabel(stack)}，换取 ${pendingItem.name}`}
+            aria-label={`丢弃 ${stackLabel(stack)}，换取 ${pendingItem.name}`}
           >
             <VisualImage
               visual={stackPresentation(stack).visual}

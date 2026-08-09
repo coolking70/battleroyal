@@ -38,7 +38,8 @@ export function ActionBar({
           className="btn btn-primary"
           disabled={locked || !search.ok}
           onClick={onSearch}
-          title={search.ok ? `消耗 ${GAME_CONFIG.searchStaminaCost} 点体力` : (search.reason ?? '')}
+          aria-label={`搜索，消耗 ${GAME_CONFIG.searchStaminaCost} 点体力${search.ok ? '' : `；${search.reason ?? '当前不可用'}`}`}
+          aria-describedby="actionbar-hint"
         >
           搜索 <span className="action-cost">体力 {GAME_CONFIG.searchStaminaCost}</span>
         </button>
@@ -46,7 +47,8 @@ export function ActionBar({
           className="btn"
           disabled={locked}
           onClick={onRest}
-          title={`恢复 ${GAME_CONFIG.restStaminaGain} 点体力，可能被同区域敌人打断`}
+          aria-label={`休息，恢复 ${GAME_CONFIG.restStaminaGain} 点体力，可能被同区域敌人打断`}
+          aria-describedby="actionbar-hint"
         >
           休息 <span className="action-cost">恢复 {GAME_CONFIG.restStaminaGain}</span>
         </button>
@@ -55,7 +57,7 @@ export function ActionBar({
         <span className="route-icon" aria-hidden="true">↗</span>
         <span>移动：左侧路线规划中的相邻区域</span>
       </div>
-      <span className="hint">{hint}</span>
+      <span className="hint" id="actionbar-hint">{hint}</span>
     </footer>
   );
 }

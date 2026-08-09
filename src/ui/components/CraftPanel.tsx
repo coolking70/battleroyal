@@ -176,7 +176,7 @@ export function CraftPanel({
                 className="btn btn-sm btn-ghost"
                 disabled={disabled}
                 onClick={() => onSetGoal(recipe.id)}
-                title="设为当前制作目标"
+                aria-label={`${isGoal ? '保持' : '设定'}${recipe.name}为当前制作目标`}
               >
                 {isGoal ? '目标中' : '设为目标'}
               </button>

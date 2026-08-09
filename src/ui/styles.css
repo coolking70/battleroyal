@@ -3581,3 +3581,206 @@ input {
 .log-line.k-world {
   color: #ffd27a;
 }
+
+/* ------------------------------------------------------------------ */
+/* Phase 4B-6：焦点、层级、调试隔离与结算收束                           */
+/* ------------------------------------------------------------------ */
+
+:where(button, input, a, [role="button"], [tabindex]):focus:not(:focus-visible) {
+  outline: none;
+}
+
+:where(button, input, a, [role="button"], [tabindex]):focus-visible {
+  outline: 3px solid #f4d37d;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(244, 211, 125, 0.2), 0 0 18px rgba(244, 211, 125, 0.28);
+}
+
+.btn:focus-visible,
+.zone-item:focus-visible,
+.char-card:focus-visible,
+.planning-drawer-trigger:focus-visible,
+.planning-drawer-close:focus-visible,
+.log-filter:focus-visible,
+.log-self-toggle input:focus-visible {
+  position: relative;
+  z-index: 2;
+  border-color: #f4d37d;
+}
+
+.panel-title {
+  letter-spacing: 0.1em;
+}
+
+.intel-panel,
+.planning-panel,
+.log-panel {
+  border-color: rgba(91, 105, 118, 0.64);
+  box-shadow: none;
+}
+
+.intel-panel .panel-title,
+.planning-panel .panel-title,
+.log-panel .panel-title {
+  background: linear-gradient(90deg, rgba(110, 168, 199, 0.06), transparent 72%);
+}
+
+.debug,
+.debug-toggle {
+  bottom: 68px;
+}
+
+.debug {
+  border-top: 3px solid var(--accent);
+  background: linear-gradient(180deg, #111a21, #0d1217);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.62);
+}
+
+.debug-head {
+  color: #9ed1eb;
+}
+
+.debug-head::after {
+  content: 'DEV ONLY';
+  padding: 2px 5px;
+  border: 1px solid var(--accent-dim);
+  border-radius: 3px;
+  color: var(--text-faint);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.result-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 184px;
+  margin-bottom: 22px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #111820;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+}
+
+.result-zone-visual,
+.result-hero-scrim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.result-zone-visual {
+  z-index: -2;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
+.result-hero-scrim {
+  z-index: -1;
+  background: linear-gradient(90deg, rgba(5, 9, 13, 0.9), rgba(5, 9, 13, 0.48) 58%, rgba(5, 9, 13, 0.22)), linear-gradient(0deg, rgba(5, 9, 13, 0.72), transparent 65%);
+}
+
+.result-hero-copy {
+  position: absolute;
+  left: 24px;
+  bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: min(68%, 500px);
+  color: #f3f6f8;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.72);
+}
+
+.result-hero-kicker {
+  color: rgba(235, 242, 247, 0.72);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
+.result-hero-copy strong {
+  font-size: 25px;
+  letter-spacing: 0.08em;
+}
+
+.result-hero-copy span:last-child {
+  color: rgba(237, 243, 247, 0.88);
+  font-size: 12px;
+}
+
+.result-character-visual {
+  position: absolute;
+  right: 14%;
+  bottom: 0;
+  width: 112px;
+  height: 142px;
+  object-fit: cover;
+  border: 1px solid rgba(235, 242, 247, 0.32);
+  border-radius: 5px 5px 0 0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.36);
+}
+
+.result-hero-won {
+  border-color: #4b7c60;
+}
+
+.result-hero-lost {
+  border-color: #7a4040;
+}
+
+.result-hero-draw {
+  border-color: #7a6537;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --debug-actionbar-gap: 138px;
+  }
+
+  .debug,
+  .debug-toggle {
+    bottom: var(--debug-actionbar-gap);
+  }
+
+  .result-hero {
+    min-height: 158px;
+    margin-bottom: 16px;
+  }
+
+  .result-hero-copy {
+    left: 14px;
+    bottom: 14px;
+    max-width: 70%;
+  }
+
+  .result-hero-copy strong {
+    font-size: 20px;
+  }
+
+  .result-character-visual {
+    right: 4%;
+    width: 88px;
+    height: 112px;
+  }
+}
+
+@media (max-width: 900px) and (max-height: 500px) {
+  .debug,
+  .debug-toggle {
+    bottom: 68px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

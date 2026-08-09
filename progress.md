@@ -207,3 +207,28 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   and Phase 4B-4 browser evidence has 0 console/page errors at 1280×720 and 390×844.
 - Remaining before handoff: final all-browser regression run, report, commit/push,
   and final CI confirmation. No core/data/rules/assets/Manifest changes are planned.
+
+## Phase 4B-6 progress (2026-08-09)
+
+- Implemented the final polish/accessibility scope only: global focus-visible
+  treatment, reduced-motion safeguards, accessible action/disabled context,
+  removal of hover-only `title` explanations, DebugPanel separation from the
+  action rail, and a ResultScreen visual closure using existing Zone/player
+  assets through `VisualImage`.
+- Removed the redundant PlanningDrawer `日志` tab because the persistent
+  history panel already owns that surface. Added focus-to-close, Escape close,
+  and focus return to the drawer trigger.
+- Added Phase 4B-6 UI regressions, including ResultScreen official-asset
+  rendering and the default NPC event information boundary. Final local suite:
+  64 files / 1266 tests PASS.
+- Added clean production-preview evidence for 1280×720, 1024×768, 768×1024,
+  844×390 and 390×844 exploration/encounter/planning states, keyboard drawer
+  behavior, Debug isolation, reduced motion and zero console/page errors.
+- Clean `npm ci`, typecheck/build, save/dependency/art/provenance/security
+  gates, 500-game `PHASE4B6` regression and production `npm audit --omit=dev`
+  all PASS. Formal 35-image tree, Manifest/Candidates, core/data, rules,
+  version and Save schema remain unchanged.
+- Added `PHASE4B6_REPORT.md`, `PHASE4B_CLOSURE_REPORT.md`,
+  `reports/phase4b-final-ux-debt.json`, `PHASE4B_PR_DESCRIPTION.md` and the
+  Phase 4C candidate list. Human real-device/screen-reader review remains
+  explicitly classified as `HUMAN-PLAYTEST-NEEDED`.

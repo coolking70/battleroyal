@@ -114,11 +114,12 @@ describe('界面冒烟', () => {
     expect(container.querySelectorAll('.recipe').length).toBeGreaterThan(0);
   });
 
-  it('切到日志页能看到开局事件', () => {
+  it('规划区移除冗余日志 tab，但历史日志仍常驻可见', () => {
     render();
     click('开始新对局');
-    click('日志');
+    expect(container.querySelectorAll('.planning-tabs button')).toHaveLength(2);
     expect(container.textContent).toContain('对局开始');
+    expect(container.querySelector('.log-panel')).not.toBeNull();
   });
 
   it('重新挂载后可以从存档继续', () => {

@@ -36,7 +36,6 @@ export function VisualImage({ visual, alt, className, role }: VisualImageProps):
         className={className}
         role={role}
         aria-label={alt}
-        title={alt}
         style={{ color: visual.color }}
       >
         {visual.emoji}

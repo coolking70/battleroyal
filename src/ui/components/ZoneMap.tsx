@@ -62,12 +62,12 @@ export function ZoneMap({
               style={{ ['--zone-color' as string]: zoneVisual.color }}
               disabled={disabled || isCurrent || !adjacent}
               onClick={() => onMove(def.id)}
-              title={
+              aria-label={
                 isCurrent
-                  ? '当前所在区域'
+                  ? `${def.name}，当前所在区域`
                   : adjacent
-                    ? `移动到${def.name}（消耗 3 体力）`
-                    : '不与当前区域相邻'
+                    ? `移动到${def.name}，消耗 3 体力`
+                    : `${def.name}，不与当前区域相邻`
               }
             >
               <span className="row1">
