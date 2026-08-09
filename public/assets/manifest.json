@@ -69,6 +69,10 @@
     "wood": "/assets/items/wood/icon.png"
   },
   "worldEvents": {
-    "blackout": "/assets/world-events/blackout/illustration.png"
+    "blackout": "/assets/world-events/blackout/illustration.png",
+    "citywide_unrest": "/assets/world-events/citywide_unrest/illustration.png",
+    "emergency_broadcast": "/assets/world-events/emergency_broadcast/illustration.png",
+    "medical_alert": "/assets/world-events/medical_alert/illustration.png",
+    "research_anomaly": "/assets/world-events/research_anomaly/illustration.png"
   }
 }

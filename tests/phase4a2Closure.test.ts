@@ -25,7 +25,7 @@ const B1_TASKS = [
 afterEach(() => setAssetManifest(null));
 
 describe('Phase 4A-4 formalization closure', () => {
-  it('publishes exactly twenty-three AI slots after B3 formalization', async () => {
+  it('publishes exactly twenty-seven AI slots after E1 formalization', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
     expect(manifest.characters.scout?.portrait).toBe('/assets/characters/scout/portrait.png');
     expect(manifest.characters.fighter?.portrait).toBe('/assets/characters/fighter/portrait.png');
@@ -50,13 +50,17 @@ describe('Phase 4A-4 formalization closure', () => {
     expect(manifest.items.simple_armor).toBe('/assets/items/simple_armor/icon.png');
     expect(manifest.items.plate_armor).toBe('/assets/items/plate_armor/icon.png');
     expect(manifest.worldEvents.blackout).toBe('/assets/world-events/blackout/illustration.png');
+    expect(manifest.worldEvents.emergency_broadcast).toBe('/assets/world-events/emergency_broadcast/illustration.png');
+    expect(manifest.worldEvents.medical_alert).toBe('/assets/world-events/medical_alert/illustration.png');
+    expect(manifest.worldEvents.research_anomaly).toBe('/assets/world-events/research_anomaly/illustration.png');
+    expect(manifest.worldEvents.citywide_unrest).toBe('/assets/world-events/citywide_unrest/illustration.png');
     expect(Object.values(manifest.characters).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(4);
     expect(Object.values(manifest.zones).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(6);
     expect(Object.values(manifest.items).filter(Boolean)).toHaveLength(12);
-    expect(Object.values(manifest.worldEvents).filter(Boolean)).toHaveLength(1);
+    expect(Object.values(manifest.worldEvents).filter(Boolean)).toHaveLength(5);
   });
 
-  it('keeps provenance limited to the twenty-three approved formal AI tasks', async () => {
+  it('keeps provenance limited to the twenty-seven approved formal AI tasks', async () => {
     const provenance = JSON.parse(await fs.readFile(path.join(process.cwd(), 'art/approved-assets.json'), 'utf8')) as { assets: Record<string, { candidateHash: string }> };
     expect(Object.keys(provenance.assets).sort()).toEqual([
       'character/engineer/portrait',
@@ -76,6 +80,10 @@ describe('Phase 4A-4 formalization closure', () => {
       'item/water/icon',
       'item/wood/icon',
       'world_event/blackout/illustration',
+      'world_event/citywide_unrest/illustration',
+      'world_event/emergency_broadcast/illustration',
+      'world_event/medical_alert/illustration',
+      'world_event/research_anomaly/illustration',
       'zone/factory/background',
       'zone/forest/background',
       'zone/hospital/background',
@@ -101,6 +109,10 @@ describe('Phase 4A-4 formalization closure', () => {
     expect(provenance.assets['item/simple_armor/icon']?.candidateHash).toBe('e7fb2c86d17c42d4745d3019ab3f188d13591b66dfe46244882cdd6bc2e695e5');
     expect(provenance.assets['item/plate_armor/icon']?.candidateHash).toBe('865f8fc5cdcad4eb81aba4a2e712afb47f0b6c11be75455408c5f7cfcafc0af5');
     expect(provenance.assets['world_event/blackout/illustration']?.candidateHash).toBe('d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843');
+    expect(provenance.assets['world_event/emergency_broadcast/illustration']?.candidateHash).toBe('07eed3b78bbf16ae30572b61987dcc498a58e446f421508150b291edcac23787');
+    expect(provenance.assets['world_event/medical_alert/illustration']?.candidateHash).toBe('7950c827639922568f0a6f3949145ec60eb812734f847783dc7f3a1e4172c0c1');
+    expect(provenance.assets['world_event/research_anomaly/illustration']?.candidateHash).toBe('f5a2bc2592f94510aac588abf30d5435ff6ab8d0fafe0cb3d0e2617df89c18e5');
+    expect(provenance.assets['world_event/citywide_unrest/illustration']?.candidateHash).toBe('1c239f17af048a803cebca4ab7e186bcee5cf05843b508531e6c313390a46bde');
     expect(provenance.assets['zone/hospital/background']?.candidateHash).toBe('1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5');
     expect(provenance.assets['zone/residential/background']?.candidateHash).toBe('9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84');
     expect(provenance.assets['zone/factory/background']?.candidateHash).toBe('94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4');
@@ -130,6 +142,12 @@ describe('Phase 4A-4 formalization closure', () => {
     }
     expect(getWorldEventVisual('blackout').source).toBe('official');
     expect(getWorldEventVisual('blackout').image).toBe('/assets/world-events/blackout/illustration.png');
+    for (const eventId of ['emergency_broadcast', 'medical_alert', 'research_anomaly', 'citywide_unrest'] as const) {
+      expect(getWorldEventVisual(eventId).source).toBe('official');
+      expect(getWorldEventVisual(eventId).image).toBe(`/assets/world-events/${eventId}/illustration.png`);
+    }
+    expect(getWorldEventVisual('rain').source).not.toBe('official');
+    expect(getWorldEventVisual('rain').image).toBe('events/rain.svg');
   });
 
   it('falls through from an unavailable official slot to the local SVG source', () => {

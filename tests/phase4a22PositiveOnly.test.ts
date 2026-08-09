@@ -160,7 +160,7 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
     expect(auditItemProviderPrompt(task, `A case with a ${token}.`).forbiddenTokens).toContain(token);
   });
 
-  it('keeps the formal manifest at twenty-three AI tasks after B3 publication', async () => {
+  it('keeps the formal manifest at twenty-seven AI tasks after E1 publication', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as {
       characters: Record<string, Record<string, string | null>>;
       zones: Record<string, Record<string, string | null>>;
@@ -173,7 +173,7 @@ describe('Phase 4A-2.2 positive-only recovery contracts', () => {
       ...Object.values(manifest.items),
       ...Object.values(manifest.worldEvents),
     ].filter(Boolean).length;
-    expect(count).toBe(23);
+    expect(count).toBe(27);
     expect(manifest.zones.hospital?.background).toBe('/assets/zones/hospital/background.png');
     expect(manifest.zones.residential?.background).toBe('/assets/zones/residential/background.png');
     expect(manifest.zones.factory?.background).toBe('/assets/zones/factory/background.png');

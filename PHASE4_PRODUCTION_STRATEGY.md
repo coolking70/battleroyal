@@ -5,7 +5,7 @@ The stable production policy is now frozen:
 - Character → `character-positive-only` — Character Base Portrait Production Proven
 - Zone → `environment-positive-only` — Zone Background Production Complete
 - Item → category-aware `item-positive-only` — Item Base Icons Production Complete
-- World Event → controlled per-event production; E1 uses `event-positive-only`
+- World Event Base Illustrations → 5/6 official; E1 uses controlled per-event `event-positive-only` production
 
 ## Item categories
 
@@ -18,4 +18,4 @@ All item categories share Render Style, Item Presentation, positive entity brief
 
 ## World event policy
 
-World events are handled per event with a provider-facing positive brief and task-specific prompt audit. Blackout is official. Emergency Broadcast, Medical Alert, Research Anomaly and Citywide Unrest are controlled E1 candidates pending human review. Rain remains a **provider compatibility exception** after two provider rejections: it receives zero calls in E1 and is not an art-quality failure.
+World events are handled per event with a provider-facing positive brief and task-specific prompt audit. Blackout, Emergency Broadcast, Medical Alert, Research Anomaly and Citywide Unrest are official. Rain remains the sole **Provider Compatibility Exception** after two provider rejections: official image is none, runtime fallback is active, and it receives zero calls in this phase.

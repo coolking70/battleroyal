@@ -1,0 +1,24 @@
+{
+  "mode": "provider",
+  "provider": "agnes",
+  "requested": 1,
+  "cacheHits": 0,
+  "apiCalls": 1,
+  "successful": 1,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 1147631,
+  "tasks": [
+    {
+      "taskId": "character/scout/injured",
+      "hash": "ccb0f5d7e17d097f94e60a5109b898f9fc4bbcaf4ac82b74bb296a31f29c1b51",
+      "candidateHash": "ccb0f5d7e17d097f94e60a5109b898f9fc4bbcaf4ac82b74bb296a31f29c1b51",
+      "source": "api",
+      "status": "passed",
+      "validation": "passed",
+      "review": "pending",
+      "errors": [],
+      "hardVisualObservation": "No obvious hard identity deviation observed in technical comparison; hairstyle, slate-blue jacket, charcoal shirt, khaki trousers, binoculars, neck strap and side pouch are present. Binoculars render darker and the pouch renders brown rather than the official muted green/camouflage tone; human identity review remains pending."
+    }
+  ]
+}

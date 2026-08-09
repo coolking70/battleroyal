@@ -207,6 +207,42 @@
       "provider": "agnes",
       "approvedAt": "2026-08-08T23:40:00.449Z",
       "publicPath": "/assets/items/wood/icon.png"
+    },
+    "world_event/citywide_unrest/illustration": {
+      "candidateHash": "1c239f17af048a803cebca4ab7e186bcee5cf05843b508531e6c313390a46bde",
+      "contentHash": "1c239f17af048a803cebca4ab7e186bcee5cf05843b508531e6c313390a46bde",
+      "promptHash": "1c239f17af048a803cebca4ab7e186bcee5cf05843b508531e6c313390a46bde",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-09T00:13:33.113Z",
+      "publicPath": "/assets/world-events/citywide_unrest/illustration.png"
+    },
+    "world_event/emergency_broadcast/illustration": {
+      "candidateHash": "07eed3b78bbf16ae30572b61987dcc498a58e446f421508150b291edcac23787",
+      "contentHash": "07eed3b78bbf16ae30572b61987dcc498a58e446f421508150b291edcac23787",
+      "promptHash": "07eed3b78bbf16ae30572b61987dcc498a58e446f421508150b291edcac23787",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-09T00:13:33.114Z",
+      "publicPath": "/assets/world-events/emergency_broadcast/illustration.png"
+    },
+    "world_event/medical_alert/illustration": {
+      "candidateHash": "7950c827639922568f0a6f3949145ec60eb812734f847783dc7f3a1e4172c0c1",
+      "contentHash": "7950c827639922568f0a6f3949145ec60eb812734f847783dc7f3a1e4172c0c1",
+      "promptHash": "7950c827639922568f0a6f3949145ec60eb812734f847783dc7f3a1e4172c0c1",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-09T00:13:33.114Z",
+      "publicPath": "/assets/world-events/medical_alert/illustration.png"
+    },
+    "world_event/research_anomaly/illustration": {
+      "candidateHash": "f5a2bc2592f94510aac588abf30d5435ff6ab8d0fafe0cb3d0e2617df89c18e5",
+      "contentHash": "f5a2bc2592f94510aac588abf30d5435ff6ab8d0fafe0cb3d0e2617df89c18e5",
+      "promptHash": "f5a2bc2592f94510aac588abf30d5435ff6ab8d0fafe0cb3d0e2617df89c18e5",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-09T00:13:33.114Z",
+      "publicPath": "/assets/world-events/research_anomaly/illustration.png"
     }
   }
 }

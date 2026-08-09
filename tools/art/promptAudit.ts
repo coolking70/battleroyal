@@ -24,6 +24,12 @@ export const FORBIDDEN_CHARACTER_TOKENS = [
   'medic',
   'field',
   'combat athlete',
+  'same scout',
+  'same character as previous image',
+  'as reference image',
+  'reference image',
+  'image reference',
+  'img2img',
 ] as const;
 
 export const FORBIDDEN_ENVIRONMENT_TOKENS = [

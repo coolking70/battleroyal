@@ -22,7 +22,8 @@ async function tasksById(): Promise<Map<string, ArtTask>> {
 describe('Phase 4A-2.1 character-positive-only strategy', () => {
   it('enables the strategy only for the three new character portrait experiments', async () => {
     const tasks = await loadTasks(process.cwd());
-    expect(tasks.filter((task) => task.promptStrategy === 'character-positive-only').map((task) => task.id).sort()).toEqual([...CHARACTER_TASKS].sort());
+    expect(tasks.filter((task) => task.promptStrategy === 'character-positive-only' && task.variant === 'portrait').map((task) => task.id).sort()).toEqual([...CHARACTER_TASKS].sort());
+    expect(tasks.find((task) => task.id === 'character/scout/injured')?.promptStrategy).toBe('character-positive-only');
     expect(tasks.find((task) => task.id === 'character/scout/portrait')?.promptStrategy).not.toBe('character-positive-only');
     expect(tasks.find((task) => task.id === 'zone/hospital/background')?.promptStrategy).toBe('environment-positive-only');
     expect(tasks.find((task) => task.id === 'item/medkit/icon')?.promptStrategy).toBe('item-positive-only-unmarked');

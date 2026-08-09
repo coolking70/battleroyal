@@ -4,6 +4,7 @@ import { generateImage } from './apiClient';
 import { findCacheEntry, contentHash, extensionForMime, saveCache } from './cache';
 import { buildPrompt } from './promptBuilder';
 import { validateImageBytes } from './validator';
+import { SCOUT_INJURED_CANARY_TASK_ID } from './canary';
 import type { ArtConfig, ArtTask, CandidateMetadata, GenerationError, ImageGenerationResult } from './types';
 import { ArtPipelineError } from './types';
 
@@ -207,8 +208,11 @@ export async function writePromptReport(
     'world_event/research_anomaly/illustration',
     'world_event/citywide_unrest/illustration',
   ]);
+  const canaryTaskIds = new Set<string>([SCOUT_INJURED_CANARY_TASK_ID]);
   const targetedVersion = b2TaskIds.has(built.task.id)
     ? 'phase4a23-b2'
+    : canaryTaskIds.has(built.task.id)
+      ? 'phase4a41-scout-injured-canary'
     : e1TaskIds.has(built.task.id)
       ? 'phase4a4-e1'
     : b3TaskIds.has(built.task.id)

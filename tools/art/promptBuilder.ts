@@ -145,7 +145,7 @@ export function promptHashInput(built: BuiltPrompt): Record<string, unknown> {
       promptStrategy: built.task.promptStrategy,
       positiveTraits: built.task.positiveTraits ?? [],
       ...(built.task.itemProductionCategory ? { itemProductionCategory: built.task.itemProductionCategory } : {}),
-      ...(built.task.promptStrategy === 'character-positive-only' || built.task.promptStrategy === 'item-positive-only-unmarked' ? {} : { positiveComposition: built.task.positiveComposition ?? [] }),
+      ...(built.task.promptStrategy !== 'item-positive-only-unmarked' && built.task.positiveComposition ? { positiveComposition: built.task.positiveComposition } : {}),
     } : {}),
   };
 }
