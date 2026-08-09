@@ -1,8 +1,9 @@
 import type { Combatant, GameState } from '../../core/types';
 import { noiseLevelOf, NOISE_LABEL } from '../../core/info';
 import { ZONES, areAdjacent } from '../../data/zones';
-import { ZONE_STATUS_LABEL, cx } from '../../utils/format';
+import { cx } from '../../utils/format';
 import { getZoneVisual } from '../visualAssets';
+import { zoneStatusMeta } from '../zonePresentation';
 import { VisualImage } from './VisualImage';
 
 interface ZoneMapProps {
@@ -31,10 +32,10 @@ export function ZoneMap({
   onMove,
 }: ZoneMapProps): JSX.Element {
   return (
-    <section className="panel col-grow">
+    <section className="panel zone-nav-panel col-grow">
       <div className="panel-title">
-        <span>区域地图</span>
-        <span className="faint">相邻可移动</span>
+        <span>路线规划</span>
+        <span className="faint">六区 · 相邻可移动</span>
       </div>
 
       <div className="zone-list scroll">
@@ -46,6 +47,7 @@ export function ZoneMap({
           const noise = noiseLevelOf(zs);
           const hasIntel = freshIntelZones?.has(def.id) ?? false;
           const zoneVisual = getZoneVisual(def.id);
+          const statusMeta = zoneStatusMeta(status);
 
           return (
             <button
@@ -67,8 +69,9 @@ export function ZoneMap({
                   <VisualImage visual={zoneVisual} alt={`${def.name}图标`} className="zone-visual" />{' '}
                   {def.name}
                 </span>
-                <span className={`tag tag-${status}`}>
-                  {ZONE_STATUS_LABEL[status]}
+                <span className={`zone-state-cue cue-${status}`}>
+                  <span className="zone-state-icon" aria-hidden="true">{statusMeta.icon}</span>
+                  <span>{statusMeta.label}</span>
                 </span>
               </span>
               <span className="row2">

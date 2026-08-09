@@ -6,6 +6,7 @@ import { getCharacterDef } from '../../data/characters';
 import { getZoneDef } from '../../data/zones';
 import { getCharacterVisual } from '../visualAssets';
 import { resolveCharacterVisualState } from '../characterVisualState';
+import { zoneStatusMeta } from '../zonePresentation';
 import { Bar } from './Bar';
 import { VisualImage } from './VisualImage';
 
@@ -30,6 +31,8 @@ export function StatusBar({
     activeEncounter: Boolean(state.encounter && !state.encounter.resolved),
   });
 
+  const zoneStatus = zone?.status ?? 'safe';
+  const zoneMeta = zoneStatusMeta(zoneStatus);
   let alert: { text: string; danger: boolean } | null = null;
   if (zone?.status === 'restricted') {
     alert = { text: `${zoneName} 已是禁区 · 每回合 -20 生命`, danger: true };
@@ -41,64 +44,54 @@ export function StatusBar({
 
   return (
     <header className="topbar">
-      <span className="brand">区域大逃杀</span>
+      <div className="topbar-brand-block">
+        <span className="brand">区域大逃杀</span>
+        <span className="topbar-context">生存状态</span>
+      </div>
 
-      <span className="stat">
-        时间 <b>{state.time}</b>
-      </span>
-      <span className="stat">
-        存活 <b>{aliveCount}</b>/{state.turnOrder.length}
-      </span>
+      <div className="survival-metrics" aria-label="生存资源">
+        <div className="survival-metric survival-metric-hp">
+          <span className="metric-label">生命</span>
+          <Bar value={player.hp} max={player.maxHp} kind="hp" />
+          <b>{player.hp}/{player.maxHp}</b>
+        </div>
+        <div className="survival-metric survival-metric-stamina">
+          <span className="metric-label">体力</span>
+          <Bar value={player.stamina} max={player.maxStamina} kind="stamina" />
+          <b>{player.stamina}/{player.maxStamina}</b>
+        </div>
+      </div>
 
-      <span className="stat">
-        生命
-        <Bar value={player.hp} max={player.maxHp} kind="hp" />
-        <b>
-          {player.hp}/{player.maxHp}
-        </b>
-      </span>
-      <span className="stat">
-        体力
-        <Bar value={player.stamina} max={player.maxStamina} kind="stamina" />
-        <b>
-          {player.stamina}/{player.maxStamina}
-        </b>
-      </span>
+      <div className="run-metrics">
+        <span className="stat">时间 <b>{state.time}</b></span>
+        <span className="stat">存活 <b>{aliveCount}</b>/{state.turnOrder.length}</span>
+        <span className="stat">攻 <b>{totalAttack(player)}</b> / 防 <b>{totalDefense(player)}</b></span>
+      </div>
 
-      <span className="stat">
-        攻 <b>{totalAttack(player)}</b> / 防 <b>{totalDefense(player)}</b>
-      </span>
+      <div className={`topbar-danger topbar-danger-${zoneStatus}${alert?.danger ? ' is-critical' : ''}`}>
+        <span className="zone-state-icon" aria-hidden="true">{zoneMeta.icon}</span>
+        <span className="topbar-danger-copy">
+          <b>{zoneName} · {zoneMeta.label}</b>
+          <span>{alert?.text ?? (countdown !== null ? `下次禁区 T+${countdown}` : zoneMeta.description)}</span>
+        </span>
+      </div>
 
       <span className="spacer" />
 
-      {alert && (
-        <span className={`zone-alert${alert.danger ? ' danger' : ''}`}>
-          {alert.text}
-        </span>
-      )}
-      {!alert && countdown !== null && (
-        <span className="stat faint">下次禁区 T+{countdown}</span>
-      )}
-      {countdown === null && <span className="stat faint">禁区已停止扩张</span>}
-
-      <span className="stat faint">
-        <span className="badge badge-you">你</span>{' '}
+      <div className="player-chip">
+        <span className="badge badge-you">你</span>
         <VisualImage
           visual={getCharacterVisual(player.characterId, characterVisualState)}
           alt={`${getCharacterDef(player.characterId).name}头像`}
           className="status-visual"
-        />{' '}
-        {getCharacterDef(player.characterId).name}
-        {player.guarding && <span className="tag tag-guard" style={{ marginLeft: 6 }}>防御</span>}
-        {hasExposed(player) && (
-          <span className="tag tag-exposed" style={{ marginLeft: 6 }}>{EXPOSED_LABEL}</span>
-        )}
-        <span className="faint">· {state.seed}</span>
-      </span>
+        />
+        <span>{getCharacterDef(player.characterId).name}</span>
+        {player.guarding && <span className="tag tag-guard">防御</span>}
+        {hasExposed(player) && <span className="tag tag-exposed">{EXPOSED_LABEL}</span>}
+        <span className="faint mono seed-chip">{state.seed}</span>
+      </div>
 
-      <button className="btn btn-sm btn-danger" onClick={onQuit}>
-        退出
-      </button>
+      <button className="btn btn-sm btn-danger" onClick={onQuit}>退出</button>
     </header>
   );
 }

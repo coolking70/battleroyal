@@ -29,25 +29,32 @@ export function ActionBar({
 
   return (
     <footer className="actionbar">
-      <button
-        className="btn btn-primary"
-        disabled={locked || !search.ok}
-        onClick={onSearch}
-        title={search.ok ? `消耗 ${GAME_CONFIG.searchStaminaCost} 点体力` : (search.reason ?? '')}
-      >
-        搜索
-      </button>
-      <button
-        className="btn"
-        disabled={locked}
-        onClick={onRest}
-        title={`恢复 ${GAME_CONFIG.restStaminaGain} 点体力，可能被同区域敌人打断`}
-      >
-        休息
-      </button>
-      <span className="faint mono" style={{ fontSize: 11.5 }}>
-        移动请点左侧相邻区域
-      </span>
+      <div className="actionbar-heading">
+        <span className="actionbar-kicker">P1</span>
+        <span className="actionbar-title">下一步行动</span>
+      </div>
+      <div className="actionbar-actions" aria-label="探索行动">
+        <button
+          className="btn btn-primary"
+          disabled={locked || !search.ok}
+          onClick={onSearch}
+          title={search.ok ? `消耗 ${GAME_CONFIG.searchStaminaCost} 点体力` : (search.reason ?? '')}
+        >
+          搜索 <span className="action-cost">体力 {GAME_CONFIG.searchStaminaCost}</span>
+        </button>
+        <button
+          className="btn"
+          disabled={locked}
+          onClick={onRest}
+          title={`恢复 ${GAME_CONFIG.restStaminaGain} 点体力，可能被同区域敌人打断`}
+        >
+          休息 <span className="action-cost">恢复 {GAME_CONFIG.restStaminaGain}</span>
+        </button>
+      </div>
+      <div className="actionbar-route-note">
+        <span className="route-icon" aria-hidden="true">↗</span>
+        <span>移动：左侧路线规划中的相邻区域</span>
+      </div>
       <span className="hint">{hint}</span>
     </footer>
   );

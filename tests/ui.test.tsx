@@ -86,7 +86,7 @@ describe('界面冒烟', () => {
     click('开始新对局');
 
     expect(container.querySelector('.game')).not.toBeNull();
-    expect(container.textContent).toContain('区域地图');
+    expect(container.textContent).toContain('路线规划');
     expect(container.textContent).toContain('同区域');
     expect(localStorage.getItem(SAVE_KEY)).not.toBeNull();
   });

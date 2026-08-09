@@ -15,8 +15,9 @@ import {
 import type { Combatant, Command, GameState } from '../../core/types';
 import { LOG_DISPLAY_COUNT } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
-import { ZONE_STATUS_LABEL, cx, stackLabel } from '../../utils/format';
+import { cx, stackLabel } from '../../utils/format';
 import { getWorldEventVisual, getZoneVisual } from '../visualAssets';
+import { zoneStatusMeta } from '../zonePresentation';
 import { ActionBar } from '../components/ActionBar';
 import { CraftPanel } from '../components/CraftPanel';
 import { EncounterPanel } from '../components/EncounterPanel';
@@ -53,6 +54,8 @@ export function GameScreen({
 
   const zoneDef = getZoneDef(player.currentZoneId);
   const zoneState = state.zones[player.currentZoneId];
+  const zoneStatus = zoneState?.status ?? 'safe';
+  const zoneMeta = zoneStatusMeta(zoneStatus);
   const alive = aliveCharacters(state);
 
   // 信息不完全：同区域只给"存在感"分档，精确数值只在遭遇中揭示
@@ -142,14 +145,32 @@ export function GameScreen({
         {/* ---------- 中栏 ---------- */}
         <div className="col">
           <section className="panel stage scroll">
-            <h2>
-              <VisualImage visual={getZoneVisual(player.currentZoneId)} alt={`${zoneDef.name}区域图`} className="stage-zone-visual" />{' '}
-              {zoneDef.name}{' '}
-              <span className={`tag tag-${zoneState?.status ?? 'safe'}`}>
-                {ZONE_STATUS_LABEL[zoneState?.status ?? 'safe']}
-              </span>
-            </h2>
-            <p className="zone-desc">{zoneDef.description}</p>
+            <div className={`zone-hero zone-hero-${zoneStatus}`} data-zone-status={zoneStatus}>
+              <VisualImage
+                visual={getZoneVisual(player.currentZoneId)}
+                alt={`${zoneDef.name}区域背景`}
+                className="zone-hero-image"
+              />
+              <div className="zone-hero-scrim" aria-hidden="true" />
+              <div className="zone-hero-pattern" aria-hidden="true" />
+              <div className="zone-hero-content">
+                <div className="zone-hero-kicker">CURRENT ZONE · {player.currentZoneId.toUpperCase()}</div>
+                <div className="zone-hero-heading">
+                  <h2>{zoneDef.name}</h2>
+                  <span className={`zone-hero-status status-${zoneStatus}`}>
+                    <span className="zone-state-icon" aria-hidden="true">{zoneMeta.icon}</span>
+                    <span>{zoneMeta.label}</span>
+                  </span>
+                </div>
+                <p>{zoneDef.description}</p>
+                <div className="zone-hero-state-note">
+                  <span className="zone-state-icon" aria-hidden="true">{zoneMeta.icon}</span>
+                  <span>{zoneMeta.description}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="stage-content">
 
             {bannerEvents.length > 0 && (
               <div className="event-banner-wrap">
@@ -285,6 +306,7 @@ export function GameScreen({
               <div className="faint mono" style={{ fontSize: 11, marginTop: 6 }}>
                 拾取不消耗时间单位。
               </div>
+            </div>
             </div>
           </section>
         </div>

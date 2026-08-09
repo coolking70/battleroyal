@@ -132,3 +132,12 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Browser runtime verification used the real Vite app at desktop and phone widths. Menu, gameplay, search feedback, item pickup, tab switching, active encounter, character combat art, toast, and mobile layout were captured. No browser console errors occurred. The mobile screenshot shows the vertical clipping risk caused by the fixed-height/overflow-hidden shell; `document.body.scrollWidth` remained equal to the 390px viewport.
 - Audit conclusion: recommend a Hybrid Zone Presentation for Phase 4B-1, with the current Zone Background promoted to the main gameplay visual and a compact translucent map/navigation layer retained for movement. Do not generate warning/restricted AI variants; use CSS state layers plus icon/label/pattern.
 - Phase 4B-0 documents and machine-readable reports are being prepared. The next phase target is frozen as one theme only: `Main Gameplay Visual Shell & Zone Visual Hierarchy`.
+
+## Phase 4B-1 progress (2026-08-09)
+
+- Implemented the frozen Main Gameplay Visual Shell scope only: the current Zone background is now a `VisualImage`-backed central Hero with readable zone name, description, status label, icon and CSS state layer.
+- Converted the six-zone list into a compact two-column navigation layer while preserving all six zones, adjacency, movement availability, noise, intel and drop information. Rebuilt StatusBar as P0 survival metrics and ActionBar as the P1 next-action cluster.
+- Added presentation-only SAFE / WARNING / RESTRICTED metadata and cues. WARNING and RESTRICTED use CSS stripes/diagonal edge treatment; no image API was called and no formal asset/core/data files changed.
+- Added four focused UI tests. Full suite is now 58 files / 1240 tests PASS. Typecheck, build, save/dependency/art/provenance/security audits, 500-game `PHASE4B1` regression and production npm audit all PASS.
+- Browser evidence is in `output/phase4b1-browser/`: desktop SAFE/WARNING/RESTRICTED/encounter states and 390×844 SAFE plus encounter-action reachability. Final mobile run measured `scrollWidth=390`, stage client height 960px versus 195px baseline, and escape-button reachability after board scroll with no browser errors.
+- Added `PHASE4B1_REPORT.md` with evidence grading, before/after measurements, gate results and scope declaration. No 4B-2 through 4B-6 work was performed.
