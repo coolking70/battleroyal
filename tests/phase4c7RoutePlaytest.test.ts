@@ -18,6 +18,9 @@ describe('Phase 4C-7 半自动路线观察', () => {
     expect(report.health.requestedEqualsActual).toBe(true);
     expect(report.health.noTimeoutDeadlockIllegalOrHardLimit).toBe(true);
     expect(report.records.every((record) => record.trustworthy)).toBe(true);
+    expect(report.records.every((record) => 'deathCause' in record)).toBe(true);
+    expect(Object.values(report.deathCauses).reduce((sum, count) => sum + count, 0))
+      .toBe(report.milestones.deathRuns);
     expect(report.records.every((record) => Object.keys(record.milestones.firstRawMaterialPicked).every((itemId) =>
       !itemId.includes('npc') && !itemId.includes('zone.loot')),
     )).toBe(true);

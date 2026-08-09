@@ -22,6 +22,8 @@
 | 完成当前制作目标 | 9 |
 | 玩家死亡 | 17 |
 
+死亡原因：衰竭 6、战斗 5、禁区侵蚀 6。
+
 ## 路线诊断分类
 
 | 分类 | 对局数 |
@@ -37,28 +39,28 @@
 
 ## 逐路线时间
 
-| 路线 | 角色 / 策略 | 目标 | 目标采纳 | 原材料（已拾取） | 中间步骤首个 | 武器首个 | 装备首个 | 遭遇首个 | 目标完成 | 诊断 |
-| --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| route-0-scout-aggressive | scout / aggressive | 复合弓 | 0 | 布料、玻璃、绳子、石头、木材 | 23 | 5 | 6 | 4 | 24 | target-completed |
-| route-1-fighter-aggressive | fighter / aggressive | 复合弓 | 0 | 布料、玻璃、药草、绳子、木材 | 8 | 8 | 9 | 2 | — | weapon-not-converted |
-| route-2-engineer-aggressive | engineer / aggressive | 复合弓 | 0 | 玻璃、铁块、绳子、废金属、石头、木材 | 26 | 26 | 20 | 4 | 27 | target-completed |
-| route-3-medic-aggressive | medic / aggressive | 复合弓 | 0 | 玻璃、绳子、石头、木材 | 39 | 1 | 2 | 30 | 40 | target-completed |
-| route-4-scout-cautious | scout / cautious | 复合弓 | 0 | 布料、玻璃、绳子、废金属、木材 | — | 9 | 10 | 2 | — | weapon-not-converted |
-| route-5-fighter-cautious | fighter / cautious | 复合弓 | 0 | 绳子、石头、木材 | 19 | 9 | 10 | — | — | equipped-before-encounter |
-| route-6-engineer-cautious | engineer / cautious | 复合弓 | 0 | 布料、玻璃、铁块、绳子、废金属、木材 | 9 | 3 | 4 | — | 26 | target-completed |
-| route-7-medic-cautious | medic / cautious | 绝缘铁管 | 0 | 铁块、绳子、废金属、石头、木材 | — | 2 | 4 | 20 | 3 | target-completed |
-| route-8-scout-collector | scout / collector | 复合弓 | 0 | 布料、玻璃、绳子、石头、木材 | 33 | 33 | 34 | 1 | — | weapon-not-converted |
-| route-9-fighter-collector | fighter / collector | 复合弓 | 0 | 药草、绳子、木材 | 5 | 5 | 6 | 2 | — | weapon-not-converted |
-| route-10-engineer-collector | engineer / collector | 复合弓 | 0 | 布料、玻璃、铁块、绳子、木材 | 37 | 37 | 39 | 1 | 38 | target-completed |
-| route-11-medic-collector | medic / collector | 复合弓 | 0 | 布料、绳子、木材 | 46 | 46 | 47 | 2 | — | weapon-not-converted |
-| route-12-scout-opportunist | scout / opportunist | 复合弓 | 0 | 布料、玻璃、绳子、废金属、石头、木材 | 9 | 9 | 11 | 12 | 10 | target-completed |
-| route-13-fighter-opportunist | fighter / opportunist | 复合弓 | 0 | 布料、玻璃、绳子、木材 | 38 | 5 | 6 | 1 | — | weapon-not-converted |
-| route-14-engineer-opportunist | engineer / opportunist | 绝缘电击棒 | 0 | 布料、玻璃 | — | — | — | 8 | — | weapon-not-converted |
-| route-15-medic-opportunist | medic / opportunist | 复合弓 | 0 | 玻璃 | — | 16 | 17 | 1 | — | weapon-not-converted |
-| route-16-scout-random | scout / random | 复合弓 | 0 | 布料、铁块、绳子、废金属、石头、木材 | 27 | 7 | 8 | 9 | — | equipped-before-encounter |
-| route-17-fighter-random | fighter / random | 复合弓 | 0 | 酒精、布料、玻璃、绳子、废金属、石头、木材 | 20 | 20 | 22 | 6 | 21 | target-completed |
-| route-18-engineer-random | engineer / random | 绝缘铁管 | 0 | 布料、铁块、绳子、废金属、石头、木材 | 31 | 26 | 13 | 8 | 27 | target-completed |
-| route-19-medic-random | medic / random | 复合弓 | 0 | 铁块 | — | 30 | 31 | 31 | — | equipped-before-encounter |
+| 路线 | 角色 / 策略 | 目标 | 目标采纳 | 原材料（已拾取） | 中间步骤首个 | 武器首个 | 装备首个 | 遭遇首个 | 目标完成 | 死亡原因 | 诊断 |
+| --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| route-0-scout-aggressive | scout / aggressive | 复合弓 | 0 | 布料、玻璃、绳子、石头、木材 | 23 | 5 | 6 | 4 | 24 | 衰竭 | target-completed |
+| route-1-fighter-aggressive | fighter / aggressive | 复合弓 | 0 | 布料、玻璃、药草、绳子、木材 | 8 | 8 | 9 | 2 | — | 衰竭 | weapon-not-converted |
+| route-2-engineer-aggressive | engineer / aggressive | 复合弓 | 0 | 玻璃、铁块、绳子、废金属、石头、木材 | 26 | 26 | 20 | 4 | 27 | 衰竭 | target-completed |
+| route-3-medic-aggressive | medic / aggressive | 复合弓 | 0 | 玻璃、绳子、石头、木材 | 39 | 1 | 2 | 30 | 40 | 衰竭 | target-completed |
+| route-4-scout-cautious | scout / cautious | 复合弓 | 0 | 布料、玻璃、绳子、废金属、木材 | — | 9 | 10 | 2 | — | 战斗 | weapon-not-converted |
+| route-5-fighter-cautious | fighter / cautious | 复合弓 | 0 | 绳子、石头、木材 | 19 | 9 | 10 | — | — | 禁区侵蚀 | equipped-before-encounter |
+| route-6-engineer-cautious | engineer / cautious | 复合弓 | 0 | 布料、玻璃、铁块、绳子、废金属、木材 | 9 | 3 | 4 | — | 26 | — | target-completed |
+| route-7-medic-cautious | medic / cautious | 绝缘铁管 | 0 | 铁块、绳子、废金属、石头、木材 | — | 2 | 4 | 20 | 3 | — | target-completed |
+| route-8-scout-collector | scout / collector | 复合弓 | 0 | 布料、玻璃、绳子、石头、木材 | 33 | 33 | 34 | 1 | — | 战斗 | weapon-not-converted |
+| route-9-fighter-collector | fighter / collector | 复合弓 | 0 | 药草、绳子、木材 | 5 | 5 | 6 | 2 | — | 禁区侵蚀 | weapon-not-converted |
+| route-10-engineer-collector | engineer / collector | 复合弓 | 0 | 布料、玻璃、铁块、绳子、木材 | 37 | 37 | 39 | 1 | 38 | 衰竭 | target-completed |
+| route-11-medic-collector | medic / collector | 复合弓 | 0 | 布料、绳子、木材 | 46 | 46 | 47 | 2 | — | 衰竭 | weapon-not-converted |
+| route-12-scout-opportunist | scout / opportunist | 复合弓 | 0 | 布料、玻璃、绳子、废金属、石头、木材 | 9 | 9 | 11 | 12 | 10 | 禁区侵蚀 | target-completed |
+| route-13-fighter-opportunist | fighter / opportunist | 复合弓 | 0 | 布料、玻璃、绳子、木材 | 38 | 5 | 6 | 1 | — | 战斗 | weapon-not-converted |
+| route-14-engineer-opportunist | engineer / opportunist | 绝缘电击棒 | 0 | 布料、玻璃 | — | — | — | 8 | — | 战斗 | weapon-not-converted |
+| route-15-medic-opportunist | medic / opportunist | 复合弓 | 0 | 玻璃 | — | 16 | 17 | 1 | — | 禁区侵蚀 | weapon-not-converted |
+| route-16-scout-random | scout / random | 复合弓 | 0 | 布料、铁块、绳子、废金属、石头、木材 | 27 | 7 | 8 | 9 | — | — | equipped-before-encounter |
+| route-17-fighter-random | fighter / random | 复合弓 | 0 | 酒精、布料、玻璃、绳子、废金属、石头、木材 | 20 | 20 | 22 | 6 | 21 | 禁区侵蚀 | target-completed |
+| route-18-engineer-random | engineer / random | 绝缘铁管 | 0 | 布料、铁块、绳子、废金属、石头、木材 | 31 | 26 | 13 | 8 | 27 | 禁区侵蚀 | target-completed |
+| route-19-medic-random | medic / random | 复合弓 | 0 | 铁块 | — | 30 | 31 | 31 | — | 战斗 | equipped-before-encounter |
 
 ## 结论与下一步
 

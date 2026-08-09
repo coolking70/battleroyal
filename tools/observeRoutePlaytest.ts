@@ -56,6 +56,7 @@ export interface RoutePlaytestRecord {
   targetOutputItemId: string | null;
   targetOutputName: string | null;
   milestones: RouteMilestoneTimes;
+  deathCause: string | null;
   rawMaterialsSeen: string[];
   intermediateOutputsCrafted: string[];
   highTierWeaponsCrafted: string[];
@@ -90,6 +91,7 @@ export interface RoutePlaytestReport {
     targetCompletedRuns: number;
     deathRuns: number;
   };
+  deathCauses: Record<string, number>;
   diagnosis: Record<RouteDiagnosis, number>;
   records: RoutePlaytestRecord[];
 }
@@ -249,6 +251,12 @@ function buildRecord(
     ),
     death: firstAt(events, (event) => event.type === 'CHARACTER_DIED' && event.targetId === playerId),
   };
+  const deathEvent = events.find(
+    (event) => event.type === 'CHARACTER_DIED' && event.targetId === playerId,
+  );
+  const deathCause = typeof deathEvent?.metadata.cause === 'string'
+    ? deathEvent.metadata.cause
+    : null;
 
   return {
     runId: `route-${index}-${characterId}-${policy}`,
@@ -264,6 +272,7 @@ function buildRecord(
     targetOutputItemId: target?.outputItemId ?? null,
     targetOutputName: itemName(target?.outputItemId ?? null),
     milestones,
+    deathCause,
     rawMaterialsSeen: RAW_MATERIAL_IDS.filter((itemId) => firstRawMaterialPicked[itemId] !== null),
     intermediateOutputsCrafted: [...intermediateOutputsCrafted].sort(),
     highTierWeaponsCrafted: [...highTierWeaponsCrafted].sort(),
@@ -289,6 +298,11 @@ export function collectRoutePlaytest(options: RoutePlaytestOptions = {}): RouteP
     (['target-completed', 'equipped-before-encounter', 'encounter-before-equipment', 'weapon-not-converted', 'no-player-material-observed', 'no-target-adopted'] as RouteDiagnosis[])
       .map((key) => [key, count((record) => record.routeDiagnosis === key)]),
   ) as Record<RouteDiagnosis, number>;
+  const deathCauses: Record<string, number> = {};
+  for (const record of records) {
+    if (!record.deathCause) continue;
+    deathCauses[record.deathCause] = (deathCauses[record.deathCause] ?? 0) + 1;
+  }
   const trustworthyRuns = count((record) => record.trustworthy);
 
   return {
@@ -319,6 +333,7 @@ export function collectRoutePlaytest(options: RoutePlaytestOptions = {}): RouteP
       targetCompletedRuns: count((record) => record.milestones.targetCompleted !== null),
       deathRuns: count((record) => record.milestones.death !== null),
     },
+    deathCauses,
     diagnosis,
     records,
   };
@@ -336,7 +351,7 @@ export function markdownForRoutePlaytest(report: RoutePlaytestReport): string {
   const milestone = report.milestones;
   const rows = report.records.map((record) => {
     const raw = record.rawMaterialsSeen.map(materialLabel).join('、') || '未观察到';
-    return `| ${record.runId} | ${record.characterId} / ${record.policy} | ${record.targetName ?? '—'} | ${formatTime(record.milestones.targetAdopted)} | ${raw} | ${formatTime(record.milestones.firstIntermediateCrafted)} | ${formatTime(record.milestones.firstWeaponObtained)} | ${formatTime(record.milestones.firstEquipped)} | ${formatTime(record.milestones.firstEncounter)} | ${formatTime(record.milestones.targetCompleted)} | ${record.routeDiagnosis} |`;
+    return `| ${record.runId} | ${record.characterId} / ${record.policy} | ${record.targetName ?? '—'} | ${formatTime(record.milestones.targetAdopted)} | ${raw} | ${formatTime(record.milestones.firstIntermediateCrafted)} | ${formatTime(record.milestones.firstWeaponObtained)} | ${formatTime(record.milestones.firstEquipped)} | ${formatTime(record.milestones.firstEncounter)} | ${formatTime(record.milestones.targetCompleted)} | ${record.deathCause ?? '—'} | ${record.routeDiagnosis} |`;
   }).join('\n');
   const diagnosisRows = Object.entries(report.diagnosis)
     .map(([key, value]) => `| ${key} | ${value} |`)
@@ -360,11 +375,12 @@ export function markdownForRoutePlaytest(report: RoutePlaytestReport): string {
     `| 首次进入遭遇 | ${milestone.encounterRuns} |\n` +
     `| 完成当前制作目标 | ${milestone.targetCompletedRuns} |\n` +
     `| 玩家死亡 | ${milestone.deathRuns} |\n\n` +
+    `死亡原因：${Object.entries(report.deathCauses).map(([cause, count]) => `${cause} ${count}`).join('、') || '无'}。\n\n` +
     `## 路线诊断分类\n\n| 分类 | 对局数 |\n| --- | ---: |\n${diagnosisRows}\n\n` +
     `分类只说明观察到的里程碑顺序，不等同于经济平衡结论；“未观察到”也不证明区域库存为空。\n\n` +
     `## 逐路线时间\n\n` +
-    `| 路线 | 角色 / 策略 | 目标 | 目标采纳 | 原材料（已拾取） | 中间步骤首个 | 武器首个 | 装备首个 | 遭遇首个 | 目标完成 | 诊断 |\n` +
-    `| --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- |\n${rows}\n\n` +
+    `| 路线 | 角色 / 策略 | 目标 | 目标采纳 | 原材料（已拾取） | 中间步骤首个 | 武器首个 | 装备首个 | 遭遇首个 | 目标完成 | 死亡原因 | 诊断 |\n` +
+    `| --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |\n${rows}\n\n` +
     `## 结论与下一步\n\n` +
     `本记录器用于回答“玩家式闭环能否被完整执行”，不是用来调胜率。只有在半自动路线和真人路线都显示某条固定路径在合理时间内稳定不可达时，才考虑最小的数据层供给调整。当前真人触控、首次上手理解、屏幕阅读器和长局取舍仍标记为 \`HUMAN-PLAYTEST-NEEDED\`。\n`;
 }

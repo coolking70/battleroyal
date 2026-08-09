@@ -1,6 +1,6 @@
 {
   "phase": "Phase 4C-7",
-  "generatedAt": "2026-08-09T19:38:06.217Z",
+  "generatedAt": "2026-08-09T19:43:15.661Z",
   "evidenceClass": "SEMI_AUTOMATED_ROUTE_OBSERVATION",
   "humanPlaytestStatus": "NOT_PERFORMED",
   "method": {
@@ -25,6 +25,11 @@
     "encounterRuns": 18,
     "targetCompletedRuns": 9,
     "deathRuns": 17
+  },
+  "deathCauses": {
+    "衰竭": 6,
+    "战斗": 5,
+    "禁区侵蚀": 6
   },
   "diagnosis": {
     "target-completed": 9,
@@ -82,6 +87,7 @@
         "targetCompleted": 24,
         "death": 87
       },
+      "deathCause": "衰竭",
       "rawMaterialsSeen": [
         "cloth",
         "glass",
@@ -144,6 +150,7 @@
         "targetCompleted": null,
         "death": 39
       },
+      "deathCause": "衰竭",
       "rawMaterialsSeen": [
         "cloth",
         "glass",
@@ -204,6 +211,7 @@
         "targetCompleted": 27,
         "death": 82
       },
+      "deathCause": "衰竭",
       "rawMaterialsSeen": [
         "glass",
         "iron",
@@ -267,6 +275,7 @@
         "targetCompleted": 40,
         "death": 42
       },
+      "deathCause": "衰竭",
       "rawMaterialsSeen": [
         "glass",
         "rope",
@@ -328,6 +337,7 @@
         "targetCompleted": null,
         "death": 43
       },
+      "deathCause": "战斗",
       "rawMaterialsSeen": [
         "cloth",
         "glass",
@@ -386,6 +396,7 @@
         "targetCompleted": null,
         "death": 22
       },
+      "deathCause": "禁区侵蚀",
       "rawMaterialsSeen": [
         "rope",
         "stone",
@@ -444,6 +455,7 @@
         "targetCompleted": 26,
         "death": null
       },
+      "deathCause": null,
       "rawMaterialsSeen": [
         "cloth",
         "glass",
@@ -508,6 +520,7 @@
         "targetCompleted": 3,
         "death": null
       },
+      "deathCause": null,
       "rawMaterialsSeen": [
         "iron",
         "rope",
@@ -568,6 +581,7 @@
         "targetCompleted": null,
         "death": 36
       },
+      "deathCause": "战斗",
       "rawMaterialsSeen": [
         "cloth",
         "glass",
@@ -628,6 +642,7 @@
         "targetCompleted": null,
         "death": 33
       },
+      "deathCause": "禁区侵蚀",
       "rawMaterialsSeen": [
         "herb",
         "rope",
@@ -686,6 +701,7 @@
         "targetCompleted": 38,
         "death": 42
       },
+      "deathCause": "衰竭",
       "rawMaterialsSeen": [
         "cloth",
         "glass",
@@ -748,6 +764,7 @@
         "targetCompleted": null,
         "death": 81
       },
+      "deathCause": "衰竭",
       "rawMaterialsSeen": [
         "cloth",
         "rope",
@@ -806,6 +823,7 @@
         "targetCompleted": 10,
         "death": 54
       },
+      "deathCause": "禁区侵蚀",
       "rawMaterialsSeen": [
         "cloth",
         "glass",
@@ -869,6 +887,7 @@
         "targetCompleted": null,
         "death": 71
       },
+      "deathCause": "战斗",
       "rawMaterialsSeen": [
         "cloth",
         "glass",
@@ -928,6 +947,7 @@
         "targetCompleted": null,
         "death": 36
       },
+      "deathCause": "战斗",
       "rawMaterialsSeen": [
         "cloth",
         "glass"
@@ -983,6 +1003,7 @@
         "targetCompleted": null,
         "death": 28
       },
+      "deathCause": "禁区侵蚀",
       "rawMaterialsSeen": [
         "glass"
       ],
@@ -1037,6 +1058,7 @@
         "targetCompleted": null,
         "death": null
       },
+      "deathCause": null,
       "rawMaterialsSeen": [
         "cloth",
         "iron",
@@ -1098,6 +1120,7 @@
         "targetCompleted": 21,
         "death": 34
       },
+      "deathCause": "禁区侵蚀",
       "rawMaterialsSeen": [
         "alcohol",
         "cloth",
@@ -1162,6 +1185,7 @@
         "targetCompleted": 27,
         "death": 70
       },
+      "deathCause": "禁区侵蚀",
       "rawMaterialsSeen": [
         "cloth",
         "iron",
@@ -1225,6 +1249,7 @@
         "targetCompleted": null,
         "death": 36
       },
+      "deathCause": "战斗",
       "rawMaterialsSeen": [
         "iron"
       ],
