@@ -14,6 +14,7 @@ import { runEventE1Batch } from './eventBatch';
 import { runInjuredBatch } from './injuredBatch';
 import { runScoutCombatCanary } from './combatCanary';
 import { runCombatBatch } from './combatBatch';
+import { runPhase4A45Audit } from './phase4a45Audit';
 import type { ArtConfig, ArtTask } from './types';
 
 interface Args {
@@ -69,6 +70,7 @@ function printHelp(): void {
   art:api-check
   art:smoke
   art:review-export --round A|--report <round-report.json> [--output <dir>] [--suffix <text>]
+  art:audit:phase4a (read-only Phase 4A base-art closure audit; no API calls)
   art:security:browser
   art:security:repo`);
 }
@@ -239,6 +241,11 @@ async function main(): Promise<number> {
       const result = await runCombatBatch(config, await loadTasks(config.rootDir), { reportName: args.reportName, force: args.force });
       console.log(JSON.stringify(result.report, null, 2));
       return result.exitCode;
+    }
+    case 'audit:phase4a': {
+      const result = await runPhase4A45Audit(config);
+      console.log(JSON.stringify({ phase: result.phase, passed: result.passed, manifest: result.manifestCoverage.passed, provenance: result.provenance.passed, candidateHygiene: result.candidateHygiene.passed, runtimeUsage: result.runtimeUsage.passed }, null, 2));
+      return result.passed ? 0 : 1;
     }
     case 'list': await listCommand(config); return 0;
     case 'approve': {

@@ -23,6 +23,7 @@
     "art:event-e1": "tsx tools/art/cli.ts event-e1",
     "art:injured-batch": "tsx tools/art/cli.ts injured-batch",
     "art:combat-batch": "tsx tools/art/cli.ts combat-batch",
+    "art:audit:phase4a": "tsx tools/art/cli.ts audit:phase4a",
     "art:list": "tsx tools/art/cli.ts list",
     "art:approve": "tsx tools/art/cli.ts approve",
     "art:reject": "tsx tools/art/cli.ts reject",

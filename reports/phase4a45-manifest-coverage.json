@@ -1,0 +1,1077 @@
+{
+  "generatedAt": "2026-08-09T03:57:40.144Z",
+  "source": {
+    "characters": "src/data/characters.ts",
+    "zones": "src/data/zones.ts",
+    "items": "art/tasks/items.json via ArtTask definitions plus src/data/items.ts identity check",
+    "worldEvents": "src/core/worldEvents.ts"
+  },
+  "counts": {
+    "characterVariantsRequired": 12,
+    "characterVariantsOfficial": 12,
+    "zoneBackgroundRequired": 6,
+    "zoneBackgroundOfficial": 6,
+    "itemArtTasks": 12,
+    "itemArtOfficial": 12,
+    "worldEventOfficial": 5,
+    "worldEventFallbackOnly": 1
+  },
+  "character": [
+    {
+      "taskId": "character/scout/portrait",
+      "gameDataId": "scout",
+      "artTask": true,
+      "manifestPath": "/assets/characters/scout/portrait.png",
+      "official": true,
+      "file": {
+        "taskId": "character/scout/portrait",
+        "manifestPath": "/assets/characters/scout/portrait.png",
+        "filePath": "public/assets/characters/scout/portrait.png",
+        "exists": true,
+        "sizeBytes": 1184460,
+        "mime": "image/png",
+        "width": 864,
+        "height": 1152,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "character/scout/injured",
+      "gameDataId": "scout",
+      "artTask": true,
+      "manifestPath": "/assets/characters/scout/injured.png",
+      "official": true,
+      "file": {
+        "taskId": "character/scout/injured",
+        "manifestPath": "/assets/characters/scout/injured.png",
+        "filePath": "public/assets/characters/scout/injured.png",
+        "exists": true,
+        "sizeBytes": 1147631,
+        "mime": "image/png",
+        "width": 864,
+        "height": 1152,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "character/scout/combat",
+      "gameDataId": "scout",
+      "artTask": true,
+      "manifestPath": "/assets/characters/scout/combat.png",
+      "official": true,
+      "file": {
+        "taskId": "character/scout/combat",
+        "manifestPath": "/assets/characters/scout/combat.png",
+        "filePath": "public/assets/characters/scout/combat.png",
+        "exists": true,
+        "sizeBytes": 1235048,
+        "mime": "image/png",
+        "width": 864,
+        "height": 1152,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "character/fighter/portrait",
+      "gameDataId": "fighter",
+      "artTask": true,
+      "manifestPath": "/assets/characters/fighter/portrait.png",
+      "official": true,
+      "file": {
+        "taskId": "character/fighter/portrait",
+        "manifestPath": "/assets/characters/fighter/portrait.png",
+        "filePath": "public/assets/characters/fighter/portrait.png",
+        "exists": true,
+        "sizeBytes": 1276009,
+        "mime": "image/png",
+        "width": 864,
+        "height": 1152,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "character/fighter/injured",
+      "gameDataId": "fighter",
+      "artTask": true,
+      "manifestPath": "/assets/characters/fighter/injured.png",
+      "official": true,
+      "file": {
+        "taskId": "character/fighter/injured",
+        "manifestPath": "/assets/characters/fighter/injured.png",
+        "filePath": "public/assets/characters/fighter/injured.png",
+        "exists": true,
+        "sizeBytes": 1268220,
+        "mime": "image/png",
+        "width": 864,
+        "height": 1152,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "character/fighter/combat",
+      "gameDataId": "fighter",
+      "artTask": true,
+      "manifestPath": "/assets/characters/fighter/combat.png",
+      "official": true,
+      "file": {
+        "taskId": "character/fighter/combat",
+        "manifestPath": "/assets/characters/fighter/combat.png",
+        "filePath": "public/assets/characters/fighter/combat.png",
+        "exists": true,
+        "sizeBytes": 1295072,
+        "mime": "image/png",
+        "width": 864,
+        "height": 1152,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "character/engineer/portrait",
+      "gameDataId": "engineer",
+      "artTask": true,
+      "manifestPath": "/assets/characters/engineer/portrait.png",
+      "official": true,
+      "file": {
+        "taskId": "character/engineer/portrait",
+        "manifestPath": "/assets/characters/engineer/portrait.png",
+        "filePath": "public/assets/characters/engineer/portrait.png",
+        "exists": true,
+        "sizeBytes": 1319593,
+        "mime": "image/png",
+        "width": 864,
+        "height": 1152,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "character/engineer/injured",
+      "gameDataId": "engineer",
+      "artTask": true,
+      "manifestPath": "/assets/characters/engineer/injured.png",
+      "official": true,
+      "file": {
+        "taskId": "character/engineer/injured",
+        "manifestPath": "/assets/characters/engineer/injured.png",
+        "filePath": "public/assets/characters/engineer/injured.png",
+        "exists": true,
+        "sizeBytes": 1318728,
+        "mime": "image/png",
+        "width": 864,
+        "height": 1152,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "character/engineer/combat",
+      "gameDataId": "engineer",
+      "artTask": true,
+      "manifestPath": "/assets/characters/engineer/combat.png",
+      "official": true,
+      "file": {
+        "taskId": "character/engineer/combat",
+        "manifestPath": "/assets/characters/engineer/combat.png",
+        "filePath": "public/assets/characters/engineer/combat.png",
+        "exists": true,
+        "sizeBytes": 1316033,
+        "mime": "image/png",
+        "width": 864,
+        "height": 1152,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "character/medic/portrait",
+      "gameDataId": "medic",
+      "artTask": true,
+      "manifestPath": "/assets/characters/medic/portrait.png",
+      "official": true,
+      "file": {
+        "taskId": "character/medic/portrait",
+        "manifestPath": "/assets/characters/medic/portrait.png",
+        "filePath": "public/assets/characters/medic/portrait.png",
+        "exists": true,
+        "sizeBytes": 1179560,
+        "mime": "image/png",
+        "width": 864,
+        "height": 1152,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "character/medic/injured",
+      "gameDataId": "medic",
+      "artTask": true,
+      "manifestPath": "/assets/characters/medic/injured.png",
+      "official": true,
+      "file": {
+        "taskId": "character/medic/injured",
+        "manifestPath": "/assets/characters/medic/injured.png",
+        "filePath": "public/assets/characters/medic/injured.png",
+        "exists": true,
+        "sizeBytes": 1299719,
+        "mime": "image/png",
+        "width": 864,
+        "height": 1152,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "character/medic/combat",
+      "gameDataId": "medic",
+      "artTask": true,
+      "manifestPath": "/assets/characters/medic/combat.png",
+      "official": true,
+      "file": {
+        "taskId": "character/medic/combat",
+        "manifestPath": "/assets/characters/medic/combat.png",
+        "filePath": "public/assets/characters/medic/combat.png",
+        "exists": true,
+        "sizeBytes": 1346067,
+        "mime": "image/png",
+        "width": 864,
+        "height": 1152,
+        "readable": true
+      }
+    }
+  ],
+  "zones": [
+    {
+      "taskId": "zone/school/background",
+      "gameDataId": "school",
+      "artTask": true,
+      "background": true,
+      "official": true,
+      "warning": null,
+      "restricted": null,
+      "optionalVariants": {
+        "warning": "optional future variant; not a Phase 4A base-art blocker",
+        "restricted": "optional future variant; not a Phase 4A base-art blocker"
+      },
+      "file": {
+        "taskId": "zone/school/background",
+        "manifestPath": "/assets/zones/school/background.png",
+        "filePath": "public/assets/zones/school/background.png",
+        "exists": true,
+        "sizeBytes": 1464929,
+        "mime": "image/png",
+        "width": 1312,
+        "height": 736,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "zone/hospital/background",
+      "gameDataId": "hospital",
+      "artTask": true,
+      "background": true,
+      "official": true,
+      "warning": null,
+      "restricted": null,
+      "optionalVariants": {
+        "warning": "optional future variant; not a Phase 4A base-art blocker",
+        "restricted": "optional future variant; not a Phase 4A base-art blocker"
+      },
+      "file": {
+        "taskId": "zone/hospital/background",
+        "manifestPath": "/assets/zones/hospital/background.png",
+        "filePath": "public/assets/zones/hospital/background.png",
+        "exists": true,
+        "sizeBytes": 1346616,
+        "mime": "image/png",
+        "width": 1312,
+        "height": 736,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "zone/residential/background",
+      "gameDataId": "residential",
+      "artTask": true,
+      "background": true,
+      "official": true,
+      "warning": null,
+      "restricted": null,
+      "optionalVariants": {
+        "warning": "optional future variant; not a Phase 4A base-art blocker",
+        "restricted": "optional future variant; not a Phase 4A base-art blocker"
+      },
+      "file": {
+        "taskId": "zone/residential/background",
+        "manifestPath": "/assets/zones/residential/background.png",
+        "filePath": "public/assets/zones/residential/background.png",
+        "exists": true,
+        "sizeBytes": 1461142,
+        "mime": "image/png",
+        "width": 1312,
+        "height": 736,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "zone/factory/background",
+      "gameDataId": "factory",
+      "artTask": true,
+      "background": true,
+      "official": true,
+      "warning": null,
+      "restricted": null,
+      "optionalVariants": {
+        "warning": "optional future variant; not a Phase 4A base-art blocker",
+        "restricted": "optional future variant; not a Phase 4A base-art blocker"
+      },
+      "file": {
+        "taskId": "zone/factory/background",
+        "manifestPath": "/assets/zones/factory/background.png",
+        "filePath": "public/assets/zones/factory/background.png",
+        "exists": true,
+        "sizeBytes": 1411019,
+        "mime": "image/png",
+        "width": 1312,
+        "height": 736,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "zone/forest/background",
+      "gameDataId": "forest",
+      "artTask": true,
+      "background": true,
+      "official": true,
+      "warning": null,
+      "restricted": null,
+      "optionalVariants": {
+        "warning": "optional future variant; not a Phase 4A base-art blocker",
+        "restricted": "optional future variant; not a Phase 4A base-art blocker"
+      },
+      "file": {
+        "taskId": "zone/forest/background",
+        "manifestPath": "/assets/zones/forest/background.png",
+        "filePath": "public/assets/zones/forest/background.png",
+        "exists": true,
+        "sizeBytes": 1654579,
+        "mime": "image/png",
+        "width": 1312,
+        "height": 736,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "zone/lab/background",
+      "gameDataId": "lab",
+      "artTask": true,
+      "background": true,
+      "official": true,
+      "warning": null,
+      "restricted": null,
+      "optionalVariants": {
+        "warning": "optional future variant; not a Phase 4A base-art blocker",
+        "restricted": "optional future variant; not a Phase 4A base-art blocker"
+      },
+      "file": {
+        "taskId": "zone/lab/background",
+        "manifestPath": "/assets/zones/lab/background.png",
+        "filePath": "public/assets/zones/lab/background.png",
+        "exists": true,
+        "sizeBytes": 1418350,
+        "mime": "image/png",
+        "width": 1312,
+        "height": 736,
+        "readable": true
+      }
+    }
+  ],
+  "items": [
+    {
+      "taskId": "item/wood/icon",
+      "gameDataIdExists": true,
+      "manifestPath": "/assets/items/wood/icon.png",
+      "official": true,
+      "file": {
+        "taskId": "item/wood/icon",
+        "manifestPath": "/assets/items/wood/icon.png",
+        "filePath": "public/assets/items/wood/icon.png",
+        "exists": true,
+        "sizeBytes": 1326357,
+        "mime": "image/png",
+        "width": 1024,
+        "height": 1024,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "item/iron/icon",
+      "gameDataIdExists": true,
+      "manifestPath": "/assets/items/iron/icon.png",
+      "official": true,
+      "file": {
+        "taskId": "item/iron/icon",
+        "manifestPath": "/assets/items/iron/icon.png",
+        "filePath": "public/assets/items/iron/icon.png",
+        "exists": true,
+        "sizeBytes": 1169134,
+        "mime": "image/png",
+        "width": 1024,
+        "height": 1024,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "item/bandage/icon",
+      "gameDataIdExists": true,
+      "manifestPath": "/assets/items/bandage/icon.png",
+      "official": true,
+      "file": {
+        "taskId": "item/bandage/icon",
+        "manifestPath": "/assets/items/bandage/icon.png",
+        "filePath": "public/assets/items/bandage/icon.png",
+        "exists": true,
+        "sizeBytes": 1208391,
+        "mime": "image/png",
+        "width": 1024,
+        "height": 1024,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "item/medkit/icon",
+      "gameDataIdExists": true,
+      "manifestPath": "/assets/items/medkit/icon.png",
+      "official": true,
+      "file": {
+        "taskId": "item/medkit/icon",
+        "manifestPath": "/assets/items/medkit/icon.png",
+        "filePath": "public/assets/items/medkit/icon.png",
+        "exists": true,
+        "sizeBytes": 1115497,
+        "mime": "image/png",
+        "width": 1024,
+        "height": 1024,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "item/energy_drink/icon",
+      "gameDataIdExists": true,
+      "manifestPath": "/assets/items/energy_drink/icon.png",
+      "official": true,
+      "file": {
+        "taskId": "item/energy_drink/icon",
+        "manifestPath": "/assets/items/energy_drink/icon.png",
+        "filePath": "public/assets/items/energy_drink/icon.png",
+        "exists": true,
+        "sizeBytes": 1096623,
+        "mime": "image/png",
+        "width": 1024,
+        "height": 1024,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "item/stone_axe/icon",
+      "gameDataIdExists": true,
+      "manifestPath": "/assets/items/stone_axe/icon.png",
+      "official": true,
+      "file": {
+        "taskId": "item/stone_axe/icon",
+        "manifestPath": "/assets/items/stone_axe/icon.png",
+        "filePath": "public/assets/items/stone_axe/icon.png",
+        "exists": true,
+        "sizeBytes": 1265737,
+        "mime": "image/png",
+        "width": 1024,
+        "height": 1024,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "item/iron_pipe/icon",
+      "gameDataIdExists": true,
+      "manifestPath": "/assets/items/iron_pipe/icon.png",
+      "official": true,
+      "file": {
+        "taskId": "item/iron_pipe/icon",
+        "manifestPath": "/assets/items/iron_pipe/icon.png",
+        "filePath": "public/assets/items/iron_pipe/icon.png",
+        "exists": true,
+        "sizeBytes": 1130159,
+        "mime": "image/png",
+        "width": 1024,
+        "height": 1024,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "item/simple_bow/icon",
+      "gameDataIdExists": true,
+      "manifestPath": "/assets/items/simple_bow/icon.png",
+      "official": true,
+      "file": {
+        "taskId": "item/simple_bow/icon",
+        "manifestPath": "/assets/items/simple_bow/icon.png",
+        "filePath": "public/assets/items/simple_bow/icon.png",
+        "exists": true,
+        "sizeBytes": 1297996,
+        "mime": "image/png",
+        "width": 1024,
+        "height": 1024,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "item/simple_armor/icon",
+      "gameDataIdExists": true,
+      "manifestPath": "/assets/items/simple_armor/icon.png",
+      "official": true,
+      "file": {
+        "taskId": "item/simple_armor/icon",
+        "manifestPath": "/assets/items/simple_armor/icon.png",
+        "filePath": "public/assets/items/simple_armor/icon.png",
+        "exists": true,
+        "sizeBytes": 1309251,
+        "mime": "image/png",
+        "width": 1024,
+        "height": 1024,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "item/plate_armor/icon",
+      "gameDataIdExists": true,
+      "manifestPath": "/assets/items/plate_armor/icon.png",
+      "official": true,
+      "file": {
+        "taskId": "item/plate_armor/icon",
+        "manifestPath": "/assets/items/plate_armor/icon.png",
+        "filePath": "public/assets/items/plate_armor/icon.png",
+        "exists": true,
+        "sizeBytes": 1206997,
+        "mime": "image/png",
+        "width": 1024,
+        "height": 1024,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "item/water/icon",
+      "gameDataIdExists": true,
+      "manifestPath": "/assets/items/water/icon.png",
+      "official": true,
+      "file": {
+        "taskId": "item/water/icon",
+        "manifestPath": "/assets/items/water/icon.png",
+        "filePath": "public/assets/items/water/icon.png",
+        "exists": true,
+        "sizeBytes": 1220235,
+        "mime": "image/png",
+        "width": 1024,
+        "height": 1024,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "item/battery/icon",
+      "gameDataIdExists": true,
+      "manifestPath": "/assets/items/battery/icon.png",
+      "official": true,
+      "file": {
+        "taskId": "item/battery/icon",
+        "manifestPath": "/assets/items/battery/icon.png",
+        "filePath": "public/assets/items/battery/icon.png",
+        "exists": true,
+        "sizeBytes": 1117672,
+        "mime": "image/png",
+        "width": 1024,
+        "height": 1024,
+        "readable": true
+      }
+    }
+  ],
+  "worldEvents": [
+    {
+      "taskId": "world_event/blackout/illustration",
+      "manifestPath": "/assets/world-events/blackout/illustration.png",
+      "official": true,
+      "fallbackOnly": false,
+      "providerCompatibility": "available",
+      "file": {
+        "taskId": "world_event/blackout/illustration",
+        "manifestPath": "/assets/world-events/blackout/illustration.png",
+        "filePath": "public/assets/world-events/blackout/illustration.png",
+        "exists": true,
+        "sizeBytes": 1199073,
+        "mime": "image/png",
+        "width": 1312,
+        "height": 736,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "world_event/rain/illustration",
+      "manifestPath": null,
+      "official": false,
+      "fallbackOnly": true,
+      "providerCompatibility": "blocked"
+    },
+    {
+      "taskId": "world_event/emergency_broadcast/illustration",
+      "manifestPath": "/assets/world-events/emergency_broadcast/illustration.png",
+      "official": true,
+      "fallbackOnly": false,
+      "providerCompatibility": "available",
+      "file": {
+        "taskId": "world_event/emergency_broadcast/illustration",
+        "manifestPath": "/assets/world-events/emergency_broadcast/illustration.png",
+        "filePath": "public/assets/world-events/emergency_broadcast/illustration.png",
+        "exists": true,
+        "sizeBytes": 1472505,
+        "mime": "image/png",
+        "width": 1312,
+        "height": 736,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "world_event/medical_alert/illustration",
+      "manifestPath": "/assets/world-events/medical_alert/illustration.png",
+      "official": true,
+      "fallbackOnly": false,
+      "providerCompatibility": "available",
+      "file": {
+        "taskId": "world_event/medical_alert/illustration",
+        "manifestPath": "/assets/world-events/medical_alert/illustration.png",
+        "filePath": "public/assets/world-events/medical_alert/illustration.png",
+        "exists": true,
+        "sizeBytes": 1218008,
+        "mime": "image/png",
+        "width": 1312,
+        "height": 736,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "world_event/research_anomaly/illustration",
+      "manifestPath": "/assets/world-events/research_anomaly/illustration.png",
+      "official": true,
+      "fallbackOnly": false,
+      "providerCompatibility": "available",
+      "file": {
+        "taskId": "world_event/research_anomaly/illustration",
+        "manifestPath": "/assets/world-events/research_anomaly/illustration.png",
+        "filePath": "public/assets/world-events/research_anomaly/illustration.png",
+        "exists": true,
+        "sizeBytes": 1451956,
+        "mime": "image/png",
+        "width": 1312,
+        "height": 736,
+        "readable": true
+      }
+    },
+    {
+      "taskId": "world_event/citywide_unrest/illustration",
+      "manifestPath": "/assets/world-events/citywide_unrest/illustration.png",
+      "official": true,
+      "fallbackOnly": false,
+      "providerCompatibility": "available",
+      "file": {
+        "taskId": "world_event/citywide_unrest/illustration",
+        "manifestPath": "/assets/world-events/citywide_unrest/illustration.png",
+        "filePath": "public/assets/world-events/citywide_unrest/illustration.png",
+        "exists": true,
+        "sizeBytes": 1565650,
+        "mime": "image/png",
+        "width": 1312,
+        "height": 736,
+        "readable": true
+      }
+    }
+  ],
+  "files": [
+    {
+      "taskId": "character/scout/portrait",
+      "manifestPath": "/assets/characters/scout/portrait.png",
+      "filePath": "public/assets/characters/scout/portrait.png",
+      "exists": true,
+      "sizeBytes": 1184460,
+      "mime": "image/png",
+      "width": 864,
+      "height": 1152,
+      "readable": true
+    },
+    {
+      "taskId": "character/scout/injured",
+      "manifestPath": "/assets/characters/scout/injured.png",
+      "filePath": "public/assets/characters/scout/injured.png",
+      "exists": true,
+      "sizeBytes": 1147631,
+      "mime": "image/png",
+      "width": 864,
+      "height": 1152,
+      "readable": true
+    },
+    {
+      "taskId": "character/scout/combat",
+      "manifestPath": "/assets/characters/scout/combat.png",
+      "filePath": "public/assets/characters/scout/combat.png",
+      "exists": true,
+      "sizeBytes": 1235048,
+      "mime": "image/png",
+      "width": 864,
+      "height": 1152,
+      "readable": true
+    },
+    {
+      "taskId": "character/fighter/portrait",
+      "manifestPath": "/assets/characters/fighter/portrait.png",
+      "filePath": "public/assets/characters/fighter/portrait.png",
+      "exists": true,
+      "sizeBytes": 1276009,
+      "mime": "image/png",
+      "width": 864,
+      "height": 1152,
+      "readable": true
+    },
+    {
+      "taskId": "character/fighter/injured",
+      "manifestPath": "/assets/characters/fighter/injured.png",
+      "filePath": "public/assets/characters/fighter/injured.png",
+      "exists": true,
+      "sizeBytes": 1268220,
+      "mime": "image/png",
+      "width": 864,
+      "height": 1152,
+      "readable": true
+    },
+    {
+      "taskId": "character/fighter/combat",
+      "manifestPath": "/assets/characters/fighter/combat.png",
+      "filePath": "public/assets/characters/fighter/combat.png",
+      "exists": true,
+      "sizeBytes": 1295072,
+      "mime": "image/png",
+      "width": 864,
+      "height": 1152,
+      "readable": true
+    },
+    {
+      "taskId": "character/engineer/portrait",
+      "manifestPath": "/assets/characters/engineer/portrait.png",
+      "filePath": "public/assets/characters/engineer/portrait.png",
+      "exists": true,
+      "sizeBytes": 1319593,
+      "mime": "image/png",
+      "width": 864,
+      "height": 1152,
+      "readable": true
+    },
+    {
+      "taskId": "character/engineer/injured",
+      "manifestPath": "/assets/characters/engineer/injured.png",
+      "filePath": "public/assets/characters/engineer/injured.png",
+      "exists": true,
+      "sizeBytes": 1318728,
+      "mime": "image/png",
+      "width": 864,
+      "height": 1152,
+      "readable": true
+    },
+    {
+      "taskId": "character/engineer/combat",
+      "manifestPath": "/assets/characters/engineer/combat.png",
+      "filePath": "public/assets/characters/engineer/combat.png",
+      "exists": true,
+      "sizeBytes": 1316033,
+      "mime": "image/png",
+      "width": 864,
+      "height": 1152,
+      "readable": true
+    },
+    {
+      "taskId": "character/medic/portrait",
+      "manifestPath": "/assets/characters/medic/portrait.png",
+      "filePath": "public/assets/characters/medic/portrait.png",
+      "exists": true,
+      "sizeBytes": 1179560,
+      "mime": "image/png",
+      "width": 864,
+      "height": 1152,
+      "readable": true
+    },
+    {
+      "taskId": "character/medic/injured",
+      "manifestPath": "/assets/characters/medic/injured.png",
+      "filePath": "public/assets/characters/medic/injured.png",
+      "exists": true,
+      "sizeBytes": 1299719,
+      "mime": "image/png",
+      "width": 864,
+      "height": 1152,
+      "readable": true
+    },
+    {
+      "taskId": "character/medic/combat",
+      "manifestPath": "/assets/characters/medic/combat.png",
+      "filePath": "public/assets/characters/medic/combat.png",
+      "exists": true,
+      "sizeBytes": 1346067,
+      "mime": "image/png",
+      "width": 864,
+      "height": 1152,
+      "readable": true
+    },
+    {
+      "taskId": "zone/school/background",
+      "manifestPath": "/assets/zones/school/background.png",
+      "filePath": "public/assets/zones/school/background.png",
+      "exists": true,
+      "sizeBytes": 1464929,
+      "mime": "image/png",
+      "width": 1312,
+      "height": 736,
+      "readable": true
+    },
+    {
+      "taskId": "zone/hospital/background",
+      "manifestPath": "/assets/zones/hospital/background.png",
+      "filePath": "public/assets/zones/hospital/background.png",
+      "exists": true,
+      "sizeBytes": 1346616,
+      "mime": "image/png",
+      "width": 1312,
+      "height": 736,
+      "readable": true
+    },
+    {
+      "taskId": "zone/residential/background",
+      "manifestPath": "/assets/zones/residential/background.png",
+      "filePath": "public/assets/zones/residential/background.png",
+      "exists": true,
+      "sizeBytes": 1461142,
+      "mime": "image/png",
+      "width": 1312,
+      "height": 736,
+      "readable": true
+    },
+    {
+      "taskId": "zone/factory/background",
+      "manifestPath": "/assets/zones/factory/background.png",
+      "filePath": "public/assets/zones/factory/background.png",
+      "exists": true,
+      "sizeBytes": 1411019,
+      "mime": "image/png",
+      "width": 1312,
+      "height": 736,
+      "readable": true
+    },
+    {
+      "taskId": "zone/forest/background",
+      "manifestPath": "/assets/zones/forest/background.png",
+      "filePath": "public/assets/zones/forest/background.png",
+      "exists": true,
+      "sizeBytes": 1654579,
+      "mime": "image/png",
+      "width": 1312,
+      "height": 736,
+      "readable": true
+    },
+    {
+      "taskId": "zone/lab/background",
+      "manifestPath": "/assets/zones/lab/background.png",
+      "filePath": "public/assets/zones/lab/background.png",
+      "exists": true,
+      "sizeBytes": 1418350,
+      "mime": "image/png",
+      "width": 1312,
+      "height": 736,
+      "readable": true
+    },
+    {
+      "taskId": "item/wood/icon",
+      "manifestPath": "/assets/items/wood/icon.png",
+      "filePath": "public/assets/items/wood/icon.png",
+      "exists": true,
+      "sizeBytes": 1326357,
+      "mime": "image/png",
+      "width": 1024,
+      "height": 1024,
+      "readable": true
+    },
+    {
+      "taskId": "item/iron/icon",
+      "manifestPath": "/assets/items/iron/icon.png",
+      "filePath": "public/assets/items/iron/icon.png",
+      "exists": true,
+      "sizeBytes": 1169134,
+      "mime": "image/png",
+      "width": 1024,
+      "height": 1024,
+      "readable": true
+    },
+    {
+      "taskId": "item/bandage/icon",
+      "manifestPath": "/assets/items/bandage/icon.png",
+      "filePath": "public/assets/items/bandage/icon.png",
+      "exists": true,
+      "sizeBytes": 1208391,
+      "mime": "image/png",
+      "width": 1024,
+      "height": 1024,
+      "readable": true
+    },
+    {
+      "taskId": "item/medkit/icon",
+      "manifestPath": "/assets/items/medkit/icon.png",
+      "filePath": "public/assets/items/medkit/icon.png",
+      "exists": true,
+      "sizeBytes": 1115497,
+      "mime": "image/png",
+      "width": 1024,
+      "height": 1024,
+      "readable": true
+    },
+    {
+      "taskId": "item/energy_drink/icon",
+      "manifestPath": "/assets/items/energy_drink/icon.png",
+      "filePath": "public/assets/items/energy_drink/icon.png",
+      "exists": true,
+      "sizeBytes": 1096623,
+      "mime": "image/png",
+      "width": 1024,
+      "height": 1024,
+      "readable": true
+    },
+    {
+      "taskId": "item/stone_axe/icon",
+      "manifestPath": "/assets/items/stone_axe/icon.png",
+      "filePath": "public/assets/items/stone_axe/icon.png",
+      "exists": true,
+      "sizeBytes": 1265737,
+      "mime": "image/png",
+      "width": 1024,
+      "height": 1024,
+      "readable": true
+    },
+    {
+      "taskId": "item/iron_pipe/icon",
+      "manifestPath": "/assets/items/iron_pipe/icon.png",
+      "filePath": "public/assets/items/iron_pipe/icon.png",
+      "exists": true,
+      "sizeBytes": 1130159,
+      "mime": "image/png",
+      "width": 1024,
+      "height": 1024,
+      "readable": true
+    },
+    {
+      "taskId": "item/simple_bow/icon",
+      "manifestPath": "/assets/items/simple_bow/icon.png",
+      "filePath": "public/assets/items/simple_bow/icon.png",
+      "exists": true,
+      "sizeBytes": 1297996,
+      "mime": "image/png",
+      "width": 1024,
+      "height": 1024,
+      "readable": true
+    },
+    {
+      "taskId": "item/simple_armor/icon",
+      "manifestPath": "/assets/items/simple_armor/icon.png",
+      "filePath": "public/assets/items/simple_armor/icon.png",
+      "exists": true,
+      "sizeBytes": 1309251,
+      "mime": "image/png",
+      "width": 1024,
+      "height": 1024,
+      "readable": true
+    },
+    {
+      "taskId": "item/plate_armor/icon",
+      "manifestPath": "/assets/items/plate_armor/icon.png",
+      "filePath": "public/assets/items/plate_armor/icon.png",
+      "exists": true,
+      "sizeBytes": 1206997,
+      "mime": "image/png",
+      "width": 1024,
+      "height": 1024,
+      "readable": true
+    },
+    {
+      "taskId": "item/water/icon",
+      "manifestPath": "/assets/items/water/icon.png",
+      "filePath": "public/assets/items/water/icon.png",
+      "exists": true,
+      "sizeBytes": 1220235,
+      "mime": "image/png",
+      "width": 1024,
+      "height": 1024,
+      "readable": true
+    },
+    {
+      "taskId": "item/battery/icon",
+      "manifestPath": "/assets/items/battery/icon.png",
+      "filePath": "public/assets/items/battery/icon.png",
+      "exists": true,
+      "sizeBytes": 1117672,
+      "mime": "image/png",
+      "width": 1024,
+      "height": 1024,
+      "readable": true
+    },
+    {
+      "taskId": "world_event/blackout/illustration",
+      "manifestPath": "/assets/world-events/blackout/illustration.png",
+      "filePath": "public/assets/world-events/blackout/illustration.png",
+      "exists": true,
+      "sizeBytes": 1199073,
+      "mime": "image/png",
+      "width": 1312,
+      "height": 736,
+      "readable": true
+    },
+    {
+      "taskId": "world_event/emergency_broadcast/illustration",
+      "manifestPath": "/assets/world-events/emergency_broadcast/illustration.png",
+      "filePath": "public/assets/world-events/emergency_broadcast/illustration.png",
+      "exists": true,
+      "sizeBytes": 1472505,
+      "mime": "image/png",
+      "width": 1312,
+      "height": 736,
+      "readable": true
+    },
+    {
+      "taskId": "world_event/medical_alert/illustration",
+      "manifestPath": "/assets/world-events/medical_alert/illustration.png",
+      "filePath": "public/assets/world-events/medical_alert/illustration.png",
+      "exists": true,
+      "sizeBytes": 1218008,
+      "mime": "image/png",
+      "width": 1312,
+      "height": 736,
+      "readable": true
+    },
+    {
+      "taskId": "world_event/research_anomaly/illustration",
+      "manifestPath": "/assets/world-events/research_anomaly/illustration.png",
+      "filePath": "public/assets/world-events/research_anomaly/illustration.png",
+      "exists": true,
+      "sizeBytes": 1451956,
+      "mime": "image/png",
+      "width": 1312,
+      "height": 736,
+      "readable": true
+    },
+    {
+      "taskId": "world_event/citywide_unrest/illustration",
+      "manifestPath": "/assets/world-events/citywide_unrest/illustration.png",
+      "filePath": "public/assets/world-events/citywide_unrest/illustration.png",
+      "exists": true,
+      "sizeBytes": 1565650,
+      "mime": "image/png",
+      "width": 1312,
+      "height": 736,
+      "readable": true
+    }
+  ],
+  "issues": [],
+  "passed": true
+}

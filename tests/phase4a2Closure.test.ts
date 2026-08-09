@@ -25,7 +25,7 @@ const B1_TASKS = [
 afterEach(() => setAssetManifest(null));
 
 describe('Phase 4A-4 formalization closure', () => {
-  it('publishes exactly thirty-two AI slots after Scout Combat formalization', async () => {
+  it('publishes exactly thirty-five AI slots after remaining Combat formalization', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
     expect(manifest.characters.scout?.portrait).toBe('/assets/characters/scout/portrait.png');
     expect(manifest.characters.scout?.injured).toBe('/assets/characters/scout/injured.png');
@@ -56,19 +56,22 @@ describe('Phase 4A-4 formalization closure', () => {
     expect(manifest.worldEvents.medical_alert).toBe('/assets/world-events/medical_alert/illustration.png');
     expect(manifest.worldEvents.research_anomaly).toBe('/assets/world-events/research_anomaly/illustration.png');
     expect(manifest.worldEvents.citywide_unrest).toBe('/assets/world-events/citywide_unrest/illustration.png');
-    expect(Object.values(manifest.characters).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(9);
+    expect(Object.values(manifest.characters).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(12);
     expect(Object.values(manifest.zones).flatMap((entry) => Object.values(entry)).filter(Boolean)).toHaveLength(6);
     expect(Object.values(manifest.items).filter(Boolean)).toHaveLength(12);
     expect(Object.values(manifest.worldEvents).filter(Boolean)).toHaveLength(5);
   });
 
-  it('keeps provenance limited to the thirty-two approved formal AI tasks', async () => {
+  it('keeps provenance limited to the thirty-five approved formal AI tasks', async () => {
     const provenance = JSON.parse(await fs.readFile(path.join(process.cwd(), 'art/approved-assets.json'), 'utf8')) as { assets: Record<string, { candidateHash: string }> };
     expect(Object.keys(provenance.assets).sort()).toEqual([
+      'character/engineer/combat',
       'character/engineer/injured',
       'character/engineer/portrait',
+      'character/fighter/combat',
       'character/fighter/injured',
       'character/fighter/portrait',
+      'character/medic/combat',
       'character/medic/injured',
       'character/medic/portrait',
       'character/scout/combat',

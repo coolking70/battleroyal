@@ -274,12 +274,12 @@ describe('Phase 4A-4.3.2 Scout Combat posture-only canary', () => {
     await fs.rm(root, { recursive: true, force: true });
   });
 
-  it('keeps all four Injured official, Scout Combat official, other Combat slots null, and formal count at 32', async () => {
+  it('keeps all four Injured and all four Combat visuals official, with formal count at 35', async () => {
     const manifest = JSON.parse(await fs.readFile(path.join(process.cwd(), 'public/assets/manifest.json'), 'utf8')) as AssetManifest;
     for (const id of ['scout', 'fighter', 'engineer', 'medic']) {
       expect(manifest.characters[id]?.portrait).toBe(`/assets/characters/${id}/portrait.png`);
       expect(manifest.characters[id]?.injured).toBe(`/assets/characters/${id}/injured.png`);
-      expect(manifest.characters[id]?.combat).toBe(id === 'scout' ? '/assets/characters/scout/combat.png' : null);
+      expect(manifest.characters[id]?.combat).toBe(`/assets/characters/${id}/combat.png`);
     }
     const count = [
       ...Object.values(manifest.characters).flatMap((entry) => Object.values(entry)),
@@ -287,7 +287,7 @@ describe('Phase 4A-4.3.2 Scout Combat posture-only canary', () => {
       ...Object.values(manifest.items),
       ...Object.values(manifest.worldEvents),
     ].filter(Boolean);
-    expect(count).toHaveLength(32);
+    expect(count).toHaveLength(35);
   });
 
   it('uses SVG fallback when an Injured official path is unavailable', () => {

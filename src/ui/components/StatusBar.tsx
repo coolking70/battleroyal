@@ -5,6 +5,7 @@ import { totalAttack, totalDefense } from '../../core/inventory';
 import { getCharacterDef } from '../../data/characters';
 import { getZoneDef } from '../../data/zones';
 import { getCharacterVisual } from '../visualAssets';
+import { resolveCharacterVisualState } from '../characterVisualState';
 import { Bar } from './Bar';
 import { VisualImage } from './VisualImage';
 
@@ -25,6 +26,9 @@ export function StatusBar({
   const countdown = nextZoneCountdown(state);
   const zone = state.zones[player.currentZoneId];
   const zoneName = getZoneDef(player.currentZoneId).name;
+  const characterVisualState = resolveCharacterVisualState(player, {
+    activeEncounter: Boolean(state.encounter && !state.encounter.resolved),
+  });
 
   let alert: { text: string; danger: boolean } | null = null;
   if (zone?.status === 'restricted') {
@@ -80,7 +84,7 @@ export function StatusBar({
       <span className="stat faint">
         <span className="badge badge-you">你</span>{' '}
         <VisualImage
-          visual={getCharacterVisual(player.characterId, player.hp <= player.maxHp * 0.35 ? 'injured' : 'portrait')}
+          visual={getCharacterVisual(player.characterId, characterVisualState)}
           alt={`${getCharacterDef(player.characterId).name}头像`}
           className="status-visual"
         />{' '}

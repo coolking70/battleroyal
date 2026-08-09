@@ -104,3 +104,13 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Offline gates passed: 1168 tests, typecheck/build/save/dependency/art/Manifest/security audits, 500-game regression and production dependency audit.
 - Generated exactly once: candidate `7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01`, API=1, cache=0, validation PASS, review pending. Visual review found static binoculars, empty separated hands and clear alert posture; no duplicate prop observed. No approval, publication or remaining Combat generation performed.
 - Review package: `output/art-review/phase4a432-scout-combat/`. Await human review; if this strategy later fails, stop text-only Combat tuning and consider Phase 4A-4.3R simplification.
+
+## Phase 4A-4.5 progress (2026-08-09)
+
+- Approved exactly the human-selected Fighter, Engineer and Medic Combat candidates and published them idempotently; final formal Manifest/provenance count is 35.
+- Added the read-only closure audit and reports for Manifest coverage, provenance, candidate hygiene and runtime usage. All four audit dimensions PASS; Rain remains fallback-only under the provider exception.
+- Added the derived character visual-state resolver and wired real StatusBar, DebugPanel and visible EncounterPanel consumers. No state is persisted and hidden NPC state is not exposed.
+- Full verification: 56 test files / 1211 tests PASS, typecheck/build PASS, offline/security/dependency gates PASS, production npm audit 0 vulnerabilities, and 500-game `PHASE4A45` regression PASS under the existing observation-only balance policy.
+- Browser smoke rendered the real gameplay UI, reported `mode=playing`, time 0 and no console-error artifact. Screenshot evidence is in `output/phase4a45-browser/`.
+- Final reports: `PHASE4A45_REPORT.md`, `PHASE4A45_AUDIT_FIXES.md`, `reports/phase4a45-command-results.txt` and the four machine-readable audit reports.
+- Remaining handoff: commit and push this closure; keep the pre-existing `reports/save-validation-audit.json` and `.md` user changes unstaged.

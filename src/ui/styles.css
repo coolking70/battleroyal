@@ -787,6 +787,13 @@ input {
   gap: 6px;
 }
 
+.encounter-character-visual {
+  width: 42px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
 .encounter-log {
   flex: 1;
   min-width: 200px;

@@ -1,0 +1,158 @@
+{
+  "generatedAt": "2026-08-09T03:57:40.137Z",
+  "officialManifestEntries": 35,
+  "provenanceEntries": 35,
+  "reverseMapping": [
+    {
+      "taskId": "character/scout/portrait",
+      "publicPath": "/assets/characters/scout/portrait.png"
+    },
+    {
+      "taskId": "character/scout/injured",
+      "publicPath": "/assets/characters/scout/injured.png"
+    },
+    {
+      "taskId": "character/scout/combat",
+      "publicPath": "/assets/characters/scout/combat.png"
+    },
+    {
+      "taskId": "character/fighter/portrait",
+      "publicPath": "/assets/characters/fighter/portrait.png"
+    },
+    {
+      "taskId": "character/fighter/injured",
+      "publicPath": "/assets/characters/fighter/injured.png"
+    },
+    {
+      "taskId": "character/fighter/combat",
+      "publicPath": "/assets/characters/fighter/combat.png"
+    },
+    {
+      "taskId": "character/engineer/portrait",
+      "publicPath": "/assets/characters/engineer/portrait.png"
+    },
+    {
+      "taskId": "character/engineer/injured",
+      "publicPath": "/assets/characters/engineer/injured.png"
+    },
+    {
+      "taskId": "character/engineer/combat",
+      "publicPath": "/assets/characters/engineer/combat.png"
+    },
+    {
+      "taskId": "character/medic/portrait",
+      "publicPath": "/assets/characters/medic/portrait.png"
+    },
+    {
+      "taskId": "character/medic/injured",
+      "publicPath": "/assets/characters/medic/injured.png"
+    },
+    {
+      "taskId": "character/medic/combat",
+      "publicPath": "/assets/characters/medic/combat.png"
+    },
+    {
+      "taskId": "zone/school/background",
+      "publicPath": "/assets/zones/school/background.png"
+    },
+    {
+      "taskId": "zone/hospital/background",
+      "publicPath": "/assets/zones/hospital/background.png"
+    },
+    {
+      "taskId": "zone/residential/background",
+      "publicPath": "/assets/zones/residential/background.png"
+    },
+    {
+      "taskId": "zone/factory/background",
+      "publicPath": "/assets/zones/factory/background.png"
+    },
+    {
+      "taskId": "zone/forest/background",
+      "publicPath": "/assets/zones/forest/background.png"
+    },
+    {
+      "taskId": "zone/lab/background",
+      "publicPath": "/assets/zones/lab/background.png"
+    },
+    {
+      "taskId": "item/bandage/icon",
+      "publicPath": "/assets/items/bandage/icon.png"
+    },
+    {
+      "taskId": "item/medkit/icon",
+      "publicPath": "/assets/items/medkit/icon.png"
+    },
+    {
+      "taskId": "item/energy_drink/icon",
+      "publicPath": "/assets/items/energy_drink/icon.png"
+    },
+    {
+      "taskId": "item/water/icon",
+      "publicPath": "/assets/items/water/icon.png"
+    },
+    {
+      "taskId": "item/battery/icon",
+      "publicPath": "/assets/items/battery/icon.png"
+    },
+    {
+      "taskId": "item/iron/icon",
+      "publicPath": "/assets/items/iron/icon.png"
+    },
+    {
+      "taskId": "item/iron_pipe/icon",
+      "publicPath": "/assets/items/iron_pipe/icon.png"
+    },
+    {
+      "taskId": "item/plate_armor/icon",
+      "publicPath": "/assets/items/plate_armor/icon.png"
+    },
+    {
+      "taskId": "item/simple_armor/icon",
+      "publicPath": "/assets/items/simple_armor/icon.png"
+    },
+    {
+      "taskId": "item/simple_bow/icon",
+      "publicPath": "/assets/items/simple_bow/icon.png"
+    },
+    {
+      "taskId": "item/stone_axe/icon",
+      "publicPath": "/assets/items/stone_axe/icon.png"
+    },
+    {
+      "taskId": "item/wood/icon",
+      "publicPath": "/assets/items/wood/icon.png"
+    },
+    {
+      "taskId": "world_event/blackout/illustration",
+      "publicPath": "/assets/world-events/blackout/illustration.png"
+    },
+    {
+      "taskId": "world_event/citywide_unrest/illustration",
+      "publicPath": "/assets/world-events/citywide_unrest/illustration.png"
+    },
+    {
+      "taskId": "world_event/emergency_broadcast/illustration",
+      "publicPath": "/assets/world-events/emergency_broadcast/illustration.png"
+    },
+    {
+      "taskId": "world_event/medical_alert/illustration",
+      "publicPath": "/assets/world-events/medical_alert/illustration.png"
+    },
+    {
+      "taskId": "world_event/research_anomaly/illustration",
+      "publicPath": "/assets/world-events/research_anomaly/illustration.png"
+    }
+  ],
+  "missingProvenance": [],
+  "pathMismatches": [],
+  "missingCandidates": [],
+  "unapprovedSources": [],
+  "provenanceNotInManifest": [],
+  "publicAiWithoutProvenance": [],
+  "duplicateApprovedSources": [],
+  "legacyAllowlist": [
+    "/assets/items/bandage.svg"
+  ],
+  "passed": true
+}

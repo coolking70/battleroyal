@@ -34,6 +34,7 @@ import { GAME_VERSION } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { ZONE_STATUS_LABEL, personalityLabel } from '../../utils/format';
 import { getAssetManifest, getAssetManifestHash, getCharacterVisual, getZoneVisual } from '../visualAssets';
+import { resolveCharacterVisualState } from '../characterVisualState';
 
 /** 触发一个浏览器下载（非浏览器环境静默忽略） */
 function downloadJson(filename: string, data: unknown): void {
@@ -219,7 +220,7 @@ export function DebugPanel({
           <span>Manifest hash</span>
           <span>{getAssetManifestHash() ?? '—'}</span>
           <span>character source</span>
-          <span>{getCharacterVisual(player.characterId, player.hp <= player.maxHp * 0.35 ? 'injured' : 'portrait').source}</span>
+          <span>{getCharacterVisual(player.characterId, resolveCharacterVisualState(player, { activeEncounter: Boolean(state.encounter && !state.encounter.resolved) })).source}</span>
           <span>zone source</span>
           <span>{getZoneVisual(player.currentZoneId).source}</span>
         </div>

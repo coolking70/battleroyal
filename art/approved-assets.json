@@ -288,6 +288,33 @@
       "provider": "agnes",
       "approvedAt": "2026-08-09T02:58:24.372Z",
       "publicPath": "/assets/characters/scout/combat.png"
+    },
+    "character/engineer/combat": {
+      "candidateHash": "771016954288f55552af415eaf25071a66d7906a1cf8a998997b4d1310f4509e",
+      "contentHash": "771016954288f55552af415eaf25071a66d7906a1cf8a998997b4d1310f4509e",
+      "promptHash": "771016954288f55552af415eaf25071a66d7906a1cf8a998997b4d1310f4509e",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-09T03:47:59.265Z",
+      "publicPath": "/assets/characters/engineer/combat.png"
+    },
+    "character/fighter/combat": {
+      "candidateHash": "e0add26bee2964f26a21df410662eed4500598b866b69eb53ab3b345980b2d7f",
+      "contentHash": "e0add26bee2964f26a21df410662eed4500598b866b69eb53ab3b345980b2d7f",
+      "promptHash": "e0add26bee2964f26a21df410662eed4500598b866b69eb53ab3b345980b2d7f",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-09T03:47:59.267Z",
+      "publicPath": "/assets/characters/fighter/combat.png"
+    },
+    "character/medic/combat": {
+      "candidateHash": "46b13f1437678d9e0da8fe127513514fa965acb72a4b530e22e8d0feedad01c8",
+      "contentHash": "46b13f1437678d9e0da8fe127513514fa965acb72a4b530e22e8d0feedad01c8",
+      "promptHash": "46b13f1437678d9e0da8fe127513514fa965acb72a4b530e22e8d0feedad01c8",
+      "model": "agnes-image-2.1-flash",
+      "provider": "agnes",
+      "approvedAt": "2026-08-09T03:47:59.267Z",
+      "publicPath": "/assets/characters/medic/combat.png"
     }
   }
 }

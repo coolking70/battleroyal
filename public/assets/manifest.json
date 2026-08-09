@@ -9,17 +9,17 @@
     "fighter": {
       "portrait": "/assets/characters/fighter/portrait.png",
       "injured": "/assets/characters/fighter/injured.png",
-      "combat": null
+      "combat": "/assets/characters/fighter/combat.png"
     },
     "engineer": {
       "portrait": "/assets/characters/engineer/portrait.png",
       "injured": "/assets/characters/engineer/injured.png",
-      "combat": null
+      "combat": "/assets/characters/engineer/combat.png"
     },
     "medic": {
       "portrait": "/assets/characters/medic/portrait.png",
       "injured": "/assets/characters/medic/injured.png",
-      "combat": null
+      "combat": "/assets/characters/medic/combat.png"
     }
   },
   "zones": {

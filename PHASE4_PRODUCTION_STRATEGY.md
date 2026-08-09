@@ -4,7 +4,7 @@ The stable production policy is now frozen:
 
 - Character → `character-positive-only` — Character Base Portrait Production Proven
 - Character Injured Base Variants → `descriptor-locked text-only` positive-only — 4/4 official; production complete
-- Character Combat State → `descriptor-locked text-only dynamic-equipment-neutral` — state art only; Scout canary requires human review
+- Character Combat State → `Descriptor-Locked + Text-Only + Positive-Only + Posture-Only + Dynamic-Equipment-Neutral` — 4/4 official; production complete
 - Zone → `environment-positive-only` — Zone Background Production Complete
 - Item → category-aware `item-positive-only` — Item Base Icons Production Complete
 - World Event Base Illustrations → 5/6 official; E1 uses controlled per-event `event-positive-only` production
@@ -24,7 +24,7 @@ Injured portraits use a descriptor-locked text-only strategy. The provider recei
 
 ## Combat state variants
 
-Combat state art is a state illustration, not an equipment illustration. It communicates expression, posture, tension and motion while remaining equipment-neutral; weapon visuals belong to item/equipment systems and are never fixed into a character Combat portrait. The provider receives only a positive descriptor-locked text-to-image prompt. No reference image is passed, and no reference-guided or image-conditioned capability is claimed. Scout Combat is a one-sample canary; it remains pending and unpublished until human review.
+Combat state art is a state illustration, not a dynamic equipment illustration. It communicates expression, posture, tension and motion through a positive-only descriptor-locked prompt. Fighter gloves are fixed wearable role costume; Scout binoculars, Engineer wrench/tool belt and Medic medical pouch remain static, in their normal positions and untouched. No reference image is passed, and no reference-guided or image-conditioned capability is claimed. Character Base State Art is now 4/4 Portrait, 4/4 Injured and 4/4 Combat complete.
 
 ## World event policy
 

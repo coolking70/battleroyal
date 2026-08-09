@@ -14,6 +14,9 @@ import { getCharacterDef } from '../../data/characters';
 import { getItem } from '../../data/items';
 import { cx, hpDescriptor } from '../../utils/format';
 import { Bar } from './Bar';
+import { VisualImage } from './VisualImage';
+import { getCharacterVisual } from '../visualAssets';
+import { resolveCharacterVisualState } from '../characterVisualState';
 
 interface EncounterPanelProps {
   state: GameState;
@@ -53,6 +56,7 @@ export function EncounterPanel({
   const guardCost = getActionStaminaCost(player, 'GUARD');
   const playerExposed = hasExposed(player);
   const enemyExposed = hasExposed(enemy);
+  const enemyVisualState = resolveCharacterVisualState(enemy, { activeEncounter: !resolved });
 
   const ATTACK_STYLES: AttackStyle[] = ['quick', 'normal', 'heavy'];
 
@@ -74,6 +78,11 @@ export function EncounterPanel({
       <div className="encounter-body">
         <div className="encounter-enemy">
           <div className="nm">
+            <VisualImage
+              visual={getCharacterVisual(enemy.characterId, enemyVisualState)}
+              alt={`${enemy.name}角色图`}
+              className="encounter-character-visual"
+            />
             <span className="badge badge-enemy">敌</span>
             {enemy.name}
             {enemyExposed && (

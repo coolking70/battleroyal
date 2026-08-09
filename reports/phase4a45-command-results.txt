@@ -1,0 +1,56 @@
+Phase 4A-4.5 command evidence
+Workspace: /Users/coolking70/Documents/同步空间/battleroyal
+Branch: agent/phase4-art-pipeline
+API calls in this phase: 0
+
+Approval and publish
+  npm run art:approve -- --task character/fighter/combat --candidate e0add26bee2964f26a21df410662eed4500598b866b69eb53ab3b345980b2d7f
+    exit 0; APPROVED
+  npm run art:approve -- --task character/engineer/combat --candidate 771016954288f55552af415eaf25071a66d7906a1cf8a998997b4d1310f4509e
+    exit 0; APPROVED
+  npm run art:approve -- --task character/medic/combat --candidate 46b13f1437678d9e0da8fe127513514fa965acb72a4b530e22e8d0feedad01c8
+    exit 0; APPROVED
+  npm run art:list
+    exit 0; three selected Combat candidates listed approved; historical pending/rejected records retained
+  npm run art:publish
+    exit 0; PUBLISHED; final approved source set 35; Manifest hash bfa0e65ff2aca9e0221b8a9ac36ce9d8c1b78c9c7113c37893bfa337e1befed6
+  npm run art:validate
+    exit 0; PASS published manifest
+  npm run art:publish
+    exit 0; NO CHANGES
+
+Closure audit and implementation checks
+  npm run art:audit:phase4a
+    exit 0; manifest=true provenance=true candidateHygiene=true runtimeUsage=true
+  targeted Phase 4A-4.5/UI suites
+    exit 0; 233/233 PASS
+  npm run typecheck && npm test && npm run build
+    exit 0; typecheck/build PASS; 56 files, 1211/1211 tests PASS
+
+Final offline gate
+  npm ci
+    exit 0; dependencies installed; dev-tree advisory output retained for the separate audit
+  npm run typecheck
+    exit 0; PASS
+  npm test
+    exit 0; 56 files, 1211/1211 tests PASS
+  npm run build
+    exit 0; Vite production build PASS
+  npm run audit:save
+    exit 0; PASS; user-owned save reports restored to their pre-existing timestamps and left unstaged
+  npm run audit:deps
+    exit 0; PASS; R1/R2/R3/R4 all zero
+  npm run art:doctor -- --offline
+    exit 0; PASS; 36 task definitions; offline check
+  npm run art:validate
+    exit 0; PASS
+  npm run art:security:browser
+    exit 0; PASS
+  npm run art:security:repo
+    exit 0; PASS
+  npm run simulate -- --games 500 --seed-prefix PHASE4A45 --regression --output reports/phase4a45-balance.json
+    exit 0; requested=500 actual=500; engine/regression PASS; role balance remains observation-only
+  npm audit --omit=dev
+    exit 0; found 0 vulnerabilities
+  npm run art:audit:phase4a
+    exit 0; all four closure checks true
