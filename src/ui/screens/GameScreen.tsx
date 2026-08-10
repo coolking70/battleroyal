@@ -19,13 +19,18 @@ import { LOG_DISPLAY_COUNT } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { cx, stackLabel } from '../../utils/format';
 import { stackPresentation } from '../itemPresentation';
-import { getCraftGoalSuggestion, latestPlayerCraftFeedback } from '../craftPathPresentation';
+import {
+  craftGoalBanner,
+  getCraftGoalSuggestion,
+  latestPlayerCraftFeedback,
+} from '../craftPathPresentation';
 import { latestPlayerSearchFeedback } from '../searchPresentation';
 import { getZoneVisual } from '../visualAssets';
 import { zoneStatusMeta } from '../zonePresentation';
 import { warningRemaining, zoneUrgencyMeta } from '../zonePresentation';
 import { latestInstantWorldEvent, sortWorldEvents } from '../worldEventPresentation';
 import { ActionBar } from '../components/ActionBar';
+import { CraftGoalBar } from '../components/CraftGoalBar';
 import { CraftPanel } from '../components/CraftPanel';
 import { CraftingCodex } from '../components/CraftingCodex';
 import { EncounterPanel } from '../components/EncounterPanel';
@@ -116,6 +121,13 @@ export function GameScreen({
     () => latestPlayerCraftFeedback(state, player),
     [state, player],
   );
+  // Phase 4D-1 改进 C：中栏常驻目标条。
+  // 遭遇战进行中与待处理拾取时收起——那两个时刻中栏属于 P0，
+  // 目标条再有用也不该跟主行动抢视线。
+  const goalBanner = useMemo(
+    () => craftGoalBanner(state, player),
+    [state, player],
+  );
   const logEvents = useMemo(
     () => recentEvents(state, LOG_DISPLAY_COUNT),
     [state],
@@ -181,6 +193,16 @@ export function GameScreen({
             className="panel stage scroll"
             data-stage-focus={inActiveEncounter ? 'encounter' : 'exploration'}
           >
+            {!inActiveEncounter && !pending && (
+              <CraftGoalBar
+                banner={goalBanner}
+                onOpenCraft={() => {
+                  setTab('craft');
+                  setPlanningOpen(true);
+                }}
+              />
+            )}
+
             <div className={`zone-hero zone-hero-${zoneStatus}`} data-zone-status={zoneStatus}>
               <VisualImage
                 visual={getZoneVisual(player.currentZoneId)}

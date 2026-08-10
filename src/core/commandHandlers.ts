@@ -1,4 +1,5 @@
 import { tryGetItem } from '../data/items';
+import { getZoneDef } from '../data/zones';
 import {
   attackActor,
   fleeActor,
@@ -9,10 +10,16 @@ import {
 } from './actorActions';
 import type { SkillId } from './skills';
 import { canAttack, resolveAttack } from './combat';
-import { performRest } from './consumables';
+import { performRest, useConsumable } from './consumables';
 import { pushEvent } from './events';
 import { charactersInZone, enemiesInZone } from './gameState';
-import { addItem, canAccept, removeStack } from './inventory';
+import {
+  addItem,
+  canAccept,
+  equipItem,
+  findStack,
+  removeStack,
+} from './inventory';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState } from './types';
 
@@ -30,6 +37,27 @@ export interface HandlerOutcome {
 /** 安全取物品名：未知 id 不抛异常，退化成占位文案 */
 function itemName(itemId: string): string {
   return tryGetItem(itemId)?.name ?? '未知物品';
+}
+
+/**
+ * 往当前遭遇的战斗日志里写一行（Phase 4D-1 缺陷 B）。
+ *
+ * 两条硬约束：
+ *
+ * 1. **非遭遇状态不落笔**。遭遇日志是「这一场交手」的记录，不是全局流水账；
+ *    全局流水账是 `events`。没有 `state.encounter` 时直接返回，
+ *    避免玩家在野外防御 / 嗑药也往一个不存在的面板里塞内容。
+ *
+ * 2. **只有玩家侧动作调用它**（Phase 2A-1 信息隐藏 §十）。敌方的防御 /
+ *    技能 / 使用物品一律**不进**遭遇日志：敌方卡片当前的合法可见范围只有
+ *    身份、无数字的生命描述、武器与 EXPOSED，一旦把「对手嗑了绷带回 12 点」
+ *    写进日志，等于隔着卡片把精确血量和背包内容送给玩家。
+ *    敌方唯一会出现在日志里的行为是攻击结算与已经合法可见的脱离，
+ *    它们分别由 `resolveNpcEngagement` 与事件流负责，不走这里。
+ */
+export function logEncounterAction(state: GameState, line: string): void {
+  if (!state.encounter) return;
+  state.encounter.log.push(line);
 }
 
 /**
@@ -209,6 +237,9 @@ export function handleGuard(
   player: Combatant,
 ): HandlerOutcome {
   const res = guardActor(state, player);
+  // Phase 4D-1 缺陷 B：防御是一次真实的战斗回合，遭遇日志必须留痕，
+  // 否则玩家在结算面板里只能看到「我打了几下」，看不到自己为什么少挨了伤害。
+  if (res.ok) logEncounterAction(state, res.message);
   return { ok: res.ok, message: res.message };
 }
 
@@ -225,7 +256,69 @@ export function handleUseSkill(
   rng: import('./random').SeededRandom,
 ): HandlerOutcome {
   const res = useSkillActor(state, player, skillId as SkillId, rng);
+  // Phase 4D-1 缺陷 B：技能消耗了一个回合与体力，日志必须记下来
+  if (res.ok) logEncounterAction(state, res.message);
   return { ok: res.ok, message: res.message };
+}
+
+/**
+ * 使用消耗品（Phase 4D-1 从 gameEngine 的 switch 收进 handler 层）。
+ *
+ * 收进来的唯一目的：让「遭遇中的四类动作都要写日志」这条规则
+ * 只在 `commandHandlers` 里有一份实现，不在 engine 的 switch 里再抄一遍。
+ * 结算本身仍然完全由 `useConsumable` 负责，未改动任何治疗量 / 倍率。
+ */
+export function handleUseItem(
+  state: GameState,
+  player: Combatant,
+  uid: string,
+): HandlerOutcome {
+  // 名称必须在消费之前取：consumeOne 可能把这一摞用光并从背包里摘掉
+  const stack = findStack(player, uid);
+  const name = stack ? itemName(stack.itemId) : '物品';
+  const res = useConsumable(state, player, uid);
+  if (!res.ok) return { ok: false, message: res.message };
+
+  const parts: string[] = [];
+  if (res.hpRestored > 0) parts.push(`生命 +${res.hpRestored}`);
+  if (res.staminaRestored > 0) parts.push(`体力 +${res.staminaRestored}`);
+  const detail = parts.length > 0 ? parts.join('，') : '没有明显效果';
+  logEncounterAction(state, `你使用了 ${name}（${detail}）。`);
+  return { ok: true, message: res.message };
+}
+
+/**
+ * 装备物品（Phase 4D-1 从 gameEngine 的 switch 收进 handler 层，理由同上）。
+ *
+ * 遭遇战中换武器是有代价的一步（占用一次行动），日志必须体现，
+ * 否则玩家复盘时会看到伤害数字凭空跳变却找不到原因。
+ */
+export function handleEquip(
+  state: GameState,
+  player: Combatant,
+  uid: string,
+): HandlerOutcome {
+  const stack = findStack(player, uid);
+  const res = equipItem(player, uid);
+  if (!res.ok) {
+    const reasons: Record<string, string> = {
+      not_found: '背包里没有这件物品。',
+      not_equipable: '该物品不能装备。',
+      no_space: '背包没有空间放置换下的装备。',
+    };
+    return { ok: false, message: reasons[res.reason] ?? '无法装备。' };
+  }
+  // 兜底文案与 Phase 4C 之前的 engine 实现逐字一致，避免既有断言漂移
+  const name = stack ? tryGetItem(stack.itemId)?.name ?? '装备' : '装备';
+  pushEvent(state, {
+    type: 'ITEM_EQUIPPED',
+    actorId: player.id,
+    zoneId: player.currentZoneId,
+    message: `你装备了 ${name}。`,
+    metadata: { itemId: stack?.itemId ?? null },
+  });
+  logEncounterAction(state, `你换上了 ${name}。`);
+  return { ok: true, message: `已装备 ${name}。` };
 }
 
 /**
@@ -273,7 +366,31 @@ export function handleFlee(
   if (!res.ok) return { ok: false, message: res.message };
 
   if (res.escaped) {
-    state.encounter = null;
+    // Phase 4D-1 缺陷 A：逃跑成功过去是直接 `state.encounter = null`，
+    // 遭遇面板凭空消失，玩家既没有结算提示也不知道自己现在安不安全。
+    // 现在走与击杀**完全相同**的结算态：resolved = true + 结算面板 + 继续按钮，
+    // 由玩家自己按「继续探索」来关闭（CLOSE_ENCOUNTER）。
+    //
+    // 只改终止态的呈现，不碰 `fleeActor` 的成功率 / 体力成本 / 追击判定。
+    if (!state.encounter) {
+      // 无正式遭遇时脱离（Phase 2A 的 S5 对称性修正）也要给结算，
+      // 否则「主动撤离」这条路径依然是静默的。
+      // zoneId 记交手发生地：转移脱离时玩家已经走了，用目的地会指错地方。
+      state.encounter = {
+        enemyId: enemy.id,
+        zoneId: res.toZoneId ? enemy.currentZoneId : player.currentZoneId,
+        startedAtTime: state.time,
+        log: [],
+        resolved: false,
+      };
+    }
+    state.encounter.log.push(res.message);
+    state.encounter.log.push(
+      res.toZoneId
+        ? `你已经离开该区域，脱离接触，当前位于${getZoneDef(res.toZoneId).name}。`
+        : `你已脱离接触，但 ${enemy.name} 仍在本区域，可能再次交火。`,
+    );
+    state.encounter.resolved = true;
     return { ok: true, message: res.message };
   }
   if (res.pursued && !state.engagedWithPlayer.includes(enemy.id)) {

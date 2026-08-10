@@ -286,6 +286,124 @@ export function getCraftGoalSuggestion(
   return candidates[0] ?? null;
 }
 
+/* ------------------------------------------------------------------ */
+/* Phase 4D-1 改进 C：合成引导提权                                      */
+/* ------------------------------------------------------------------ */
+
+/** 目标条上展示的一项材料缺口。 */
+export interface CraftGoalBannerGap {
+  itemId: string;
+  name: string;
+  missing: number;
+}
+
+/**
+ * 中栏常驻目标条的数据。
+ *
+ * 它回答四个问题，且**只**回答这四个：
+ * 目标是什么 / 现在该做哪一步 / 还缺什么 / 去哪找。
+ *
+ * 信息边界与合成 tab 完全一致：只读玩家自己的背包、静态配方表和
+ * 区域的**公开**物资池（`basePool` / `rarePool`），不读 `zone.loot` 的
+ * 实际剩余、不读其他角色、不读未发现的掉落。
+ */
+export interface CraftGoalBanner {
+  /** goal = 玩家已设目标；suggestion = 尚未设目标时的系统建议 */
+  kind: 'goal' | 'suggestion';
+  recipeId: string;
+  outputItemId: string;
+  name: string;
+  completed: boolean;
+  /** 当前最先未完成的子目标名；全部步骤就绪时为 null */
+  nextStepName: string | null;
+  /** 缺口最大的原始材料（最多 3 项） */
+  gaps: CraftGoalBannerGap[];
+  /** 去哪找：公开来源区域名（去重，最多 3 个） */
+  sourceZoneNames: string[];
+}
+
+const BANNER_GAP_LIMIT = 3;
+const BANNER_ZONE_LIMIT = 3;
+
+function bannerFromPath(
+  kind: CraftGoalBanner['kind'],
+  recipeId: string,
+  completed: boolean,
+  state: GameState,
+  player: Combatant,
+): CraftGoalBanner | null {
+  const recipe = tryGetRecipe(recipeId);
+  if (!recipe) return null;
+  const path = craftPathSummary(recipeId, state, player);
+  if (!path) return null;
+
+  const gaps = path.rawMaterials
+    .filter((material) => material.missing > 0)
+    .sort((a, b) => b.missing - a.missing || a.itemId.localeCompare(b.itemId))
+    .slice(0, BANNER_GAP_LIMIT)
+    .map((material) => ({
+      itemId: material.itemId,
+      name: getItem(material.itemId).name,
+      missing: material.missing,
+    }));
+
+  // 只列还缺的那些材料的来源；已经凑齐的材料没必要再指路
+  const sourceZoneIds = [
+    ...new Set(
+      path.rawMaterials
+        .filter((material) => material.missing > 0)
+        .flatMap((material) => material.sourceZoneIds),
+    ),
+  ];
+  const sourceZoneNames = sourceZoneIds
+    .sort(
+      (a, b) =>
+        getZoneDistance(player.currentZoneId, a) -
+          getZoneDistance(player.currentZoneId, b) || a.localeCompare(b),
+    )
+    .slice(0, BANNER_ZONE_LIMIT)
+    .map((zoneId) => ZONES.find((zone) => zone.id === zoneId)?.name ?? zoneId);
+
+  return {
+    kind,
+    recipeId,
+    outputItemId: recipe.outputItemId,
+    name: getItem(recipe.outputItemId).name,
+    completed,
+    nextStepName: path.nextStep?.name ?? null,
+    gaps,
+    sourceZoneNames,
+  };
+}
+
+/**
+ * 中栏常驻目标条（Phase 4D-1 改进 C）。
+ *
+ * 为什么要提权：武器主要靠合成拿，但这条认知过去只活在右侧规划抽屉的
+ * 「合成」tab 里——玩家不主动切 tab 就完全感知不到自己正在做什么、还差什么。
+ * 现在把它抬到中栏主视线的常驻一行，玩家不需要任何操作就能看见进度。
+ *
+ * 优先级：玩家手动设的目标 > 系统建议。手动目标永远优先，
+ * 与 `getCraftGoalSuggestion` 内部「有手动目标就不给建议」的约定一致。
+ */
+export function craftGoalBanner(
+  state: GameState,
+  player: Combatant,
+): CraftGoalBanner | null {
+  if (state.craftGoalRecipeId) {
+    return bannerFromPath(
+      'goal',
+      state.craftGoalRecipeId,
+      state.craftGoalCompleted,
+      state,
+      player,
+    );
+  }
+  const suggestion = getCraftGoalSuggestion(state, player);
+  if (!suggestion) return null;
+  return bannerFromPath('suggestion', suggestion.recipeId, false, state, player);
+}
+
 /** 玩家自己的最近一次合成，用于复用 4B-3 的原地结果卡形态。 */
 export interface CraftProgressFeedback {
   eventId: string;
