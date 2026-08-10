@@ -597,3 +597,54 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   Pre-existing `reports/save-validation-audit.json` / `.md` user edits are left
   unstaged per the Phase 4D-2 note. Real-device / screen-reader / long-session
   validation remains HUMAN-PLAYTEST-NEEDED.
+
+## Phase 4E-1 progress (2026-08-10)
+
+- Branch `phase4e1` from `main @ 7c97461` (v0.3.2); kill battle-reports,
+  craftable hints, and stat-bar quick-use — three features under strict thaw
+  scope (only `src/core/vitals.ts` thawed for Defect A; B/C entirely in `src/ui`;
+  `src/core/**` / `src/data/**` otherwise frozen).
+- **Defect A (kill report)**: `killCharacter` in `vitals.ts` now writes a
+  `deathLine` to `state.encounter.log` when the victim is a current-encounter
+  participant (enemy or player). Environmental deaths (`killerId === null`) get
+  a readable `在{zone}死亡（{cause}）` line. Only adds the log push; does NOT
+  change death settlement / drops / `resolved` / event-stream. Info boundary:
+  only legally-visible facts (names + zone + cause); no enemy exact HP, no
+  hidden gear/skills; non-participant deaths excluded.
+- **Improvement B (craftable hint)**: `detectCraftableHint` pure function
+  triggers when a recipe flips uncraftable→craftable AND inventory gained an
+  item. Prioritizes current craft goal; else highest-value output. Renders as
+  inline `aside.craftable-hint` (4B-3 search-result card paradigm) with
+  one-click `CRAFT` via existing command channel. No blocking modal; auto-hides
+  when no longer craftable / during encounter / pending.
+- **Improvement C (stat-bar quick-use)**: `Bar` gains optional button mode
+  (`onActivate` / `aria-label` / `:focus-visible`). `decideQuickRestore` implements
+  §3.1–§3.4: auto-use iff exactly one candidate kind AND recovery ≤ deficit;
+  otherwise small `QuickRestoreMenu` popover (no backdrop, anchored to trigger,
+  `useDrawerFocus` for Esc/focus-return). Dual-effect items judged only by
+  clicked-slot recovery for auto-use; popup shows BOTH effects. Reuses existing
+  `USE_ITEM` command. Usable during encounter.
+- §3.4 divergence: dual items NOT excluded from auto-use (only clicked-slot
+  recovery matters) — matches spec default, no STOP needed.
+- New files: `src/ui/quickRestore.ts`, `src/ui/craftableHint.ts`,
+  `src/ui/components/QuickRestoreMenu.tsx`, `src/ui/components/CraftableHint.tsx`,
+  `PHASE4E1_REPORT.md`, `reports/phase4e1-balance.json` + `.md`,
+  `tests/phase4e1{KillReport,CraftableHint,QuickRestore,QuickRestoreUi,CraftableHintUi,Fixtures}.test.ts(x)`,
+  `tests/browser/phase4e1-*.spec.ts` + `phase4e1Fixtures.ts`.
+  Modified: `src/core/vitals.ts`, `src/ui/components/{Bar,StatusBar}.tsx`,
+  `src/ui/screens/GameScreen.tsx`, `src/ui/styles.css`.
+- Browser evidence fixture robustness: enemy `maxHp=1` → `hpRatio=1.0` never
+  triggers NPC low-HP flee decision (threshold 0.22); any hit (min 1 dmg) kills.
+  Transient toast (3.2s auto-dismiss) dismissed before P0-clickable assertion.
+- §7 gates green: clean `npm ci`, typecheck (`tsc -b --force`), unit suite
+  **1359 passed / 78 files** (baseline 1328/72, +31 tests +6 files), `vite build`,
+  `audit:save`, `audit:deps` (R1–R4 = 0), `art:doctor --offline`, `art:validate`,
+  `art:audit:phase4a`, `art:security:browser` + `art:security:repo` (199+817
+  files, no secrets), 500-game `PHASE4E1` simulation (requests=actual=500,
+  engine healthy, regression PASS), `npm audit --omit=dev` (0 vulnerabilities).
+  Browser evidence: 7/7 Playwright tests green (1280×720 + 390×844), 0
+  console/page errors.
+- Handoff: **commit and push `phase4e1`, let CI run to completion before
+  delivery.** `reports/save-validation-audit.*` and `reports/phase4a451-*.json`
+  left unstaged (regenerated artifacts, timestamp-only changes). Real-device /
+  screen-reader / long-session validation remains HUMAN-PLAYTEST-NEEDED.

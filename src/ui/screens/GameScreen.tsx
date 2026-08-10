@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getCraftGoalRecommendations } from '../../core/craftGuide';
 import { listRecipes } from '../../core/crafting';
 import { recentEvents } from '../../core/events';
@@ -45,6 +45,8 @@ import { ZoneIndicator } from '../components/ZoneIndicator';
 import { MapDrawer } from '../components/MapDrawer';
 import { VisualImage } from '../components/VisualImage';
 import { InstantWorldEventAnnouncement, WorldEventBanner } from '../components/WorldEventFeedback';
+import { detectCraftableHint } from '../craftableHint';
+import { CraftableHint } from '../components/CraftableHint';
 
 interface GameScreenProps {
   state: GameState;
@@ -119,6 +121,9 @@ export function GameScreen({
     dispatch(command);
   };
 
+  // Phase 4E-1 §3：点击生命 / 体力槽使用恢复道具，走既有 USE_ITEM 命令
+  const handleUseItem = (uid: string): void => act({ type: 'USE_ITEM', uid });
+
   // 世界事件横幅（Phase 3A Step 6）：展示当前生效中的事件
   const bannerEvents = sortWorldEvents(activeWorldEvents(state));
   const instantEvent = useMemo(() => latestInstantWorldEvent(state.events), [state.events]);
@@ -172,6 +177,24 @@ export function GameScreen({
   );
   const searchFeedback = useMemo(() => latestPlayerSearchFeedback(state), [state]);
 
+  // Phase 4E-1 改进 B：检测"新获得物品使某配方从不可做变为可做"，给出非阻塞提示。
+  // 用 ref 维护上一帧快照，每次状态变化后调用纯函数 detectCraftableHint。
+  const [hintRecipeId, setHintRecipeId] = useState<string | null>(null);
+  const prevCraftableRef = useRef<Set<string> | null>(null);
+  const prevInvRef = useRef<Record<string, number> | null>(null);
+  useEffect(() => {
+    const { recipeId, nextCraftableIds, nextInventory } = detectCraftableHint({
+      recipeViews,
+      inventory: player.inventory,
+      prevCraftableIds: prevCraftableRef.current,
+      prevInventory: prevInvRef.current,
+      goalRecipeId: state.craftGoalRecipeId,
+    });
+    if (recipeId) setHintRecipeId(recipeId);
+    prevCraftableRef.current = nextCraftableIds;
+    prevInvRef.current = nextInventory;
+  }, [state, player, recipeViews]);
+
   return (
     <div
       className={cx(
@@ -186,6 +209,7 @@ export function GameScreen({
         player={player}
         aliveCount={alive.length}
         onQuit={onQuit}
+        onUseItem={handleUseItem}
       />
 
       {/* ---------- 常驻地图指示器（小型） ---------- */}
@@ -282,6 +306,19 @@ export function GameScreen({
             data-search-feedback={searchFeedback?.kind ?? 'none'}
           >
             <InstantWorldEventAnnouncement event={instantEvent} />
+
+            {(() => {
+              if (!hintRecipeId || inActiveEncounter || pending) return null;
+              const view = recipeViews.find((v) => v.recipe.id === hintRecipeId);
+              if (!view || !view.craftable) return null;
+              return (
+                <CraftableHint
+                  view={view}
+                  onCraft={(recipeId) => act({ type: 'CRAFT', recipeId })}
+                  onDismiss={() => setHintRecipeId(null)}
+                />
+              );
+            })()}
 
             {bannerEvents.length > 0 && (
               <div className="event-banner-wrap">
