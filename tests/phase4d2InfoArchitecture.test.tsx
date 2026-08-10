@@ -77,7 +77,7 @@ describe('Phase 4D-2 §3.1 五块常驻', () => {
     expect(container.querySelector('.intel-panel')).toBeNull();
   });
 
-  it('§3.4 主视觉是「角色立绘 + 区域背景」的合成，背景不降级为缩略图', () => {
+  it('§3.4（经 4D-3 §2.2 修订）主视觉的区域背景仍是 hero 尺度底图，探索态不再叠加玩家立绘', () => {
     const manifest: AssetManifest = {
       version: 1,
       characters: { scout: { portrait: '/assets/characters/scout/portrait.png' } },
@@ -97,24 +97,23 @@ describe('Phase 4D-2 §3.1 五块常驻', () => {
     expect(hero.querySelector('.zone-hero-image')?.getAttribute('src')).toBe(
       '/assets/zones/forest/background.png',
     );
-    // 角色立绘是主体
-    expect(hero.querySelector('.zone-hero-portrait')?.getAttribute('src')).toBe(
-      '/assets/characters/scout/portrait.png',
-    );
+    // 4D-3 §2.2：探索态主视觉只有区域背景，玩家立绘撤出（玩家状态只由顶栏承载）
+    expect(hero.querySelector('.zone-hero-portrait')).toBeNull();
+    expect(hero.getAttribute('data-hero-mode')).toBe('exploration');
     // 区域名 / 状态 / 描述可读
     expect(hero.querySelector('h2')?.textContent).toContain('森林');
     expect(hero.querySelector('.zone-hero-status')?.textContent?.length ?? 0).toBeGreaterThan(0);
     expect(hero.querySelector('p')?.textContent?.length ?? 0).toBeGreaterThan(0);
   });
 
-  it('§3.4 立绘随 resolveCharacterVisualState 在 portrait / injured / combat 三态间切换', () => {
+  it('§3.4（经 4D-3 §2.1 修订）遭遇态主视觉的敌方立绘仍随 resolveCharacterVisualState 切换三态', () => {
     const manifest: AssetManifest = {
       version: 1,
       characters: {
-        scout: {
-          portrait: '/assets/characters/scout/portrait.png',
-          injured: '/assets/characters/scout/injured.png',
-          combat: '/assets/characters/scout/combat.png',
+        fighter: {
+          portrait: '/assets/characters/fighter/portrait.png',
+          injured: '/assets/characters/fighter/injured.png',
+          combat: '/assets/characters/fighter/combat.png',
         },
       },
       zones: {},
@@ -123,39 +122,44 @@ describe('Phase 4D-2 §3.1 五块常驻', () => {
     };
     setAssetManifest(manifest);
 
-    const portraitSrc = () =>
-      container.querySelector('.zone-hero-portrait')?.getAttribute('src');
+    const enemyVisualSrc = () =>
+      container.querySelector('.encounter-enemy-visual')?.getAttribute('src');
 
-    // portrait：满血、无遭遇
-    const a = newGame('PHASE4D2-VISUAL-PORTRAIT');
-    isolatePlayer(a.state, a.player);
-    render(a.state, a.player);
-    expect(resolveCharacterVisualState(a.player, { activeEncounter: false })).toBe('portrait');
-    expect(portraitSrc()).toBe('/assets/characters/scout/portrait.png');
+    function withEnemy(seed: string, resolved: boolean) {
+      const { state, player } = newGame(seed);
+      isolatePlayer(state, player);
+      const enemy = Object.values(state.characters).find((c) => !c.isPlayer)!;
+      enemy.characterId = 'fighter';
+      enemy.currentZoneId = player.currentZoneId;
+      state.zones[player.currentZoneId]!.aliveCharacterIds = [player.id, enemy.id];
+      state.encounter = {
+        enemyId: enemy.id,
+        zoneId: player.currentZoneId,
+        startedAtTime: state.time,
+        log: [],
+        resolved,
+      };
+      return { state, player, enemy };
+    }
 
-    // combat：满血、遭遇进行中
-    const b = newGame('PHASE4D2-VISUAL-COMBAT');
-    isolatePlayer(b.state, b.player);
-    const enemyB = Object.values(b.state.characters).find((c) => !c.isPlayer)!;
-    enemyB.currentZoneId = b.player.currentZoneId;
-    b.state.encounter = {
-      enemyId: enemyB.id,
-      zoneId: b.player.currentZoneId,
-      startedAtTime: b.state.time,
-      log: [],
-      resolved: false,
-    };
+    // combat：交手中的可见对手
+    const b = withEnemy('PHASE4D2-VISUAL-COMBAT', false);
     render(b.state, b.player);
-    expect(resolveCharacterVisualState(b.player, { activeEncounter: true })).toBe('combat');
-    expect(portraitSrc()).toBe('/assets/characters/scout/combat.png');
+    expect(resolveCharacterVisualState(b.enemy, { activeEncounter: true })).toBe('combat');
+    expect(enemyVisualSrc()).toBe('/assets/characters/fighter/combat.png');
 
     // injured：HP 比 ≤ 0.35 时压过 combat
-    const c = newGame('PHASE4D2-VISUAL-INJURED');
-    isolatePlayer(c.state, c.player);
-    c.player.hp = Math.floor(c.player.maxHp * 0.2);
+    const c = withEnemy('PHASE4D2-VISUAL-INJURED', false);
+    c.enemy.hp = Math.floor(c.enemy.maxHp * 0.2);
     render(c.state, c.player);
-    expect(resolveCharacterVisualState(c.player, { activeEncounter: false })).toBe('injured');
-    expect(portraitSrc()).toBe('/assets/characters/scout/injured.png');
+    expect(resolveCharacterVisualState(c.enemy, { activeEncounter: true })).toBe('injured');
+    expect(enemyVisualSrc()).toBe('/assets/characters/fighter/injured.png');
+
+    // portrait：结算后回到常态
+    const a = withEnemy('PHASE4D2-VISUAL-PORTRAIT', true);
+    render(a.state, a.player);
+    expect(resolveCharacterVisualState(a.enemy, { activeEncounter: false })).toBe('portrait');
+    expect(enemyVisualSrc()).toBe('/assets/characters/fighter/portrait.png');
   });
 });
 

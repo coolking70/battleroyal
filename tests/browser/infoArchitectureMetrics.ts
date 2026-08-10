@@ -79,7 +79,7 @@ export function measureInfoArchitecture(): InfoArchitectureMetrics {
     ['同区域', '.stage-content .presence'],
     ['地面掉落', '.stage-content .ground-list'],
     ['搜索结果', '.stage-content .search-result'],
-    ['遭遇面板', '.stage-content .encounter'],
+    ['遭遇态主视觉', '.zone-hero .encounter-hero'],
     ['待处理拾取', '.stage-content .pending'],
     ['世界事件横幅', '.stage-content .event-banner-wrap'],
   ];

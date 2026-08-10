@@ -10,7 +10,8 @@ import { CHARACTERS } from '../src/data/characters';
 import { ITEMS } from '../src/data/items';
 import { ZONES } from '../src/data/zones';
 import { WORLD_EVENT_IDS } from '../src/core/worldEvents';
-import { EncounterPanel } from '../src/ui/components/EncounterPanel';
+import { buildCombatActionBar } from '../src/ui/combatActionsPresentation';
+import { EncounterHero } from '../src/ui/components/EncounterHero';
 import { StatusBar } from '../src/ui/components/StatusBar';
 import { resolveCharacterVisualState, INJURED_VISUAL_HP_RATIO } from '../src/ui/characterVisualState';
 import {
@@ -143,19 +144,14 @@ describe('Phase 4A-4.5 derived character visual state', () => {
     state.encounter = { enemyId: enemy.id, zoneId: player.currentZoneId, startedAtTime: state.time, log: [], resolved: false };
     setAssetManifest(await manifest());
     act(() => root.render(
-      <EncounterPanel
-        state={state}
+      <EncounterHero
         encounter={state.encounter!}
         player={player}
         enemy={enemy}
-        onAttack={() => undefined}
-        onFlee={() => undefined}
-        onGuard={() => undefined}
-        onSkill={() => undefined}
-        onClose={() => undefined}
+        combat={buildCombatActionBar(state, player, enemy)}
       />,
     ));
-    expect(container.querySelector('.encounter-character-visual')?.getAttribute('src')).toBe('/assets/characters/fighter/combat.png');
+    expect(container.querySelector('.encounter-enemy-visual')?.getAttribute('src')).toBe('/assets/characters/fighter/combat.png');
   });
 
   it('uses the injured encounter asset after the visible opponent is low HP', async () => {
@@ -167,19 +163,14 @@ describe('Phase 4A-4.5 derived character visual state', () => {
     state.encounter = { enemyId: enemy.id, zoneId: player.currentZoneId, startedAtTime: state.time, log: [], resolved: false };
     setAssetManifest(await manifest());
     act(() => root.render(
-      <EncounterPanel
-        state={state}
+      <EncounterHero
         encounter={state.encounter!}
         player={player}
         enemy={enemy}
-        onAttack={() => undefined}
-        onFlee={() => undefined}
-        onGuard={() => undefined}
-        onSkill={() => undefined}
-        onClose={() => undefined}
+        combat={buildCombatActionBar(state, player, enemy)}
       />,
     ));
-    expect(container.querySelector('.encounter-character-visual')?.getAttribute('src')).toBe('/assets/characters/fighter/injured.png');
+    expect(container.querySelector('.encounter-enemy-visual')?.getAttribute('src')).toBe('/assets/characters/fighter/injured.png');
   });
 
   it('returns from Combat to Portrait when the encounter is resolved and HP is healthy', () => {

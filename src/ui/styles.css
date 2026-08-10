@@ -1064,36 +1064,10 @@ input {
   background: linear-gradient(90deg, rgba(6, 10, 14, 0.88) 0%, rgba(6, 10, 14, 0.52) 48%, rgba(6, 10, 14, 0.2) 100%), linear-gradient(0deg, rgba(6, 10, 14, 0.76), transparent 58%);
 }
 
-/* ---- 合成式主视觉：角色立绘为主体（Phase 4D-2 §3.4）----
-   层序：区域背景(-4) → 压暗层(-3) → 角色立绘(-2) → 状态描边(-1) → 文案(auto)。
-   立绘压在压暗层之上所以本身是亮的；压暗层的横向渐变让左侧文案区保持可读，
-   而区域背景仍是整幅铺满的场景底 —— 不降级为缩略图。 */
-
-.zone-hero-portrait {
-  position: absolute;
-  z-index: -2;
-  right: 2.5%;
-  bottom: 0;
-  width: auto;
-  height: 94%;
-  max-width: 40%;
-  object-fit: contain;
-  object-position: bottom right;
-  pointer-events: none;
-  filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.72));
-}
-
-/* 三级降级到 emoji 时 VisualImage 渲染的是 <span>，给它等效的立绘占位 */
-span.zone-hero-portrait {
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
-  width: 26%;
-  max-width: 26%;
-  height: 88%;
-  font-size: clamp(46px, 8vw, 104px);
-  line-height: 1;
-}
+/* ---- 主视觉：区域背景为主体（Phase 4D-2 §3.4 → 4D-3 §2.2 修订）----
+   层序：区域背景(-4) → 压暗层(-3) → 状态描边(-1) → 文案(auto)。
+   4D-3 起探索态**不再叠加玩家立绘**（玩家状态只由顶栏承载），
+   立绘位留给遭遇态的敌方主体 `.encounter-hero-portrait`。 */
 
 .zone-hero-pattern {
   z-index: -1;
@@ -1118,8 +1092,9 @@ span.zone-hero-portrait {
   justify-content: flex-end;
   min-height: 264px;
   padding: 24px 28px 22px;
-  /* 为右侧立绘留出让位，保证区域名 / 状态 / 描述始终可读（§3.4） */
-  padding-right: clamp(28px, 34%, 430px);
+  /* 4D-3 §2.2：探索态不再有右侧立绘，让位收窄为一条行宽上限，
+     文案不至于在宽视口上摊成难读的长行。遭遇态由 `.zone-hero-encounter` 另行接管。 */
+  max-width: min(100%, 720px);
   color: #f1f4f7;
 }
 
@@ -1214,6 +1189,333 @@ span.zone-hero-portrait {
 
 .zone-hero-hazard {
   color: #ffc0b3;
+}
+
+/* ---- 遭遇态主视觉（Phase 4D-3 §2.1）----
+   `.zone-hero` 变成纵向 flex：上面是压缩成窄带的区域信息，下面是遭遇本体。
+   区域背景仍然铺满，敌方立绘居中成为焦点；玩家状态一律不在这里重复。 */
+
+.zone-hero-encounter {
+  display: flex;
+  flex-direction: column;
+  min-height: 296px;
+}
+
+/* 遭遇态时主视觉吃掉中栏剩余高度：上下文保留区此刻通常为空，
+   这样敌方立绘拿到最大画幅，而 .stage 自身仍然 overflow:hidden、不产生滚动。 */
+.game-encounter-active .stage > .zone-hero,
+.game-encounter-resolved .stage > .zone-hero {
+  flex: 1 1 auto;
+}
+
+.zone-hero-encounter .zone-hero-content {
+  flex: none;
+  justify-content: flex-start;
+  min-height: 0;
+  padding: 12px 16px 6px;
+  padding-right: 16px;
+}
+
+.zone-hero-encounter .zone-hero-heading {
+  gap: 8px;
+}
+
+.zone-hero-encounter h2 {
+  font-size: clamp(17px, 1.5vw, 21px);
+}
+
+.zone-hero-encounter .zone-hero-state-note {
+  margin-top: 6px;
+  padding: 3px 7px;
+  font-size: 10.5px;
+}
+
+.encounter-hero {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 4px 14px 12px;
+}
+
+/* 敌方立绘：主视觉焦点，水平居中、底部对齐 */
+.encounter-hero-portrait {
+  position: absolute;
+  inset: 0 0 44px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.encounter-enemy-visual {
+  height: 100%;
+  width: auto;
+  max-width: 46%;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.72));
+}
+
+/* 三级降级到 emoji 时 VisualImage 渲染 <span>，给它等效画幅 */
+span.encounter-enemy-visual {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 30%;
+  max-width: 30%;
+  font-size: clamp(44px, 7vw, 96px);
+  line-height: 1;
+}
+
+.zone-hero-encounter-resolved .encounter-enemy-visual {
+  opacity: 0.6;
+  filter: grayscale(0.45) drop-shadow(0 10px 22px rgba(0, 0, 0, 0.7));
+}
+
+/* 敌方合法可见字段卡：身份 / 角色名 / 无数字 HP / 武器 / EXPOSED / 共享率值 */
+.encounter-hero-enemyinfo {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+  z-index: 2;
+  width: min(236px, 38%);
+  padding: 8px 10px 9px;
+  border: 1px solid #7a4040;
+  border-radius: var(--radius);
+  background: linear-gradient(150deg, rgba(36, 23, 25, 0.94), rgba(23, 19, 21, 0.94));
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.42);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.encounter-hero-resolved .encounter-hero-enemyinfo {
+  border-color: #456d5a;
+  background: linear-gradient(150deg, rgba(23, 37, 29, 0.94), rgba(21, 28, 27, 0.94));
+}
+
+.eh-kicker {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+.eh-name-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+}
+
+.eh-class {
+  padding: 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-size: 9.5px;
+  color: var(--text-dim);
+}
+
+/* 敌方信息卡里的三态标签沿用共享 `.combat-visual-state` + `.state-*`，
+   这里只把尺寸压到卡片刻度（后代选择器，不依赖声明顺序）。 */
+.encounter-hero-enemyinfo .combat-visual-state {
+  gap: 3px;
+  margin-top: 4px;
+  padding: 1px 5px;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+}
+
+.eh-hp {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.eh-hp b {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text);
+}
+
+.eh-line {
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+
+.eh-shared-rate {
+  font-family: var(--mono);
+  color: var(--text);
+}
+
+.eh-status-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 18px;
+  margin-top: 5px;
+}
+
+.eh-status-empty {
+  font-size: 9.5px;
+}
+
+/* 底部：一行即时反馈 + 战斗记录小入口 */
+.encounter-hero-bottom {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.encounter-hero-feedback {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  border-left: 3px solid #c76a6a;
+  border-radius: 3px;
+  background: rgba(6, 10, 14, 0.78);
+}
+
+.encounter-hero-resolved .encounter-hero-feedback {
+  border-left-color: #6fbf95;
+}
+
+.eh-feedback-kicker {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+.encounter-hero-feedback strong {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #f2f6f9;
+}
+
+.encounter-hero-log-toggle {
+  flex: none;
+}
+
+.eh-log-count {
+  margin-left: 3px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+/* 战斗记录：按需展开的浮层，压在主视觉上，不占常驻空间 */
+.encounter-hero-log {
+  position: absolute;
+  left: 14px;
+  right: 12px;
+  bottom: 52px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  max-height: min(64%, 250px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(10, 15, 20, 0.97);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+}
+
+.eh-log-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 9px;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.eh-log-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 7px 10px 9px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.eh-log-body p {
+  margin: 0 0 4px;
+  color: var(--text-dim);
+}
+
+.eh-log-body p:last-child {
+  margin-bottom: 0;
+  color: var(--text);
+}
+
+/* ---- 行动栏遭遇态（Phase 4D-3 §2.5）----
+   与探索态共用 `.actionbar`，只换内容：6 个战斗动作单行铺开。
+   行动栏本身是 `.game` flex 布局里的 `flex: none` 页脚，永远在视口内，
+   所以 6 个动作**零滚动**可达。 */
+
+.actionbar-combat {
+  border-top-color: #8a4a4a;
+  background: linear-gradient(180deg, #241a1c, #171216);
+}
+
+.actionbar-combat .actionbar-kicker {
+  color: #f0a3a3;
+}
+
+.actionbar-combat-actions {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.actionbar-combat-actions .btn {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 5px 4px;
+  line-height: 1.25;
+}
+
+.actionbar-combat-actions .action-cost {
+  margin-left: 0;
+  white-space: nowrap;
+}
+
+.actionbar-combat-actions .heavy-risk {
+  font-size: 9px;
+  color: #f0b7a3;
+}
+
+.actionbar-combat .hint {
+  flex: 1 1 100%;
+  margin-left: 0;
+  padding-top: 4px;
 }
 
 .stage-section {
@@ -1414,7 +1716,7 @@ span.zone-hero-portrait {
   gap: 3px;
 }
 
-/* 遭遇战：Player / 即时反馈与行动 / Enemy 三段式构图。 */
+/* 遭遇态（Phase 4D-3）：遭遇是主视觉的一种状态，不再是下方的独立窗口。 */
 
 .game-encounter-active .stage {
   border-color: #8a4a4a;
@@ -1427,65 +1729,26 @@ span.zone-hero-portrait {
   transition: opacity 0.16s ease;
 }
 
-.game-encounter-active .zone-rail,
-.game-encounter-active .actionbar {
+/* 行动栏在遭遇态承载 6 个战斗动作，是当下的 P0 —— 绝不能再压暗。
+   只有地图指示器（此刻被 lockedGeneral 禁用）继续退到背景。 */
+.game-encounter-active .zone-rail {
   opacity: 0.55;
   transition: opacity 0.16s ease;
 }
 
-.game-encounter-active .zone-rail:hover,
-.game-encounter-active .actionbar:hover {
+.game-encounter-active .zone-rail:hover {
   opacity: 0.78;
 }
 
-.encounter {
-  border: 1px solid #7a4040;
-  background: linear-gradient(135deg, #241719, #171315 68%, #1b2027);
-  border-radius: var(--radius);
-  padding: 12px;
-  margin-bottom: 14px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 210, 180, 0.04);
-}
+/* Phase 4D-3：独立对战窗口（.encounter 三段式面板）已移除。
+   下面只保留仍被 EncounterHero / ActionBar 复用的共享战斗视觉语汇。 */
 
-.encounter-resolved {
-  border-color: #456d5a;
-  background: linear-gradient(135deg, #17251d, #151c1b 68%, #171d24);
-}
-
-.encounter-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.encounter-heading-main {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.encounter h4 {
-  margin: 0;
-  font-size: 14px;
-  color: #f0b0a5;
-  letter-spacing: 0.06em;
-}
-
-.encounter-resolved h4 {
-  color: #a4d8b4;
-}
-
-.encounter-mode-badge,
 .combat-visual-state {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   width: fit-content;
+  margin-top: 6px;
   padding: 3px 7px;
   border: 1px solid #8a4a4a;
   border-radius: 3px;
@@ -1498,114 +1761,7 @@ span.zone-hero-portrait {
   white-space: nowrap;
 }
 
-.encounter-resolved .encounter-mode-badge {
-  border-color: #4b7c60;
-  color: #bce5c8;
-  background: rgba(36, 84, 56, 0.44);
-}
-
-.encounter-heading-note {
-  color: var(--text-dim);
-  font-size: 11px;
-  text-align: right;
-}
-
-.combat-cue-icon {
-  display: inline-block;
-  font-size: 1.1em;
-  line-height: 1;
-  font-weight: 700;
-}
-
-.encounter-composition {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(250px, 1.25fr) minmax(0, 0.9fr);
-  gap: 9px;
-  align-items: stretch;
-}
-
-.combatant-card,
-.encounter-center {
-  min-width: 0;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius);
-  background: rgba(11, 15, 19, 0.58);
-}
-
-.combatant-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 9px 8px 10px;
-  text-align: center;
-}
-
-.combatant-player {
-  grid-column: 1;
-  border-color: #315468;
-  background: linear-gradient(180deg, rgba(28, 55, 70, 0.54), rgba(12, 19, 24, 0.78));
-}
-
-.combatant-enemy {
-  grid-column: 3;
-  border-color: #6d3a3d;
-  background: linear-gradient(180deg, rgba(72, 34, 37, 0.6), rgba(20, 14, 16, 0.8));
-}
-
-.combatant-card-kicker,
-.encounter-focus-kicker {
-  width: 100%;
-  color: var(--text-faint);
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.combatant-visual-frame {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 130px;
-  margin: 5px 0 6px;
-}
-
-.encounter-combat-visual {
-  width: clamp(78px, 8vw, 112px);
-  height: clamp(104px, 11vw, 150px);
-  object-fit: cover;
-  border-radius: 5px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 7px 15px rgba(0, 0, 0, 0.32);
-}
-
-.combatant-player .encounter-combat-visual {
-  border-color: rgba(110, 168, 199, 0.72);
-}
-
-.combatant-enemy .encounter-combat-visual {
-  border-color: rgba(199, 106, 106, 0.78);
-}
-
-.combatant-name-line {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 23px;
-  font-size: 14px;
-}
-
-.combatant-name-line strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.combat-visual-state {
-  margin-top: 6px;
-}
-
+/* 三态标签既有图标也有文字，颜色只是补充（4B-6 无障碍口径） */
 .state-combat {
   border-color: #4c7691;
   color: #b9e3f4;
@@ -1624,199 +1780,11 @@ span.zone-hero-portrait {
   background: rgba(36, 84, 56, 0.44);
 }
 
-.combat-visual-description {
-  min-height: 32px;
-  max-width: 190px;
-  margin: 5px 0 7px;
-  color: var(--text-dim);
-  font-size: 10.5px;
-  line-height: 1.45;
-}
-
-.combat-resource-row,
-.enemy-health-summary {
-  display: grid;
-  grid-template-columns: auto minmax(40px, 1fr) auto;
-  align-items: center;
-  width: 100%;
-  gap: 5px;
-  margin-top: 4px;
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--text-dim);
-}
-
-.combat-resource-row b,
-.enemy-health-summary b {
-  color: var(--text);
-  font-size: 10px;
-  white-space: nowrap;
-}
-
-.combat-resource-row .bar,
-.enemy-health-summary .bar {
-  min-width: 0;
-}
-
-.enemy-health-summary {
-  grid-template-columns: 1fr;
-  gap: 4px;
-  text-align: left;
-}
-
-.enemy-health-summary b {
-  color: #f1b1a9;
-}
-
-.combat-stat-line {
-  width: 100%;
-  margin-top: 6px;
-  color: var(--text-dim);
-  font-family: var(--mono);
-  font-size: 10px;
-  text-align: left;
-}
-
-.flee-line {
-  color: #c9d7df;
-}
-
-.combat-status-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px;
-  width: 100%;
-  min-height: 22px;
-  margin-top: 6px;
-}
-
-.combat-status-row .tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.combat-status-empty {
-  font-size: 10px;
-}
-
-.encounter-center {
-  grid-column: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 9px;
-  border-color: #68494a;
-  background: rgba(15, 19, 23, 0.82);
-}
-
-.encounter-focus {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-height: 72px;
-  padding: 9px 10px;
-  border-left: 3px solid #d88b7e;
-  border-radius: 3px;
-  background: linear-gradient(90deg, rgba(98, 45, 42, 0.68), rgba(45, 26, 28, 0.48));
-}
-
-.encounter-resolved .encounter-focus {
-  border-left-color: #78b38b;
-  background: linear-gradient(90deg, rgba(35, 84, 55, 0.58), rgba(29, 42, 34, 0.48));
-}
-
-.encounter-focus strong {
-  color: #f2e2df;
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.encounter-focus-note {
-  color: var(--text-dim);
-  font-size: 10px;
-}
-
-.encounter-log {
-  flex: 1;
-  min-height: 74px;
-  max-height: 112px;
-  overflow-y: auto;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  color: var(--text-dim);
-  background: #10151a;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius);
-  padding: 7px 8px;
-}
-
-.encounter-log p {
-  margin: 0 0 4px;
-}
-
-.encounter-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.action-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.action-group-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 5px;
-  color: #dfc9c5;
-  font-size: 11px;
+.combat-cue-icon {
+  display: inline-block;
+  font-size: 1.1em;
+  line-height: 1;
   font-weight: 700;
-}
-
-.action-group-heading > span {
-  white-space: nowrap;
-}
-
-.action-group-heading small {
-  color: var(--text-faint);
-  font-size: 9px;
-  font-weight: 400;
-  text-align: right;
-}
-
-.attack-styles {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px;
-}
-
-.attack-styles .btn,
-.encounter-side-actions .btn {
-  min-width: 0;
-  padding: 6px 5px;
-  font-size: 11px;
-  line-height: 1.25;
-}
-
-.action-button-detail {
-  display: block;
-  margin-top: 3px;
-  color: #b9c8d0;
-  font-family: var(--mono);
-  font-size: 9px;
-  font-weight: 400;
-  line-height: 1.25;
-}
-
-.encounter-side-actions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px;
 }
 
 .heavy-risk {
@@ -1826,18 +1794,6 @@ span.zone-hero-portrait {
   font-size: 9px;
   font-weight: 500;
   line-height: 1.2;
-}
-
-.encounter-legal-note {
-  color: var(--text-faint);
-  font-family: var(--mono);
-  font-size: 9px;
-  line-height: 1.35;
-}
-
-.encounter-continue {
-  width: 100%;
-  min-height: 42px;
 }
 
 /* 待处理拾取 */
@@ -3101,147 +3057,61 @@ span.zone-hero-portrait {
   }
   .zone-hero-content {
     padding: 16px 18px 16px;
-    padding-right: clamp(18px, 34%, 150px);
-  }
-  .zone-hero-portrait {
-    right: 1.5%;
-    max-width: 34%;
-  }
-  span.zone-hero-portrait {
-    width: 22%;
-    max-width: 22%;
-    font-size: clamp(38px, 11vw, 62px);
   }
   .zone-rail {
     padding: 5px 8px;
     gap: 8px;
   }
 
-  .game-encounter-active .zone-hero,
-  .game-encounter-active .zone-hero-content {
-    min-height: 126px;
+  /* 遭遇态（4D-3）：窄屏把敌方字段卡摊成顶部横带，立绘让到中下部。
+     区域危险提示（倒计时 / 禁区侵蚀）继续保留 —— 那是战术信息，不是风味文案。 */
+  .zone-hero-encounter {
+    min-height: 250px;
   }
 
-  .game-encounter-active .zone-hero-content p,
-  .game-encounter-active .zone-hero-state-note {
-    display: none;
+  .encounter-hero {
+    padding: 4px 10px 10px;
   }
+
+  .encounter-hero-enemyinfo {
+    left: 10px;
+    right: 10px;
+    width: auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px 10px;
+    padding: 6px 9px 7px;
+  }
+
+  .encounter-hero-enemyinfo .eh-kicker,
+  .encounter-hero-enemyinfo .eh-name-line,
+  .encounter-hero-enemyinfo .eh-hp {
+    grid-column: 1 / -1;
+  }
+
+  .encounter-hero-portrait {
+    inset: 104px 0 42px;
+  }
+
+  .encounter-enemy-visual {
+    max-width: 56%;
+  }
+
+  span.encounter-enemy-visual {
+    width: 40%;
+    max-width: 40%;
+    font-size: clamp(38px, 12vw, 72px);
+  }
+
+  .encounter-hero-log {
+    left: 10px;
+    right: 10px;
+  }
+
   .zone-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .encounter {
-    padding: 10px;
-  }
-  .encounter-heading {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 5px;
-  }
-  .encounter-heading-note {
-    text-align: left;
-  }
-  .encounter-composition {
-    grid-template-columns: 78px minmax(0, 1fr) 78px;
-    gap: 4px;
-    align-items: start;
-  }
-  .combatant-player {
-    grid-column: 1;
-    grid-row: 1;
-  }
-  .combatant-enemy {
-    grid-column: 3;
-    grid-row: 1;
-  }
-  .encounter-center {
-    grid-column: 2;
-    grid-row: 1;
-    padding: 6px;
-    gap: 5px;
-  }
-  .combatant-card {
-    display: flex;
-    padding: 6px 3px 7px;
-    text-align: center;
-  }
-  .combatant-card-kicker {
-    font-size: 8px;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .combatant-visual-frame {
-    min-height: 80px;
-    margin: 3px 0 4px;
-  }
-  .encounter-combat-visual {
-    width: 58px;
-    height: 78px;
-  }
-  .combatant-name-line {
-    min-height: 19px;
-    gap: 3px;
-    font-size: 10px;
-  }
-  .combat-visual-description {
-    min-height: 25px;
-    max-width: 72px;
-    margin: 3px 0 4px;
-    font-size: 8px;
-    line-height: 1.3;
-  }
-  .combat-visual-state {
-    gap: 2px;
-    padding: 2px 3px;
-    margin-top: 3px;
-    font-size: 8px;
-  }
-  .combat-resource-row,
-  .enemy-health-summary,
-  .combat-stat-line {
-    gap: 2px;
-    margin-top: 3px;
-    font-size: 8px;
-  }
-  .combat-resource-row b,
-  .enemy-health-summary b {
-    font-size: 8px;
-  }
-  .combat-status-row {
-    gap: 2px;
-    min-height: 18px;
-    margin-top: 3px;
-  }
-  .encounter-focus {
-    min-height: 56px;
-    padding: 6px;
-  }
-  .encounter-focus strong { font-size: 10px; }
-  .encounter-focus-note { font-size: 8px; }
-  .encounter-log {
-    min-height: 54px;
-    max-height: 68px;
-    padding: 5px;
-    font-size: 8px;
-  }
-  .action-group-heading {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .action-group-heading small {
-    text-align: left;
-  }
-  .attack-styles .btn,
-  .encounter-side-actions .btn {
-    min-height: 42px;
-    padding: 4px 2px;
-    font-size: 9px;
-  }
-  .action-button-detail { font-size: 8px; }
   .heavy-risk { font-size: 8px; }
-  .encounter-legal-note { font-size: 8px; }
   .topbar {
     gap: 10px;
     align-items: stretch;
@@ -3450,17 +3320,6 @@ span.zone-hero-portrait {
 
   .zone-hero-content {
     padding: 8px 12px 9px;
-    padding-right: clamp(12px, 26%, 210px);
-  }
-
-  .zone-hero-portrait {
-    max-width: 26%;
-  }
-
-  span.zone-hero-portrait {
-    width: 16%;
-    max-width: 16%;
-    font-size: clamp(30px, 6vw, 52px);
   }
 
   .zone-hero-kicker {
@@ -3499,114 +3358,88 @@ span.zone-hero-portrait {
     padding: 7px 10px 10px;
   }
 
+  /* 遭遇态（4D-3）横屏：高度极紧，主视觉不设下限、靠 flex 吃掉中栏剩余高度；
+     敌方字段卡回到右侧（横屏有的是宽度），立绘居中压缩。 */
+  .zone-hero-encounter,
   .game-encounter-active .zone-hero,
-  .game-encounter-active .zone-hero-content {
-    min-height: 74px;
+  .game-encounter-resolved .zone-hero {
+    min-height: 0;
   }
 
-  .game-encounter-active .zone-hero-content p,
-  .game-encounter-active .zone-hero-state-note {
-    display: none;
+  .encounter-hero {
+    padding: 2px 8px 6px;
   }
 
-  .encounter {
-    padding: 6px;
-    margin-bottom: 6px;
+  .encounter-hero-enemyinfo {
+    top: 4px;
+    right: 8px;
+    width: min(206px, 32%);
+    padding: 5px 7px 6px;
+    font-size: 9.5px;
+    line-height: 1.35;
   }
 
-  .encounter-heading {
-    gap: 5px;
-    margin-bottom: 5px;
-    padding-bottom: 4px;
+  .eh-kicker { font-size: 8px; }
+  .eh-name-line { font-size: 10.5px; }
+  .encounter-hero-enemyinfo .combat-visual-state,
+  .eh-status-empty { font-size: 8.5px; }
+  .eh-hp,
+  .eh-hp b,
+  .eh-line { font-size: 9px; }
+  .eh-status-row { min-height: 14px; margin-top: 3px; }
+
+  .encounter-hero-portrait {
+    inset: 2px 0 34px;
   }
 
-  .encounter-composition {
-    grid-template-columns: minmax(70px, 0.78fr) minmax(0, 1.45fr) minmax(70px, 0.78fr);
+  .encounter-enemy-visual {
+    max-width: 30%;
+  }
+
+  span.encounter-enemy-visual {
+    width: 20%;
+    max-width: 20%;
+    font-size: clamp(28px, 6vw, 48px);
+  }
+
+  .encounter-hero-feedback {
+    padding: 4px 8px;
+  }
+
+  .eh-feedback-kicker { font-size: 8px; }
+  .encounter-hero-feedback strong { font-size: 10px; }
+
+  .encounter-hero-log {
+    left: 8px;
+    right: 8px;
+    bottom: 38px;
+    max-height: min(78%, 150px);
+  }
+
+  .eh-log-head { padding: 4px 7px; font-size: 9px; }
+  .eh-log-body { padding: 5px 8px 6px; font-size: 9px; line-height: 1.45; }
+
+  /* 横屏宽度够，6 个战斗动作保持单行 */
+  .actionbar-combat-actions {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 4px;
   }
 
-  .combatant-card {
-    padding: 5px 4px 6px;
-  }
-
-  .combatant-visual-frame {
-    min-height: 68px;
-    margin: 3px 0;
-  }
-
-  .encounter-combat-visual {
-    width: 50px;
-    height: 66px;
-  }
-
-  .combatant-name-line {
-    min-height: 17px;
+  .actionbar-combat-actions .btn {
+    min-height: 38px;
+    padding: 3px 2px;
     font-size: 10px;
   }
 
-  .combat-visual-description {
-    min-height: 22px;
-    margin: 2px 0 3px;
-    font-size: 8px;
-    line-height: 1.2;
-  }
-
-  .combat-visual-state,
-  .combat-resource-row,
-  .enemy-health-summary,
-  .combat-stat-line {
-    margin-top: 2px;
+  .actionbar-combat-actions .action-cost {
     font-size: 8px;
   }
 
-  .combat-status-row {
-    min-height: 16px;
-    margin-top: 2px;
-  }
-
-  .encounter-center {
-    gap: 4px;
-    padding: 5px;
-  }
-
-  .encounter-focus {
-    min-height: 46px;
-    padding: 5px;
-  }
-
-  .encounter-focus strong {
-    font-size: 9px;
-  }
-
-  .encounter-focus-note,
-  .encounter-log {
+  .actionbar-combat-actions .heavy-risk {
     font-size: 8px;
   }
 
-  .encounter-log {
-    min-height: 42px;
-    max-height: 55px;
-    padding: 4px;
-  }
-
-  .encounter-actions {
-    gap: 4px;
-  }
-
-  .action-group {
-    gap: 3px;
-  }
-
-  .attack-styles .btn,
-  .encounter-side-actions .btn {
-    min-height: 38px;
-    padding: 3px 3px;
-    font-size: 9px;
-  }
-
-  .action-button-detail,
-  .heavy-risk,
-  .encounter-legal-note {
+  .heavy-risk {
     font-size: 7px;
   }
 
@@ -4059,7 +3892,7 @@ span.zone-hero-portrait {
   color: #ffd9a0;
   border: 1px solid #ff9d5c;
 }
-.attack-styles .btn-danger-heavy {
+.actionbar-combat-actions .btn-danger-heavy {
   background: #8a2f2f;
   border-color: #ff9d5c;
 }
