@@ -543,3 +543,57 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Deliverables: `PHASE4D2_REPORT.md`, `reports/phase4d2-balance.json`, browser
   evidence under `output/phase4d2-browser/{phase4d2,baseline}/`. Real-device /
   screen-reader / long-session validation remains HUMAN-PLAYTEST-NEEDED.
+
+## Phase 4D-3 progress (2026-08-10)
+
+- Branch `phase4d3` from `main @ 437f173` (v0.3.2); information-architecture
+  follow-through — fold the encounter state into the main hero visual and remove
+  the standalone combat window (no combat / balance / core-data changes).
+- Design landing (§2.1–§2.5 + §3 + §4):
+  - §2.1 去重：`.zone-hero` now has an `encounter` state — region background stays,
+    the **enemy portrait is centered** as the focus; player portrait / HP / stamina
+    copies are NOT rendered in the hero (player state lives only in the top bar).
+  - §2.2 信息分层：enemy legal-visible fields (identity + class, no-digit HP bar +
+    descriptor, weapon, EXPOSED, shared flee/hit rate, action stamina cost) live in
+    `.encounter-hero-enemyinfo`; exact HP digits / hidden gear / skills / intent /
+    backpack are never shown.
+  - §2.3 无「继续探索」按钮：after resolve, the result is one line of immediate
+    feedback on the hero; `GameScreen.act()` auto-fires `CLOSE_ENCOUNTER` on the
+    next action (`CLOSE_ENCOUNTER` does not advance time), so the settlement clears
+    without a close button.
+  - §2.4 战斗记录：small on-demand entry reusing `useDrawerFocus` (open / Esc /
+    focus-return), not a duplicate panel.
+  - §2.5 共用行动栏：`ActionBar` switches via `combat` prop — 6 combat actions
+    (`.actionbar-combat-actions`, `data-action="guard"/"flee"/"skill"`,
+    `data-attack-style`) pinned to the viewport-bottom footer with `flex:none` (no
+    scroll); non-combat → search / rest / move. Legal hint renders in
+    `#actionbar-hint`. The `.presence` 袭击/防御/脱离 buttons are guarded by
+    `{!inActiveEncounter && ...}` to avoid a duplicate combat entry.
+- New files: `src/ui/components/EncounterHero.tsx`,
+  `src/ui/combatActionsPresentation.ts`, `PHASE4D3_REPORT.md`,
+  `reports/phase4d3-balance.json`, `reports/phase4d3-balance.md`.
+  Deleted `src/ui/components/EncounterPanel.tsx`.
+  Modified `GameScreen.tsx`, `ActionBar.tsx`, `styles.css`,
+  `tests/phase4b2CombatFeedback.test.tsx`, `tests/phase4a45VisualClosure.test.tsx`,
+  `tests/phase4d2InfoArchitecture.test.tsx`, `tests/browser/*`,
+  `tools/art/phase4a45Audit.ts`.
+- Browser evidence `phase4c3` initially failed at the closing assertion: with the
+  enemy still in-zone after a stationary flee, `REST` has a 45% interrupt chance that
+  re-opens a fresh **active** encounter, so `.encounter-hero` count stayed 1. This is
+  correct game behavior, not a deadlock (the player can always flee/guard again).
+  Fixed the assertion to prove the §2.3 contract precisely: the **resolved** settlement
+  state is cleared by the next action (`.encounter-hero[data-encounter-state="resolved"]`
+  count 0), and the test robustly handles the re-encounter branch (either returns to
+  exploration or re-enters a reachable combat state). Re-run: 17/17 browser specs green,
+  0 console/page errors across 5 viewports.
+- §7 gates green: clean `npm ci`, typecheck (`tsc -b`), unit suite **1328 passed /
+  72 files**, `vite build`, `audit:save`, `audit:deps` (R1–R4 = 0), `art:doctor
+  --offline`, `art:validate`, `art:audit:phase4a`, `art:security:browser` +
+  `art:security:repo` (195+812 files, no secrets), 500-game `PHASE4D3` simulation
+  (requests=actual=500, engine healthy, character-balance ratio 3.33 logged as
+  observation only), and `npm audit --omit=dev` (0 vulnerabilities).
+- Handoff / explicit #45 requirement: **commit and push `phase4d3`, then let CI run
+  to completion before declaring delivery** (prior two rounds were left uncommitted).
+  Pre-existing `reports/save-validation-audit.json` / `.md` user edits are left
+  unstaged per the Phase 4D-2 note. Real-device / screen-reader / long-session
+  validation remains HUMAN-PLAYTEST-NEEDED.

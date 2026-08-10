@@ -223,10 +223,12 @@ test(`Phase 4D-2 information architecture metrics (${label})`, async ({ page }) 
     expect(encounter.titleAttributeCount).toBe(0);
   }
   if (!isBaseline && reached) {
-    await expect(page.locator('.stage-content .encounter')).toBeVisible();
+    // Phase 4D-3：遭遇态是主视觉的一种状态（.encounter-hero 位于 .zone-hero 内），
+    // 不再是下方的独立面板 .stage-content .encounter。
+    await expect(page.locator('.encounter-hero')).toBeVisible();
     await expect(page.locator('.zone-hero')).toBeVisible();
     const portraitSrc = await page
-      .locator('.zone-hero-portrait')
+      .locator('.encounter-enemy-visual')
       .first()
       .getAttribute('src');
     // 官方图存在时应切到 combat/injured 变体；emoji 降级时 src 为 null，不强制

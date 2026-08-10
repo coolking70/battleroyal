@@ -4,7 +4,6 @@ import { listRecipes } from '../../core/crafting';
 import { recentEvents } from '../../core/events';
 import { canPayActionCost, getActionStaminaCost } from '../../core/actionCosts';
 import { GAME_CONFIG } from '../../data/gameConfig';
-import { getCharacterDef } from '../../data/characters';
 import { listIntel, PRESENCE_TEXT, zonePresence } from '../../core/info';
 import { aliveCharacters } from '../../core/gameState';
 import { activeWorldEvents } from '../../core/worldEvents';
@@ -15,7 +14,7 @@ import {
   getCharacterSkill,
   isSkillReady,
 } from '../../core/skills';
-import type { Combatant, Command, GameState } from '../../core/types';
+import type { AttackStyle, Combatant, Command, GameState } from '../../core/types';
 import { LOG_DISPLAY_COUNT } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { cx, stackLabel } from '../../utils/format';
@@ -26,8 +25,8 @@ import {
   latestPlayerCraftFeedback,
 } from '../craftPathPresentation';
 import { latestPlayerSearchFeedback } from '../searchPresentation';
-import { getCharacterVisual, getZoneVisual } from '../visualAssets';
-import { resolveCharacterVisualState } from '../characterVisualState';
+import { getZoneVisual } from '../visualAssets';
+import { buildCombatActionBar } from '../combatActionsPresentation';
 import { zoneStatusMeta } from '../zonePresentation';
 import { warningRemaining, zoneUrgencyMeta } from '../zonePresentation';
 import { latestInstantWorldEvent, sortWorldEvents } from '../worldEventPresentation';
@@ -35,7 +34,7 @@ import { ActionBar } from '../components/ActionBar';
 import { CraftGoalBar } from '../components/CraftGoalBar';
 import { CraftPanel } from '../components/CraftPanel';
 import { CraftingCodex } from '../components/CraftingCodex';
-import { EncounterPanel } from '../components/EncounterPanel';
+import { EncounterHero } from '../components/EncounterHero';
 import { EventLog } from '../components/EventLog';
 import { Inventory } from '../components/Inventory';
 import { PendingPickupPanel } from '../components/PendingPickupPanel';
@@ -57,13 +56,18 @@ interface GameScreenProps {
 type Tab = 'inventory' | 'craft' | 'codex';
 
 /**
- * 对局主界面（Phase 4D-2 信息架构）。
+ * 对局主界面（Phase 4D-2 信息架构 + 4D-3 遭遇态并入主视觉）。
  *
- * 五块常驻：① 状态栏（生存 + 危险指示）② 地图指示器 ③ 主视觉（角色立绘 + 区域背景）
- * ④ 行动栏 + 合成目标条 ⑤ —— 外加中栏主视觉下的「上下文保留区」。
+ * 五块常驻：① 状态栏（生存 + 危险指示）② 地图指示器 ③ 主视觉 ④ 行动栏 + 合成目标条
+ *          —— 外加中栏主视觉下的「上下文保留区」。
  *
- * 按需展开：完整六区地图（地图指示器展开）、背包+装备、合成+图鉴、历史日志（规划抽屉）。
- * 上下文触发：情报 / 同区域存在感 / 地面掉落 / 搜索结果 / 遭遇面板 / 世界事件 / 满包拾取
+ * 主视觉有两种状态（Phase 4D-3 §2.1）：
+ * - **探索态**：只有区域背景 + 区域名 / 状态。玩家立绘已移除，玩家状态只在顶栏（§2.2）。
+ * - **遭遇态**：区域背景 + **敌方立绘居中** + 敌方合法可见字段 + 一行即时反馈。
+ *   遭遇不再是下方的独立面板，行动栏切换成 6 个战斗动作（§2.5）。
+ *
+ * 按需展开：完整六区地图、背包+装备、合成+图鉴、历史日志、本次遭遇战斗记录（§2.4）。
+ * 上下文触发：情报 / 同区域存在感 / 地面掉落 / 搜索结果 / 世界事件 / 满包拾取
  *            —— 无内容时完全不渲染、不占位（首屏空态归零）。
  */
 export function GameScreen({
@@ -100,7 +104,20 @@ export function GameScreen({
   const encounter = state.encounter;
   const enemy = encounter ? (state.characters[encounter.enemyId] ?? null) : null;
   const inActiveEncounter = Boolean(encounter && !encounter.resolved && enemy?.alive);
+  const resolvedEncounter = Boolean(encounter?.resolved);
   const pending = state.pendingPickup;
+
+  /**
+   * Phase 4D-3 §2.3：遭遇结束**不需要点击关闭**。
+   * 结果作为一行即时反馈留在主视觉上，玩家的下一次行动顺带把结算态清掉 ——
+   * 核心的 `resolved` 状态与 `CLOSE_ENCOUNTER` 命令都不变，
+   * 变的只是「谁来派发它」：从玩家点按钮改成 UI 在下一次行动前自动补发。
+   * `CLOSE_ENCOUNTER` 不推进时间，因此不影响任何结算口径。
+   */
+  const act = (command: Command): void => {
+    if (resolvedEncounter) dispatch({ type: 'CLOSE_ENCOUNTER' });
+    dispatch(command);
+  };
 
   // 世界事件横幅（Phase 3A Step 6）：展示当前生效中的事件
   const bannerEvents = sortWorldEvents(activeWorldEvents(state));
@@ -116,10 +133,18 @@ export function GameScreen({
   const playerSkillUsable = playerSkillId ? canUseSkill(player, playerSkillId).ok : false;
   const playerSkillCooldown = playerSkillId ? player.skillCooldowns[playerSkillId] ?? 0 : 0;
 
-  // 主视觉立绘三态（复用 4B-1 解析器）：portrait / injured / combat
-  const characterVisualState = resolveCharacterVisualState(player, {
-    activeEncounter: Boolean(state.encounter && !state.encounter.resolved),
-  });
+  // 遭遇态共用行动栏的视图模型（Phase 4D-3 §2.5）。
+  // 待处理拾取时核心只给拾取解决命令，所以那一刻不切战斗行动栏。
+  const combatBar = useMemo(
+    () =>
+      inActiveEncounter && enemy && !pending
+        ? buildCombatActionBar(state, player, enemy)
+        : null,
+    [inActiveEncounter, enemy, pending, state, player],
+  );
+
+  // 遭遇态（含结算态）时区域文案收成一条窄带，把主视觉让给敌方立绘
+  const heroCompact = Boolean(encounter && enemy);
 
   const recipeViews = useMemo(() => listRecipes(state, player), [state, player]);
   const craftGoalRecs = useMemo(
@@ -168,7 +193,7 @@ export function GameScreen({
         state={state}
         player={player}
         disabled={lockedGeneral}
-        onMove={(zoneId) => dispatch({ type: 'MOVE', zoneId })}
+        onMove={(zoneId) => act({ type: 'MOVE', zoneId })}
         onExpand={() => setMapOpen(true)}
         triggerRef={mapTriggerRef}
       />
@@ -189,22 +214,31 @@ export function GameScreen({
             />
           )}
 
-          {/* 主视觉：角色立绘（主体）+ 区域背景（场景底） */}
-          <div className={`zone-hero zone-hero-${zoneStatus}`} data-zone-status={zoneStatus}>
+          {/* 主视觉：探索态 = 区域背景；遭遇态 = 区域背景 + 敌方立绘居中（§2.1 / §2.2） */}
+          <div
+            className={cx(
+              'zone-hero',
+              `zone-hero-${zoneStatus}`,
+              encounter && enemy && 'zone-hero-encounter',
+              inActiveEncounter && 'zone-hero-encounter-active',
+              resolvedEncounter && 'zone-hero-encounter-resolved',
+            )}
+            data-zone-status={zoneStatus}
+            data-hero-mode={
+              inActiveEncounter ? 'encounter' : resolvedEncounter ? 'encounter-resolved' : 'exploration'
+            }
+          >
             <VisualImage
               visual={getZoneVisual(player.currentZoneId)}
               alt={`${zoneDef.name}区域背景`}
               className="zone-hero-image"
             />
-            <VisualImage
-              visual={getCharacterVisual(player.characterId, characterVisualState)}
-              alt={`${getCharacterDef(player.characterId).name}立绘`}
-              className="zone-hero-portrait"
-            />
             <div className="zone-hero-scrim" aria-hidden="true" />
             <div className="zone-hero-pattern" aria-hidden="true" />
             <div className="zone-hero-content">
-              <div className="zone-hero-kicker">CURRENT ZONE · {player.currentZoneId.toUpperCase()}</div>
+              {!heroCompact && (
+                <div className="zone-hero-kicker">CURRENT ZONE · {player.currentZoneId.toUpperCase()}</div>
+              )}
               <div className="zone-hero-heading">
                 <h2>{zoneDef.name}</h2>
                 <span className={`zone-hero-status status-${zoneStatus}`}>
@@ -212,10 +246,11 @@ export function GameScreen({
                   <span>{zoneMeta.label}</span>
                 </span>
               </div>
-              <p>{zoneDef.description}</p>
+              {/* 遭遇态收起区域描述这类风味文案，但危险倒计时 / 禁区侵蚀是战术信息，必须留 */}
+              {!heroCompact && <p>{zoneDef.description}</p>}
               <div className={`zone-hero-state-note zone-hero-urgency-${zoneUrgency.urgency}`}>
                 <span className="zone-state-icon" aria-hidden="true">{zoneMeta.icon}</span>
-                <span>{zoneMeta.description}</span>
+                {!heroCompact && <span>{zoneMeta.description}</span>}
                 {zoneStatus === 'warning' && warningTimeRemaining !== null && (
                   <strong className="zone-hero-countdown">
                     {zoneUrgency.icon} {zoneUrgency.label} · 剩余 {warningTimeRemaining} 回合
@@ -226,8 +261,19 @@ export function GameScreen({
                     ☠ 禁区侵蚀 · 每回合 −{zoneDamagePerTick(state)} 生命
                   </strong>
                 )}
+                {heroCompact && zoneStatus === 'safe' && <span>{zoneMeta.label}</span>}
               </div>
             </div>
+
+            {/* 遭遇态：主视觉本身变成遭遇（敌方立绘居中），不再有下方的独立对战窗口 */}
+            {encounter && enemy && (
+              <EncounterHero
+                encounter={encounter}
+                player={player}
+                enemy={enemy}
+                combat={combatBar}
+              />
+            )}
           </div>
 
           {/* 上下文保留区：无内容时整段不渲染（空态归零，且不引发整页重排） */}
@@ -261,23 +307,6 @@ export function GameScreen({
               />
             )}
 
-            {encounter && enemy && (
-              <EncounterPanel
-                state={state}
-                encounter={encounter}
-                player={player}
-                enemy={enemy}
-                onAttack={(style) => dispatch({ type: 'ATTACK', targetId: enemy.id, style })}
-                onFlee={() => dispatch({ type: 'FLEE' })}
-                onGuard={() => dispatch({ type: 'GUARD' })}
-                onSkill={() => {
-                  const sid = getCharacterSkill(player.characterId);
-                  if (sid) dispatch({ type: 'USE_SKILL', skillId: sid });
-                }}
-                onClose={() => dispatch({ type: 'CLOSE_ENCOUNTER' })}
-              />
-            )}
-
             {intel.length > 0 && (
               <div className="stage-section context-intel">
                 <h4>情报</h4>
@@ -305,31 +334,38 @@ export function GameScreen({
                   <div className="presence-line">
                     <span className="who">{PRESENCE_TEXT[presence]}</span>
                   </div>
-                  <div className="presence-actions">
-                    <button
-                      className="btn btn-sm btn-danger"
-                      disabled={lockedAll}
-                      onClick={() => dispatch({ type: 'ATTACK_NEARBY', style: 'normal' })}
-                      aria-label="尝试袭击同区域的未识别目标"
-                    >
-                      尝试袭击附近目标
-                    </button>
-                    <button
-                      className="btn btn-sm"
-                      disabled={lockedAll || !canPayActionCost(player, 'GUARD').ok}
-                      onClick={() => dispatch({ type: 'GUARD' })}
-                      aria-label={`防御姿态：下一击伤害减免，消耗 ${getActionStaminaCost(player, 'GUARD')} 点体力`}
-                    >
-                      防御
-                    </button>
-                    <button
-                      className="btn btn-sm"
-                      disabled={lockedAll}
-                      onClick={() => dispatch({ type: 'FLEE' })}
-                    >
-                      脱离
-                    </button>
-                  </div>
+                  {/*
+                    Phase 4D-3 §2.5：遭遇态由共用行动栏独占战斗动作。
+                    这里的袭击 / 防御 / 脱离只在**未交手**时提供，避免与行动栏上的
+                    速攻 / 普通 / 重击 / 防御 / 逃跑 / 技能重复成两套战斗入口。
+                  */}
+                  {!inActiveEncounter && (
+                    <div className="presence-actions">
+                      <button
+                        className="btn btn-sm btn-danger"
+                        disabled={lockedAll}
+                        onClick={() => act({ type: 'ATTACK_NEARBY', style: 'normal' })}
+                        aria-label="尝试袭击同区域的未识别目标"
+                      >
+                        尝试袭击附近目标
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        disabled={lockedAll || !canPayActionCost(player, 'GUARD').ok}
+                        onClick={() => act({ type: 'GUARD' })}
+                        aria-label={`防御姿态：下一击伤害减免，消耗 ${getActionStaminaCost(player, 'GUARD')} 点体力`}
+                      >
+                        防御
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        disabled={lockedAll}
+                        onClick={() => act({ type: 'FLEE' })}
+                      >
+                        脱离
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className="faint mono" style={{ fontSize: 11, marginTop: 6 }}>
                   未交手前无法辨认对手身份与人数；只有正在交手的对手才会暴露精确生命与武器。
@@ -342,7 +378,7 @@ export function GameScreen({
                 <button
                   className="btn btn-sm"
                   disabled={lockedAll || !playerSkillUsable}
-                  onClick={() => dispatch({ type: 'USE_SKILL', skillId: playerSkillId })}
+                  onClick={() => act({ type: 'USE_SKILL', skillId: playerSkillId })}
                   aria-label={
                     playerSkillReady
                       ? `${SKILLS[playerSkillId].name}：${SKILLS[playerSkillId].description}（消耗 ${SKILLS[playerSkillId].staminaCost} 点体力）`
@@ -389,12 +425,23 @@ export function GameScreen({
         </section>
       </main>
 
+      {/* 共用同一条行动栏：遭遇态 6 个战斗动作 ↔ 探索态搜索 / 休息 / 移动入口（§2.5） */}
       <ActionBar
         state={state}
         player={player}
         locked={lockedGeneral}
-        onSearch={() => dispatch({ type: 'SEARCH' })}
-        onRest={() => dispatch({ type: 'REST' })}
+        onSearch={() => act({ type: 'SEARCH' })}
+        onRest={() => act({ type: 'REST' })}
+        combat={combatBar}
+        onAttack={(style: AttackStyle) => {
+          if (enemy) dispatch({ type: 'ATTACK', targetId: enemy.id, style });
+        }}
+        onGuard={() => dispatch({ type: 'GUARD' })}
+        onFlee={() => dispatch({ type: 'FLEE' })}
+        onSkill={() => {
+          const sid = getCharacterSkill(player.characterId);
+          if (sid) dispatch({ type: 'USE_SKILL', skillId: sid });
+        }}
       />
 
       {/* ---------- 按需展开：规划抽屉（背包+装备 / 合成+图鉴 / 历史日志） ---------- */}
@@ -503,7 +550,7 @@ export function GameScreen({
         player={player}
         disabled={lockedGeneral}
         freshIntelZones={freshIntelZones}
-        onMove={(zoneId) => dispatch({ type: 'MOVE', zoneId })}
+        onMove={(zoneId) => act({ type: 'MOVE', zoneId })}
         triggerRef={mapTriggerRef}
       />
     </div>

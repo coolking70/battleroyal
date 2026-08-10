@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-09T04:42:05.520Z",
+  "generatedAt": "2026-08-10T07:40:25.051Z",
   "assetCategory": {
     "characters": {
       "manifestSlots": 12,
@@ -8,7 +8,7 @@
       "uiConsumers": [
         "MenuScreen",
         "StatusBar",
-        "EncounterPanel"
+        "EncounterHero"
       ]
     },
     "zones": {
@@ -62,7 +62,7 @@
       "fallback": "VisualImage formal → SVG → emoji"
     },
     {
-      "component": "EncounterPanel",
+      "component": "EncounterHero",
       "getter": "getCharacterVisual + resolveCharacterVisualState",
       "variants": [
         "portrait",

@@ -111,7 +111,7 @@ async function snapshot(
   const runtime = await page.evaluate(() => {
     const board = document.querySelector('.board') as HTMLElement | null;
     const stage = document.querySelector('.stage') as HTMLElement | null;
-    const encounter = document.querySelector('.encounter') as HTMLElement | null;
+    const encounter = document.querySelector('.encounter-hero') as HTMLElement | null;
     const planning = document.querySelector('.planning-drawer-panel') as HTMLElement | null;
     const hero = document.querySelector('.zone-hero') as HTMLElement | null;
     const rect = (node: HTMLElement | null) => node
@@ -207,7 +207,8 @@ test('Phase 4B-5 production responsive closure across five viewports', async ({ 
     expect(encounter.bodyScrollWidth).toBe(viewport.width);
     expect(encounter.documentScrollWidth).toBe(viewport.width);
     expect(focus.visible).toBe(6);
-    expect((encounter.encounter as { height?: number } | null)?.height ?? 0).toBeLessThan(700);
+    // Phase 4D-3：遭遇态并入主视觉，.encounter-hero 在遭遇期间必然在场且可见。
+    expect((encounter.encounter as { height?: number } | null)?.height ?? 0).toBeGreaterThan(0);
   }
 
   // Pending pickup is a modal-free decision surface: it must be completable on

@@ -1,11 +1,14 @@
 /**
- * 浏览器证据用的滚动辅助（Phase 4D-2）。
+ * 浏览器证据用的滚动辅助（Phase 4D-3）。
  *
- * 4D-2 之前中栏 `.stage` 自己滚动；4D-2 之后 `.stage` 固定住主视觉与目标条，
- * 真正滚动的是它下面的上下文保留区 `.stage-content`。若把滚动容器写死成
- * `.stage` 或 `.board`，证据脚本会"滚了个寂寞"，从而给出假阴性。
+ * 4D-3 起遭遇态并入主视觉：不再有独立的 `.encounter` 面板或内部的
+ * `.encounter-actions` 行动区，取而代之的是主视觉里的 `.encounter-hero`
+ * 与底部共用行动栏里的 `.actionbar-combat-actions`（始终钉在视口底部，
+ * 6 个战斗动作无需滚动即可触达）。
  *
- * 这里改成从目标节点向上找第一个真正可滚动的祖先，两套布局都成立。
+ * 这里把目标选择器从旧的 `.encounter` / `.encounter-actions` 改指 4D-3 的
+ * `.encounter-hero` / `.actionbar-combat-actions`，其余"向上找第一个可滚动祖先"
+ * 的逻辑不变，两套布局都成立。
  *
  * 注意：本文件里的函数会被 page.evaluate 序列化到页面上下文执行，
  * 因此必须自包含，不能引用模块作用域的变量或 import。
@@ -17,9 +20,9 @@ export interface ActionScrollResult {
   scrollContainer: string | null;
 }
 
-/** 把遭遇面板整体滚到保留区顶部（不关心按钮可见性）。 */
+/** 把遭遇态主视觉（.encounter-hero）整体滚进视口（不关心按钮可见性）。 */
 export function scrollEncounterIntoView(): void {
-  const encounter = document.querySelector('.encounter') as HTMLElement | null;
+  const encounter = document.querySelector('.encounter-hero') as HTMLElement | null;
   if (!encounter) return;
 
   let current: HTMLElement | null = encounter.parentElement;
@@ -33,9 +36,9 @@ export function scrollEncounterIntoView(): void {
   }
 }
 
-/** 把遭遇行动区滚进视口，返回滚动后完整可见的按钮数。 */
+/** 把遭遇行动区（共用行动栏的 .actionbar-combat-actions）滚进视口，返回滚动后完整可见的按钮数。 */
 export function scrollEncounterActionsIntoView(): ActionScrollResult {
-  const actions = document.querySelector('.encounter-actions') as HTMLElement | null;
+  const actions = document.querySelector('.actionbar-combat-actions') as HTMLElement | null;
   const topbarBottom = document.querySelector('.topbar')?.getBoundingClientRect().bottom ?? 0;
   if (!actions) return { scrollTop: 0, visibleButtons: 0, scrollContainer: null };
 
