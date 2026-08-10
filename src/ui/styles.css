@@ -879,6 +879,64 @@ input {
   padding: 12px 16px 16px;
 }
 
+/* ---- 合成目标条（Phase 4D-1 改进 C）----
+   中栏滚动容器顶部的常驻单行。用 sticky 而不是 fixed：它只在自己的滚动
+   容器里吸顶，不脱离文档流、不参与全局层叠，因此既不会遮挡底部行动栏，
+   也不会动到遭遇面板与移动端抽屉入口那几处硬编码偏移。 */
+
+.craft-goal-bar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-panel-2);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.cgb-icon {
+  color: var(--warn);
+}
+
+.cgb-kind {
+  color: var(--text-faint);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.cgb-name {
+  color: var(--text);
+}
+
+.cgb-step {
+  color: var(--accent);
+}
+
+.cgb-gaps {
+  color: var(--warn);
+}
+
+.cgb-where {
+  color: var(--text-dim);
+}
+
+.craft-goal-bar .cgb-open {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  .craft-goal-bar {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+}
+
 /* ---- 主视觉 Zone 舞台 ---- */
 
 .zone-hero {

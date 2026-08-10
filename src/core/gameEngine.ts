@@ -6,7 +6,6 @@ import {
   isEncounterBlocking,
   isPickupBlocking,
 } from './commands';
-import { useConsumable } from './consumables';
 import { performCraft } from './crafting';
 import { describeError, isExpectedError } from './errors';
 import { pushEvent } from './events';
@@ -24,8 +23,6 @@ import {
   addItem,
   canAccept,
   createStack,
-  equipItem,
-  findStack,
   removeStack,
   unequip,
 } from './inventory';
@@ -37,6 +34,7 @@ import { applyWorldEventTickDamage } from './worldEventTick';
 import {
   handleAttack,
   handleAttackNearby,
+  handleEquip,
   handleFlee,
   handleGuard,
   handleMove,
@@ -44,6 +42,7 @@ import {
   handleResolvePickup,
   handleRest,
   handleSearch,
+  handleUseItem,
   handleUseSkill,
   type HandlerOutcome,
 } from './commandHandlers';
@@ -359,31 +358,16 @@ function executeCommandInner(state: GameState, command: Command): CommandResult 
       return finish({ ok: true, message: `制作目标：${recipe.name}` });
     }
 
-    case 'USE_ITEM': {
-      const res = useConsumable(draft, player, command.uid);
-      return finish({ ok: res.ok, message: res.message });
-    }
+    // USE_ITEM / EQUIP 的结算已在 Phase 4D-1 收进 commandHandlers，
+    // 与 GUARD / USE_SKILL 一样共用同一份「遭遇中要写战斗日志」的规则。
+    case 'USE_ITEM':
+      return finish(handleUseItem(draft, player, command.uid));
 
     case 'EQUIP': {
-      const stack = findStack(player, command.uid);
-      const res = equipItem(player, command.uid);
-      if (!res.ok) {
-        const reasons: Record<string, string> = {
-          not_found: '背包里没有这件物品。',
-          not_equipable: '该物品不能装备。',
-          no_space: '背包没有空间放置换下的装备。',
-        };
-        return reject(reasons[res.reason] ?? '无法装备。');
-      }
-      const name = stack ? tryGetItem(stack.itemId)?.name ?? '装备' : '装备';
-      pushEvent(draft, {
-        type: 'ITEM_EQUIPPED',
-        actorId: player.id,
-        zoneId: player.currentZoneId,
-        message: `你装备了 ${name}。`,
-        metadata: { itemId: stack?.itemId ?? null },
-      });
-      return finish({ ok: true, message: `已装备 ${name}。` });
+      const outcome = handleEquip(draft, player, command.uid);
+      // 装备失败不推进时间，与收编前的 reject 行为逐字一致
+      if (!outcome.ok) return reject(outcome.message ?? '无法装备。');
+      return finish(outcome);
     }
 
     case 'UNEQUIP': {

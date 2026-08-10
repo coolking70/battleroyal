@@ -16,6 +16,7 @@ import { CraftPanel } from '../src/ui/components/CraftPanel';
 import { PendingPickupPanel } from '../src/ui/components/PendingPickupPanel';
 import { SearchResultFeedback } from '../src/ui/components/SearchResultFeedback';
 import { GameScreen } from '../src/ui/screens/GameScreen';
+import { craftGoalBanner } from '../src/ui/craftPathPresentation';
 import { latestPlayerSearchFeedback } from '../src/ui/searchPresentation';
 
 let root: Root;
@@ -191,10 +192,29 @@ describe('Phase 4B-3 search, loot, inventory and craft presentation', () => {
   it('does not render undiscovered zone loot or other characters’ inventory information', () => {
     const state = createGame({ seed: 'PHASE4B3-BOUNDARY', playerCharacterId: 'scout', playerName: '测试者' });
     const player = getPlayer(state);
-    state.zones[player.currentZoneId]!.loot = [{ itemId: 'glass', count: 1, rarity: 'normal' }];
+    state.zones[player.currentZoneId]!.loot = [
+      { itemId: 'glass', count: 1, rarity: 'normal' },
+      // 对照物：能量饮料不参与任何配方，因此它一旦出现在中栏，
+      // 唯一可能的来源就是 zone.loot 泄露——这条断言不受任何展示层改动干扰。
+      { itemId: 'energy_drink', count: 1, rarity: 'rare' },
+    ];
     render(<GameScreen state={state} player={player} dispatch={() => undefined} onQuit={() => undefined} />);
-    const stageText = container.querySelector('.stage')?.textContent ?? '';
-    expect(stageText).not.toContain('玻璃');
+    const stage = container.querySelector('.stage');
+    expect(stage?.textContent ?? '').not.toContain('能量饮料');
+
+    // Phase 4D-1 改进 C 之后，中栏常驻目标条会以「还缺玻璃 ×N」的形式
+    // 提到玻璃。这不是泄露：数据来自静态配方表 + 玩家自己的背包 +
+    // 区域的**公开**物资池（图鉴里本来就能查），与 zone.loot 的实际剩余无关。
+    // 为了让本用例继续精确守住 zone.loot 这条边界，先核对目标条里出现的
+    // 材料确实来自配方缺口，再把目标条摘掉、对中栏其余部分重新断言一次。
+    const goalBar = stage?.querySelector('.craft-goal-bar') ?? null;
+    if (goalBar?.textContent?.includes('玻璃')) {
+      const banner = craftGoalBanner(state, player);
+      expect(banner?.gaps.some((gap) => gap.itemId === 'glass')).toBe(true);
+    }
+    goalBar?.remove();
+    expect(stage?.textContent ?? '').not.toContain('玻璃');
+
     expect(container.textContent).not.toContain('其他角色的背包');
     expect(container.querySelector('[data-search-result]')).toBeNull();
   });
