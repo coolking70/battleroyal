@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { SAVE_KEY } from '../../src/data/gameConfig';
 import { pendingPickupFixture } from './pendingPickupFixture';
+import { scrollEncounterActionsIntoView } from './scrollHelpers';
 
 const baseUrl = process.env.PHASE4B5_BASE_URL ?? 'http://127.0.0.1:4173';
 const evidenceDir = path.resolve('output/phase4b5-browser');
@@ -97,29 +98,9 @@ async function findPendingPickup(page: import('@playwright/test').Page): Promise
 }
 
 async function focusEncounterActions(page: import('@playwright/test').Page): Promise<Record<string, unknown>> {
-  const result = await page.evaluate(() => {
-    const board = document.querySelector('.board') as HTMLElement | null;
-    const stage = document.querySelector('.stage') as HTMLElement | null;
-    const actions = document.querySelector('.encounter-actions') as HTMLElement | null;
-    const topbarBottom = document.querySelector('.topbar')?.getBoundingClientRect().bottom ?? 0;
-    if (!board || !stage || !actions) return { scroll: 0, visible: 0 };
-
-    const scrollContainer = stage.scrollHeight > stage.clientHeight + 1 ? stage : board;
-    const targetTop = topbarBottom + 8;
-    const before = actions.getBoundingClientRect().top;
-    scrollContainer.scrollTop = Math.max(0, scrollContainer.scrollTop + before - targetTop);
-    const visible = Array.from(actions.querySelectorAll('button')).filter((button) => {
-      const rect = button.getBoundingClientRect();
-      return rect.width > 0 && rect.height > 0 && rect.top >= topbarBottom && rect.bottom <= window.innerHeight;
-    }).length;
-    return {
-      scroll: scrollContainer.scrollTop,
-      visible,
-      scrollContainer: scrollContainer.className,
-    };
-  });
+  const result = await page.evaluate(scrollEncounterActionsIntoView);
   await page.waitForTimeout(60);
-  return result;
+  return { scroll: result.scrollTop, visible: result.visibleButtons, scrollContainer: result.scrollContainer };
 }
 
 async function snapshot(
@@ -173,28 +154,50 @@ test('Phase 4B-5 production responsive closure across five viewports', async ({ 
       search: (() => { const node = document.querySelector('.actionbar-actions button'); const r = node?.getBoundingClientRect(); return Boolean(node && r && r.width > 0 && r.bottom <= innerHeight); })(),
       rest: (() => { const nodes = Array.from(document.querySelectorAll('.actionbar-actions button')); const node = nodes.find((n) => n.textContent?.includes('休息')); const r = node?.getBoundingClientRect(); return Boolean(node && r && r.width > 0 && r.bottom <= innerHeight); })(),
       movementEntries: document.querySelectorAll('.zone-item').length,
+      // Phase 4D-2：常驻的是小型地图指示器，只给当前 + 相邻。
+      visibleAdjacentChips: Array.from(document.querySelectorAll('.zone-rail .zone-chip')).filter((node) => {
+        const r = node.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      }).length,
     }));
     expect(base.bodyScrollWidth).toBe(viewport.width);
     expect(base.documentScrollWidth).toBe(viewport.width);
     expect(base.search).toBe(true);
     expect(base.rest).toBe(true);
     expect(base.movementEntries).toBe(6);
+    expect(base.visibleAdjacentChips).toBeGreaterThan(0);
 
+    // 完整六区仍然一步可达，且展开后是真正可见的（不是藏在 DOM 里凑数）。
+    await page.locator('.zone-rail-expand').click();
+    await expect(page.locator('.map-slot-open')).toHaveCount(1);
+    await expect(page.locator('.map-drawer-panel .zone-item')).toHaveCount(6);
+    const mapOverflow = await page.evaluate(() => ({
+      bodyScrollWidth: document.body.scrollWidth,
+      documentScrollWidth: document.documentElement.scrollWidth,
+      visibleZoneItems: Array.from(document.querySelectorAll('.map-drawer-panel .zone-item')).filter((node) => {
+        const r = node.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      }).length,
+    }));
+    expect(mapOverflow.bodyScrollWidth).toBe(viewport.width);
+    expect(mapOverflow.documentScrollWidth).toBe(viewport.width);
+    expect(mapOverflow.visibleZoneItems).toBe(6);
+    await snapshot(page, `${viewport.name}-map-open`);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.map-slot-open')).toHaveCount(0);
+
+    // Phase 4D-2 起规划抽屉在**所有**视口都按需展开（桌面端不再常驻侧栏），
+    // 所以这条响应式闭环对五个视口走同一条路径。
     const planningTrigger = page.locator('.planning-drawer-trigger');
-    if (viewport.width < 1100) {
-      await expect(planningTrigger).toBeVisible();
-      await planningTrigger.click();
-      await expect(page.locator('.planning-slot-open')).toHaveCount(1);
-      await expect(page.locator('.planning-drawer-panel')).toBeVisible();
-      await expect(page.locator('.planning-tabs button')).toHaveCount(3);
-      await expect(page.locator('.log-panel')).toBeVisible();
-      await snapshot(page, `${viewport.name}-planning-open`);
-      await page.locator('.planning-drawer-close').click();
-      await expect(page.locator('.planning-slot-open')).toHaveCount(0);
-    } else {
-      await expect(page.locator('.planning-drawer-panel')).toBeVisible();
-      await expect(planningTrigger).toBeHidden();
-    }
+    await expect(planningTrigger).toBeVisible();
+    await planningTrigger.click();
+    await expect(page.locator('.planning-slot-open')).toHaveCount(1);
+    await expect(page.locator('.planning-drawer-panel')).toBeVisible();
+    await expect(page.locator('.planning-tabs button')).toHaveCount(3);
+    await expect(page.locator('.log-panel')).toBeVisible();
+    await snapshot(page, `${viewport.name}-planning-open`);
+    await page.locator('.planning-drawer-close').click();
+    await expect(page.locator('.planning-slot-open')).toHaveCount(0);
     await snapshot(page, `${viewport.name}-exploration`);
 
     await startGame(page, `PHASE4B5-ENCOUNTER-${viewport.name}`);

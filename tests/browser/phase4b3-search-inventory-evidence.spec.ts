@@ -134,15 +134,37 @@ async function snapshot(page: import('@playwright/test').Page, name: string): Pr
 
 async function focusNodeInBoard(page: import('@playwright/test').Page, selector: string): Promise<void> {
   await page.evaluate((target) => {
-    const board = document.querySelector('.board') as HTMLElement | null;
     const node = document.querySelector(target) as HTMLElement | null;
-    if (board && node) {
-      const boardRect = board.getBoundingClientRect();
-      const nodeRect = node.getBoundingClientRect();
-      board.scrollTop = Math.max(0, board.scrollTop + nodeRect.top - boardRect.top - 12);
+    if (!node) return;
+    let current: HTMLElement | null = node.parentElement;
+    while (current) {
+      const style = getComputedStyle(current);
+      if (/(auto|scroll|overlay)/.test(style.overflowY) && current.scrollHeight > current.clientHeight + 1) {
+        const containerRect = current.getBoundingClientRect();
+        const nodeRect = node.getBoundingClientRect();
+        current.scrollTop = Math.max(0, current.scrollTop + nodeRect.top - containerRect.top - 12);
+        return;
+      }
+      current = current.parentElement;
     }
   }, selector);
   await page.waitForTimeout(60);
+}
+
+/**
+ * Phase 4D-2 起规划区在所有视口都是按需抽屉，关闭时 `display: none`。
+ * 任何点 Tab / 点物品按钮的证据步骤都必须先把抽屉展开，否则元素不可见。
+ */
+async function openPlanningDrawer(page: import('@playwright/test').Page): Promise<void> {
+  if (await page.locator('.planning-slot-open').count() > 0) return;
+  await page.locator('.planning-drawer-trigger').click();
+  await expect(page.locator('.planning-drawer-panel')).toBeVisible();
+}
+
+async function closePlanningDrawer(page: import('@playwright/test').Page): Promise<void> {
+  if (await page.locator('.planning-slot-open').count() === 0) return;
+  await page.locator('.planning-drawer-close').click();
+  await expect(page.locator('.planning-drawer-panel')).toBeHidden();
 }
 
 test('Phase 4B-3 production search and inventory evidence', async ({ page }) => {
@@ -174,6 +196,7 @@ test('Phase 4B-3 production search and inventory evidence', async ({ page }) => 
   await page.setViewportSize({ width: 1280, height: 720 });
   await startGame(page, 'CRAFT-3');
   await ensureWoodAndStone(page);
+  await openPlanningDrawer(page);
   await page.locator('.planning-tabs button').filter({ hasText: '合成' }).click();
   await expect(page.locator('[data-output-item-id="stick"]')).toHaveCount(1);
   const stickRecipe = page.locator('[data-output-item-id="stick"]');
@@ -187,14 +210,20 @@ test('Phase 4B-3 production search and inventory evidence', async ({ page }) => 
   await stickItem.getByRole('button', { name: '装备' }).click();
   const equipped = await snapshot(page, '05-desktop-equipped-item');
   expect(equipped.equippedImages).toBeGreaterThan(0);
+  await closePlanningDrawer(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await openPlanningDrawer(page);
   await focusNodeInBoard(page, '.planning-rail');
   const mobile = await snapshot(page, '06-mobile-planning-and-log');
   expect(mobile.bodyScrollWidth).toBe(390);
   expect(mobile.documentScrollWidth).toBe(390);
   expect(mobile.planningRect).not.toBeNull();
   expect(mobile.logRect).not.toBeNull();
+  // 4D-2：抽屉展开时两块面板必须真的有面积，而不是 display:none 下的 0×0。
+  expect((mobile.planningRect as { height: number }).height).toBeGreaterThan(0);
+  expect((mobile.logRect as { height: number }).height).toBeGreaterThan(0);
+  await closePlanningDrawer(page);
 
   const errors = { consoleErrors, pageErrors };
   fs.writeFileSync(path.join(evidenceDir, 'runtime-errors.json'), `${JSON.stringify(errors, null, 2)}\n`);

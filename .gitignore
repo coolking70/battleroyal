@@ -32,3 +32,7 @@ art/candidates/**
 art/archive/
 art/reviews.json
 output/
+
+# Playwright 证据输出（不入库）
+test-results/
+playwright-report/
