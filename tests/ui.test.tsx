@@ -87,7 +87,10 @@ describe('界面冒烟', () => {
 
     expect(container.querySelector('.game')).not.toBeNull();
     expect(container.textContent).toContain('路线规划');
-    expect(container.textContent).toContain('同区域');
+    // Phase 4D-2：「同区域」改为上下文触发。开局同区域无人时整段不渲染，
+    // 不再出现「这里暂时只有你一个人」这类空态占位。
+    expect(container.querySelector('.zone-rail')).not.toBeNull();
+    expect(container.textContent).not.toContain('这里暂时只有你一个人');
     expect(localStorage.getItem(SAVE_KEY)).not.toBeNull();
   });
 

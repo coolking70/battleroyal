@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
+import { scrollEncounterActionsIntoView } from './scrollHelpers';
 
 const baseUrl = process.env.PHASE4B6_BASE_URL ?? 'http://127.0.0.1:4173';
 const evidenceDir = path.resolve('output/phase4b6-browser');
@@ -110,27 +111,8 @@ async function snapshot(
 }
 
 async function minimalEncounterScroll(page: import('@playwright/test').Page): Promise<Record<string, unknown>> {
-  return page.evaluate(() => {
-    const board = document.querySelector('.board') as HTMLElement | null;
-    const stage = document.querySelector('.stage') as HTMLElement | null;
-    const actions = document.querySelector('.encounter-actions') as HTMLElement | null;
-    const topbarBottom = document.querySelector('.topbar')?.getBoundingClientRect().bottom ?? 0;
-    if (!board || !stage || !actions) return { scrollTop: 0, visibleButtons: 0, scrollContainer: null };
-    const scrollContainer = stage.scrollHeight > stage.clientHeight + 1 ? stage : board;
-    const start = scrollContainer.scrollTop;
-    const before = actions.getBoundingClientRect();
-    const desiredTop = Math.max(topbarBottom + 8, Math.min(before.top, innerHeight - before.height - 8));
-    scrollContainer.scrollTop = Math.max(0, start + before.top - desiredTop);
-    const visibleButtons = Array.from(actions.querySelectorAll('button')).filter((button) => {
-      const rect = button.getBoundingClientRect();
-      return rect.width > 0 && rect.height > 0 && rect.top >= topbarBottom && rect.bottom <= innerHeight;
-    }).length;
-    return {
-      scrollTop: scrollContainer.scrollTop,
-      visibleButtons,
-      scrollContainer: scrollContainer.className,
-    };
-  });
+  const result = await page.evaluate(scrollEncounterActionsIntoView);
+  return { ...result };
 }
 
 test('Phase 4B-6 production polish evidence across five viewports', async ({ page }) => {
@@ -150,22 +132,29 @@ test('Phase 4B-6 production polish evidence across five viewports', async ({ pag
     await expect(page.locator('.actionbar-actions button').filter({ hasText: '搜索' })).toBeVisible();
     await expect(page.locator('.actionbar-actions button').filter({ hasText: '休息' })).toBeVisible();
 
+    // Phase 4D-2 起规划抽屉在所有视口都按需展开，键盘开合闭环对五个视口一致成立。
     const trigger = page.locator('.planning-drawer-trigger');
-    if (viewport.width < 1100) {
-      await expect(trigger).toBeVisible();
-      await trigger.focus();
-      await page.keyboard.press('Enter');
-      await expect(page.locator('.planning-slot-open')).toHaveCount(1);
-      await expect(page.locator('.planning-drawer-close')).toBeFocused();
-      await snapshot(page, `${viewport.name}-planning-open`, { keyboardOpened: true });
-      await page.keyboard.press('Escape');
-      await expect(page.locator('.planning-slot-open')).toHaveCount(0);
-      await expect(trigger).toBeFocused();
-    } else {
-      await expect(page.locator('.planning-drawer-panel')).toBeVisible();
-      await expect(trigger).toBeHidden();
-      await snapshot(page, `${viewport.name}-planning-open`, { keyboardOpened: false });
-    }
+    await expect(trigger).toBeVisible();
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.planning-slot-open')).toHaveCount(1);
+    await expect(page.locator('.planning-drawer-close')).toBeFocused();
+    await snapshot(page, `${viewport.name}-planning-open`, { keyboardOpened: true });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.planning-slot-open')).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+
+    // 地图抽屉复用同一套焦点管理（useDrawerFocus），键盘可达性同样成立。
+    const mapTrigger = page.locator('.zone-rail-expand');
+    await expect(mapTrigger).toBeVisible();
+    await mapTrigger.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.map-slot-open')).toHaveCount(1);
+    await expect(page.locator('.map-drawer-close')).toBeFocused();
+    await snapshot(page, `${viewport.name}-map-open`, { keyboardOpened: true });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.map-slot-open')).toHaveCount(0);
+    await expect(mapTrigger).toBeFocused();
 
     // Reuse the stable encounter seeds from the already-accepted 4B-5
     // evidence path so this closure captures the encounter surface before

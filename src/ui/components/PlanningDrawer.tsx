@@ -1,14 +1,6 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { cx } from '../../utils/format';
-
-const FOCUSABLE_SELECTOR = [
-  'button:not([disabled])',
-  '[href]',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
-].join(',');
+import { useDrawerFocus } from './useDrawerFocus';
 
 interface PlanningDrawerProps {
   open: boolean;
@@ -20,57 +12,12 @@ interface PlanningDrawerProps {
 /**
  * 规划面板的响应式壳：桌面端是右侧常驻栏，平板/手机端变成可关闭抽屉。
  * 面板内容仍由 GameScreen 提供，避免移动布局复制或改变任何信息边界。
+ *
+ * 焦点管理（打开移焦关闭按钮 / Escape 关闭 / 关闭回触发器 / Tab 环绕）
+ * 统一由 useDrawerFocus 提供，与 MapDrawer 共用同一套 4B-5 / 4B-6 实现。
  */
 export function PlanningDrawer({ open, onOpen, onClose, children }: PlanningDrawerProps): JSX.Element {
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLElement>(null);
-  const wasOpenRef = useRef(false);
-
-  useEffect(() => {
-    if (open) {
-      wasOpenRef.current = true;
-      closeRef.current?.focus();
-      return undefined;
-    }
-    if (wasOpenRef.current) {
-      wasOpenRef.current = false;
-      triggerRef.current?.focus();
-    }
-    return undefined;
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-
-      if (event.key !== 'Tab') return;
-      const panel = panelRef.current;
-      if (!panel) return;
-      const focusable = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
-      if (focusable.length === 0) {
-        event.preventDefault();
-        return;
-      }
-      const first = focusable[0]!;
-      const last = focusable[focusable.length - 1]!;
-      const active = document.activeElement;
-      if (event.shiftKey && (active === first || !panel.contains(active))) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && (active === last || !panel.contains(active))) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose]);
+  const { triggerRef, closeRef, panelRef } = useDrawerFocus(open, onClose);
 
   return (
     <div className={cx('planning-slot', open && 'planning-slot-open')}>
@@ -89,7 +36,7 @@ export function PlanningDrawer({ open, onOpen, onClose, children }: PlanningDraw
       {open && (
         <button
           type="button"
-          className="planning-drawer-backdrop"
+          className="drawer-backdrop planning-drawer-backdrop"
           aria-label="关闭规划面板"
           onClick={onClose}
         />
@@ -102,7 +49,7 @@ export function PlanningDrawer({ open, onOpen, onClose, children }: PlanningDraw
         aria-label="规划与历史"
         aria-labelledby="planning-drawer-title"
       >
-        <div className="planning-drawer-header">
+        <div className="drawer-header planning-drawer-header">
           <strong id="planning-drawer-title">规划与历史</strong>
           <button
             type="button"

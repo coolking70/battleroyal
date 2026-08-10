@@ -678,11 +678,10 @@ input {
 
 .board {
   flex: 1;
-  display: grid;
-  grid-template-columns: 232px minmax(0, 1fr) 288px;
-  gap: 10px;
-  padding: 10px;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
+  padding: 10px;
 }
 
 .col {
@@ -701,6 +700,81 @@ input {
 .scroll {
   overflow-y: auto;
   min-height: 0;
+}
+
+/* ---- 常驻地图指示器（Phase 4D-2，小型）---- */
+.zone-rail {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: linear-gradient(180deg, #141b22, #0f151b);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+.zone-rail-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid var(--zone-color, var(--line));
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.zone-rail-current-visual {
+  width: 28px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.zone-rail-current-name {
+  font-weight: 600;
+}
+
+.zone-rail-adjacent {
+  display: flex;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.zone-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  border: 1px solid var(--zone-color, var(--line));
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.zone-chip .zone-chip-name {
+  font-size: 12px;
+}
+
+.zone-chip .zone-state-icon {
+  font-size: 11px;
+}
+
+.zone-chip[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.zone-rail-expand {
+  margin-left: auto;
+  flex: 0 0 auto;
 }
 
 /* ---- 左栏：地图 ---- */
@@ -867,16 +941,37 @@ input {
   font-style: italic;
 }
 
-/* ---- 中栏：主舞台 ---- */
+/* ---- 主舞台（Phase 4D-2：主视觉 + 上下文保留区）----
+   设计规则 ①：上下文元素只在 .stage-content 这个"保留区"里出没，
+   保留区自己滚动。主视觉（.zone-hero）与行动栏都在保留区之外，
+   所以情报/掉落/遭遇任何一个出现或消失都不会让它们位移。 */
 
 .stage {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* 覆盖 .scroll：滚动交给保留区，主视觉必须钉死 */
+  overflow: hidden;
   padding: 0;
   background: #111820;
 }
 
+.stage > .craft-goal-bar,
+.stage > .zone-hero {
+  flex: none;
+}
+
 .stage-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   padding: 12px 16px 16px;
+}
+
+/* 保留区为空（上下文元素全部未触发）时不留视觉痕迹 */
+.stage-content:empty {
+  padding: 0;
 }
 
 /* ---- 合成目标条（Phase 4D-1 改进 C）----
@@ -958,15 +1053,46 @@ input {
 }
 
 .zone-hero-image {
-  z-index: -3;
+  z-index: -4;
   display: block;
   object-fit: cover;
   object-position: center;
 }
 
 .zone-hero-scrim {
-  z-index: -2;
+  z-index: -3;
   background: linear-gradient(90deg, rgba(6, 10, 14, 0.88) 0%, rgba(6, 10, 14, 0.52) 48%, rgba(6, 10, 14, 0.2) 100%), linear-gradient(0deg, rgba(6, 10, 14, 0.76), transparent 58%);
+}
+
+/* ---- 合成式主视觉：角色立绘为主体（Phase 4D-2 §3.4）----
+   层序：区域背景(-4) → 压暗层(-3) → 角色立绘(-2) → 状态描边(-1) → 文案(auto)。
+   立绘压在压暗层之上所以本身是亮的；压暗层的横向渐变让左侧文案区保持可读，
+   而区域背景仍是整幅铺满的场景底 —— 不降级为缩略图。 */
+
+.zone-hero-portrait {
+  position: absolute;
+  z-index: -2;
+  right: 2.5%;
+  bottom: 0;
+  width: auto;
+  height: 94%;
+  max-width: 40%;
+  object-fit: contain;
+  object-position: bottom right;
+  pointer-events: none;
+  filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.72));
+}
+
+/* 三级降级到 emoji 时 VisualImage 渲染的是 <span>，给它等效的立绘占位 */
+span.zone-hero-portrait {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  width: 26%;
+  max-width: 26%;
+  height: 88%;
+  font-size: clamp(46px, 8vw, 104px);
+  line-height: 1;
 }
 
 .zone-hero-pattern {
@@ -986,11 +1112,14 @@ input {
 }
 
 .zone-hero-content {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   min-height: 264px;
   padding: 24px 28px 22px;
+  /* 为右侧立绘留出让位，保证区域名 / 状态 / 描述始终可读（§3.4） */
+  padding-right: clamp(28px, 34%, 430px);
   color: #f1f4f7;
 }
 
@@ -1298,13 +1427,13 @@ input {
   transition: opacity 0.16s ease;
 }
 
-.game-encounter-active .col-left,
+.game-encounter-active .zone-rail,
 .game-encounter-active .actionbar {
   opacity: 0.55;
   transition: opacity 0.16s ease;
 }
 
-.game-encounter-active .col-left:hover,
+.game-encounter-active .zone-rail:hover,
 .game-encounter-active .actionbar:hover {
   opacity: 0.78;
 }
@@ -2097,25 +2226,6 @@ input {
   gap: 10px;
 }
 
-.planning-slot {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-}
-
-.planning-slot > .planning-drawer-panel {
-  flex: 1;
-  min-width: 0;
-}
-
-.planning-drawer-trigger,
-.planning-drawer-backdrop,
-.planning-drawer-header {
-  display: none;
-}
-
-
 .planning-panel {
   flex: 1.25 1 0;
 }
@@ -2136,32 +2246,8 @@ input {
   flex: 1;
 }
 
-@media (max-width: 760px) {
-  .col-right.planning-rail {
-    max-height: 640px;
-    overflow-y: auto;
-  }
-
-  .col-right.planning-rail .planning-panel,
-  .col-right.planning-rail .log-panel {
-    flex: 0 0 auto;
-    min-height: 0;
-  }
-
-  .col-right.planning-rail .planning-panel {
-    min-height: 300px;
-  }
-
-  .col-right.planning-rail .log-panel {
-    min-height: 280px;
-  }
-
-  .col-right.planning-rail .planning-tabpanel > .inv-list,
-  .col-right.planning-rail .planning-tabpanel > .recipe-list,
-  .col-right.planning-rail .log-panel .log-list {
-    max-height: 235px;
-  }
-}
+/* Phase 4D-2：规划区在所有视口都是按需抽屉，不再有 ≤760px 的常驻栏形态，
+   原 .col-right.planning-rail 常驻高度约束随之删除（统一由抽屉规则接管）。 */
 
 /* ------------------------------------------------------------------ */
 /* Phase 4C-2：自动目标、子目标追踪与公开合成图鉴                       */
@@ -2455,108 +2541,172 @@ input {
 }
 
 /* ------------------------------------------------------------------ */
-/* Phase 4B-5：平板 / 手机将规划区移出主滚动流，改为可关闭抽屉        */
+/* Phase 4B-5 → 4D-2：规划区（背包·装备 / 合成 / 图鉴 / 历史日志）      */
+/* 从「≤1099px 才是抽屉」升级为「所有视口都是按需抽屉」                 */
 /* ------------------------------------------------------------------ */
 
-@media (max-width: 1099px) {
-  .planning-slot {
-    display: contents;
-  }
+.planning-slot {
+  display: contents;
+}
 
-  .planning-drawer-panel {
-    display: none;
-  }
+.planning-drawer-panel {
+  display: none;
+}
 
-  .planning-slot-open .planning-drawer-panel {
-    position: fixed;
-    z-index: 70;
-    top: 8px;
-    bottom: calc(76px + var(--safe-area-bottom));
-    left: calc(8px + var(--safe-area-left));
-    right: calc(8px + var(--safe-area-right));
-    display: flex;
-    width: auto;
-    max-height: none;
-    overflow-y: auto;
-    padding: 8px;
-    border: 1px solid var(--accent-dim);
-    background: linear-gradient(180deg, #1b2731, #11181e);
-    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.62);
-  }
+.planning-slot-open .planning-drawer-panel {
+  position: fixed;
+  z-index: 70;
+  top: 8px;
+  bottom: calc(76px + var(--safe-area-bottom));
+  left: calc(8px + var(--safe-area-left));
+  right: calc(8px + var(--safe-area-right));
+  display: flex;
+  width: auto;
+  max-width: 880px;
+  margin-inline: auto;
+  max-height: none;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, #1b2731, #11181e);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.62);
+}
 
-  .planning-drawer-backdrop {
-    position: fixed;
-    z-index: 60;
-    inset: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-    border: 0;
-    background: rgba(3, 7, 10, 0.72);
-    cursor: default;
-  }
+/* 规划抽屉与地图抽屉共享外观，但各自保留独立类名：
+   两个抽屉同时挂在 DOM 上，共用类名会让选择器一次命中两个节点。 */
+.drawer-backdrop {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgba(3, 7, 10, 0.72);
+  cursor: default;
+}
 
-  .planning-drawer-trigger {
-    position: fixed;
-    right: calc(10px + var(--safe-area-right));
-    bottom: calc(82px + var(--safe-area-bottom));
-    z-index: 75;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 76px;
-    min-height: 44px;
-    padding: 8px 12px;
-    border-color: var(--accent-dim);
-    background: #1b303c;
-    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.4);
-  }
+.planning-drawer-trigger {
+  position: fixed;
+  right: calc(10px + var(--safe-area-right));
+  bottom: calc(82px + var(--safe-area-bottom));
+  z-index: 75;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-color: var(--accent-dim);
+  background: #1b303c;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.4);
+}
 
-  .planning-slot-open .planning-drawer-trigger {
-    right: calc(18px + var(--safe-area-right));
-    bottom: calc(84px + var(--safe-area-bottom));
-    z-index: 90;
-  }
+.planning-slot-open .planning-drawer-trigger {
+  right: calc(18px + var(--safe-area-right));
+  bottom: calc(84px + var(--safe-area-bottom));
+  z-index: 90;
+}
 
-  .planning-drawer-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex: none;
-    padding: 3px 2px 9px;
-    color: var(--text);
-    border-bottom: 1px solid var(--line);
-  }
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: none;
+  padding: 3px 2px 9px;
+  color: var(--text);
+  border-bottom: 1px solid var(--line);
+}
 
-  .planning-drawer-header .btn {
-    min-height: 44px;
-  }
+.drawer-header .btn {
+  min-height: 44px;
+}
 
-  .planning-drawer-panel .planning-panel,
-  .planning-drawer-panel .log-panel {
-    flex: 0 0 auto;
-    min-height: 0;
-  }
+.planning-drawer-panel .planning-panel,
+.planning-drawer-panel .log-panel {
+  flex: 0 0 auto;
+  min-height: 0;
+}
 
-  .planning-drawer-panel .planning-panel {
-    min-height: 220px;
-  }
+.planning-drawer-panel .planning-panel {
+  min-height: 220px;
+}
 
-  .planning-drawer-panel .log-panel {
-    min-height: 190px;
-  }
+.planning-drawer-panel .log-panel {
+  min-height: 190px;
+}
 
+.planning-drawer-panel .planning-tabpanel > .inv-list,
+.planning-drawer-panel .planning-tabpanel > .recipe-list,
+.planning-drawer-panel .log-panel .log-list {
+  max-height: 290px;
+  overflow-y: auto;
+}
+
+.planning-drawer-panel .log-wrap {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+/* 桌面视口空间富余：抽屉内的列表可以放开一些，减少二次滚动 */
+@media (min-width: 1100px) {
   .planning-drawer-panel .planning-tabpanel > .inv-list,
   .planning-drawer-panel .planning-tabpanel > .recipe-list,
   .planning-drawer-panel .log-panel .log-list {
-    max-height: 290px;
-    overflow-y: auto;
+    max-height: 46vh;
   }
 
   .planning-drawer-panel .log-wrap {
-    max-height: 250px;
-    overflow-y: auto;
+    max-height: 40vh;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Phase 4D-2：完整六区地图抽屉（由常驻地图指示器展开，信息无损）       */
+/* ------------------------------------------------------------------ */
+
+.map-slot {
+  display: contents;
+}
+
+.map-drawer-panel {
+  display: none;
+}
+
+.map-slot-open .map-drawer-panel {
+  position: fixed;
+  z-index: 70;
+  top: 8px;
+  bottom: calc(76px + var(--safe-area-bottom));
+  left: calc(8px + var(--safe-area-left));
+  right: calc(8px + var(--safe-area-right));
+  display: flex;
+  width: auto;
+  max-width: 720px;
+  margin-inline: auto;
+  max-height: none;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, #1b2731, #11181e);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.62);
+}
+
+.map-drawer-panel .zone-nav-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.map-drawer-panel .zone-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 720px) {
+  .map-drawer-panel .zone-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -2933,9 +3083,6 @@ input {
 /* ------------------------------------------------------------------ */
 
 @media (max-width: 1080px) {
-  .board {
-    grid-template-columns: 200px minmax(0, 1fr);
-  }
   .topbar-danger {
     max-width: 250px;
   }
@@ -2946,24 +3093,7 @@ input {
     overflow: hidden;
   }
   .board {
-    grid-template-columns: minmax(0, 1fr);
-    overflow-y: auto;
-    align-content: start;
-    grid-auto-rows: max-content;
-  }
-  .stage.scroll {
-    overflow-y: visible;
-  }
-  .col-left,
-  .col-right {
-    max-height: 340px;
-  }
-  .col-left {
-    overflow-y: auto;
-  }
-  .board > .col:nth-child(2),
-  .col > .stage {
-    min-height: 320px;
+    padding: 8px;
   }
   .zone-hero,
   .zone-hero-content {
@@ -2971,11 +3101,20 @@ input {
   }
   .zone-hero-content {
     padding: 16px 18px 16px;
+    padding-right: clamp(18px, 34%, 150px);
   }
-
-  /* 遭遇中左栏仍可由桌面/平板导航提供，但手机视口优先保证战斗行动可达。 */
-  .game-encounter-active .col-left {
-    display: none;
+  .zone-hero-portrait {
+    right: 1.5%;
+    max-width: 34%;
+  }
+  span.zone-hero-portrait {
+    width: 22%;
+    max-width: 22%;
+    font-size: clamp(38px, 11vw, 62px);
+  }
+  .zone-rail {
+    padding: 5px 8px;
+    gap: 8px;
   }
 
   .game-encounter-active .zone-hero,
@@ -3224,30 +3363,32 @@ input {
   }
 
   .board {
-    grid-template-columns: minmax(0, 1fr);
     gap: 6px;
     padding: 6px;
-    overflow-y: auto;
-    align-content: start;
-    grid-auto-rows: max-content;
   }
 
-  .col-left {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 172px;
+  .zone-rail {
+    padding: 3px 6px;
     gap: 6px;
-    max-height: 132px;
-    overflow: hidden;
   }
 
-  .zone-nav-panel,
-  .intel-panel {
+  .zone-rail-current-visual {
+    width: 22px;
+    height: 16px;
+  }
+
+  .zone-rail-current,
+  .zone-chip {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+
+  .zone-nav-panel {
     min-height: 0;
     overflow: hidden;
   }
 
-  .zone-nav-panel .panel-title,
-  .intel-panel .panel-title {
+  .zone-nav-panel .panel-title {
     min-height: 25px;
     padding: 5px 7px;
     font-size: 10px;
@@ -3309,6 +3450,17 @@ input {
 
   .zone-hero-content {
     padding: 8px 12px 9px;
+    padding-right: clamp(12px, 26%, 210px);
+  }
+
+  .zone-hero-portrait {
+    max-width: 26%;
+  }
+
+  span.zone-hero-portrait {
+    width: 16%;
+    max-width: 16%;
+    font-size: clamp(30px, 6vw, 52px);
   }
 
   .zone-hero-kicker {
@@ -3345,10 +3497,6 @@ input {
 
   .stage-content {
     padding: 7px 10px 10px;
-  }
-
-  .game-encounter-active .col-left {
-    display: none;
   }
 
   .game-encounter-active .zone-hero,
@@ -3980,13 +4128,26 @@ input {
 
 .btn:focus-visible,
 .zone-item:focus-visible,
+.zone-chip:focus-visible,
+.zone-rail-current:focus-visible,
 .char-card:focus-visible,
-.planning-drawer-trigger:focus-visible,
 .planning-drawer-close:focus-visible,
+.map-drawer-close:focus-visible,
+.zone-rail-expand:focus-visible,
 .log-filter:focus-visible,
 .log-self-toggle input:focus-visible {
   position: relative;
   z-index: 2;
+  border-color: #f4d37d;
+}
+
+/* 规划触发器本身就是 fixed 浮动按钮，不能吃上面那条共享的 `position: relative`
+   （它同时还是 `.btn`，所以 `.btn:focus-visible` 也会命中）。一旦被打回文档流，
+   它会摊成整屏宽横条压在行动栏上、拦截「搜索/休息」的点击 —— 键盘用户按
+   Escape 关抽屉后必然踩中。这里显式重申 fixed 定位，只提层级和描边。 */
+.planning-drawer-trigger:focus-visible {
+  position: fixed;
+  z-index: 95;
   border-color: #f4d37d;
 }
 

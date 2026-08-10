@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { getCraftGoalRecommendations } from '../../core/craftGuide';
 import { listRecipes } from '../../core/crafting';
 import { recentEvents } from '../../core/events';
 import { canPayActionCost, getActionStaminaCost } from '../../core/actionCosts';
 import { GAME_CONFIG } from '../../data/gameConfig';
+import { getCharacterDef } from '../../data/characters';
 import { listIntel, PRESENCE_TEXT, zonePresence } from '../../core/info';
 import { aliveCharacters } from '../../core/gameState';
 import { activeWorldEvents } from '../../core/worldEvents';
@@ -25,7 +26,8 @@ import {
   latestPlayerCraftFeedback,
 } from '../craftPathPresentation';
 import { latestPlayerSearchFeedback } from '../searchPresentation';
-import { getZoneVisual } from '../visualAssets';
+import { getCharacterVisual, getZoneVisual } from '../visualAssets';
+import { resolveCharacterVisualState } from '../characterVisualState';
 import { zoneStatusMeta } from '../zonePresentation';
 import { warningRemaining, zoneUrgencyMeta } from '../zonePresentation';
 import { latestInstantWorldEvent, sortWorldEvents } from '../worldEventPresentation';
@@ -40,7 +42,8 @@ import { PendingPickupPanel } from '../components/PendingPickupPanel';
 import { PlanningDrawer } from '../components/PlanningDrawer';
 import { SearchResultFeedback } from '../components/SearchResultFeedback';
 import { StatusBar } from '../components/StatusBar';
-import { ZoneMap } from '../components/ZoneMap';
+import { ZoneIndicator } from '../components/ZoneIndicator';
+import { MapDrawer } from '../components/MapDrawer';
 import { VisualImage } from '../components/VisualImage';
 import { InstantWorldEventAnnouncement, WorldEventBanner } from '../components/WorldEventFeedback';
 
@@ -54,12 +57,15 @@ interface GameScreenProps {
 type Tab = 'inventory' | 'craft' | 'codex';
 
 /**
- * 世界事件横幅（Phase 3A Step 6）。
- * 图标统一取自 visualAssets 注册表（Step 11）：有图走图，没图回退 emoji。
- * `Record<WorldEventId, ...>` 保证新增事件类型时 TypeScript 强制补齐。
+ * 对局主界面（Phase 4D-2 信息架构）。
+ *
+ * 五块常驻：① 状态栏（生存 + 危险指示）② 地图指示器 ③ 主视觉（角色立绘 + 区域背景）
+ * ④ 行动栏 + 合成目标条 ⑤ —— 外加中栏主视觉下的「上下文保留区」。
+ *
+ * 按需展开：完整六区地图（地图指示器展开）、背包+装备、合成+图鉴、历史日志（规划抽屉）。
+ * 上下文触发：情报 / 同区域存在感 / 地面掉落 / 搜索结果 / 遭遇面板 / 世界事件 / 满包拾取
+ *            —— 无内容时完全不渲染、不占位（首屏空态归零）。
  */
-
-/** 对局主界面：上状态栏 / 左地图 / 中舞台 / 右面板 / 下行动条 */
 export function GameScreen({
   state,
   player,
@@ -68,6 +74,8 @@ export function GameScreen({
 }: GameScreenProps): JSX.Element {
   const [tab, setTab] = useState<Tab>('inventory');
   const [planningOpen, setPlanningOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const mapTriggerRef = useRef<HTMLButtonElement>(null);
 
   const zoneDef = getZoneDef(player.currentZoneId);
   const zoneState = state.zones[player.currentZoneId];
@@ -107,6 +115,11 @@ export function GameScreen({
   const playerSkillReady = playerSkillId ? isSkillReady(player, playerSkillId) : false;
   const playerSkillUsable = playerSkillId ? canUseSkill(player, playerSkillId).ok : false;
   const playerSkillCooldown = playerSkillId ? player.skillCooldowns[playerSkillId] ?? 0 : 0;
+
+  // 主视觉立绘三态（复用 4B-1 解析器）：portrait / injured / combat
+  const characterVisualState = resolveCharacterVisualState(player, {
+    activeEncounter: Boolean(state.encounter && !state.encounter.resolved),
+  });
 
   const recipeViews = useMemo(() => listRecipes(state, player), [state, player]);
   const craftGoalRecs = useMemo(
@@ -150,99 +163,78 @@ export function GameScreen({
         onQuit={onQuit}
       />
 
-      <div className="board">
-        {/* ---------- 左栏 ---------- */}
-        <div className="col col-left">
-          <ZoneMap
-            state={state}
-            player={player}
-            disabled={lockedGeneral}
-            freshIntelZones={freshIntelZones}
-            onMove={(zoneId) => dispatch({ type: 'MOVE', zoneId })}
-          />
+      {/* ---------- 常驻地图指示器（小型） ---------- */}
+      <ZoneIndicator
+        state={state}
+        player={player}
+        disabled={lockedGeneral}
+        onMove={(zoneId) => dispatch({ type: 'MOVE', zoneId })}
+        onExpand={() => setMapOpen(true)}
+        triggerRef={mapTriggerRef}
+      />
 
-          <section className="panel intel-panel">
-            <div className="panel-title">
-              <span>情报</span>
-              <span className="faint">最后已知位置</span>
-            </div>
-            <div className="intel-list scroll">
-              {intel.length === 0 ? (
-                <div className="empty">还没有任何情报。</div>
-              ) : (
-                intel.map((i) => (
-                  <div className="intel-item" key={i.characterId}>
-                    <span className="who">
-                      {i.name}
-                      {i.dead ? '（已出局）' : ''}
-                    </span>
-                    <span className={cx(!i.fresh && !i.dead && 'stale')}>
-                      {getZoneDef(i.zoneId).name}
-                      {i.dead ? '' : i.fresh ? ' · 新' : ' · 陈旧'}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-        </div>
+      {/* ---------- 中栏：主视觉 + 上下文保留区 ---------- */}
+      <main className="board">
+        <section
+          className="panel stage scroll"
+          data-stage-focus={inActiveEncounter ? 'encounter' : 'exploration'}
+        >
+          {!inActiveEncounter && !pending && (
+            <CraftGoalBar
+              banner={goalBanner}
+              onOpenCraft={() => {
+                setTab('craft');
+                setPlanningOpen(true);
+              }}
+            />
+          )}
 
-        {/* ---------- 中栏 ---------- */}
-        <div className="col">
-          <section
-            className="panel stage scroll"
-            data-stage-focus={inActiveEncounter ? 'encounter' : 'exploration'}
-          >
-            {!inActiveEncounter && !pending && (
-              <CraftGoalBar
-                banner={goalBanner}
-                onOpenCraft={() => {
-                  setTab('craft');
-                  setPlanningOpen(true);
-                }}
-              />
-            )}
-
-            <div className={`zone-hero zone-hero-${zoneStatus}`} data-zone-status={zoneStatus}>
-              <VisualImage
-                visual={getZoneVisual(player.currentZoneId)}
-                alt={`${zoneDef.name}区域背景`}
-                className="zone-hero-image"
-              />
-              <div className="zone-hero-scrim" aria-hidden="true" />
-              <div className="zone-hero-pattern" aria-hidden="true" />
-              <div className="zone-hero-content">
-                <div className="zone-hero-kicker">CURRENT ZONE · {player.currentZoneId.toUpperCase()}</div>
-                <div className="zone-hero-heading">
-                  <h2>{zoneDef.name}</h2>
-                  <span className={`zone-hero-status status-${zoneStatus}`}>
-                    <span className="zone-state-icon" aria-hidden="true">{zoneMeta.icon}</span>
-                    <span>{zoneMeta.label}</span>
-                  </span>
-                </div>
-                <p>{zoneDef.description}</p>
-                <div className={`zone-hero-state-note zone-hero-urgency-${zoneUrgency.urgency}`}>
+          {/* 主视觉：角色立绘（主体）+ 区域背景（场景底） */}
+          <div className={`zone-hero zone-hero-${zoneStatus}`} data-zone-status={zoneStatus}>
+            <VisualImage
+              visual={getZoneVisual(player.currentZoneId)}
+              alt={`${zoneDef.name}区域背景`}
+              className="zone-hero-image"
+            />
+            <VisualImage
+              visual={getCharacterVisual(player.characterId, characterVisualState)}
+              alt={`${getCharacterDef(player.characterId).name}立绘`}
+              className="zone-hero-portrait"
+            />
+            <div className="zone-hero-scrim" aria-hidden="true" />
+            <div className="zone-hero-pattern" aria-hidden="true" />
+            <div className="zone-hero-content">
+              <div className="zone-hero-kicker">CURRENT ZONE · {player.currentZoneId.toUpperCase()}</div>
+              <div className="zone-hero-heading">
+                <h2>{zoneDef.name}</h2>
+                <span className={`zone-hero-status status-${zoneStatus}`}>
                   <span className="zone-state-icon" aria-hidden="true">{zoneMeta.icon}</span>
-                  <span>{zoneMeta.description}</span>
-                  {zoneStatus === 'warning' && warningTimeRemaining !== null && (
-                    <strong className="zone-hero-countdown">
-                      {zoneUrgency.icon} {zoneUrgency.label} · 剩余 {warningTimeRemaining} 回合
-                    </strong>
-                  )}
-                  {zoneStatus === 'restricted' && (
-                    <strong className="zone-hero-hazard">
-                      ☠ 禁区侵蚀 · 每回合 −{zoneDamagePerTick(state)} 生命
-                    </strong>
-                  )}
-                </div>
+                  <span>{zoneMeta.label}</span>
+                </span>
+              </div>
+              <p>{zoneDef.description}</p>
+              <div className={`zone-hero-state-note zone-hero-urgency-${zoneUrgency.urgency}`}>
+                <span className="zone-state-icon" aria-hidden="true">{zoneMeta.icon}</span>
+                <span>{zoneMeta.description}</span>
+                {zoneStatus === 'warning' && warningTimeRemaining !== null && (
+                  <strong className="zone-hero-countdown">
+                    {zoneUrgency.icon} {zoneUrgency.label} · 剩余 {warningTimeRemaining} 回合
+                  </strong>
+                )}
+                {zoneStatus === 'restricted' && (
+                  <strong className="zone-hero-hazard">
+                    ☠ 禁区侵蚀 · 每回合 −{zoneDamagePerTick(state)} 生命
+                  </strong>
+                )}
               </div>
             </div>
+          </div>
 
-            <div
-              className="stage-content"
-              data-search-feedback={searchFeedback?.kind ?? 'none'}
-            >
-
+          {/* 上下文保留区：无内容时整段不渲染（空态归零，且不引发整页重排） */}
+          <div
+            className="stage-content"
+            data-search-feedback={searchFeedback?.kind ?? 'none'}
+          >
             <InstantWorldEventAnnouncement event={instantEvent} />
 
             {bannerEvents.length > 0 && (
@@ -286,13 +278,33 @@ export function GameScreen({
               />
             )}
 
-            <div className="stage-section">
-              <h4>同区域</h4>
-              <div className="presence">
-                <div className="presence-line">
-                  <span className="who">{PRESENCE_TEXT[presence]}</span>
+            {intel.length > 0 && (
+              <div className="stage-section context-intel">
+                <h4>情报</h4>
+                <div className="intel-list scroll">
+                  {intel.map((i) => (
+                    <div className="intel-item" key={i.characterId}>
+                      <span className="who">
+                        {i.name}
+                        {i.dead ? '（已出局）' : ''}
+                      </span>
+                      <span className={cx(!i.fresh && !i.dead && 'stale')}>
+                        {getZoneDef(i.zoneId).name}
+                        {i.dead ? '' : i.fresh ? ' · 新' : ' · 陈旧'}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                {presence !== 'none' && !inActiveEncounter && (
+              </div>
+            )}
+
+            {presence !== 'none' && (
+              <div className="stage-section">
+                <h4>同区域</h4>
+                <div className="presence">
+                  <div className="presence-line">
+                    <span className="who">{PRESENCE_TEXT[presence]}</span>
+                  </div>
                   <div className="presence-actions">
                     <button
                       className="btn btn-sm btn-danger"
@@ -318,12 +330,12 @@ export function GameScreen({
                       脱离
                     </button>
                   </div>
-                )}
+                </div>
+                <div className="faint mono" style={{ fontSize: 11, marginTop: 6 }}>
+                  未交手前无法辨认对手身份与人数；只有正在交手的对手才会暴露精确生命与武器。
+                </div>
               </div>
-              <div className="faint mono" style={{ fontSize: 11, marginTop: 6 }}>
-                未交手前无法辨认对手身份与人数；只有正在交手的对手才会暴露精确生命与武器。
-              </div>
-            </div>
+            )}
 
             {playerSkillId && !inActiveEncounter && (
               <div className="presence-actions" style={{ marginTop: 8 }}>
@@ -344,11 +356,9 @@ export function GameScreen({
               </div>
             )}
 
-            <div className="stage-section">
-              <h4>地面掉落</h4>
-              {(zoneState?.groundItems.length ?? 0) === 0 ? (
-                <div className="empty">地上没有可拾取的东西。</div>
-              ) : (
+            {(zoneState?.groundItems.length ?? 0) > 0 && (
+              <div className="stage-section">
+                <h4>地面掉落</h4>
                 <div className="ground-list">
                   {zoneState?.groundItems.map((stack) => (
                     <span className="ground-item" key={stack.uid} data-item-id={stack.itemId}>
@@ -370,114 +380,14 @@ export function GameScreen({
                     </span>
                   ))}
                 </div>
-              )}
-              <div className="faint mono" style={{ fontSize: 11, marginTop: 6 }}>
-                拾取不消耗时间单位。
-              </div>
-            </div>
-            </div>
-          </section>
-        </div>
-
-        {/* ---------- 规划 / 历史：桌面右栏，平板与手机抽屉 ---------- */}
-        <PlanningDrawer
-          open={planningOpen}
-          onOpen={() => setPlanningOpen(true)}
-          onClose={() => setPlanningOpen(false)}
-        >
-          <section className="panel planning-panel">
-            <div className="panel-title">
-              <span>规划区</span>
-              <span className="faint">背包 · 合成 · 图鉴</span>
-            </div>
-            <div className="tabs planning-tabs" role="tablist" aria-label="规划面板">
-              <button
-                id="planning-tab-inventory"
-                role="tab"
-                aria-selected={tab === 'inventory'}
-                aria-controls="planning-tabpanel-inventory"
-                className={cx(tab === 'inventory' && 'active')}
-                onClick={() => setTab('inventory')}
-              >
-                背包
-              </button>
-              <button
-                id="planning-tab-craft"
-                role="tab"
-                aria-selected={tab === 'craft'}
-                aria-controls="planning-tabpanel-craft"
-                className={cx(tab === 'craft' && 'active')}
-                onClick={() => setTab('craft')}
-              >
-                合成
-              </button>
-              <button
-                id="planning-tab-codex"
-                role="tab"
-                aria-selected={tab === 'codex'}
-                aria-controls="planning-tabpanel-codex"
-                className={cx(tab === 'codex' && 'active')}
-                onClick={() => setTab('codex')}
-              >
-                图鉴
-              </button>
-            </div>
-
-            {tab === 'inventory' && (
-              <div className="planning-tabpanel" role="tabpanel" id="planning-tabpanel-inventory" aria-labelledby="planning-tab-inventory">
-                <Inventory
-                  player={player}
-                  disabled={lockedAll}
-                  onUse={(uid) => dispatch({ type: 'USE_ITEM', uid })}
-                  onEquip={(uid) => dispatch({ type: 'EQUIP', uid })}
-                  onUnequip={(slot) => dispatch({ type: 'UNEQUIP', slot })}
-                  onDrop={(uid) => dispatch({ type: 'DROP_ITEM', uid })}
-                />
+                <div className="faint mono" style={{ fontSize: 11, marginTop: 6 }}>
+                  拾取不消耗时间单位。
+                </div>
               </div>
             )}
-
-            {tab === 'craft' && (
-              <div className="planning-tabpanel" role="tabpanel" id="planning-tabpanel-craft" aria-labelledby="planning-tab-craft">
-                <CraftPanel
-                  views={recipeViews}
-                  state={state}
-                  player={player}
-                  disabled={lockedGeneral}
-                  goalRecipeId={state.craftGoalRecipeId}
-                  goalCompleted={state.craftGoalCompleted}
-                  recommendations={craftGoalRecs}
-                  onSetGoal={(recipeId) =>
-                    dispatch({ type: 'SET_CRAFT_GOAL', recipeId })
-                  }
-                  onCraft={(recipeId) => dispatch({ type: 'CRAFT', recipeId })}
-                  suggestion={craftGoalSuggestion}
-                  latestCraftFeedback={latestCraftFeedback}
-                  onEquip={(uid) => dispatch({ type: 'EQUIP', uid })}
-                />
-              </div>
-            )}
-
-            {tab === 'codex' && (
-              <div className="planning-tabpanel" role="tabpanel" id="planning-tabpanel-codex" aria-labelledby="planning-tab-codex">
-                <CraftingCodex
-                  state={state}
-                  player={player}
-                  disabled={lockedGeneral}
-                  onSetGoal={(recipeId) => dispatch({ type: 'SET_CRAFT_GOAL', recipeId })}
-                />
-              </div>
-            )}
-
-          </section>
-          <section className="panel log-panel">
-            <div className="panel-title">
-              <span>历史日志</span>
-              <span className="faint">最近 {logEvents.length} 条</span>
-            </div>
-            <EventLog events={logEvents} playerId={state.playerId} />
-          </section>
-        </PlanningDrawer>
-      </div>
+          </div>
+        </section>
+      </main>
 
       <ActionBar
         state={state}
@@ -485,6 +395,116 @@ export function GameScreen({
         locked={lockedGeneral}
         onSearch={() => dispatch({ type: 'SEARCH' })}
         onRest={() => dispatch({ type: 'REST' })}
+      />
+
+      {/* ---------- 按需展开：规划抽屉（背包+装备 / 合成+图鉴 / 历史日志） ---------- */}
+      <PlanningDrawer
+        open={planningOpen}
+        onOpen={() => setPlanningOpen(true)}
+        onClose={() => setPlanningOpen(false)}
+      >
+        <section className="panel planning-panel">
+          <div className="panel-title">
+            <span>规划区</span>
+            <span className="faint">背包 · 合成 · 图鉴</span>
+          </div>
+          <div className="tabs planning-tabs" role="tablist" aria-label="规划面板">
+            <button
+              id="planning-tab-inventory"
+              role="tab"
+              aria-selected={tab === 'inventory'}
+              aria-controls="planning-tabpanel-inventory"
+              className={cx(tab === 'inventory' && 'active')}
+              onClick={() => setTab('inventory')}
+            >
+              背包·装备
+            </button>
+            <button
+              id="planning-tab-craft"
+              role="tab"
+              aria-selected={tab === 'craft'}
+              aria-controls="planning-tabpanel-craft"
+              className={cx(tab === 'craft' && 'active')}
+              onClick={() => setTab('craft')}
+            >
+              合成
+            </button>
+            <button
+              id="planning-tab-codex"
+              role="tab"
+              aria-selected={tab === 'codex'}
+              aria-controls="planning-tabpanel-codex"
+              className={cx(tab === 'codex' && 'active')}
+              onClick={() => setTab('codex')}
+            >
+              图鉴
+            </button>
+          </div>
+
+          {tab === 'inventory' && (
+            <div className="planning-tabpanel" role="tabpanel" id="planning-tabpanel-inventory" aria-labelledby="planning-tab-inventory">
+              <Inventory
+                player={player}
+                disabled={lockedAll}
+                onUse={(uid) => dispatch({ type: 'USE_ITEM', uid })}
+                onEquip={(uid) => dispatch({ type: 'EQUIP', uid })}
+                onUnequip={(slot) => dispatch({ type: 'UNEQUIP', slot })}
+                onDrop={(uid) => dispatch({ type: 'DROP_ITEM', uid })}
+              />
+            </div>
+          )}
+
+          {tab === 'craft' && (
+            <div className="planning-tabpanel" role="tabpanel" id="planning-tabpanel-craft" aria-labelledby="planning-tab-craft">
+              <CraftPanel
+                views={recipeViews}
+                state={state}
+                player={player}
+                disabled={lockedGeneral}
+                goalRecipeId={state.craftGoalRecipeId}
+                goalCompleted={state.craftGoalCompleted}
+                recommendations={craftGoalRecs}
+                onSetGoal={(recipeId) =>
+                  dispatch({ type: 'SET_CRAFT_GOAL', recipeId })
+                }
+                onCraft={(recipeId) => dispatch({ type: 'CRAFT', recipeId })}
+                suggestion={craftGoalSuggestion}
+                latestCraftFeedback={latestCraftFeedback}
+                onEquip={(uid) => dispatch({ type: 'EQUIP', uid })}
+              />
+            </div>
+          )}
+
+          {tab === 'codex' && (
+            <div className="planning-tabpanel" role="tabpanel" id="planning-tabpanel-codex" aria-labelledby="planning-tab-codex">
+              <CraftingCodex
+                state={state}
+                player={player}
+                disabled={lockedGeneral}
+                onSetGoal={(recipeId) => dispatch({ type: 'SET_CRAFT_GOAL', recipeId })}
+              />
+            </div>
+          )}
+        </section>
+        <section className="panel log-panel">
+          <div className="panel-title">
+            <span>历史日志</span>
+            <span className="faint">最近 {logEvents.length} 条</span>
+          </div>
+          <EventLog events={logEvents} playerId={state.playerId} />
+        </section>
+      </PlanningDrawer>
+
+      {/* ---------- 按需展开：完整六区地图 ---------- */}
+      <MapDrawer
+        open={mapOpen}
+        onClose={() => setMapOpen(false)}
+        state={state}
+        player={player}
+        disabled={lockedGeneral}
+        freshIntelZones={freshIntelZones}
+        onMove={(zoneId) => dispatch({ type: 'MOVE', zoneId })}
+        triggerRef={mapTriggerRef}
       />
     </div>
   );

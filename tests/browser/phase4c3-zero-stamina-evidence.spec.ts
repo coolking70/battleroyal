@@ -4,6 +4,7 @@ import path from 'node:path';
 import { createGame, getPlayer, refreshZoneOccupants } from '../../src/core/gameState';
 import { clearInventory } from '../helpers';
 import { GAME_VERSION, SAVE_KEY } from '../../src/data/gameConfig';
+import { scrollEncounterActionsIntoView } from './scrollHelpers';
 
 const evidenceDir = path.resolve('output/phase4c3-browser');
 
@@ -85,18 +86,7 @@ async function snapshot(
 }
 
 async function focusEncounterActions(page: import('@playwright/test').Page): Promise<void> {
-  await page.evaluate(() => {
-    const board = document.querySelector('.board') as HTMLElement | null;
-    const stage = document.querySelector('.stage') as HTMLElement | null;
-    const actions = document.querySelector('.encounter-actions') as HTMLElement | null;
-    if (!board || !stage || !actions) return;
-    board.scrollTop = Math.max(0, stage.offsetTop - 8);
-    const topbarBottom = document.querySelector('.topbar')?.getBoundingClientRect().bottom ?? 0;
-    const desiredTop = window.innerWidth < 700 ? topbarBottom + 8 : 180;
-    const actionTop = actions.getBoundingClientRect().top;
-    const scrollContainer = stage.scrollHeight > stage.clientHeight + 1 ? stage : board;
-    scrollContainer.scrollTop = Math.max(0, scrollContainer.scrollTop + actionTop - desiredTop);
-  });
+  await page.evaluate(scrollEncounterActionsIntoView);
   await page.waitForTimeout(60);
 }
 
@@ -121,7 +111,12 @@ test('Phase 4C-3 clean production zero-stamina deadlock evidence', async ({ page
   await expect(page.locator('[data-encounter-mode="active"]')).toHaveCount(0);
   await expect(page.locator('.toast')).toContainText('原地脱离');
   const afterFlee = await snapshot(page, '02-desktop-after-stationary-flee');
-  expect(afterFlee.encounterState).toBeNull();
+  // Phase 4D-1 起脱离不再让遭遇面板凭空消失：它进入 resolved 结算态，
+  // 玩家读完结果后自己关闭。这里跟随那个已验收的行为，而不是旧的"直接清空"。
+  expect(afterFlee.encounterState).toBe('resolved');
+  await expect(page.locator('.encounter-continue')).toBeVisible();
+  await page.locator('.encounter-continue').click();
+  await expect(page.locator('.encounter')).toHaveCount(0);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await loadFixture(page);

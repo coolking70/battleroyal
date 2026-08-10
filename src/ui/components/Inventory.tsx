@@ -46,11 +46,10 @@ function EquipSlot({
         </div>
       ) : (
         <div className="equip-empty">
-          <div className="nm"><span className="faint">空槽</span></div>
-          <div className="meta">{candidatePresented ? '有可装备候选' : '暂无可装备候选'}</div>
+          <div className="nm"><span className="faint">未装备</span></div>
         </div>
       )}
-      <div className="meta">{presented ? presented.summary : '—'}</div>
+      {presented && <div className="meta">{presented.summary}</div>}
       {!presented && candidatePresented && (
         <div className="equip-candidate" data-candidate-item-id={candidatePresented.itemId}>
           <VisualImage
@@ -112,8 +111,6 @@ export function Inventory({
         <div className="faint mono" style={{ fontSize: 11, padding: '0 2px 2px' }}>
           背包 {player.inventory.length}/{GAME_CONFIG.inventorySlots}
         </div>
-
-        {player.inventory.length === 0 && <div className="empty">背包是空的。</div>}
 
         {player.inventory.map((stack) => {
           const def = getItem(stack.itemId);

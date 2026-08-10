@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
+import { scrollEncounterActionsIntoView, scrollEncounterIntoView } from './scrollHelpers';
 
 const baseUrl = process.env.PHASE4B2_BASE_URL ?? 'http://127.0.0.1:4173';
 const evidenceDir = path.resolve('output/phase4b2-browser-final');
@@ -114,33 +115,12 @@ async function startGame(page: import('@playwright/test').Page, seed: string, ch
 }
 
 async function focusEncounter(page: import('@playwright/test').Page): Promise<void> {
-  await page.evaluate(() => {
-    const board = document.querySelector('.board') as HTMLElement | null;
-    const stage = document.querySelector('.stage') as HTMLElement | null;
-    const encounter = document.querySelector('.encounter') as HTMLElement | null;
-    if (!board || !stage || !encounter) return;
-    board.scrollTop = Math.max(0, stage.offsetTop - 8);
-    stage.scrollTop = Math.max(0, encounter.offsetTop - 14);
-  });
+  await page.evaluate(scrollEncounterIntoView);
   await page.waitForTimeout(60);
 }
 
 async function focusEncounterActions(page: import('@playwright/test').Page): Promise<void> {
-  await page.evaluate(() => {
-    const board = document.querySelector('.board') as HTMLElement | null;
-    const stage = document.querySelector('.stage') as HTMLElement | null;
-    const actions = document.querySelector('.encounter-actions') as HTMLElement | null;
-    if (!board || !stage || !actions) return;
-
-    board.scrollTop = Math.max(0, stage.offsetTop - 8);
-    const topbarBottom = document.querySelector('.topbar')?.getBoundingClientRect().bottom ?? 0;
-    const desiredTop = window.innerWidth < 700
-      ? topbarBottom + 8
-      : Math.min(180, Math.max(110, stage.clientHeight * 0.24));
-    const actionTop = actions.getBoundingClientRect().top;
-    const scrollContainer = stage.scrollHeight > stage.clientHeight + 1 ? stage : board;
-    scrollContainer.scrollTop = Math.max(0, scrollContainer.scrollTop + actionTop - desiredTop);
-  });
+  await page.evaluate(scrollEncounterActionsIntoView);
   await page.waitForTimeout(60);
 }
 

@@ -480,3 +480,66 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Real-device safe-area behavior, touch feel, screen-reader phrasing and
   long-session comfort remain HUMAN-PLAYTEST-NEEDED; the human checklist is
   untouched.
+
+## Phase 4D-1 progress (2026-08-10) — backfilled during 4D-2 handoff
+
+- Branch created from `main` merge `21aa0b7`; merged at `ce508cf` (PR #4,
+  "Merge Phase 4D-1 encounter resolution and combat log fixes"). Version bumped
+  v0.3.2 → v0.3.2-phase4d1.
+- Three scoped fixes only; **no** layout refactor (that is Phase 4D-2):
+  - Defect A: flee success now reaches a `resolved` settlement state instead of
+    silently clearing the encounter panel; in-place vs zone-transfer text and
+    `CLOSE_ENCOUNTER` are distinguished. Zero-stamina in-place flee stays free
+    and does not trigger pursuit or damage on its own.
+  - Defect B: four player action classes (`GUARD`/`USE_SKILL`/`USE_ITEM`/
+    `EQUIP`) plus the NPC-visible escape write to the encounter log; enemy
+    guard/skill/useItem are never logged (no new visibility seam; no enemy HP /
+    item / skill / intent leakage).
+  - Improvement C: `CraftGoalBar` sticky single-row guidance above the stage,
+    reusing public pools + static recipes and reading no `zone.loot`.
+- Added an empty data-URI favicon to kill the `/favicon.ico` 404 console error.
+- Tests: added `tests/phase4d1EncounterResolutionAndLog.test.ts` (15 cases) and
+  fixed the `tests/phase4b3SearchInventory.test.tsx` info-boundary assertion
+  (`glass` is a legit recipe material; switched the leak probe to `energy_drink`).
+  Full suite 71 files / 1311 tests PASS (was 1296).
+- Gates: typecheck, build, `audit:save`, `audit:deps`, `art:validate`, 1000-game
+  simulate (≥500), and `npm audit` all PASS; browser evidence recorded 0
+  console/page errors at 1280×720 and 390×844 with `CraftGoalBar` visible in
+  both. Deliverables `PHASE4D1_REPORT.md` and `reports/phase4d1-balance.json`
+  were produced at the time.
+
+## Phase 4D-2 progress (2026-08-10)
+
+- Branch `phase4d2` from baseline `main @ ce508cf`; version stays v0.3.2.
+  Information-architecture restructure + synthetic key visual (no combat /
+  balance / core-data changes).
+- Frozen decisions: 5 resident blocks (StatusBar / ZoneRail / MapIndicator /
+  CraftGoalBar / PlanningZone+ActionBar), on-demand off-canvas drawers (Map,
+  Planning) for all viewports, context-triggered blocks in a reserved
+  `.stage-content` scroll region (`.presence` is conditional `presence !==
+  'none'`), and a synthetic `VisualImage` key visual (character portrait over
+  zone background via `resolveCharacterVisualState` → portrait/injured/combat).
+- §5 constraints satisfied: info boundary via player-scoped event filters only
+  (audited `state.events` — no unfiltered leakage to player UI); a11y shared
+  `:focus-visible { position: relative }` no longer breaks the fixed
+  `.planning-drawer-trigger` (dedicated `position: fixed` rule added); no
+  horizontal overflow (`scrollWidth === viewport` at 390px); `[title]=0`
+  everywhere; byte-consistent art assets.
+- Measured §7 metrics (self-contained `infoArchitectureMetrics.ts` via
+  `page.evaluate`, baseline vs 4D-2): resident blocks 9 → 5 (desktop) / 6 → 5
+  (phone); first-screen empty states 7 → 0 (desktop) / 1 → 0 (phone); equip +
+  inventory + map screen share 18.5% → 6.3% (desktop) / 27.7% → 5.1% (phone);
+  visible interactive controls 22 → 11 (desktop).
+- Real a11y/usability regression fixed: after Escape-closing the planning drawer,
+  focus returned to the floating trigger, and the shared focus-visible rule
+  dropped it into document flow as a full-width bar overlapping the ActionBar and
+  intercepting 搜索/休息 clicks. Fixed in `styles.css`; unit + browser hit-test
+  regression guards added.
+- Browser suite 17/17 green; unit suite 1328 PASS. §8 gates green: clean `npm ci`,
+  typecheck, test, build, `audit:save`, `audit:deps`, `art:doctor --offline` /
+  `art:validate` / `art:audit:phase4a`, `art:security:browser`,
+  `art:security:repo`, 500-game `PHASE4D2` regression, and `npm audit
+  --omit=dev` (0 vulnerabilities).
+- Deliverables: `PHASE4D2_REPORT.md`, `reports/phase4d2-balance.json`, browser
+  evidence under `output/phase4d2-browser/{phase4d2,baseline}/`. Real-device /
+  screen-reader / long-session validation remains HUMAN-PLAYTEST-NEEDED.
