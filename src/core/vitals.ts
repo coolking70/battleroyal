@@ -157,15 +157,30 @@ export function killCharacter(
   state.engagedWithPlayer = state.engagedWithPlayer.filter((id) => id !== victim.id);
 
   const killerName = killerId ? state.characters[killerId]?.name ?? '未知' : null;
+  const zoneName = getZoneDef(victim.currentZoneId).name;
+  const deathLine = killerName
+    ? `${victim.name} 被 ${killerName} 击杀（${zoneName}）。`
+    : `${victim.name} 在${zoneName}死亡（${cause}）。`;
+
+  // Phase 4E-1 缺陷 A：遭遇期间的死亡必须写进本次遭遇战报（encounter.log），
+  // 让「战斗记录」能看到最后一击的结果。只增加战报写入，不改变死亡结算 /
+  // 掉落 / resolved 时机或全局事件流内容。信息边界：仅写已合法可见的事实
+  // （名字 + 区域 + 死因），不写敌方精确 HP、隐藏装备 / 技能；
+  // 仅限本次遭遇的参与者（敌方或玩家），其他区域 NPC 互杀不计入本次战报。
+  if (
+    state.encounter &&
+    (state.encounter.enemyId === victim.id || victim.id === state.playerId)
+  ) {
+    state.encounter.log.push(deathLine);
+  }
+
   pushEvent(state, {
     type: 'CHARACTER_DIED',
     actorId: killerId,
     targetId: victim.id,
     zoneId: victim.currentZoneId,
     importance: 'critical',
-    message: killerName
-      ? `${victim.name} 被 ${killerName} 击杀（${getZoneDef(victim.currentZoneId).name}）。`
-      : `${victim.name} 在${getZoneDef(victim.currentZoneId).name}死亡（${cause}）。`,
+    message: deathLine,
     metadata: {
       cause,
       killerId: killerId ?? null,

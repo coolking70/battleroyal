@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { nextZoneCountdown } from '../../core/restrictedZones';
 import { zoneDamagePerTick } from '../../core/restrictedZones';
 import { GAME_CONFIG } from '../../data/gameConfig';
@@ -11,12 +12,16 @@ import { resolveCharacterVisualState } from '../characterVisualState';
 import { latestPlayerHazardFeedback, warningRemaining, zoneStatusMeta, zoneUrgencyMeta } from '../zonePresentation';
 import { Bar } from './Bar';
 import { VisualImage } from './VisualImage';
+import { QuickRestoreMenu } from './QuickRestoreMenu';
+import { decideQuickRestore, type RestoreSlot } from '../quickRestore';
 
 interface StatusBarProps {
   state: GameState;
   player: Combatant;
   aliveCount: number;
   onQuit: () => void;
+  /** Phase 4E-1 §3：点击生命 / 体力槽使用恢复道具；走既有 USE_ITEM 命令 */
+  onUseItem?: (uid: string) => void;
 }
 
 /** 顶部状态栏：时间 / 存活人数 / 生命 / 体力 / 禁区倒计时 */
@@ -25,6 +30,7 @@ export function StatusBar({
   player,
   aliveCount,
   onQuit,
+  onUseItem,
 }: StatusBarProps): JSX.Element {
   const countdown = nextZoneCountdown(state);
   const zone = state.zones[player.currentZoneId];
@@ -32,6 +38,21 @@ export function StatusBar({
   const characterVisualState = resolveCharacterVisualState(player, {
     activeEncounter: Boolean(state.encounter && !state.encounter.resolved),
   });
+
+  // Phase 4E-1 §3：点击槽位后的小型选择窗；null 表示未打开
+  const [restoreSlot, setRestoreSlot] = useState<RestoreSlot | null>(null);
+  const hpRef = useRef<HTMLButtonElement>(null);
+  const staminaRef = useRef<HTMLButtonElement>(null);
+
+  const handleBarActivate = (slot: RestoreSlot): void => {
+    if (!onUseItem) return;
+    const decision = decideQuickRestore(player, slot);
+    if (decision.mode === 'auto' && decision.autoUid) {
+      onUseItem(decision.autoUid);
+    } else {
+      setRestoreSlot(slot);
+    }
+  };
 
   const zoneStatus = zone?.status ?? 'safe';
   const zoneMeta = zoneStatusMeta(zoneStatus);
@@ -62,12 +83,26 @@ export function StatusBar({
       <div className="survival-metrics" aria-label="生存资源">
         <div className="survival-metric survival-metric-hp">
           <span className="metric-label">生命</span>
-          <Bar value={player.hp} max={player.maxHp} kind="hp" />
+          <Bar
+            value={player.hp}
+            max={player.maxHp}
+            kind="hp"
+            onActivate={onUseItem ? () => handleBarActivate('hp') : undefined}
+            buttonRef={hpRef}
+            activateLabel={`点击使用恢复道具恢复生命（当前 ${player.hp}/${player.maxHp}）`}
+          />
           <b>{player.hp}/{player.maxHp}</b>
         </div>
         <div className="survival-metric survival-metric-stamina">
           <span className="metric-label">体力</span>
-          <Bar value={player.stamina} max={player.maxStamina} kind="stamina" />
+          <Bar
+            value={player.stamina}
+            max={player.maxStamina}
+            kind="stamina"
+            onActivate={onUseItem ? () => handleBarActivate('stamina') : undefined}
+            buttonRef={staminaRef}
+            activateLabel={`点击使用恢复道具恢复体力（当前 ${player.stamina}/${player.maxStamina}）`}
+          />
           <b>{player.stamina}/{player.maxStamina}</b>
         </div>
       </div>
@@ -118,6 +153,19 @@ export function StatusBar({
       </div>
 
       <button className="btn btn-sm btn-danger" onClick={onQuit}>退出</button>
+
+      {restoreSlot && onUseItem && (
+        <QuickRestoreMenu
+          player={player}
+          slot={restoreSlot}
+          triggerRef={restoreSlot === 'hp' ? hpRef : staminaRef}
+          onUse={(uid) => {
+            onUseItem(uid);
+            setRestoreSlot(null);
+          }}
+          onClose={() => setRestoreSlot(null)}
+        />
+      )}
     </header>
   );
 }

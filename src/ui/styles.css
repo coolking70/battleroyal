@@ -272,6 +272,24 @@ input {
   animation: bar-pulse 1.1s ease-in-out infinite;
 }
 
+/* Phase 4E-1 §3：生命 / 体力槽变为可点击按钮（键盘可达、触摸目标够大） */
+.bar-button {
+  display: block;
+  width: 100%;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.bar-button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.bar-button:focus-visible {
+  outline: 3px solid #f4d37d;
+  outline-offset: 2px;
+}
+
 .empty {
   color: var(--text-faint);
   font-size: 12px;
@@ -2997,6 +3015,136 @@ span.encounter-enemy-visual {
 /* ------------------------------------------------------------------ */
 /* Toast                                                              */
 /* ------------------------------------------------------------------ */
+
+/* Phase 4E-1 改进 B：可合成提示卡（复用 4B-3 搜索结果卡范式，非阻塞、非常驻） */
+.craftable-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #3a5a48;
+  border-radius: var(--radius);
+  background: rgba(18, 30, 22, 0.7);
+}
+.craftable-hint-icon {
+  font-size: 18px;
+  color: #7fd6a6;
+}
+.craftable-hint-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.craftable-hint-kicker {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.craftable-hint-name {
+  font-size: 14px;
+}
+.craftable-hint-meta {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.craftable-hint-actions {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+/* Phase 4E-1 §3.3：点击生命 / 体力槽后的小型道具选择窗（右上角浮层，不遮挡 P0） */
+.quick-restore-menu {
+  position: fixed;
+  top: 60px;
+  right: 14px;
+  width: 248px;
+  z-index: 80;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(12, 16, 20, 0.97);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.quick-restore-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.quick-restore-close {
+  border: 0;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.quick-restore-close:hover {
+  color: var(--text);
+}
+.quick-restore-close:focus-visible {
+  outline: 3px solid #f4d37d;
+  outline-offset: 2px;
+}
+.quick-restore-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.quick-restore-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+.quick-restore-item:hover {
+  border-color: #f4d37d;
+}
+.quick-restore-item:focus-visible {
+  outline: 3px solid #f4d37d;
+  outline-offset: 2px;
+}
+.qri-name {
+  font-size: 13px;
+}
+.qri-count {
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.qri-effects {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  font-size: 11px;
+  font-family: var(--mono);
+}
+.qri-effect.qri-hp {
+  color: #e0888f;
+}
+.qri-effect.qri-stamina {
+  color: #8fc2e0;
+}
+.quick-restore-empty,
+.quick-restore-note {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
 
 .toast {
   position: fixed;
