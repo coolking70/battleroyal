@@ -812,5 +812,11 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Production browser smoke was rerun against the current build at 1280×720. Menu and
   playing-state screenshots show the cleaned cards; state is `mode=playing`, time 0,
   player Lv.1 / 0 EXP, with no console/page errors.
-- Remaining handoff: clean `npm ci`, complete all H0 gates, commit/push the branch,
-  and wait for CI before delivery.
+- Final clean gates are green: `npm ci`, typecheck, **86 files / 1423 tests**, build,
+  save audit 89/89, dependency audit R1–R4=0, art/security audits, 500-game
+  PHASE4H0 engine-health regression (requested=actual=500; timeout/illegal/
+  hard-limit=0), and `npm audit --omit=dev` (0 vulnerabilities). Production
+  browser smoke against the clean build has no console/page errors and confirms the
+  cleaned role cards. Commit `bed0c74` is pushed, draft PR #13 is open, and CI run
+  `31512421838` verify is green. Generated audit timestamps remain intentionally
+  unstaged; binary screenshots remain local under ignored `output/`.
