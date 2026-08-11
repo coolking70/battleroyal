@@ -43,6 +43,7 @@ import { pushEvent } from './events';
 import { refreshZoneOccupants } from './gameState';
 import { addItem, stackValue } from './inventory';
 import { performSearch, type SearchOutcome } from './search';
+import { gainCostedActionExperience } from './progression';
 import { done, fail, guard, who, type ActorActionResult } from './actorActionBase';
 import {
   attackActor,
@@ -97,6 +98,7 @@ export function moveActor(
   actor.currentZoneId = zoneId;
   // Phase 3A-1：移动扣费走 state 感知入口（连绵阴雨 +1，玩家/NPC 共用）
   const spent = payMoveCost(state, actor);
+  gainCostedActionExperience(actor, GAME_CONFIG.expExplore, spent);
   actor.stats.moves += 1;
   state.stats.moves += 1;
 
@@ -140,6 +142,7 @@ export function searchActor(
   // `performSearch` 内部通过 `payActionCost` 扣费，这里先记下应扣数额用于回报
   const spent = canPayActionCost(actor, 'SEARCH').cost;
   const outcome = performSearch(state, actor, rng);
+  gainCostedActionExperience(actor, GAME_CONFIG.expSearch, spent);
   if (outcome.kind === 'enemy') {
     const enemy = state.characters[outcome.enemyId];
     return {

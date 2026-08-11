@@ -26,11 +26,12 @@ import {
   hasScoutAwareness,
 } from '../../core/skills';
 import { validateSaveData, type ValidationReport } from '../../core/saveLoad';
+import { experienceToNextLevel } from '../../core/progression';
 import { tryGetRecipe } from '../../data/recipes';
 import { missingIngredients } from '../../core/inventory';
 import { tryGetItem } from '../../data/items';
 import type { AttackStyle, Combatant, Command, GameState } from '../../core/types';
-import { GAME_VERSION } from '../../data/gameConfig';
+import { GAME_CONFIG, GAME_VERSION } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { ZONE_STATUS_LABEL, personalityLabel } from '../../utils/format';
 import { getAssetManifest, getAssetManifestHash, getCharacterVisual, getZoneVisual } from '../visualAssets';
@@ -84,6 +85,8 @@ function exportSummaryJson(state: GameState): void {
       id: player.id,
       name: player.name,
       characterId: player.characterId,
+      level: player.level,
+      exp: player.exp,
       hp: player.hp,
       maxHp: player.maxHp,
       stamina: player.stamina,
@@ -233,6 +236,17 @@ export function DebugPanel({
           <span>
             {player.hp}/{player.maxHp} · {player.stamina}/{player.maxStamina}
           </span>
+          <span>level / exp</span>
+          <span>
+            Lv.{player.level} ·{' '}
+            {player.level >= GAME_CONFIG.maxLevel
+              ? 'MAX'
+              : `${player.exp}/${experienceToNextLevel(player.level)}`}
+          </span>
+          <span>attack / defense</span>
+          <span>
+            {player.attack} / {player.defense}
+          </span>
           <span>power</span>
           <span>{estimatePower(player)}</span>
           <span>inv</span>
@@ -372,7 +386,12 @@ export function DebugPanel({
             </div>
             <div>
               {getZoneDef(n.currentZoneId).name} · hp {n.hp}/{n.maxHp} · sta{' '}
-              {n.stamina} · pw {estimatePower(n)} · kills {n.kills}
+              {n.stamina} · Lv.{n.level} exp{' '}
+              {n.level >= GAME_CONFIG.maxLevel
+                ? 'MAX'
+                : `${n.exp}/${experienceToNextLevel(n.level)}`}{' '}
+              · atk {n.attack} · def {n.defense} · pw {estimatePower(n)} · kills{' '}
+              {n.kills}
             </div>
             {n.alive && <NpcPlanDetail state={state} npcId={n.id} />}
             <div className="faint">

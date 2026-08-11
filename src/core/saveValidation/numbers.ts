@@ -132,6 +132,34 @@ export function validateNumbers(ctx: ValidationContext): void {
       continue;
     }
     const c = raw;
+    const levelValid = isFiniteNumber(c.level) && Number.isInteger(c.level);
+    if (!levelValid) {
+      fail(`角色 ${id} 的 level 必须是整数（实际 ${String(c.level)}）`);
+    } else if (
+      (c.level as number) < 1 ||
+      (c.level as number) > GAME_CONFIG.maxLevel
+    ) {
+      fail(`角色 ${id} 的 level 越界（${c.level}，应在 [1, ${GAME_CONFIG.maxLevel}]）`);
+    }
+    const expValid = isFiniteNumber(c.exp) && Number.isInteger(c.exp);
+    if (!expValid) {
+      fail(`角色 ${id} 的 exp 必须是整数（实际 ${String(c.exp)}）`);
+    } else if ((c.exp as number) < 0) {
+      fail(`角色 ${id} 的 exp 不得为负（${c.exp}）`);
+    } else if (
+      levelValid &&
+      (c.level as number) >= 1 &&
+      (c.level as number) <= GAME_CONFIG.maxLevel
+    ) {
+      const level = c.level as number;
+      const threshold = GAME_CONFIG.levelExpThresholds[level - 1] ?? 0;
+      if (level === GAME_CONFIG.maxLevel && c.exp !== 0) {
+        fail(`角色 ${id} 已满级但 exp 不为 0（${c.exp}）`);
+      } else if (level < GAME_CONFIG.maxLevel && (c.exp as number) >= threshold) {
+        fail(`角色 ${id} 的 exp 已达到升级阈值却未升级（${c.exp} / ${threshold}）`);
+      }
+    }
+
     if (!isFiniteNumber(c.hp) || !isFiniteNumber(c.maxHp)) {
       fail(`角色 ${id} 的 hp/maxHp 类型错误`);
       continue;

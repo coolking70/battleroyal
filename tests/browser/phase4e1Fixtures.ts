@@ -1,6 +1,6 @@
 import { createGame, getPlayer, refreshZoneOccupants } from '../../src/core/gameState';
 import { addItem, createStack, equipItem } from '../../src/core/inventory';
-import { GAME_VERSION } from '../../src/data/gameConfig';
+import { GAME_CONFIG, GAME_VERSION } from '../../src/data/gameConfig';
 import { ZONE_IDS } from '../../src/data/zones';
 import type { Combatant, GameState } from '../../src/core/types';
 
@@ -63,6 +63,11 @@ export function killReportFixture(seed = 'PHASE4E1-KILL'): Record<string, unknow
   // 任何一次命中（保底 1 伤）即死，配合 95% 命中上限可在少量回合内稳定击杀。
   enemy.maxHp = 1;
   enemy.hp = 1;
+  // Phase 4F-1：快捷恢复会推进时间，敌人可能先行动并从“打出 / 承受攻击”升级，
+  // 从而把 1 HP 临时抬到 11 HP，破坏“一击可杀”证据。固定到满级只稳定夹具，
+  // 不改变命中、伤害或击杀断言；满级不再累计经验，也不会因证据前置行动回血。
+  enemy.level = GAME_CONFIG.maxLevel;
+  enemy.exp = 0;
   enemy.statusEffects = [];
   isolate(state, enemy.id);
 

@@ -125,6 +125,9 @@ export interface Combatant {
   isPlayer: boolean;
   characterId: string;
   personality: Personality;
+  /** Phase 4F-1：持久化成长状态；经验是当前等级内进度，5 级时固定为 0。 */
+  level: number;
+  exp: number;
   hp: number;
   maxHp: number;
   stamina: number;

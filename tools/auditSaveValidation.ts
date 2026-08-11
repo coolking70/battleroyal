@@ -169,6 +169,35 @@ const CASES: AuditCase[] = [
   { case: '负 kills', expected: false, mutate: (s) => {
     s.state.characters[s.state.playerId]!.kills = -1;
   } },
+  { case: '角色缺 level', expected: false, mutate: (s) => {
+    delete (s.state.characters[s.state.playerId] as unknown as Mutable).level;
+  } },
+  { case: '角色缺 exp', expected: false, mutate: (s) => {
+    delete (s.state.characters[s.state.playerId] as unknown as Mutable).exp;
+  } },
+  { case: 'level 为字符串', expected: false, mutate: (s) => {
+    (s.state.characters[s.state.playerId] as unknown as Mutable).level = '2';
+  } },
+  { case: 'exp 为字符串', expected: false, mutate: (s) => {
+    (s.state.characters[s.state.playerId] as unknown as Mutable).exp = '8';
+  } },
+  { case: 'level 低于 1', expected: false, mutate: (s) => {
+    s.state.characters[s.state.playerId]!.level = 0;
+  } },
+  { case: 'level 超过上限', expected: false, mutate: (s) => {
+    s.state.characters[s.state.playerId]!.level = GAME_CONFIG.maxLevel + 1;
+  } },
+  { case: 'exp 为负数', expected: false, mutate: (s) => {
+    s.state.characters[s.state.playerId]!.exp = -1;
+  } },
+  { case: 'exp 达阈值但未升级', expected: false, mutate: (s) => {
+    s.state.characters[s.state.playerId]!.exp = GAME_CONFIG.levelExpThresholds[0]!;
+  } },
+  { case: '满级仍保留 exp', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.level = GAME_CONFIG.maxLevel;
+    p.exp = 1;
+  } },
   { case: '已死亡但 hp>0', expected: false, mutate: (s) => {
     const npc = Object.values(s.state.characters).find((c) => !c.isPlayer)!;
     npc.alive = false;

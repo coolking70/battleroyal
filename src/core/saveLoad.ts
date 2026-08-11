@@ -134,6 +134,16 @@ export function loadGame(): LoadResult {
     return { ok: false, data: null, error: '存档内容已损坏（无法解析）。' };
   }
 
+  // Phase 4F-1：0.4.0 新增长期成长状态。旧档保留原数据但明确失效，
+  // 在深度校验前先给出版本错误，避免把“缺 level/exp”误报成普通结构损坏。
+  if (isRecord(parsed) && typeof parsed.version === 'string' && parsed.version !== GAME_VERSION) {
+    return {
+      ok: false,
+      data: null,
+      error: `存档版本不匹配（存档 ${parsed.version}，当前 ${GAME_VERSION}）；旧档不会自动迁移或删除。`,
+    };
+  }
+
   const report = validateSaveData(parsed);
   if (!report.ok) {
     return {

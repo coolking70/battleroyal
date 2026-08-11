@@ -1,7 +1,10 @@
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { SAVE_KEY } from '../../src/data/gameConfig';
+import { refreshZoneOccupants } from '../../src/core/gameState';
+import { GAME_VERSION, SAVE_KEY } from '../../src/data/gameConfig';
+import { ZONE_IDS } from '../../src/data/zones';
+import { clearInventory, give, newGame, npcs, player } from '../helpers';
 import { pendingPickupFixture } from './pendingPickupFixture';
 
 const baseUrl = process.env.PHASE4B3_BASE_URL ?? 'http://127.0.0.1:4173';
@@ -92,15 +95,24 @@ async function findPendingPickup(page: import('@playwright/test').Page): Promise
   await expect(page.locator('.pending[data-pending-item-id]')).toHaveCount(1);
 }
 
-async function ensureWoodAndStone(page: import('@playwright/test').Page): Promise<void> {
-  for (let i = 0; i < 80; i += 1) {
-    const wood = page.locator('.inv-item[data-item-id="wood"]');
-    const stone = page.locator('.inv-item[data-item-id="stone"]');
-    if (await wood.count() > 0 && await stone.count() > 0) return;
-    await takeExplorationAction(page);
-  }
-  await expect(page.locator('.inv-item[data-item-id="wood"]')).toHaveCount(1);
-  await expect(page.locator('.inv-item[data-item-id="stone"]')).toHaveCount(1);
+function craftMaterialsFixture(): Record<string, unknown> {
+  const state = newGame('CRAFT-3');
+  const p = player(state);
+  clearInventory(p);
+  give(state, p, 'wood');
+  give(state, p, 'stone');
+  const elsewhere = ZONE_IDS.find((zoneId) => zoneId !== p.currentZoneId) ?? p.currentZoneId;
+  for (const npc of npcs(state)) npc.currentZoneId = elsewhere;
+  state.engagedWithPlayer = [];
+  refreshZoneOccupants(state);
+  return {
+    version: GAME_VERSION,
+    savedAt: 1,
+    seed: state.seed,
+    time: state.time,
+    rngState: state.rngState,
+    state,
+  };
 }
 
 async function snapshot(page: import('@playwright/test').Page, name: string): Promise<Record<string, unknown>> {
@@ -194,8 +206,9 @@ test('Phase 4B-3 production search and inventory evidence', async ({ page }) => 
   expect(pending.pending).not.toBeNull();
 
   await page.setViewportSize({ width: 1280, height: 720 });
-  await startGame(page, 'CRAFT-3');
-  await ensureWoodAndStone(page);
+  // 4F-1 成长会合法改变长随机走子的后续战斗结果；本段只验证合成状态与装备，
+  // 搜索的 item / nothing / pending 三条真实路径已在上方单独完成。
+  await loadFixture(page, craftMaterialsFixture());
   await openPlanningDrawer(page);
   await page.locator('.planning-tabs button').filter({ hasText: '合成' }).click();
   await expect(page.locator('[data-output-item-id="stick"]')).toHaveCount(1);

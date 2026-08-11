@@ -1,0 +1,152 @@
+{
+  "version": "0.4.0",
+  "config": {
+    "maxLevel": 5,
+    "levelExpThresholds": [
+      20,
+      30,
+      40,
+      50
+    ],
+    "levelAttackGain": 1,
+    "levelDefenseGain": 1,
+    "levelMaxHpGain": 10,
+    "expCombatParticipation": 8,
+    "expKillBonus": 7,
+    "expSearch": 1,
+    "expExplore": 1
+  },
+  "initial": {
+    "level": 1,
+    "exp": 0,
+    "attack": 8,
+    "defense": 5,
+    "hp": 105,
+    "maxHp": 105,
+    "stamina": 100,
+    "alive": true
+  },
+  "combatParticipation": {
+    "before": {
+      "player": {
+        "level": 1,
+        "exp": 0,
+        "attack": 8,
+        "defense": 5,
+        "hp": 105,
+        "maxHp": 105,
+        "stamina": 100,
+        "alive": true
+      },
+      "npc": {
+        "level": 1,
+        "exp": 0,
+        "attack": 8,
+        "defense": 5,
+        "hp": 105,
+        "maxHp": 105,
+        "stamina": 100,
+        "alive": true
+      }
+    },
+    "after": {
+      "player": {
+        "level": 1,
+        "exp": 8,
+        "attack": 8,
+        "defense": 5,
+        "hp": 105,
+        "maxHp": 105,
+        "stamina": 98,
+        "alive": true
+      },
+      "npc": {
+        "level": 1,
+        "exp": 8,
+        "attack": 8,
+        "defense": 5,
+        "hp": 100,
+        "maxHp": 105,
+        "stamina": 100,
+        "alive": true
+      }
+    }
+  },
+  "playerLevelUp": {
+    "before": {
+      "level": 1,
+      "exp": 12,
+      "attack": 8,
+      "defense": 5,
+      "hp": 105,
+      "maxHp": 105,
+      "stamina": 100,
+      "alive": true
+    },
+    "after": {
+      "level": 2,
+      "exp": 0,
+      "attack": 9,
+      "defense": 6,
+      "hp": 115,
+      "maxHp": 115,
+      "stamina": 98,
+      "alive": true
+    }
+  },
+  "npcLevelUp": {
+    "before": {
+      "level": 1,
+      "exp": 12,
+      "attack": 7,
+      "defense": 5,
+      "hp": 100,
+      "maxHp": 100,
+      "stamina": 105,
+      "alive": true
+    },
+    "after": {
+      "level": 2,
+      "exp": 0,
+      "attack": 8,
+      "defense": 6,
+      "hp": 110,
+      "maxHp": 110,
+      "stamina": 103,
+      "alive": true
+    }
+  },
+  "zeroStaminaGuard": {
+    "repetitions": 5,
+    "before": {
+      "level": 1,
+      "exp": 0,
+      "attack": 8,
+      "defense": 5,
+      "hp": 105,
+      "maxHp": 105,
+      "stamina": 0,
+      "alive": true
+    },
+    "after": {
+      "level": 1,
+      "exp": 0,
+      "attack": 8,
+      "defense": 5,
+      "hp": 105,
+      "maxHp": 105,
+      "stamina": 0,
+      "alive": true
+    }
+  },
+  "browser": {
+    "viewport": "1280x720",
+    "titleCount": 0,
+    "overflow": {
+      "scrollWidth": 1280,
+      "clientWidth": 1280
+    },
+    "consoleErrors": [],
+    "pageErrors": []
+  }
+}

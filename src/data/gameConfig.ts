@@ -4,11 +4,11 @@
 /**
  * 存档版本。
  *
- * Phase 3A 改了三处**不可向后兼容**的状态结构：EXPOSED 状态、四角色技能全部换 id、
- * 世界事件取代动态事件。0.2.0 存档里的 `dash` / `storm` 等字段在新规则下没有对应语义，
- * 强行读入只会得到一个自相矛盾的局面。因此**明确拒绝**旧档，不做迁移。
+ * Phase 4F-1 新增持久化的 level / exp，并让成长永久改变基础战斗属性。
+ * 旧档没有足够信息还原进行中角色本应获得的成长，因此继续沿用项目既有策略：
+ * **明确拒绝**旧档、不静默迁移，也不自动删除，由主菜单给出可读提示。
  */
-export const GAME_VERSION = '0.3.2';
+export const GAME_VERSION = '0.4.0';
 
 /** 默认测试种子 */
 export const DEFAULT_SEED = 'BR-DEMO-001';
@@ -83,6 +83,24 @@ export const GAME_CONFIG = {
   baseFleeChance: 0.45,
   /** 远程武器命中加成 */
   rangedHitBonus: 0.08,
+
+  /* --- 经验与等级（Phase 4F-1） --- */
+  maxLevel: 5,
+  /** 各等级升到下一级所需的“当前级经验”；5 级封顶，不再累计经验。 */
+  levelExpThresholds: [20, 30, 40, 50],
+  levelAttackGain: 1,
+  levelDefenseGain: 1,
+  levelMaxHpGain: 10,
+  /** 单次有体力成本的攻击结算：攻击者与承受者各得一次。 */
+  expCombatParticipation: 8,
+  /** 击杀者在参与经验之外获得的额外奖励。 */
+  expKillBonus: 7,
+  expSearch: 1,
+  expExplore: 1,
+  /** 合成经验按成品既有 value 派生，不新增物品分级字段。 */
+  expCraftValueDivisor: 6,
+  expCraftMin: 2,
+  expCraftMax: 6,
 
   /* --- 战斗风格（Phase 3 Step 1） --- */
   /** 攻击风格的体力成本：quick 轻量、normal 基准、heavy 重击 */
