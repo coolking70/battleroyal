@@ -4,7 +4,7 @@ import { percent } from '../../utils/format';
 interface BarProps {
   value: number;
   max: number;
-  kind: 'hp' | 'stamina';
+  kind: 'hp' | 'stamina' | 'growth';
   /** 提供后槽位变为真正可点击的按钮（Phase 4E-1 §3）；不提供则维持纯展示 */
   onActivate?: () => void;
   /** 仅交互模式使用：无障碍标签，说明点击行为与当前数值 */

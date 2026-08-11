@@ -1,0 +1,79 @@
+{
+  "version": "0.4.0",
+  "levelExpThresholds": [
+    30,
+    275,
+    550,
+    900
+  ],
+  "desktop": {
+    "residentMetricCount": 3,
+    "barHeights": [
+      6,
+      6,
+      6
+    ],
+    "hpFrame": {
+      "x": 99.203125,
+      "y": 9,
+      "width": 138.65625,
+      "height": 45,
+      "top": 9,
+      "right": 237.859375,
+      "bottom": 54,
+      "left": 99.203125
+    },
+    "hpButtonFrame": {
+      "x": 99.203125,
+      "y": 9,
+      "width": 138.65625,
+      "height": 45,
+      "top": 9,
+      "right": 237.859375,
+      "bottom": 54,
+      "left": 99.203125
+    },
+    "staminaFrame": {
+      "x": 244.859375,
+      "y": 9,
+      "width": 138.671875,
+      "height": 45,
+      "top": 9,
+      "right": 383.53125,
+      "bottom": 54,
+      "left": 244.859375
+    },
+    "growthFrame": {
+      "x": 390.53125,
+      "y": 9,
+      "width": 138.671875,
+      "height": 45,
+      "top": 9,
+      "right": 529.203125,
+      "bottom": 54,
+      "left": 390.53125
+    },
+    "hpHotzoneMinHeight": 45,
+    "staminaHotzoneMinHeight": 45,
+    "hpLabelHit": "bar-button vital-metric-button",
+    "hpValueHit": "bar-button vital-metric-button",
+    "hotzoneFrameAreaRatio": 1,
+    "actionButtons": 0,
+    "bodyScrollWidth": 1280,
+    "documentScrollWidth": 1280,
+    "titleCount": 0
+  },
+  "mobile": {
+    "bodyScrollWidth": 390,
+    "documentScrollWidth": 390,
+    "titleCount": 0,
+    "actionButtons": 6,
+    "actionbarBottom": 844
+  },
+  "loot": {
+    "count": 3,
+    "feedback": "击杀战利品：3 件已落地，可拾取。"
+  },
+  "consoleErrors": [],
+  "pageErrors": []
+}

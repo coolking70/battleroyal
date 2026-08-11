@@ -200,6 +200,21 @@ export function GameScreen({
       ) ?? null,
     [state.events, state.playerId, player.currentZoneId],
   );
+  const encounterLootCount = useMemo(() => {
+    if (!encounter) return 0;
+    const death = visibleEventsForPlayer(state.events, state.playerId)
+      .slice()
+      .reverse()
+      .find(
+        (event) =>
+          event.type === 'CHARACTER_DIED' &&
+          event.actorId === state.playerId &&
+          event.targetId === encounter.enemyId &&
+          event.zoneId === encounter.zoneId,
+      );
+    const count = Number(death?.metadata.dropCount ?? 0);
+    return Number.isInteger(count) && count > 0 ? count : 0;
+  }, [encounter, state.events, state.playerId]);
   const searchFeedback = useMemo(() => latestPlayerSearchFeedback(state), [state]);
 
   // Phase 4E-1 改进 B：检测"新获得物品使某配方从不可做变为可做"，给出非阻塞提示。
@@ -322,6 +337,7 @@ export function GameScreen({
                 player={player}
                 enemy={enemy}
                 combat={combatBar}
+                lootCount={encounterLootCount}
               />
             )}
           </div>

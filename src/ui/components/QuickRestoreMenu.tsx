@@ -52,7 +52,8 @@ export function QuickRestoreMenu({ player, slot, triggerRef, onUse, onClose }: Q
     return () => trigger?.focus();
   }, [triggerRef]);
 
-  // 锚定到触发槽正下方并夹进视口，避免在窄屏压住顶部 P0 生存信息
+  // 锚定到整个顶栏正下方并夹进视口，避免窄屏下浮层从生命槽下方横向
+  // 覆盖同一行的体力数值；触发槽仍用于焦点归还与外部点击判定。
   const [anchor, setAnchor] = useState<CSSProperties | null>(null);
   useEffect(() => {
     const rect = triggerRef.current?.getBoundingClientRect();
@@ -62,7 +63,9 @@ export function QuickRestoreMenu({ player, slot, triggerRef, onUse, onClose }: Q
     const height = panel.offsetHeight || panel.getBoundingClientRect().height;
     if (width <= 0 || height <= 0) return; // jsdom / 未布局：退回 CSS 默认位置
     const left = Math.max(MARGIN, Math.min(rect.left, window.innerWidth - width - MARGIN));
-    const top = Math.max(MARGIN, Math.min(rect.bottom + 6, window.innerHeight - height - MARGIN));
+    const topbar = triggerRef.current?.closest('.topbar') as HTMLElement | null;
+    const anchorBottom = topbar?.getBoundingClientRect().bottom ?? rect.bottom;
+    const top = Math.max(MARGIN, Math.min(anchorBottom + 6, window.innerHeight - height - MARGIN));
     setAnchor({ top, left, right: 'auto' });
   }, [triggerRef, panelRef, candidates.length]);
 

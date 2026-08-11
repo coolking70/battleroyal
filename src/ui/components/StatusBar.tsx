@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type RefObject } from 'react';
 import { nextZoneCountdown } from '../../core/restrictedZones';
 import { zoneDamagePerTick } from '../../core/restrictedZones';
 import { GAME_CONFIG } from '../../data/gameConfig';
@@ -23,6 +23,34 @@ interface StatusBarProps {
   onQuit: () => void;
   /** Phase 4E-1 §3：点击生命 / 体力槽使用恢复道具；走既有 USE_ITEM 命令 */
   onUseItem?: (uid: string) => void;
+}
+
+interface VitalMetricProps {
+  kind: 'hp' | 'stamina';
+  label: string;
+  value: number;
+  max: number;
+  buttonRef: RefObject<HTMLButtonElement>;
+  onActivate: () => void;
+}
+
+/** 整个视觉框都是触发器；内部 Bar 保持纯展示，避免留下细长点击条。 */
+function VitalMetric({ kind, label, value, max, buttonRef, onActivate }: VitalMetricProps): JSX.Element {
+  return (
+    <div className={`survival-metric survival-metric-${kind} vital-metric-shell`}>
+      <button
+        type="button"
+        ref={buttonRef}
+        className="bar-button vital-metric-button"
+        onClick={onActivate}
+        aria-label={`点击使用恢复道具恢复${label}（当前 ${value}/${max}）`}
+      >
+        <span className="metric-label">{label}</span>
+        <Bar value={value} max={max} kind={kind} />
+        <b>{value}/{max}</b>
+      </button>
+    </div>
+  );
 }
 
 /** 顶部状态栏：时间 / 存活人数 / 生命 / 体力 / 禁区倒计时 */
@@ -82,30 +110,39 @@ export function StatusBar({
       </div>
 
       <div className="survival-metrics" aria-label="生存资源与成长">
-        <div className="survival-metric survival-metric-hp">
-          <span className="metric-label">生命</span>
-          <Bar
-            value={player.hp}
-            max={player.maxHp}
-            kind="hp"
-            onActivate={onUseItem ? () => handleBarActivate('hp') : undefined}
-            buttonRef={hpRef}
-            activateLabel={`点击使用恢复道具恢复生命（当前 ${player.hp}/${player.maxHp}）`}
-          />
-          <b>{player.hp}/{player.maxHp}</b>
-        </div>
-        <div className="survival-metric survival-metric-stamina">
-          <span className="metric-label">体力</span>
-          <Bar
-            value={player.stamina}
-            max={player.maxStamina}
-            kind="stamina"
-            onActivate={onUseItem ? () => handleBarActivate('stamina') : undefined}
-            buttonRef={staminaRef}
-            activateLabel={`点击使用恢复道具恢复体力（当前 ${player.stamina}/${player.maxStamina}）`}
-          />
-          <b>{player.stamina}/{player.maxStamina}</b>
-        </div>
+        {onUseItem ? (
+          <>
+            <VitalMetric
+              kind="hp"
+              label="生命"
+              value={player.hp}
+              max={player.maxHp}
+              buttonRef={hpRef}
+              onActivate={() => handleBarActivate('hp')}
+            />
+            <VitalMetric
+              kind="stamina"
+              label="体力"
+              value={player.stamina}
+              max={player.maxStamina}
+              buttonRef={staminaRef}
+              onActivate={() => handleBarActivate('stamina')}
+            />
+          </>
+        ) : (
+          <>
+            <div className="survival-metric survival-metric-hp">
+              <span className="metric-label">生命</span>
+              <Bar value={player.hp} max={player.maxHp} kind="hp" />
+              <b>{player.hp}/{player.maxHp}</b>
+            </div>
+            <div className="survival-metric survival-metric-stamina">
+              <span className="metric-label">体力</span>
+              <Bar value={player.stamina} max={player.maxStamina} kind="stamina" />
+              <b>{player.stamina}/{player.maxStamina}</b>
+            </div>
+          </>
+        )}
         <GrowthProgress player={player} />
       </div>
 

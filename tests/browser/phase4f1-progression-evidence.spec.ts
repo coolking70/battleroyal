@@ -101,7 +101,7 @@ test('Phase 4F-1 生产预览：成长、NPC 同步与零体力防刷取证据',
   const initial = actorSnapshot(player(initialState));
   await loadFixture(page, initialState);
   await showPlayerDebug(page);
-  await expect(page.locator('aside.debug')).toContainText('Lv.1 · 0/20');
+  await expect(page.locator('aside.debug')).toContainText(`Lv.1 · 0/${GAME_CONFIG.levelExpThresholds[0]}`);
   await expect(page.locator('aside.debug')).toContainText('attack / defense');
   await shot(page, '01-initial-level-exp');
 
@@ -124,7 +124,7 @@ test('Phase 4F-1 生产预览：成长、NPC 同步与零体力防刷取证据',
   };
   await loadFixture(page, combat.state);
   await showPlayerDebug(page);
-  await expect(page.locator('aside.debug')).toContainText('Lv.1 · 8/20');
+  await expect(page.locator('aside.debug')).toContainText(`Lv.1 · 8/${GAME_CONFIG.levelExpThresholds[0]}`);
   await shot(page, '02-combat-participation-exp');
 
   const upgrade = stageDuel('PHASE4F1-BROWSER-UPGRADE');
@@ -142,7 +142,7 @@ test('Phase 4F-1 生产预览：成长、NPC 同步与零体力防刷取证据',
   const upgradeAfter = actorSnapshot(upgrade.p);
   await loadFixture(page, upgrade.state);
   await showPlayerDebug(page);
-  await expect(page.locator('aside.debug')).toContainText('Lv.2 · 0/30');
+  await expect(page.locator('aside.debug')).toContainText(`Lv.2 · 0/${GAME_CONFIG.levelExpThresholds[1]}`);
   await expect(page.locator('aside.debug')).toContainText(
     `${upgradeAfter.attack} / ${upgradeAfter.defense}`,
   );
@@ -164,7 +164,7 @@ test('Phase 4F-1 生产预览：成长、NPC 同步与零体力防刷取证据',
   await loadFixture(page, npcUpgrade.state);
   const npcCard = page.locator('.debug-npc', { hasText: npcUpgrade.npc.name });
   await npcCard.scrollIntoViewIfNeeded();
-  await expect(npcCard).toContainText('Lv.2 exp 0/30');
+  await expect(npcCard).toContainText(`Lv.2 exp 0/${GAME_CONFIG.levelExpThresholds[1]}`);
   await expect(npcCard).toContainText(`atk ${npcAfter.attack}`);
   await expect(npcCard).toContainText(`def ${npcAfter.defense}`);
   await shot(page, '04-npc-level-up-stats');
@@ -179,7 +179,7 @@ test('Phase 4F-1 生产预览：成长、NPC 同步与零体力防刷取证据',
   const guardAfter = actorSnapshot(guarder);
   await loadFixture(page, guardState);
   await showPlayerDebug(page);
-  await expect(page.locator('aside.debug')).toContainText('Lv.1 · 0/20');
+  await expect(page.locator('aside.debug')).toContainText(`Lv.1 · 0/${GAME_CONFIG.levelExpThresholds[0]}`);
   await expect(page.locator('.tag-guard')).toContainText('防御');
   await shot(page, '05-zero-stamina-guard-no-exp');
 

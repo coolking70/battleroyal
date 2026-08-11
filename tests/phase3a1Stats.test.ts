@@ -103,12 +103,20 @@ describe('世界事件影响统计', () => {
   });
 
   it('研究异常伤害/致死与 WORLD_EVENT_DAMAGE 事件一致', () => {
-    // Phase 4C-2 restores the hospital pool's medical weighting, which shifts
-    // the deterministic loot/RNG stream again. STAT-1 is the fixed seed that
-    // still exercises research_anomaly; keep the event assertion intact.
-    const r = play('STAT-1', 'engineer', 'aggressive');
-    const ra = r.worldEventImpact.research_anomaly!;
-    if (ra.ticks > 0) {
+    // Phase 4G-1 changes growth thresholds only, but level-up timing can still
+    // shift later deterministic actions. Keep the invariant tied to the actual
+    // event trace instead of assuming this seed must trigger the world event.
+    const r = runAutoGame({
+      seed: 'STAT-1',
+      characterId: 'engineer',
+      policy: 'aggressive',
+      keepEventTrace: true,
+    });
+    const damageEvents = r.eventTrace?.filter((event) => event.type === 'WORLD_EVENT_DAMAGE') ?? [];
+    const ra = r.worldEventImpact.research_anomaly;
+    expect(ra?.ticks ?? 0).toBe(damageEvents.length);
+    if (damageEvents.length > 0) {
+      expect(ra).toBeDefined();
       expect(ra.damageTotal).toBeGreaterThan(0);
       expect(ra.deaths).toBeGreaterThanOrEqual(0);
     }
