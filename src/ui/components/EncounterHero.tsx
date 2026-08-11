@@ -56,9 +56,15 @@ export function EncounterHero({
   const weapon = getEquippedWeapon(enemy);
   const modeMeta = combatModeMeta(resolved);
   const enemyClassName = getCharacterDef(enemy.characterId).name;
-  const latestFeedback =
-    encounter.log[encounter.log.length - 1] ??
-    (resolved ? '遭遇已结束。' : '尚未交手，选择一项行动。');
+  // NPC 成功离开遭遇区域时，核心只需把 encounter 标成 resolved；这里把
+  // 玩家已合法知道的“对方已离开本次交手区域”补到即时反馈，不读取 NPC 意图。
+  // 用 encounter.zoneId 判断，避免把玩家自己的转移脱离误报成对方逃走。
+  const opponentLeftArea =
+    resolved && enemy.alive && enemy.currentZoneId !== encounter.zoneId;
+  const latestFeedback = opponentLeftArea
+    ? `${enemy.name} 已经离开该区域，脱离接触。`
+    : encounter.log[encounter.log.length - 1] ??
+      (resolved ? '遭遇已结束。' : '尚未交手，选择一项行动。');
   const normalHit = combat?.attacks.find((a) => a.style === 'normal')?.hitPct ?? null;
 
   const [logOpen, setLogOpen] = useState(false);

@@ -47,6 +47,11 @@ import { VisualImage } from '../components/VisualImage';
 import { InstantWorldEventAnnouncement, WorldEventBanner } from '../components/WorldEventFeedback';
 import { detectCraftableHint } from '../craftableHint';
 import { CraftableHint } from '../components/CraftableHint';
+import { CraftEquipmentHint } from '../components/CraftEquipmentHint';
+import {
+  equipmentHandoffFor,
+  shouldPromptCraftEquipment,
+} from '../equipmentPresentation';
 
 interface GameScreenProps {
   state: GameState;
@@ -164,6 +169,13 @@ export function GameScreen({
     () => latestPlayerCraftFeedback(state, player),
     [state, player],
   );
+  const craftEquipmentHandoff = useMemo(
+    () =>
+      latestCraftFeedback
+        ? equipmentHandoffFor(player, latestCraftFeedback.outputItemId)
+        : null,
+    [latestCraftFeedback, player],
+  );
   // Phase 4D-1 改进 C：中栏常驻目标条。
   // 遭遇战进行中与待处理拾取时收起——那两个时刻中栏属于 P0，
   // 目标条再有用也不该跟主行动抢视线。
@@ -180,6 +192,7 @@ export function GameScreen({
   // Phase 4E-1 改进 B：检测"新获得物品使某配方从不可做变为可做"，给出非阻塞提示。
   // 用 ref 维护上一帧快照，每次状态变化后调用纯函数 detectCraftableHint。
   const [hintRecipeId, setHintRecipeId] = useState<string | null>(null);
+  const [dismissedCraftEquipmentEventId, setDismissedCraftEquipmentEventId] = useState<string | null>(null);
   const prevCraftableRef = useRef<Set<string> | null>(null);
   const prevInvRef = useRef<Record<string, number> | null>(null);
   useEffect(() => {
@@ -306,6 +319,19 @@ export function GameScreen({
             data-search-feedback={searchFeedback?.kind ?? 'none'}
           >
             <InstantWorldEventAnnouncement event={instantEvent} />
+
+            {!inActiveEncounter && !pending &&
+              latestCraftFeedback &&
+              latestCraftFeedback.eventId !== dismissedCraftEquipmentEventId &&
+              shouldPromptCraftEquipment(craftEquipmentHandoff) &&
+              craftEquipmentHandoff && (
+                <CraftEquipmentHint
+                  handoff={craftEquipmentHandoff}
+                  disabled={lockedAll}
+                  onEquip={(uid) => dispatch({ type: 'EQUIP', uid })}
+                  onDismiss={() => setDismissedCraftEquipmentEventId(latestCraftFeedback.eventId)}
+                />
+              )}
 
             {(() => {
               if (!hintRecipeId || inActiveEncounter || pending) return null;

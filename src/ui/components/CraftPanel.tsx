@@ -6,7 +6,11 @@ import { getZoneDef } from '../../data/zones';
 import { CATEGORY_LABEL, itemSummary, stackLabel } from '../../utils/format';
 import type { CraftGoalSuggestion, CraftProgressFeedback } from '../craftPathPresentation';
 import { craftPathSummary } from '../craftPathPresentation';
-import { equipmentHandoffFor } from '../equipmentPresentation';
+import {
+  equipmentComparisonText,
+  equipmentHandoffFor,
+  shouldPromptCraftEquipment,
+} from '../equipmentPresentation';
 import { ITEM_CATEGORY_META, presentItem } from '../itemPresentation';
 import { VisualImage } from './VisualImage';
 
@@ -54,7 +58,9 @@ export function CraftPanel({
   const craftHandoff = latestCraftFeedback
     ? equipmentHandoffFor(player, latestCraftFeedback.outputItemId)
     : null;
-  const canEquipCraftOutput = Boolean(craftHandoff?.candidate && craftHandoff.status !== 'equipped' && onEquip);
+  const canEquipCraftOutput = Boolean(
+    shouldPromptCraftEquipment(craftHandoff) && onEquip,
+  );
   return (
     <div className="recipe-list scroll">
       <section className="craft-route-guide" data-craft-guidance="weapon-primary-path">
@@ -108,7 +114,7 @@ export function CraftPanel({
             )}
             {canEquipCraftOutput && craftHandoff?.candidate && (
               <div className="equipment-handoff">
-                <span>{craftHandoff.status === 'ready' ? '成品可提升装备位' : '成品可作为备用'}</span>
+                <span>是否装备？{equipmentComparisonText(craftHandoff)}</span>
                 <button
                   className="btn btn-sm btn-primary"
                   data-craft-equip-output="true"

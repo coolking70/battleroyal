@@ -60,6 +60,19 @@ export function logEncounterAction(state: GameState, line: string): void {
   state.encounter.log.push(line);
 }
 
+function attackBattleReport(
+  message: string,
+  target: Combatant,
+  targetDied: boolean,
+  attackerDied: boolean,
+): string {
+  let line = message.replace(/\s*\n\s*/g, ' ').trim();
+  if (message.includes('被闪开了') && !message.includes('落空')) line += '——攻击落空。';
+  if (targetDied) line += `——${target.name} 已被击杀。`;
+  if (attackerDied) line += '——你 已被击杀。';
+  return line;
+}
+
 /**
  * 玩家移动。
  *
@@ -166,7 +179,7 @@ export function handleAttack(
   if (!res.ok) return { ok: false, message: res.message };
   if (!target) return { ok: false, message: '目标已经不在了。' };
 
-  const lines = [res.message];
+  const line = attackBattleReport(res.message, target, res.targetDied, res.attackerDied);
   if (!state.engagedWithPlayer.includes(target.id)) {
     state.engagedWithPlayer.push(target.id);
   }
@@ -180,10 +193,10 @@ export function handleAttack(
       resolved: false,
     };
   }
-  state.encounter.log.push(...lines);
+  state.encounter.log.push(line);
   state.encounter.resolved = !target.alive;
 
-  return { ok: true, message: lines.join(' ') };
+  return { ok: true, message: line };
 }
 
 /**
@@ -212,7 +225,7 @@ export function handleAttackNearby(
   const res = attackActor(state, player, target, rng, { allowCounter: true, style });
   if (!res.ok) return { ok: false, message: res.message };
 
-  const lines = [`你对 ${target.name} 出手：${res.message}`];
+  const line = attackBattleReport(`你对 ${target.name} 出手：${res.message}`, target, res.targetDied, res.attackerDied);
   if (!state.engagedWithPlayer.includes(target.id)) {
     state.engagedWithPlayer.push(target.id);
   }
@@ -225,10 +238,10 @@ export function handleAttackNearby(
       resolved: false,
     };
   }
-  state.encounter.log.push(...lines);
+  state.encounter.log.push(line);
   state.encounter.resolved = !target.alive;
 
-  return { ok: true, message: lines.join(' ') };
+  return { ok: true, message: line };
 }
 
 /** 摆出防御姿态（Phase 3 Step 1） */
@@ -384,20 +397,25 @@ export function handleFlee(
         resolved: false,
       };
     }
-    state.encounter.log.push(res.message);
-    state.encounter.log.push(
-      res.toZoneId
-        ? `你已经离开该区域，脱离接触，当前位于${getZoneDef(res.toZoneId).name}。`
-        : `你已脱离接触，但 ${enemy.name} 仍在本区域，可能再次交火。`,
-    );
+    const settlementLine = res.toZoneId
+      ? `你已经离开该区域，脱离接触，当前位于${getZoneDef(res.toZoneId).name}。`
+      : `你已脱离接触，但 ${enemy.name} 仍在本区域，可能再次交火。`;
+    const finalLine = `${res.message.replace(/\s*\n\s*/g, ' ').trim()}——${settlementLine}`;
+    state.encounter.log.push(finalLine);
     state.encounter.resolved = true;
-    return { ok: true, message: res.message };
+    return { ok: true, message: finalLine };
   }
   if (res.pursued && !state.engagedWithPlayer.includes(enemy.id)) {
     state.engagedWithPlayer.push(enemy.id);
   }
-  if (state.encounter) state.encounter.log.push(res.message);
-  return { ok: true, message: res.message };
+  const finalLine = attackBattleReport(
+    res.message,
+    enemy,
+    false,
+    !player.alive,
+  );
+  if (state.encounter) state.encounter.log.push(finalLine);
+  return { ok: true, message: finalLine };
 }
 
 export function handlePickupGround(

@@ -648,3 +648,25 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   delivery.** `reports/save-validation-audit.*` and `reports/phase4a451-*.json`
   left unstaged (regenerated artifacts, timestamp-only changes). Real-device /
   screen-reader / long-session validation remains HUMAN-PLAYTEST-NEEDED.
+
+## Phase 4E-2 progress (2026-08-11)
+
+- Branch `codex/phase4e2` from `main @ 9e773e8` (v0.3.2). Scope stayed within the
+  thaw: `src/core/commandHandlers.ts` for report-line assembly; `vitals.ts` and
+  all `src/data/**` remained unchanged.
+- Combat feedback now combines hit/miss, kill, player death, and both 4D-1 flee
+  outcomes into the final immediate-feedback line. Existing global death events,
+  damage, hit checks, drops, settlement timing, and resolved timing are unchanged.
+- Craft completion now has an inline optional equip prompt only for an empty slot
+  or a strictly higher attack/defense result. Durability is intentionally excluded;
+  the action dispatches the existing `EQUIP` command and never auto-equips.
+- Added 9 tests and the production-preview evidence spec. Current suite: **81 test
+  files / 1368 tests**. Evidence covers four combat outcomes, both flee wordings,
+  empty/stronger/not-stronger craft branches, five viewports, 6 visible combat
+  actions, zero horizontal overflow, and zero console/page errors. See
+  `PHASE4E2_REPORT.md` and `output/phase4e2-browser/`.
+- Gates: clean `npm ci`, typecheck, production build, audit/art/security checks,
+  500-game `PHASE4E2` engine regression, and `npm audit --omit=dev` all passed;
+  full tests passed 81/1368 with `--testTimeout=20000` after default 5s environment
+  timeouts on four pre-existing long-running cases. Commit/push and CI completion
+  are the remaining handoff steps.

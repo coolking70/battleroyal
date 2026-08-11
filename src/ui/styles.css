@@ -3016,6 +3016,54 @@ span.encounter-enemy-visual {
 /* Toast                                                              */
 /* ------------------------------------------------------------------ */
 
+/* Phase 4E-2：合成装备后的内联交接提示（非阻塞、可忽略） */
+.craft-equipment-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(110, 168, 199, 0.58);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(38, 75, 94, 0.52), rgba(17, 24, 30, 0.88));
+}
+.craft-equipment-hint-visual {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  object-fit: cover;
+  font-size: 24px;
+  border-radius: 3px;
+}
+.craft-equipment-hint-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.craft-equipment-hint-kicker {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+.craft-equipment-hint-body strong {
+  display: block;
+  font-size: 13px;
+  color: #d9f0f7;
+}
+.craft-equipment-hint-comparison {
+  margin-top: 2px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.craft-equipment-hint-actions {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
 /* Phase 4E-1 改进 B：可合成提示卡（复用 4B-3 搜索结果卡范式，非阻塞、非常驻） */
 .craftable-hint {
   display: flex;
