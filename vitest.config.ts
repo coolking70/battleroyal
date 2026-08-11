@@ -14,6 +14,11 @@ export default defineConfig({
       },
     },
     include: ['tests/**/*.test.{ts,tsx}'],
+    // 守恒 / 确定性 / 无死锁这类不变量测试要跑完整对局，单条动辄 1~3 秒。
+    // vitest 默认的 5s 上限在机器有负载时会把它们判成超时失败，
+    // 使套件的红绿变成负载相关而非代码相关。放宽到 30s：
+    // 真正挂死的用例仍会被拦住，正常的重型模拟不再假红。
+    testTimeout: 30_000,
     reporters: ['default'],
   },
 });
