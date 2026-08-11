@@ -99,8 +99,13 @@ test('Phase 4F-2 player growth presentation on clean production preview', async 
   const initialState = newGame('PHASE4F2-BROWSER-INITIAL', 'fighter');
   await loadFixture(page, initialState);
   await expect(page.locator('.survival-metric-growth')).toContainText('Lv.1');
+  // 可见文本不带 EXP 后缀；完整措辞在 aria-valuetext 上，两者分别断言。
   await expect(page.locator('.survival-metric-growth')).toContainText(
-    `0/${GAME_CONFIG.levelExpThresholds[0]} EXP`,
+    `0/${GAME_CONFIG.levelExpThresholds[0]}`,
+  );
+  await expect(page.locator('.survival-metric-growth [role="progressbar"]')).toHaveAttribute(
+    'aria-valuetext',
+    new RegExp(`0/${GAME_CONFIG.levelExpThresholds[0]} EXP`),
   );
   await screenshot(page, '01-desktop-level-exp');
 

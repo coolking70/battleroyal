@@ -55,9 +55,16 @@ describe('Phase 4F-2 player growth presentation', () => {
 
     const growth = container.querySelector('.survival-metric-growth');
     expect(growth?.textContent).toContain('Lv.1');
-    expect(growth?.textContent).toContain(`7/${GAME_CONFIG.levelExpThresholds[0]} EXP`);
+    // 可见文本不带 EXP 后缀（三条状态条共用固定宽度，带后缀会溢出到相邻字段）；
+    // 完整措辞仍由 aria-valuetext 承担，所以这里两者都断言。
+    expect(growth?.textContent).toContain(`7/${GAME_CONFIG.levelExpThresholds[0]}`);
+    expect(growth?.textContent).not.toContain('EXP');
     expect(growth?.getAttribute('data-growth-capped')).toBe('false');
-    expect(container.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow')).toBe('7');
+    const progressbar = container.querySelector('[role="progressbar"]');
+    expect(progressbar?.getAttribute('aria-valuenow')).toBe('7');
+    expect(progressbar?.getAttribute('aria-valuetext')).toContain(
+      `7/${GAME_CONFIG.levelExpThresholds[0]} EXP`,
+    );
     expect(container.querySelectorAll('.survival-metric')).toHaveLength(3);
     expect(container.querySelector('.growth-max-state')).toBeNull();
   });

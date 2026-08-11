@@ -43,7 +43,11 @@ export function GrowthProgress({ player }: GrowthProgressProps): JSX.Element {
           <Bar value={player.exp} max={nextLevelExp} kind="growth" />
         </div>
       )}
-      <b>{capped ? '已满级' : `${player.exp}/${nextLevelExp} EXP`}</b>
+      {/* 可见文本不带 EXP 后缀：三条状态条共用 139px 宽的槽位，
+          带后缀时「0/30 EXP」会溢出并压到相邻的「时间」字段上，
+          且阈值升到三位数后会更宽。完整措辞保留在上面的
+          aria-valuetext 里，读屏用户不受影响。 */}
+      <b>{capped ? '已满级' : `${player.exp}/${nextLevelExp}`}</b>
     </div>
   );
 }
