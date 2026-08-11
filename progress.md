@@ -715,6 +715,7 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   Balance observations were recorded only; no tuning was made.
 - Deliverables now present: `PHASE4F1_REPORT.md`,
   `reports/phase4f1-balance.{json,md}`, `reports/phase4f1-runtime.json`, production
-  code/tests, and this progress entry. Remaining handoff: review/stage only intended
-  files (leave pre-existing/regenerated audit artifacts unstaged), commit, push, open
-  the PR, and wait for CI green before delivery.
+  code/tests, and this progress entry. Handoff completed through implementation commit
+  `29ef33d`, pushed branch `codex/phase4f1`, draft PR #9, and CI run #70 with every
+  verify step green. Pre-existing/regenerated audit artifacts remain intentionally
+  unstaged; delivery still requires the PR's final documentation head to stay green.

@@ -173,6 +173,7 @@ clientWidth = 1280`，实时 DOM `[title] = 0`，console errors = 0，page error
 | `simulate 500 PHASE4F1 --regression` | PASS，请求=实际=500，timeout/illegal/deadlock/hard-limit 均 0 |
 | `npm audit --omit=dev` | PASS，0 vulnerabilities |
 | 完整生产 Playwright | PASS，28 / 28，console/page errors 0 |
+| GitHub Actions CI（实现提交 `29ef33d`，run #70） | PASS，verify 全步骤成功 |
 
 500 局胜率与角色差异只记录：总玩家胜率 3.2%，各角色 2.4%–4.0%。这些数据未作为
 门禁，也没有据此反向调整成长、伤害、命中或经济数值。
