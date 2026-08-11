@@ -12,9 +12,11 @@ import { VisualImage } from './VisualImage';
 
 interface WorldEventBannerProps {
   event: WorldEventState;
+  /** 主视觉内联版：保留完整严重度 / 紧迫度 / 非颜色线索，但压缩占位。 */
+  compact?: boolean;
 }
 
-export function WorldEventBanner({ event }: WorldEventBannerProps): JSX.Element {
+export function WorldEventBanner({ event, compact = false }: WorldEventBannerProps): JSX.Element {
   const meta = worldEventMeta(event.eventId);
   const remaining = worldEventRemainingMeta(event.remaining);
   const scope = eventScopeLabel(
@@ -23,7 +25,7 @@ export function WorldEventBanner({ event }: WorldEventBannerProps): JSX.Element 
   );
   return (
     <article
-      className={`event-banner event-banner-${meta.severity} event-banner-urgency-${remaining.urgency}`}
+      className={`event-banner event-banner-${meta.severity} event-banner-urgency-${remaining.urgency}${compact ? ' event-banner-hero' : ''}`}
       data-event-id={event.eventId}
       data-event-severity={meta.severity}
       data-event-remaining={event.remaining}

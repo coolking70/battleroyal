@@ -125,8 +125,13 @@ export function killCharacter(
   }
 
   const zone = state.zones[victim.currentZoneId];
+  const corpseDrops = drops.slice(0, GAME_CONFIG.maxCorpseDrops).map((stack) => ({
+    ...stack,
+    ...(killerId ? { droppedBy: killerId } : {}),
+    revealedTo: [],
+  }));
   if (zone) {
-    zone.groundItems.push(...drops.slice(0, GAME_CONFIG.maxCorpseDrops));
+    zone.groundItems.push(...corpseDrops);
     zone.lastCombatTime = state.time;
   }
 

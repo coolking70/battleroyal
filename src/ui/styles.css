@@ -1211,9 +1211,18 @@ input {
 
 .zone-hero-heading {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+/* Phase 4G-2：世界事件横幅归位到区域名称旁，不再占用下方上下文保留区。 */
+.zone-hero-event-banners {
+  flex: 1 1 280px;
+  min-width: min(100%, 260px);
+  max-width: 470px;
+  margin: 0;
+  gap: 4px;
 }
 
 .zone-hero h2 {
@@ -3377,6 +3386,11 @@ span.encounter-enemy-visual {
   .zone-hero-content {
     padding: 16px 18px 16px;
   }
+  .zone-hero-event-banners {
+    flex-basis: 100%;
+    max-width: none;
+    min-width: 0;
+  }
   .zone-rail {
     padding: 5px 8px;
     gap: 8px;
@@ -3952,7 +3966,7 @@ span.encounter-enemy-visual {
   align-items: center;
   justify-content: center;
 }
-.event-banner-body { flex: 1; }
+.event-banner-body { flex: 1; min-width: 0; }
 .event-banner-title {
   font-weight: 600;
   font-size: 13px;
@@ -4061,6 +4075,60 @@ span.encounter-enemy-visual {
 .event-banner-desc {
   position: relative;
   z-index: 1;
+}
+
+/* 主视觉内联横幅覆盖通用横幅的宽松尺寸；严重度 / 紧迫度样式仍沿用上方规则。 */
+.zone-hero-event-banners.event-banner-wrap {
+  flex: 1 1 280px;
+  min-width: min(100%, 260px);
+  max-width: 470px;
+  margin: 0;
+  gap: 4px;
+}
+.zone-hero-event-banners .event-banner-hero {
+  gap: 6px;
+  min-width: 0;
+  padding: 5px 7px;
+  border-radius: 3px;
+}
+.zone-hero-event-banners .event-banner-hero .event-banner-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 15px;
+}
+.zone-hero-event-banners .event-banner-hero .event-banner-title {
+  gap: 4px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+.zone-hero-event-banners .event-banner-hero .event-severity-cue {
+  width: 15px;
+  height: 15px;
+  font-size: 10px;
+}
+.zone-hero-event-banners .event-banner-hero .event-severity-label {
+  padding: 1px 3px;
+  font-size: 8px;
+}
+.zone-hero-event-banners .event-banner-hero .event-banner-meta {
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 9px;
+  line-height: 1.2;
+}
+.zone-hero-event-banners .event-banner-hero .event-banner-desc {
+  margin-top: 1px;
+  font-size: 10px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .zone-hero-heading .zone-hero-event-banners.event-banner-wrap {
+    flex-basis: 100%;
+    max-width: none;
+    min-width: 0;
+  }
 }
 
 .world-event-announcement {

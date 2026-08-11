@@ -257,6 +257,41 @@ const CASES: AuditCase[] = [
     p.equippedWeaponId = null;
     p.equippedArmorId = null;
   } },
+  { case: '尸体掉落缺 revealedTo', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    const z = s.state.zones[p.currentZoneId]!;
+    const stack = { uid: 'corpse-relic-1', itemId: 'wood', count: 1, droppedBy: p.id, revealedTo: [] as string[] };
+    z.groundItems.push(stack);
+    delete (stack as unknown as Mutable).revealedTo;
+  } },
+  { case: '尸体掉落 droppedBy 类型错误', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    s.state.zones[p.currentZoneId]!.groundItems.push(
+      { uid: 'corpse-relic-2', itemId: 'wood', count: 1, droppedBy: 42 as never, revealedTo: [] },
+    );
+  } },
+  { case: '尸体掉落 revealedTo 类型错误', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    s.state.zones[p.currentZoneId]!.groundItems.push(
+      { uid: 'corpse-relic-3', itemId: 'wood', count: 1, droppedBy: p.id, revealedTo: 'p0' as never },
+    );
+  } },
+  { case: '尸体掉落 revealedTo 非法角色', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    s.state.zones[p.currentZoneId]!.groundItems.push(
+      { uid: 'corpse-relic-4', itemId: 'wood', count: 1, droppedBy: p.id, revealedTo: ['ghost'] },
+    );
+  } },
+  { case: '尸体掉落 revealedTo 超过上限', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    s.state.zones[p.currentZoneId]!.groundItems.push(
+      { uid: 'corpse-relic-5', itemId: 'wood', count: 1, droppedBy: p.id, revealedTo: ['p0', 'n1', 'n2', 'n3', 'n4', 'n5', 'p0'] },
+    );
+  } },
+  { case: '背包物品携带尸体归属字段', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.inventory.push({ uid: 'corpse-in-inventory', itemId: 'wood', count: 1, droppedBy: p.id, revealedTo: [] });
+  } },
   { case: '重复事件 ID', expected: false, mutate: (s) => {
     s.state.events.push(structuredClone(s.state.events[0]!));
   } },

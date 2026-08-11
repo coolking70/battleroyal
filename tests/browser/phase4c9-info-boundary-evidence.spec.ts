@@ -80,8 +80,9 @@ test('Phase 4C-9 production info-boundary evidence for ground drops', async ({ p
   const remoteName = getZoneDef(data.remoteZoneId).name;
   const currentRow = snapshot.zoneText.find((text) => text.includes(currentName));
   const remoteRow = snapshot.zoneText.find((text) => text.includes(remoteName));
-  expect(currentRow).toContain('掉落 1');
-  expect(remoteRow).not.toContain('掉落');
+  expect(currentRow).toContain('有地面物资');
+  expect(currentRow).not.toMatch(/\d+\s*件/);
+  expect(remoteRow).not.toContain('有地面物资');
   expect(snapshot.currentGround).toContain('木材');
   expect(snapshot.currentGround).not.toContain('铁块');
   expect(snapshot.bodyScrollWidth).toBe(1280);
