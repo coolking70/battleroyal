@@ -61,9 +61,14 @@ export function EncounterHero({
   // 用 encounter.zoneId 判断，避免把玩家自己的转移脱离误报成对方逃走。
   const opponentLeftArea =
     resolved && enemy.alive && enemy.currentZoneId !== encounter.zoneId;
+  // 4F-2 信息边界：战报只允许呈现战斗事实。4F-1 核心不会写入等级 / 经验，
+  // 这里再做展示层兜底，避免未来的非公开成长字段沿战报字符串泄露。
+  const visibleEncounterLog = encounter.log.filter(
+    (line) => !/(?:等级|经验|\blevel\b|\bexp\b)\s*[:：=]?\s*\d+/i.test(line),
+  );
   const latestFeedback = opponentLeftArea
     ? `${enemy.name} 已经离开该区域，脱离接触。`
-    : encounter.log[encounter.log.length - 1] ??
+    : visibleEncounterLog[visibleEncounterLog.length - 1] ??
       (resolved ? '遭遇已结束。' : '尚未交手，选择一项行动。');
   const normalHit = combat?.attacks.find((a) => a.style === 'normal')?.hitPct ?? null;
 
@@ -140,7 +145,7 @@ export function EncounterHero({
           aria-controls="encounter-hero-log"
           onClick={() => setLogOpen((open) => !open)}
         >
-          战斗记录 <span className="eh-log-count">{encounter.log.length}</span>
+          战斗记录 <span className="eh-log-count">{visibleEncounterLog.length}</span>
         </button>
       </div>
 
@@ -164,10 +169,10 @@ export function EncounterHero({
             </button>
           </div>
           <div className="eh-log-body scroll">
-            {encounter.log.length === 0 ? (
+            {visibleEncounterLog.length === 0 ? (
               <p className="faint">尚未交手。</p>
             ) : (
-              encounter.log.map((line, i) => <p key={i}>{line}</p>)
+              visibleEncounterLog.map((line, i) => <p key={i}>{line}</p>)
             )}
           </div>
         </aside>

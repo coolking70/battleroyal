@@ -14,6 +14,7 @@ import { Bar } from './Bar';
 import { VisualImage } from './VisualImage';
 import { QuickRestoreMenu } from './QuickRestoreMenu';
 import { decideQuickRestore, type RestoreSlot } from '../quickRestore';
+import { GrowthProgress } from './GrowthProgress';
 
 interface StatusBarProps {
   state: GameState;
@@ -80,7 +81,7 @@ export function StatusBar({
         <span className="topbar-context">生存状态</span>
       </div>
 
-      <div className="survival-metrics" aria-label="生存资源">
+      <div className="survival-metrics" aria-label="生存资源与成长">
         <div className="survival-metric survival-metric-hp">
           <span className="metric-label">生命</span>
           <Bar
@@ -105,6 +106,7 @@ export function StatusBar({
           />
           <b>{player.stamina}/{player.maxStamina}</b>
         </div>
+        <GrowthProgress player={player} />
       </div>
 
       <div className="run-metrics">

@@ -719,3 +719,28 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   `29ef33d`, pushed branch `codex/phase4f1`, draft PR #9, and CI run #70 with every
   verify step green. Pre-existing/regenerated audit artifacts remain intentionally
   unstaged; delivery still requires the PR's final documentation head to stay green.
+
+## Phase 4F-2 progress (2026-08-11)
+
+- Started `codex/phase4f2-growth-presentation` from exact `main @ 65b1500` (v0.4.0).
+  Scope is presentation-only: no `src/core/**`, `src/data/**`, PNG, Manifest, or
+  dependency changes.
+- Added player-only Lv./EXP progress to the existing top-bar P0 resource group,
+  with semantic progressbar values and an explicit Lv.5 “已满级” state. Existing
+  permanent-block structure remains unchanged.
+- The UI glue compares the player's pre/post command state and reuses the existing
+  Toast channel to explain combat, kill bonus, crafting, exploration, and the
+  explicit “休息不会获得经验” zero source. Level-up Toasts include attack,
+  defense, and maxHp deltas and are lifted above the encounter action bar.
+- The visible public death event's `dropCount` now labels the resulting ground
+  items as “击杀战利品”; the event still passes through `visibleEventsForPlayer`.
+  Encounter battle-log rendering filters numeric level/EXP growth terms as a UI
+  boundary backstop; NPC level/EXP is not rendered in the normal encounter UI.
+- Final verification: clean `npm ci`, typecheck, **83/1405** tests, build, save audit
+  **83/83**, dependency audit R1–R4=0, all art/security audits, 500-game `PHASE4F2`
+  engine-health regression (requested=actual=500; observation-only balance output),
+  and production `npm audit --omit=dev` (0 vulnerabilities) all pass. Production
+  browser evidence is 1/1 with console/page errors 0; the 4B-2 five-viewport,
+  4D-2 five-block, and 4C-3 zero-stamina regressions also pass. Runtime and balance
+  JSON snapshots plus `PHASE4F2_REPORT.md` are included; screenshots remain ignored
+  under `output/`.
