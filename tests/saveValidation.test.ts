@@ -130,6 +130,38 @@ describe('[saveValidation] 数值层损坏', () => {
       p.maxHp = 0;
     });
   });
+  it.each([
+    ['缺 level', (p: GameState['characters'][string]) => {
+      delete (p as unknown as Record<string, unknown>).level;
+    }],
+    ['缺 exp', (p: GameState['characters'][string]) => {
+      delete (p as unknown as Record<string, unknown>).exp;
+    }],
+    ['level 类型错误', (p: GameState['characters'][string]) => {
+      (p as unknown as Record<string, unknown>).level = '2';
+    }],
+    ['exp 类型错误', (p: GameState['characters'][string]) => {
+      (p as unknown as Record<string, unknown>).exp = '8';
+    }],
+    ['level 低于下限', (p: GameState['characters'][string]) => {
+      p.level = 0;
+    }],
+    ['level 超过 5 级上限', (p: GameState['characters'][string]) => {
+      p.level = GAME_CONFIG.maxLevel + 1;
+    }],
+    ['exp 为负', (p: GameState['characters'][string]) => {
+      p.exp = -1;
+    }],
+    ['exp 达阈值却未升级', (p: GameState['characters'][string]) => {
+      p.exp = GAME_CONFIG.levelExpThresholds[0]!;
+    }],
+    ['满级仍保留 exp', (p: GameState['characters'][string]) => {
+      p.level = GAME_CONFIG.maxLevel;
+      p.exp = 1;
+    }],
+  ])('拒绝：新增成长字段%s', (_label, mutate) => {
+    expectRejected((s) => mutate(s.characters[s.playerId]!));
+  });
   it('拒绝：活人血量为 0', () => {
     expectRejected((s) => {
       const p = s.characters[s.playerId]!;

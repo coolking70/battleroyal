@@ -670,3 +670,51 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   full tests passed 81/1368 with `--testTimeout=20000` after default 5s environment
   timeouts on four pre-existing long-running cases. Commit/push and CI completion
   are the remaining handoff steps.
+
+## Phase 4F-1 progress (2026-08-11)
+
+- Branch `codex/phase4f1` from exact `main @ fb4152c` (v0.3.2 baseline). Added
+  persistent `Combatant.level/exp` with `GAME_VERSION = 0.4.0`; new games start
+  every player/NPC at Lv.1 / 0 EXP.
+- Shared progression core is deterministic and has no RNG: paid attack settlement
+  gives both participants 8 EXP, kill adds 7, craft derives 2–6 EXP from the
+  existing output `value`, search/move give 1, rest gives 0. Guard/flee have no
+  hook, and all cost-gated awards require an actual positive stamina spend;
+  therefore zero-stamina guard, flee, and free field craft yield 0 EXP.
+- Level thresholds are 20/30/40/50, cap Lv.5. Each level adds attack +1, defense
+  +1, maxHp +10, and a living character's current HP +10. Player and NPC paths
+  share the same action and level-up functions; an execution test levels an NPC
+  through `attackActor`.
+- Old-save policy: explicit invalidation without migration or deletion. A 0.3.2
+  in-progress save has no history from which to reconstruct accrued growth, so
+  `loadGame` returns a readable version mismatch before deep validation while
+  preserving the original storage value.
+- Save audit matrix expanded from 74 to 83 corrupted cases for missing/type/bounds/
+  threshold errors in level/exp. DebugPanel is the only UI touched; it exposes
+  player and NPC level/exp solely under `?debug=1` and includes level/exp in the
+  debug summary export.
+- First verification pass: typecheck green; focused progression/save/4C-3 tests
+  104/104; full suite **82 files / 1399 tests** green. No pre-existing deterministic
+  expectation changed except the exact version assertion required by the 0.4.0
+  bump.
+- Production evidence added in `tests/browser/phase4f1-progression-evidence.spec.ts`:
+  5 ignored screenshots plus committed `reports/phase4f1-runtime.json` prove initial
+  state, both combat participants gaining EXP, player and NPC level-ups with stat/HP
+  changes, and five zero-stamina guards leaving EXP unchanged. Visual inspection
+  confirmed the debug values are legible; 1280×720 has no overflow, `[title]=0`, and
+  console/page errors are empty.
+- Two historical browser fixtures needed deterministic updates without weaker
+  assertions: the 4E-1 kill target is capped at Lv.5 so pre-kill combat cannot raise
+  its 1 HP, and the 4B-3 craft-state segment uses isolated wood/stone while its real
+  item/nothing/pending search paths stay unchanged. Final clean production browser
+  suite: **28/28 passed**, including the five-viewport/6-combat-action contracts.
+- Final clean gates green: `rm -rf node_modules && npm ci`, typecheck, **82/1399**
+  unit tests, build, save audit **83/83**, dependency audit R1–R4=0, all art/security
+  audits (35 PNG unchanged), 500-game `PHASE4F1` regression (requested=actual=500;
+  timeout/illegal/deadlock/hard-limit=0), and `npm audit --omit=dev` (0 findings).
+  Balance observations were recorded only; no tuning was made.
+- Deliverables now present: `PHASE4F1_REPORT.md`,
+  `reports/phase4f1-balance.{json,md}`, `reports/phase4f1-runtime.json`, production
+  code/tests, and this progress entry. Remaining handoff: review/stage only intended
+  files (leave pre-existing/regenerated audit artifacts unstaged), commit, push, open
+  the PR, and wait for CI green before delivery.

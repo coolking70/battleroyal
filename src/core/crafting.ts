@@ -12,6 +12,7 @@ import {
   missingIngredients,
 } from './inventory';
 import { consumeFieldCraftCharge, hasFieldCraftCharge } from './skills';
+import { craftExperienceFor, gainCostedActionExperience } from './progression';
 import type { Combatant, GameState, Recipe, RecipeIngredient } from './types';
 
 export interface RecipeView {
@@ -152,6 +153,7 @@ export function performCraft(
 
   actor.stats.crafts += 1;
   state.stats.crafts += 1;
+  gainCostedActionExperience(actor, craftExperienceFor(recipe.outputItemId), cost);
 
   const outName = getItem(recipe.outputItemId).name;
   pushEvent(state, {

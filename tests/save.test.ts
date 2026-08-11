@@ -39,6 +39,8 @@ describe('本地存档', () => {
     expect(Object.keys(restored.characters)).toEqual(Object.keys(state.characters));
     expect(player(restored).hp).toBe(player(state).hp);
     expect(player(restored).stamina).toBe(player(state).stamina);
+    expect(player(restored).level).toBe(player(state).level);
+    expect(player(restored).exp).toBe(player(state).exp);
     expect(restored.events.length).toBe(state.events.length);
   });
 
@@ -104,20 +106,21 @@ describe('本地存档', () => {
     expect(res.error).toContain('版本');
   });
 
-  it('Phase 3A-2：0.3.1 及更早存档被明确拒绝，不做迁移', () => {
-    // Phase 3A-2 版本 0.3.2（只修闭环与资产加载，不改变存档结构语义）；0.3.1 及更早存档
-    // 里的旧技能语义 / 旧事件字段在新规则下没有对应，宁可拒绝不做迁移。
-    expect(GAME_VERSION).toBe('0.3.2');
+  it('Phase 4F-1：0.3.2 旧档被明确拒绝、保留且不自动迁移', () => {
+    // 0.3.2 没有 level / exp，也没有足够历史重建进行中角色的成长。
+    // 因此 0.4.0 明确失效旧档，但不静默删除原始数据。
+    expect(GAME_VERSION).toBe('0.4.0');
 
     const state = newGame();
     saveGame(state);
     const raw = JSON.parse(storage.getItem(SAVE_KEY)!) as Record<string, unknown>;
-    raw.version = '0.3.0';
+    raw.version = '0.3.2';
     storage.setItem(SAVE_KEY, JSON.stringify(raw));
 
     const res = loadGame();
     expect(res.ok).toBe(false);
-    expect(res.error).toContain('版本');
+    expect(res.error).toContain('存档版本不匹配');
+    expect(res.error).toContain('旧档不会自动迁移或删除');
     // 拒绝 ≠ 静默清档：原始数据仍在，用户可以自己导出备份
     expect(storage.getItem(SAVE_KEY)).toBeTruthy();
   });

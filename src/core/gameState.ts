@@ -66,6 +66,8 @@ function createCombatant(params: {
     isPlayer: params.isPlayer,
     characterId: def.id,
     personality: params.personality,
+    level: 1,
+    exp: 0,
     hp: def.maxHp,
     maxHp: def.maxHp,
     stamina: def.maxStamina,

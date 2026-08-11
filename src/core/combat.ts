@@ -16,6 +16,7 @@ import {
   weaponAttackOf,
 } from './inventory';
 import { consumeAdrenalineCharge, ADRENALINE_ID } from './skills';
+import { awardAttackExperience } from './progression';
 import { selfDamageTakenMultiplier } from './statusIds';
 import { applyDamage } from './vitals';
 import { worldModifiersAt } from './worldEvents';
@@ -189,7 +190,7 @@ export function resolveAttack(
   state.stats.attacks += 1;
   // Phase 3A：体力成本走 attackStaminaCostFor，肾上腺素的折扣才会真的落地，
   // 且与 UI / legalActions 读的是同一个函数（不重蹈 BUG-01 的覆辙）。
-  spendStamina(attacker, attackStaminaCostFor(attacker, style));
+  const staminaSpent = spendStamina(attacker, attackStaminaCostFor(attacker, style));
   // Phase 3A-1 统计：记录本次攻击是否处于肾上腺素状态（供模拟指标）
   const adrenalineActive = attacker.statusEffects.some(
     (e) => e.id === ADRENALINE_ID,
@@ -256,6 +257,7 @@ export function resolveAttack(
         ranged: rangedAttack,
       },
     });
+    awardAttackExperience(attacker, defender, false, staminaSpent);
     return { hit: false, damage: 0, targetDied: false, weaponBroke, message: msg };
   }
 
@@ -351,6 +353,8 @@ export function resolveAttack(
       metadata: { broke: true },
     });
   }
+
+  awardAttackExperience(attacker, defender, res.died, staminaSpent);
 
   return {
     hit: true,
