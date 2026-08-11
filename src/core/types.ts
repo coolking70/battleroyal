@@ -40,10 +40,7 @@ export interface ItemStack {
   count: number;
   /** 武器当前耐久，非武器为 undefined */
   durability?: number;
-  /** 尸体掉落的击杀者 id；普通丢弃为 undefined。物品被捡进背包时清除。 */
-  droppedBy?: string;
-  /** 已在该区域搜索过、因而看得见这批遗物的角色 id；击杀者无需列入。 */
-  revealedTo?: string[];
+  droppedBy?: string; revealedTo?: string[]; // 尸体掉落归属，见 legalActions.canAccessGroundItem
 }
 
 /* ------------------------------------------------------------------ */
