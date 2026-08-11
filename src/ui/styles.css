@@ -531,9 +531,10 @@ input {
 
 .survival-metrics {
   display: grid;
-  grid-template-columns: repeat(2, minmax(142px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 7px;
-  flex: 0 1 330px;
+  flex: 0 1 430px;
+  min-width: 0;
 }
 
 .survival-metric {
@@ -561,6 +562,64 @@ input {
 
 .survival-metric-stamina {
   border-color: #315468;
+}
+
+/* Phase 4F-2：成长并入既有 P0 生存资源组，不形成第六个常驻信息块。 */
+.survival-metric-growth {
+  grid-template-columns: auto minmax(0, 1fr);
+  border-color: #64502a;
+}
+
+.growth-progress-wrap,
+.growth-max-state {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+
+.growth-progress-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #0b0e12;
+  border: 1px solid #4e4126;
+}
+
+.growth-progress-track > i {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #a27a32, #e4bf62);
+}
+
+.growth-progress-copy,
+.growth-max-state {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.growth-progress-copy b,
+.growth-max-state b {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: #f0d487;
+}
+
+.growth-progress-copy span,
+.growth-max-state span {
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.growth-max-state span {
+  color: #f0d487;
+  font-weight: 700;
 }
 
 .run-metrics {
@@ -1578,6 +1637,28 @@ span.encounter-enemy-visual {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.corpse-loot-notice {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid #7c6130;
+  border-left: 3px solid #e0b75a;
+  border-radius: var(--radius);
+  background: linear-gradient(90deg, rgba(93, 68, 27, 0.5), rgba(20, 28, 35, 0.82));
+}
+
+.corpse-loot-notice h4 {
+  margin: 0;
+  color: #f0d487;
+  font-size: 12px;
+}
+
+.corpse-loot-notice p {
+  margin: 4px 0 0;
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .ground-item {
@@ -3219,6 +3300,19 @@ span.encounter-enemy-visual {
   border-color: var(--accent-dim);
 }
 
+.toast-growth {
+  border-color: #d8a657 !important;
+  background: linear-gradient(135deg, #3a2e1b, #1d242c);
+  color: #ffe5a4;
+  font-weight: 700;
+  box-shadow: 0 8px 28px rgba(92, 65, 24, 0.5);
+}
+
+/* 遭遇行动栏是 P0：升级提示上移，不能遮住 6 个战斗动作。 */
+.app:has(.actionbar-combat) .toast-growth {
+  bottom: 132px;
+}
+
 @keyframes toast-in {
   from {
     opacity: 0;
@@ -3243,6 +3337,9 @@ span.encounter-enemy-visual {
 @media (max-width: 760px) {
   .game {
     overflow: hidden;
+  }
+  .app:has(.actionbar-combat) .toast-growth {
+    bottom: 140px;
   }
   .board {
     padding: 8px;
@@ -3321,6 +3418,7 @@ span.encounter-enemy-visual {
   }
   .survival-metrics {
     min-width: min(100%, 280px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .run-metrics {
     order: 3;

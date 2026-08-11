@@ -35,7 +35,7 @@ import { CraftGoalBar } from '../components/CraftGoalBar';
 import { CraftPanel } from '../components/CraftPanel';
 import { CraftingCodex } from '../components/CraftingCodex';
 import { EncounterHero } from '../components/EncounterHero';
-import { EventLog } from '../components/EventLog';
+import { EventLog, visibleEventsForPlayer } from '../components/EventLog';
 import { Inventory } from '../components/Inventory';
 import { PendingPickupPanel } from '../components/PendingPickupPanel';
 import { PlanningDrawer } from '../components/PlanningDrawer';
@@ -186,6 +186,19 @@ export function GameScreen({
   const logEvents = useMemo(
     () => recentEvents(state, LOG_DISPLAY_COUNT),
     [state],
+  );
+  const latestPlayerCorpseLoot = useMemo(
+    () => visibleEventsForPlayer(state.events, state.playerId)
+      .slice()
+      .reverse()
+      .find(
+        (event) =>
+          event.type === 'CHARACTER_DIED' &&
+          event.actorId === state.playerId &&
+          event.zoneId === player.currentZoneId &&
+          Number(event.metadata.dropCount ?? 0) > 0,
+      ) ?? null,
+    [state.events, state.playerId, player.currentZoneId],
   );
   const searchFeedback = useMemo(() => latestPlayerSearchFeedback(state), [state]);
 
@@ -358,6 +371,17 @@ export function GameScreen({
                 player={player}
                 onEquip={(uid) => dispatch({ type: 'EQUIP', uid })}
               />
+            )}
+
+            {latestPlayerCorpseLoot && (zoneState?.groundItems.length ?? 0) > 0 && (
+              <div className="stage-section corpse-loot-notice" aria-live="polite">
+                <h4>击杀战利品</h4>
+                <p>
+                  {latestPlayerCorpseLoot.message} 该对手遗留的{' '}
+                  <strong>{latestPlayerCorpseLoot.metadata.dropCount} 件战利品</strong>{' '}
+                  已落在地面，可拾取。
+                </p>
+              </div>
             )}
 
             {pending && (

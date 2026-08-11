@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { executeCommand } from '../core/gameEngine';
-import { createGame } from '../core/gameState';
+import { createGame, getPlayer } from '../core/gameState';
 import { clearSave, loadGame, saveGame } from '../core/saveLoad';
 import type { Command, GameState } from '../core/types';
+import { growthFeedbackText } from './growthPresentation';
 
 export interface Toast {
   id: number;
@@ -78,7 +79,16 @@ export function useGame(): UseGameApi {
       setState((prev) => {
         if (!prev) return prev;
         const result = executeCommand(prev, command);
-        notify(result.message, result.ok ? 'ok' : 'error');
+        notify(
+          growthFeedbackText({
+            command,
+            before: getPlayer(prev),
+            after: getPlayer(result.state),
+            message: result.message,
+            ok: result.ok,
+          }),
+          result.ok ? 'ok' : 'error',
+        );
         return result.state;
       });
     },

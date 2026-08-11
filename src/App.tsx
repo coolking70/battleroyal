@@ -87,7 +87,12 @@ export default function App(): JSX.Element {
           characterId: player.characterId,
           zoneId: player.currentZoneId,
           hp: player.hp,
+          maxHp: player.maxHp,
           stamina: player.stamina,
+          level: player.level,
+          exp: player.exp,
+          attack: player.attack,
+          defense: player.defense,
           alive: player.alive,
         },
         encounter: state.encounter

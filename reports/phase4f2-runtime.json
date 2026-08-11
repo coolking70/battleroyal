@@ -1,0 +1,41 @@
+{
+  "version": "0.4.0",
+  "ownGrowth": {
+    "initialLevel": 1,
+    "initialExp": 0,
+    "maxLevel": 5
+  },
+  "encounterUpgrade": {
+    "before": {
+      "level": 1,
+      "exp": 12
+    },
+    "visibleToast": "升级 Lv.2！攻击 +1 · 防御 +1 · 最大生命 +10"
+  },
+  "corpseLoot": {
+    "dropCount": 3
+  },
+  "maxLevel": {
+    "level": 5,
+    "text": "已满级"
+  },
+  "browser": {
+    "layout": {
+      "viewport": "390x844",
+      "bodyScrollWidth": 390,
+      "documentScrollWidth": 390,
+      "titleCount": 0,
+      "actionbarBottom": 844,
+      "actionbarHeight": 128.859375,
+      "residentBlocks": [
+        ".topbar",
+        ".zone-rail",
+        ".zone-hero",
+        ".craft-goal-bar",
+        ".actionbar"
+      ]
+    },
+    "consoleErrors": [],
+    "pageErrors": []
+  }
+}
