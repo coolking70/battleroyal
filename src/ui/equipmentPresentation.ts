@@ -1,4 +1,9 @@
-import { getEquippedArmor, getEquippedWeapon } from '../core/inventory';
+import {
+  armorDefenseOf,
+  getEquippedArmor,
+  getEquippedWeapon,
+  weaponAttackOf,
+} from '../core/inventory';
 import type { Combatant, ItemCategory, ItemStack } from '../core/types';
 import { getItem } from '../data/items';
 
@@ -36,6 +41,10 @@ function equippedFor(player: Combatant, slot: EquipmentSlot): ItemStack | null {
   return slot === 'weapon' ? getEquippedWeapon(player) : getEquippedArmor(player);
 }
 
+function metricLabel(slot: EquipmentSlot): string {
+  return slot === 'weapon' ? '攻击' : '防御';
+}
+
 /** 返回玩家背包中同一物品的一个实例，供父层派发精确 uid 的 EQUIP。 */
 export function inventoryEquipmentCandidate(
   player: Combatant,
@@ -64,14 +73,28 @@ export function equipmentHandoffFor(
   const equipped = equippedFor(player, slot);
   const candidate = inventoryEquipmentCandidate(player, itemId);
   const candidateScore = scoreOf(itemId, slot);
-  const equippedScore = equipped ? scoreOf(equipped.itemId, slot) : 0;
+  // 只比较槽位关键属性；耐久度刻意不参与本轮提示判定。
+  const equippedScore = slot === 'weapon' ? weaponAttackOf(player) : armorDefenseOf(player);
 
   let status: EquipmentHandoffStatus = 'none';
   if (equipped?.itemId === itemId) status = 'equipped';
-  else if (candidate && candidateScore > equippedScore) status = 'ready';
+  else if (candidate && (!equipped || candidateScore > equippedScore)) status = 'ready';
   else if (candidate) status = 'backup';
 
   return { slot, itemId, candidate, equipped, status, candidateScore, equippedScore };
+}
+
+/** 合成提示中的简短数值对比；只允许展示玩家自己的装备与成品数值。 */
+export function equipmentComparisonText(handoff: EquipmentHandoff): string {
+  const metric = metricLabel(handoff.slot);
+  return handoff.equipped
+    ? `${metric} ${handoff.equippedScore} → ${handoff.candidateScore}`
+    : `当前空槽 · ${metric} +${handoff.candidateScore}`;
+}
+
+/** 合成成品只有空槽或严格变强时才给装备提示。 */
+export function shouldPromptCraftEquipment(handoff: EquipmentHandoff | null): boolean {
+  return Boolean(handoff?.candidate && handoff.status === 'ready');
 }
 
 /** 背包装备槽使用：总是显示该槽位数值最高的候选，而不是第一格物品。 */
