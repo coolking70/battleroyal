@@ -2,7 +2,7 @@
   "meta": {
     "tool": "audit-save-validation",
     "version": "0.4.0",
-    "generatedAt": "2026-08-11T08:30:16.411Z",
+    "generatedAt": "2026-08-11T10:43:18.674Z",
     "control": "normal-save-accepted",
     "totalCases": 83,
     "passedCases": 83,
@@ -280,7 +280,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "角色 p0 的 exp 已达到升级阈值却未升级（20 / 20）",
+      "errorMessage": "角色 p0 的 exp 已达到升级阈值却未升级（30 / 30）",
       "constructionFailed": false
     },
     {

@@ -1,6 +1,7 @@
 import { experienceToNextLevel } from '../../core/progression';
 import { GAME_CONFIG } from '../../data/gameConfig';
 import type { Combatant } from '../../core/types';
+import { Bar } from './Bar';
 
 interface GrowthProgressProps {
   player: Combatant;
@@ -13,9 +14,6 @@ interface GrowthProgressProps {
 export function GrowthProgress({ player }: GrowthProgressProps): JSX.Element {
   const capped = player.level >= GAME_CONFIG.maxLevel;
   const nextLevelExp = experienceToNextLevel(player.level);
-  const progress = capped || nextLevelExp <= 0
-    ? 100
-    : Math.min(100, Math.round((player.exp / nextLevelExp) * 100));
 
   return (
     <div
@@ -23,14 +21,13 @@ export function GrowthProgress({ player }: GrowthProgressProps): JSX.Element {
       data-growth-level={player.level}
       data-growth-capped={capped ? 'true' : 'false'}
     >
-      <span className="metric-label">成长</span>
+      <span className="metric-label">成长 Lv.{player.level}</span>
       {capped ? (
         <div
           className="growth-max-state"
           role="status"
           aria-label={`等级 ${player.level}，已满级`}
         >
-          <b>Lv.{player.level}</b>
           <span>已满级</span>
         </div>
       ) : (
@@ -41,16 +38,12 @@ export function GrowthProgress({ player }: GrowthProgressProps): JSX.Element {
           aria-valuemin={0}
           aria-valuemax={nextLevelExp}
           aria-valuenow={player.exp}
+          aria-valuetext={`Lv.${player.level} ${player.exp}/${nextLevelExp} EXP`}
         >
-          <div className="growth-progress-track" aria-hidden="true">
-            <i style={{ width: `${progress}%` }} />
-          </div>
-          <span className="growth-progress-copy">
-            <b>Lv.{player.level}</b>
-            <span>{player.exp}/{nextLevelExp} EXP</span>
-          </span>
+          <Bar value={player.exp} max={nextLevelExp} kind="growth" />
         </div>
       )}
+      <b>{capped ? '已满级' : `${player.exp}/${nextLevelExp} EXP`}</b>
     </div>
   );
 }

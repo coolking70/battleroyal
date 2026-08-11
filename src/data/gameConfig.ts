@@ -87,7 +87,7 @@ export const GAME_CONFIG = {
   /* --- 经验与等级（Phase 4F-1） --- */
   maxLevel: 5,
   /** 各等级升到下一级所需的“当前级经验”；5 级封顶，不再累计经验。 */
-  levelExpThresholds: [20, 30, 40, 50],
+  levelExpThresholds: [30, 275, 550, 900],
   levelAttackGain: 1,
   levelDefenseGain: 1,
   levelMaxHpGain: 10,

@@ -744,3 +744,25 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   4D-2 five-block, and 4C-3 zero-stamina regressions also pass. Runtime and balance
   JSON snapshots plus `PHASE4F2_REPORT.md` are included; screenshots remain ignored
   under `output/`.
+
+## Phase 4G-1 progress (2026-08-11)
+
+- Started `codex/phase4g1-growth-loot-hotzone` from `main @ ed01c03` (v0.4.0).
+  Only `GAME_CONFIG.levelExpThresholds` changed in the frozen core/data boundary:
+  `[20,30,40,50]` → `[30,275,550,900]`; all experience amounts, cap, combat,
+  drop, save, RNG, and version values remain unchanged.
+- Same-seed 100-game distribution iteration: baseline Lv.5 98%; `[30,60,100,160]`
+  yielded Lv.2 0% / Lv.5 27%; `[35,75,125,190]` yielded Lv.2 57% / Lv.5 10%;
+  final yielded Lv.1 0%, Lv.2 70%, Lv.3 30%, Lv.5 0%.
+- Public `CHARACTER_DIED.dropCount` is now appended to the resolved encounter's
+  main-visual feedback line as immediate “击杀战利品”; the existing lower context
+  notice remains for later pickup and no drop logic changed.
+- Experience now uses the same `Bar` / metric surface as HP and stamina. Vital slot
+  buttons cover the full label + bar + value frame, measure 45px, retain aria/ref/
+  focus behavior and existing 4E-1 restore rules. Quick-restore menu anchors below
+  the whole topbar to preserve P0 clickability on narrow screens.
+- Production browser evidence: G1 1/1, 4B-5 five viewports, 4D-2, 4C-3 and 4E-1
+  all pass with console/page errors 0. Clean gates pass: 84 files / 1408 tests,
+  build, save 83/83, deps R1–R4=0, art/security, 500-game engine regression and
+  production npm audit. Deliverables: `PHASE4G1_REPORT.md`, the level distribution,
+  runtime and balance JSON snapshots; screenshots remain ignored under `output/`.

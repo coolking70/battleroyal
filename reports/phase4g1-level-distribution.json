@@ -1,0 +1,37 @@
+{
+  "version": "0.4.0",
+  "seedPrefix": "PHASE4G1-DISTRIBUTION",
+  "matrix": {
+    "groups": 20,
+    "gamesPerGroup": 5,
+    "totalGames": 100,
+    "characters": ["scout", "fighter", "engineer", "medic"],
+    "policies": ["aggressive", "cautious", "collector", "opportunist", "random"]
+  },
+  "thresholds": [30, 275, 550, 900],
+  "finalLevelCounts": {"1": 0, "2": 70, "3": 30, "4": 0, "5": 0},
+  "finalLevelRates": {"1": 0, "2": 0.7, "3": 0.3, "4": 0, "5": 0},
+  "trustworthyGames": 100,
+  "cells": [
+    {"characterId": "scout", "policy": "aggressive", "games": 5, "finalLevelCounts": {"2": 4, "3": 1}, "trustworthy": 5},
+    {"characterId": "scout", "policy": "cautious", "games": 5, "finalLevelCounts": {"2": 3, "3": 2}, "trustworthy": 5},
+    {"characterId": "scout", "policy": "collector", "games": 5, "finalLevelCounts": {"2": 2, "3": 3}, "trustworthy": 5},
+    {"characterId": "scout", "policy": "opportunist", "games": 5, "finalLevelCounts": {"2": 5}, "trustworthy": 5},
+    {"characterId": "scout", "policy": "random", "games": 5, "finalLevelCounts": {"2": 5}, "trustworthy": 5},
+    {"characterId": "fighter", "policy": "aggressive", "games": 5, "finalLevelCounts": {"2": 3, "3": 2}, "trustworthy": 5},
+    {"characterId": "fighter", "policy": "cautious", "games": 5, "finalLevelCounts": {"2": 3, "3": 2}, "trustworthy": 5},
+    {"characterId": "fighter", "policy": "collector", "games": 5, "finalLevelCounts": {"2": 3, "3": 2}, "trustworthy": 5},
+    {"characterId": "fighter", "policy": "opportunist", "games": 5, "finalLevelCounts": {"2": 4, "3": 1}, "trustworthy": 5},
+    {"characterId": "fighter", "policy": "random", "games": 5, "finalLevelCounts": {"2": 4, "3": 1}, "trustworthy": 5},
+    {"characterId": "engineer", "policy": "aggressive", "games": 5, "finalLevelCounts": {"2": 2, "3": 3}, "trustworthy": 5},
+    {"characterId": "engineer", "policy": "cautious", "games": 5, "finalLevelCounts": {"2": 4, "3": 1}, "trustworthy": 5},
+    {"characterId": "engineer", "policy": "collector", "games": 5, "finalLevelCounts": {"2": 5}, "trustworthy": 5},
+    {"characterId": "engineer", "policy": "opportunist", "games": 5, "finalLevelCounts": {"2": 4, "3": 1}, "trustworthy": 5},
+    {"characterId": "engineer", "policy": "random", "games": 5, "finalLevelCounts": {"2": 3, "3": 2}, "trustworthy": 5},
+    {"characterId": "medic", "policy": "aggressive", "games": 5, "finalLevelCounts": {"2": 3, "3": 2}, "trustworthy": 5},
+    {"characterId": "medic", "policy": "cautious", "games": 5, "finalLevelCounts": {"2": 2, "3": 3}, "trustworthy": 5},
+    {"characterId": "medic", "policy": "collector", "games": 5, "finalLevelCounts": {"2": 5}, "trustworthy": 5},
+    {"characterId": "medic", "policy": "opportunist", "games": 5, "finalLevelCounts": {"2": 3, "3": 2}, "trustworthy": 5},
+    {"characterId": "medic", "policy": "random", "games": 5, "finalLevelCounts": {"2": 3, "3": 2}, "trustworthy": 5}
+  ]
+}

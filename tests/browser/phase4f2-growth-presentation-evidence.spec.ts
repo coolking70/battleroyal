@@ -99,7 +99,9 @@ test('Phase 4F-2 player growth presentation on clean production preview', async 
   const initialState = newGame('PHASE4F2-BROWSER-INITIAL', 'fighter');
   await loadFixture(page, initialState);
   await expect(page.locator('.survival-metric-growth')).toContainText('Lv.1');
-  await expect(page.locator('.growth-progress-wrap')).toContainText('0/20 EXP');
+  await expect(page.locator('.survival-metric-growth')).toContainText(
+    `0/${GAME_CONFIG.levelExpThresholds[0]} EXP`,
+  );
   await screenshot(page, '01-desktop-level-exp');
 
   const encounter = stageEncounter('PHASE4F2-BROWSER-UPGRADE-ENCOUNTER');

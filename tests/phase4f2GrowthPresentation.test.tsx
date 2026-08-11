@@ -55,7 +55,7 @@ describe('Phase 4F-2 player growth presentation', () => {
 
     const growth = container.querySelector('.survival-metric-growth');
     expect(growth?.textContent).toContain('Lv.1');
-    expect(growth?.textContent).toContain('7/20 EXP');
+    expect(growth?.textContent).toContain(`7/${GAME_CONFIG.levelExpThresholds[0]} EXP`);
     expect(growth?.getAttribute('data-growth-capped')).toBe('false');
     expect(container.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow')).toBe('7');
     expect(container.querySelectorAll('.survival-metric')).toHaveLength(3);
@@ -183,5 +183,6 @@ describe('Phase 4F-2 player growth presentation', () => {
     ));
     expect(container.querySelectorAll('[title]')).toHaveLength(0);
     expect(container.querySelector('.growth-progress-wrap')?.getAttribute('aria-label')).toContain('经验进度');
+    expect(container.querySelector('.survival-metric-growth .bar-growth')).not.toBeNull();
   });
 });

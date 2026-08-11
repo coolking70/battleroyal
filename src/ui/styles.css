@@ -262,6 +262,10 @@ input {
   background: linear-gradient(90deg, #3f7d99, var(--stamina));
   box-shadow: 0 0 6px rgba(110, 168, 199, 0.3);
 }
+.bar-growth > i {
+  background: linear-gradient(90deg, #a27a32, #e4bf62);
+  box-shadow: 0 0 6px rgba(228, 191, 98, 0.3);
+}
 
 /* 低生命 / 低体力时条体轻微脉动，强化危机感（纯视觉） */
 @keyframes bar-pulse {
@@ -288,6 +292,37 @@ input {
 .bar-button:focus-visible {
   outline: 3px solid #f4d37d;
   outline-offset: 2px;
+}
+
+/* Phase 4G-1：恢复触发器覆盖整个生命 / 体力视觉框，触控目标至少 44px。 */
+.vital-metric-button {
+  display: grid;
+  grid-template-columns: auto minmax(24px, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.vital-metric-button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.vital-metric-button:focus-visible {
+  outline: 3px solid #f4d37d;
+  outline-offset: 2px;
+}
+
+.vital-metric-shell {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .empty {
@@ -543,10 +578,12 @@ input {
   align-items: center;
   gap: 7px;
   min-width: 0;
+  box-sizing: border-box;
   padding: 6px 8px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: rgba(10, 14, 18, 0.55);
+  min-height: 44px;
 }
 
 .survival-metric b {
@@ -559,6 +596,15 @@ input {
 .survival-metric-hp {
   border-color: #59363a;
 }
+.vital-metric-shell .vital-metric-button {
+  align-self: stretch;
+}
+.vital-metric-shell.survival-metric-hp .vital-metric-button {
+  border-color: #59363a;
+}
+.vital-metric-shell.survival-metric-stamina .vital-metric-button {
+  border-color: #315468;
+}
 
 .survival-metric-stamina {
   border-color: #315468;
@@ -566,51 +612,31 @@ input {
 
 /* Phase 4F-2：成长并入既有 P0 生存资源组，不形成第六个常驻信息块。 */
 .survival-metric-growth {
-  grid-template-columns: auto minmax(0, 1fr);
   border-color: #64502a;
+}
+
+.survival-metric.vital-metric-shell {
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  align-items: stretch;
 }
 
 .growth-progress-wrap,
 .growth-max-state {
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 3px;
+  width: 100%;
 }
 
-.growth-progress-track {
-  height: 6px;
-  overflow: hidden;
-  border-radius: 3px;
-  background: #0b0e12;
-  border: 1px solid #4e4126;
-}
-
-.growth-progress-track > i {
-  display: block;
-  height: 100%;
-  min-width: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #a27a32, #e4bf62);
-}
-
-.growth-progress-copy,
 .growth-max-state {
   display: flex;
-  align-items: baseline;
-  gap: 5px;
+  align-items: center;
+  justify-content: center;
+  min-height: 6px;
   white-space: nowrap;
 }
 
-.growth-progress-copy b,
-.growth-max-state b {
-  font-family: var(--mono);
-  font-size: 12px;
-  color: #f0d487;
-}
-
-.growth-progress-copy span,
 .growth-max-state span {
   color: var(--text-dim);
   font-family: var(--mono);
