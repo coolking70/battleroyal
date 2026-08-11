@@ -409,6 +409,10 @@ export function validateReferences(ctx: ValidationContext): void {
       if (typeof pending.source !== 'string' ||
           (pending.source !== 'search' && pending.source !== 'ground')) {
         fail(`pendingPickup.source 非法（${String(pending.source)}）`);
+      } else if (pending.source === 'search' &&
+        (Object.prototype.hasOwnProperty.call(stack, 'droppedBy') ||
+          Object.prototype.hasOwnProperty.call(stack, 'revealedTo'))) {
+        fail('搜索发现的 pendingPickup 不得携带尸体掉落归属字段');
       }
       const zoneId = pending.zoneId;
       if (typeof zoneId !== 'string' || !zoneIds.has(zoneId)) {

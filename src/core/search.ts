@@ -31,6 +31,22 @@ export interface SearchCheck {
   reason: string | null;
 }
 
+/**
+ * 搜索完成后揭示本区域尚未揭示的尸体遗物。
+ *
+ * 归属记录直接挂在 ItemStack 上：不新增角色级 / 全局状态，也不消耗 RNG。
+ * `revealedTo` 的上限与本游戏最多 6 名角色一致；重复搜索只做幂等检查。
+ */
+function revealCorpseLootToSearcher(state: GameState, actor: Combatant): void {
+  const zone = state.zones[actor.currentZoneId];
+  if (!zone) return;
+  for (const stack of zone.groundItems) {
+    if (!Array.isArray(stack.revealedTo)) continue;
+    if (stack.droppedBy === actor.id || stack.revealedTo.includes(actor.id)) continue;
+    if (stack.revealedTo.length < 6) stack.revealedTo.push(actor.id);
+  }
+}
+
 /** 搜索前置条件校验（体力、存活、对局状态） */
 export function canSearch(state: GameState, actor: Combatant): SearchCheck {
   if (state.status !== 'playing') return { ok: false, reason: '对局已经结束。' };
@@ -150,6 +166,7 @@ export function performSearch(
   actor.stats.searches += 1;
   state.stats.searches += 1;
   addNoise(state, zone.id, 'search');
+  revealCorpseLootToSearcher(state, actor);
 
   const w = computeSearchWeights(state, actor);
   const kind = rng.pickWeighted<'item' | 'enemy' | 'nothing'>([

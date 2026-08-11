@@ -40,6 +40,7 @@ export interface ItemStack {
   count: number;
   /** 武器当前耐久，非武器为 undefined */
   durability?: number;
+  droppedBy?: string; revealedTo?: string[];
 }
 
 /* ------------------------------------------------------------------ */

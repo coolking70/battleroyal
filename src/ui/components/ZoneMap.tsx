@@ -1,6 +1,7 @@
 import type { Combatant, GameState } from '../../core/types';
 import { GAME_CONFIG } from '../../data/gameConfig';
 import { noiseLevelOf, NOISE_LABEL } from '../../core/info';
+import { canAccessGroundItem } from '../../core/legalActions';
 import { zoneDamagePerTick } from '../../core/restrictedZones';
 import { ZONES, areAdjacent } from '../../data/zones';
 import { cx } from '../../utils/format';
@@ -57,7 +58,10 @@ export function ZoneMap({
           const urgency = zoneUrgencyMeta(warningTimeRemaining);
           // 地面掉落不是全局公开情报：远处区域的库存只能留在 DebugPanel，
           // 玩家地图最多确认自己当前所在区域的可拾取物。
-          const showGroundDropCue = isCurrent && (zs?.groundItems.length ?? 0) > 0;
+          const visibleGroundItems = isCurrent
+            ? (zs?.groundItems ?? []).filter((stack) => canAccessGroundItem(player, stack))
+            : [];
+          const showGroundDropCue = visibleGroundItems.length > 0;
 
           return (
             <button
@@ -101,7 +105,7 @@ export function ZoneMap({
                   </span>
                 )}
                 {showGroundDropCue && (
-                  <span>掉落 {zs?.groundItems.length}</span>
+                  <span>有地面物资</span>
                 )}
               </span>
             </button>

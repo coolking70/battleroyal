@@ -128,7 +128,8 @@ test('Phase 4F-2 player growth presentation on clean production preview', async 
   await page.setViewportSize({ width: 1280, height: 720 });
   await loadFixture(page, stageCorpseLoot('PHASE4F2-BROWSER-CORPSE-LOOT'));
   await expect(page.locator('.corpse-loot-notice')).toContainText('击杀战利品');
-  await expect(page.locator('.corpse-loot-notice')).toContainText('件战利品');
+  await expect(page.locator('.corpse-loot-notice')).toContainText('遗留的物资');
+  await expect(page.locator('.corpse-loot-notice')).not.toContainText(/\d+\s*件/);
   await page.locator('.stage').evaluate((element) => {
     element.scrollTop = element.scrollHeight;
   });

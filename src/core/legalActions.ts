@@ -59,7 +59,7 @@ import {
   pickupResolutionActions,
   skillActions,
 } from './legalActionBuilders';
-import type { Combatant, Command, GameState } from './types';
+import type { Combatant, Command, GameState, ItemStack } from './types';
 
 import type { LegalAction } from './legalActionBuilders';
 
@@ -67,6 +67,19 @@ export type { LegalAction, LegalActionCategory } from './legalActionBuilders';
 
 /** 解锁前瞻的最大步数：目前最深的阻塞链是 pendingPickup → 遭遇 → 正常，2 步足够 */
 const MAX_RESOLUTION_LOOKAHEAD = 2;
+
+/**
+ * 地面物品的唯一可见 / 可拾取门槛。
+ *
+ * 普通掉落没有 `revealedTo`，维持原有公开行为；尸体掉落只有击杀者或
+ * 已通过本区域搜索被写入 `revealedTo` 的角色可以看到它。玩家 UI、玩家命令
+ * 与 NPC 自动拾取都复用此判定，避免出现“列表可见但命令拒绝”的漂移。
+ */
+export function canAccessGroundItem(actor: Combatant, stack: ItemStack): boolean {
+  if (stack.droppedBy === undefined && stack.revealedTo === undefined) return true;
+  if (!Array.isArray(stack.revealedTo)) return false;
+  return stack.droppedBy === actor.id || stack.revealedTo.includes(actor.id);
+}
 
 /* ------------------------------------------------------------------ */
 /* 主入口                                                              */
@@ -155,6 +168,7 @@ export function getLegalPlayerCommands(state: GameState): LegalAction[] {
   const zone = state.zones[player.currentZoneId];
   for (const stack of zone?.groundItems ?? []) {
     if (!tryGetItem(stack.itemId)) continue;
+    if (!canAccessGroundItem(player, stack)) continue;
     if (!canAccept(player, stack)) continue;
     out.push(action({ type: 'PICKUP_GROUND', uid: stack.uid }, 'item', 0, null));
   }

@@ -74,8 +74,9 @@ describe('Phase 4B-1 visual shell', () => {
     const remoteButton = Array.from(container.querySelectorAll('.zone-item')).find((node) =>
       node.textContent?.includes(remoteName),
     );
-    expect(currentButton?.textContent).toContain('掉落 1');
-    expect(remoteButton?.textContent).not.toContain('掉落');
+    expect(currentButton?.textContent).toContain('有地面物资');
+    expect(currentButton?.textContent).not.toMatch(/\d+\s*件/);
+    expect(remoteButton?.textContent).not.toContain('有地面物资');
   });
 
   it('defines Safe/Warning/Restricted with label, icon and distinct pattern cues', () => {

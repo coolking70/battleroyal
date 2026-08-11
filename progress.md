@@ -766,3 +766,30 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   build, save 83/83, deps R1–R4=0, art/security, 500-game engine regression and
   production npm audit. Deliverables: `PHASE4G1_REPORT.md`, the level distribution,
   runtime and balance JSON snapshots; screenshots remain ignored under `output/`.
+
+## Phase 4G-2 progress (2026-08-11)
+
+- Started `codex/phase4g2-loot-ownership-world-banner` from exact `main @ 9ed5e1c`.
+  Core scope stayed within `types.ts`, `vitals.ts`, `search.ts` (the explicitly approved
+  addition), `legalActions.ts`, `commandHandlers.ts`, `npcAi.ts` and save validation;
+  `src/data/**`, combat/drop/RNG rules, PNGs and the art approval manifest are unchanged.
+- Implemented corpse-loot ownership on `ItemStack`: killer id plus per-item `revealedTo`
+  (max 6), search reveals after the kill per character, the shared player/NPC access
+  gate blocks unsearched third parties, and pickup reconstruction clears both fields.
+  No `gameState.ts` or character/global search state was added.
+- Removed numeric loot claims from the immediate encounter line, lower notice and map cue;
+  current visible ground items remain the source of truth. Added execution tests proving
+  NPC auto-loot is blocked before its own search and succeeds after it, while ordinary
+  non-corpse drops remain public.
+- Moved persistent world-event banners beside the zone name in the hero. Critical /
+  elevated / ambient, imminent / near / stable, icon and text cues remain present for
+  multiple events; instant announcements remain unchanged.
+- Save audit expanded to 89 rejected corruption cases for ownership metadata. Legacy
+  saves without optional fields use the ordinary-drop default and remain on version 0.4.0.
+- Final clean verification: **86 files / 1422 tests**, typecheck/build, save 89/89,
+  dependency/art/security audits, 500-game PHASE4G2 engine-health regression
+  (requested=actual=500; timeout/illegal/hard-limit=0), and production npm audit all PASS.
+  Production browser evidence covers killer loot, hidden third-party loot, hero banners,
+  390px no-overflow, 5 resident blocks, 6 encounter actions, `[title]=0`, and zero
+  console/page errors. Deliverables: `PHASE4G2_REPORT.md`, balance/runtime JSON;
+  screenshots remain ignored under `output/`.

@@ -1,0 +1,89 @@
+{
+  "version": "0.4.0",
+  "killer": {
+    "feedback": "击杀战利品：该对手遗留了物资，可拾取。",
+    "feedbackVisibleWithoutScroll": true,
+    "promptHasQuantity": false,
+    "groundListVisible": true
+  },
+  "thirdParty": {
+    "groundListVisible": false,
+    "corpseItemVisible": false,
+    "corpseQuantityExposed": false
+  },
+  "worldBanners": {
+    "desktopInHero": true,
+    "mobile": {
+      "bodyScrollWidth": 390,
+      "documentScrollWidth": 390,
+      "titleCount": 0,
+      "heroHeading": {
+        "x": 27,
+        "y": 422.8125,
+        "width": 336,
+        "height": 149.640625,
+        "top": 422.8125,
+        "right": 363,
+        "bottom": 572.453125,
+        "left": 27
+      },
+      "zoneTitle": {
+        "x": 27,
+        "y": 422.8125,
+        "width": 54,
+        "height": 27.5,
+        "top": 422.8125,
+        "right": 81,
+        "bottom": 450.3125,
+        "left": 27
+      },
+      "bannerWrap": {
+        "x": 27,
+        "y": 461.859375,
+        "width": 336,
+        "height": 110.59375,
+        "top": 461.859375,
+        "right": 363,
+        "bottom": 572.453125,
+        "left": 27
+      },
+      "bannerRects": [
+        {
+          "x": 27,
+          "y": 458.29071044921875,
+          "width": 336,
+          "height": 53.296875,
+          "top": 458.29071044921875,
+          "right": 363,
+          "bottom": 511.58758544921875,
+          "left": 27
+        },
+        {
+          "x": 27,
+          "y": 515.5875854492188,
+          "width": 336,
+          "height": 53.296875,
+          "top": 515.5875854492188,
+          "right": 363,
+          "bottom": 568.8844604492188,
+          "left": 27
+        }
+      ],
+      "residentBlocks": [
+        ".topbar",
+        ".zone-rail",
+        ".zone-hero",
+        ".craft-goal-bar",
+        ".actionbar"
+      ]
+    }
+  },
+  "encounter": {
+    "bodyScrollWidth": 390,
+    "documentScrollWidth": 390,
+    "actionButtons": 6,
+    "titleCount": 0
+  },
+  "consoleErrors": [],
+  "pageErrors": []
+}

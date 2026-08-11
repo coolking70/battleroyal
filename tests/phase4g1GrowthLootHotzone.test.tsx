@@ -93,8 +93,16 @@ describe('Phase 4G-1 growth curve, corpse loot, and vital hot zones', () => {
       resolved: true,
     };
     state.encounter = encounter;
-    state.zones[actor.currentZoneId]!.groundItems.push(createStack(state, 'wood'));
-    state.zones[actor.currentZoneId]!.groundItems.push(createStack(state, 'stone'));
+    state.zones[actor.currentZoneId]!.groundItems.push({
+      ...createStack(state, 'wood'),
+      droppedBy: state.playerId,
+      revealedTo: [],
+    });
+    state.zones[actor.currentZoneId]!.groundItems.push({
+      ...createStack(state, 'stone'),
+      droppedBy: state.playerId,
+      revealedTo: [],
+    });
     state.events.push({
       id: 'phase4g1-public-death',
       type: 'CHARACTER_DIED',
@@ -112,7 +120,8 @@ describe('Phase 4G-1 growth curve, corpse loot, and vital hot zones', () => {
     ));
 
     const feedback = container.querySelector('.encounter-hero-feedback')?.textContent ?? '';
-    expect(feedback).toContain('击杀战利品：2 件已落地，可拾取');
-    expect(container.querySelector('.encounter-hero-feedback strong')?.getAttribute('data-corpse-loot-count')).toBe('2');
+    expect(feedback).toContain('击杀战利品：该对手遗留了物资，可拾取');
+    expect(feedback).not.toMatch(/\d+\s*件/);
+    expect(container.querySelector('.encounter-hero-feedback strong')?.getAttribute('data-corpse-loot-available')).toBe('true');
   });
 });

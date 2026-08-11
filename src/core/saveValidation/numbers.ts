@@ -25,7 +25,7 @@ export function validateStack(
   stack: unknown,
   where: string,
 ): boolean {
-  const { fail } = ctx;
+  const { fail, charIds } = ctx;
   if (!isRecord(stack)) {
     fail(`${where} 中存在结构损坏的物品`);
     return false;
@@ -37,6 +37,41 @@ export function validateStack(
     fail(`${where} 的物品缺少非空 uid`);
     ok = false;
   }
+
+  const hasDroppedBy = Object.prototype.hasOwnProperty.call(s, 'droppedBy');
+  const hasRevealedTo = Object.prototype.hasOwnProperty.call(s, 'revealedTo');
+  if (hasDroppedBy || hasRevealedTo) {
+    const groundLike = where.includes('地面') || where === 'pendingPickup';
+    if (!groundLike) {
+      fail(`${where} 不得携带尸体掉落归属字段`);
+      ok = false;
+    }
+    if (hasDroppedBy && (typeof s.droppedBy !== 'string' || !charIds.has(s.droppedBy))) {
+      fail(`${where} 的 droppedBy 不是合法角色引用（${String(s.droppedBy)}）`);
+      ok = false;
+    }
+    if (!hasRevealedTo || !Array.isArray(s.revealedTo)) {
+      fail(`${where} 的尸体掉落缺少合法 revealedTo 数组`);
+      ok = false;
+    } else {
+      if (s.revealedTo.length > 6) {
+        fail(`${where} 的 revealedTo 超过 6 个角色（${s.revealedTo.length}）`);
+        ok = false;
+      }
+      const seen = new Set<string>();
+      for (const id of s.revealedTo) {
+        if (typeof id !== 'string' || !charIds.has(id)) {
+          fail(`${where} 的 revealedTo 含非法角色引用（${String(id)}）`);
+          ok = false;
+        } else if (seen.has(id)) {
+          fail(`${where} 的 revealedTo 存在重复角色（${id}）`);
+          ok = false;
+        }
+        if (typeof id === 'string') seen.add(id);
+      }
+    }
+  }
+
   if (typeof s.itemId !== 'string' || !tryGetItem(s.itemId)) {
     fail(`${where} 持有未知物品（${String(s.itemId)}）`);
     ok = false;

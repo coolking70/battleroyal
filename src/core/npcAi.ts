@@ -13,6 +13,7 @@ import {
 } from './actorActions';
 import { pushEvent } from './events';
 import { noteOwnActionCompleted } from './exposed';
+import { canAccessGroundItem } from './legalActions';
 import type { SkillId } from './skills';
 import {
   addItem,
@@ -81,6 +82,7 @@ function autoLoot(state: GameState, npc: Combatant): void {
   let picks = 2;
   for (let i = zone.groundItems.length - 1; i >= 0 && picks > 0; i--) {
     const stack = zone.groundItems[i]!;
+    if (!canAccessGroundItem(npc, stack)) continue;
     if (canAccept(npc, stack)) {
       zone.groundItems.splice(i, 1);
       addItem(npc, stack);

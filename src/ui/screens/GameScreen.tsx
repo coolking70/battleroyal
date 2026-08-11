@@ -6,6 +6,7 @@ import { canPayActionCost, getActionStaminaCost } from '../../core/actionCosts';
 import { GAME_CONFIG } from '../../data/gameConfig';
 import { listIntel, PRESENCE_TEXT, zonePresence } from '../../core/info';
 import { aliveCharacters } from '../../core/gameState';
+import { canAccessGroundItem } from '../../core/legalActions';
 import { activeWorldEvents } from '../../core/worldEvents';
 import { zoneDamagePerTick } from '../../core/restrictedZones';
 import {
@@ -113,6 +114,14 @@ export function GameScreen({
   const inActiveEncounter = Boolean(encounter && !encounter.resolved && enemy?.alive);
   const resolvedEncounter = Boolean(encounter?.resolved);
   const pending = state.pendingPickup;
+  const visibleGroundItems = useMemo(
+    () => (zoneState?.groundItems ?? []).filter((stack) => canAccessGroundItem(player, stack)),
+    [player.id, zoneState?.groundItems],
+  );
+  const visibleCorpseGroundItems = useMemo(
+    () => visibleGroundItems.filter((stack) => stack.revealedTo !== undefined),
+    [visibleGroundItems],
+  );
 
   /**
    * Phase 4D-3 §2.3：遭遇结束**不需要点击关闭**。
@@ -200,8 +209,8 @@ export function GameScreen({
       ) ?? null,
     [state.events, state.playerId, player.currentZoneId],
   );
-  const encounterLootCount = useMemo(() => {
-    if (!encounter) return 0;
+  const encounterLootAvailable = useMemo(() => {
+    if (!encounter || visibleCorpseGroundItems.length === 0) return false;
     const death = visibleEventsForPlayer(state.events, state.playerId)
       .slice()
       .reverse()
@@ -212,9 +221,8 @@ export function GameScreen({
           event.targetId === encounter.enemyId &&
           event.zoneId === encounter.zoneId,
       );
-    const count = Number(death?.metadata.dropCount ?? 0);
-    return Number.isInteger(count) && count > 0 ? count : 0;
-  }, [encounter, state.events, state.playerId]);
+    return Number(death?.metadata.dropCount ?? 0) > 0;
+  }, [encounter, state.events, state.playerId, visibleCorpseGroundItems]);
   const searchFeedback = useMemo(() => latestPlayerSearchFeedback(state), [state]);
 
   // Phase 4E-1 改进 B：检测"新获得物品使某配方从不可做变为可做"，给出非阻塞提示。
@@ -310,6 +318,11 @@ export function GameScreen({
                   <span className="zone-state-icon" aria-hidden="true">{zoneMeta.icon}</span>
                   <span>{zoneMeta.label}</span>
                 </span>
+                {bannerEvents.length > 0 && (
+                  <div className="event-banner-wrap zone-hero-event-banners" aria-label="当前生效的世界事件">
+                    {bannerEvents.map((ev) => <WorldEventBanner event={ev} compact key={ev.id} />)}
+                  </div>
+                )}
               </div>
               {/* 遭遇态收起区域描述这类风味文案，但危险倒计时 / 禁区侵蚀是战术信息，必须留 */}
               {!heroCompact && <p>{zoneDef.description}</p>}
@@ -337,7 +350,7 @@ export function GameScreen({
                 player={player}
                 enemy={enemy}
                 combat={combatBar}
-                lootCount={encounterLootCount}
+                lootAvailable={encounterLootAvailable}
               />
             )}
           </div>
@@ -375,12 +388,6 @@ export function GameScreen({
               );
             })()}
 
-            {bannerEvents.length > 0 && (
-              <div className="event-banner-wrap">
-                {bannerEvents.map((ev) => <WorldEventBanner event={ev} key={ev.id} />)}
-              </div>
-            )}
-
             {searchFeedback && (
               <SearchResultFeedback
                 feedback={searchFeedback}
@@ -389,13 +396,11 @@ export function GameScreen({
               />
             )}
 
-            {latestPlayerCorpseLoot && (zoneState?.groundItems.length ?? 0) > 0 && (
+            {latestPlayerCorpseLoot && visibleCorpseGroundItems.length > 0 && (
               <div className="stage-section corpse-loot-notice" aria-live="polite">
                 <h4>击杀战利品</h4>
                 <p>
-                  {latestPlayerCorpseLoot.message} 该对手遗留的{' '}
-                  <strong>{latestPlayerCorpseLoot.metadata.dropCount} 件战利品</strong>{' '}
-                  已落在地面，可拾取。
+                  {latestPlayerCorpseLoot.message} 该对手遗留的物资仍在地面，可拾取。
                 </p>
               </div>
             )}
@@ -495,11 +500,11 @@ export function GameScreen({
               </div>
             )}
 
-            {(zoneState?.groundItems.length ?? 0) > 0 && (
+            {visibleGroundItems.length > 0 && (
               <div className="stage-section">
                 <h4>地面掉落</h4>
                 <div className="ground-list">
-                  {zoneState?.groundItems.map((stack) => (
+                  {visibleGroundItems.map((stack) => (
                     <span className="ground-item" key={stack.uid} data-item-id={stack.itemId}>
                       <VisualImage
                         visual={stackPresentation(stack).visual}

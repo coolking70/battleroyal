@@ -161,7 +161,11 @@ describe('Phase 4F-2 player growth presentation', () => {
     const state = createGame({ seed: 'PHASE4F2-CORPSE-LOOT', playerCharacterId: 'scout' });
     const player = getPlayer(state);
     const zone = state.zones[player.currentZoneId]!;
-    zone.groundItems.push(createStack(state, 'wood'));
+    zone.groundItems.push({
+      ...createStack(state, 'wood'),
+      droppedBy: state.playerId,
+      revealedTo: [],
+    });
     state.events.push({
       id: 'phase4f2-corpse-death',
       type: 'CHARACTER_DIED',
@@ -179,7 +183,7 @@ describe('Phase 4F-2 player growth presentation', () => {
     ));
 
     expect(container.querySelector('.corpse-loot-notice')?.textContent).toContain('击杀战利品');
-    expect(container.querySelector('.corpse-loot-notice')?.textContent).toContain('1 件战利品');
+    expect(container.querySelector('.corpse-loot-notice')?.textContent).not.toMatch(/\d+\s*件/);
     expect(container.querySelector('.ground-list')).not.toBeNull();
   });
 

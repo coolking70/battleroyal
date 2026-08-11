@@ -13,6 +13,7 @@ import { canAttack, resolveAttack } from './combat';
 import { performRest, useConsumable } from './consumables';
 import { pushEvent } from './events';
 import { charactersInZone, enemiesInZone } from './gameState';
+import { canAccessGroundItem } from './legalActions';
 import {
   addItem,
   canAccept,
@@ -429,6 +430,7 @@ export function handlePickupGround(
   if (idx < 0) return { ok: false, message: '地上没有这件物品。' };
   const stack = zone.groundItems[idx]!;
 
+  if (!canAccessGroundItem(player, stack)) return { ok: false, message: '你还没有搜索过这里，暂时看不到这件遗物。' };
   // 数据自愈：地面上出现了未知物品（存档被改坏 / 版本残留）时，
   // 直接把它清掉并返回失败，而不是让 getItem 抛异常炸穿命令层。
   const def = tryGetItem(stack.itemId);

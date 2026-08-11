@@ -23,8 +23,8 @@ interface EncounterHeroProps {
   enemy: Combatant;
   /** 行动栏视图模型（含脱离率 / 普通命中率），敌方合法可见字段与行动栏共享同一组数值 */
   combat: CombatActionBarView | null;
-  /** 已由公开 CHARACTER_DIED.dropCount 证明的本次击杀掉落数量。 */
-  lootCount?: number;
+  /** 已由公开 CHARACTER_DIED 与当前可见地面遗物共同证明存在战利品。 */
+  lootAvailable?: boolean;
 }
 
 /**
@@ -50,7 +50,7 @@ export function EncounterHero({
   player,
   enemy,
   combat,
-  lootCount = 0,
+  lootAvailable = false,
 }: EncounterHeroProps): JSX.Element {
   const resolved = encounter.resolved || !enemy.alive;
   const enemyVisualState = resolveCharacterVisualState(enemy, { activeEncounter: !resolved });
@@ -73,8 +73,8 @@ export function EncounterHero({
     ? `${enemy.name} 已经离开该区域，脱离接触。`
     : visibleEncounterLog[visibleEncounterLog.length - 1] ??
       (resolved ? '遭遇已结束。' : '尚未交手，选择一项行动。');
-  const latestFeedback = lootCount > 0 && resolved && !enemy.alive
-    ? `${baseFeedback} 击杀战利品：${lootCount} 件已落地，可拾取。`
+  const latestFeedback = lootAvailable && resolved && !enemy.alive
+    ? `${baseFeedback} 击杀战利品：该对手遗留了物资，可拾取。`
     : baseFeedback;
   const normalHit = combat?.attacks.find((a) => a.style === 'normal')?.hitPct ?? null;
 
@@ -141,7 +141,7 @@ export function EncounterHero({
       <div className="encounter-hero-bottom">
         <div className="encounter-hero-feedback" aria-live="polite">
           <span className="eh-feedback-kicker">即时反馈</span>
-          <strong data-corpse-loot-count={lootCount > 0 ? lootCount : undefined}>{latestFeedback}</strong>
+          <strong data-corpse-loot-available={lootAvailable ? 'true' : undefined}>{latestFeedback}</strong>
         </div>
         <button
           type="button"

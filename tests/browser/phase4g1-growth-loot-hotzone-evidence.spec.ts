@@ -91,7 +91,8 @@ test('Phase 4G-1 production evidence: immediate loot, equal bars, and full-frame
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await loadFixture(page, stageCorpseEncounter('PHASE4G1-BROWSER-CORPSE-DESKTOP'));
-  await expect(page.locator('.encounter-hero-feedback')).toContainText('击杀战利品：3 件已落地，可拾取');
+  await expect(page.locator('.encounter-hero-feedback')).toContainText('击杀战利品：该对手遗留了物资，可拾取');
+  await expect(page.locator('.encounter-hero-feedback')).not.toContainText(/\d+\s*件/);
   const feedbackBox = await page.locator('.encounter-hero-feedback').boundingBox();
   expect(feedbackBox).not.toBeNull();
   expect(feedbackBox!.y + feedbackBox!.height).toBeLessThanOrEqual(720);
@@ -165,7 +166,7 @@ test('Phase 4G-1 production evidence: immediate loot, equal bars, and full-frame
       levelExpThresholds: GAME_CONFIG.levelExpThresholds,
       desktop: desktopMetrics,
       mobile: mobileMetrics,
-      loot: { count: 3, feedback: '击杀战利品：3 件已落地，可拾取。' },
+      loot: { promptHasQuantity: false, feedback: '击杀战利品：该对手遗留了物资，可拾取。' },
       consoleErrors,
       pageErrors,
     }, null, 2)}\n`,
