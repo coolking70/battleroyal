@@ -13,7 +13,7 @@ import { canAttack, resolveAttack } from './combat';
 import { performRest, useConsumable } from './consumables';
 import { pushEvent } from './events';
 import { charactersInZone, enemiesInZone } from './gameState';
-import { canAccessGroundItem } from './legalActions';
+import { canAccessGroundItem, clearGroundOwnership } from './legalActions';
 import {
   addItem,
   canAccept,
@@ -446,7 +446,7 @@ export function handlePickupGround(
   }
 
   zone.groundItems.splice(idx, 1);
-  addItem(player, stack);
+  addItem(player, clearGroundOwnership(stack));
   pushEvent(state, {
     type: 'ITEM_PICKED',
     actorId: player.id,
@@ -485,7 +485,7 @@ export function handleResolvePickup(
   if (!dropped) return { ok: false, message: '要丢弃的物品不存在。' };
 
   if (zone) zone.groundItems.push(dropped);
-  addItem(player, pending.stack);
+  addItem(player, clearGroundOwnership(pending.stack));
   state.pendingPickup = null;
 
   pushEvent(state, {

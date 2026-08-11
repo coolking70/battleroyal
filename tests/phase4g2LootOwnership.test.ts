@@ -137,4 +137,29 @@ describe('Phase 4G-2 corpse loot ownership', () => {
       b.zones[actorB.currentZoneId]!.groundItems,
     );
   });
+  it('拾进背包即清除归属：之后手动丢弃不再被当成尸体遗物', () => {
+    // 回归：归属只描述「躺在地上的遗物」。若入包后仍保留 droppedBy，
+    // 玩家腾背包丢下的东西会被 canAccessGroundItem 判成尸体遗物，
+    // 除原主外谁都看不见 —— 与「非击杀掉落不受此规则约束」相悖。
+    const state = newGame('PHASE4G2-PICKUP-CLEARS');
+    const player = getPlayer(state);
+    const other = npcs(state)[0]!;
+    const zone = state.zones[player.currentZoneId]!;
+
+    const corpse = createStack(state, 'wood');
+    corpse.droppedBy = player.id;
+    corpse.revealedTo = [];
+    zone.groundItems.push(corpse);
+
+    expect(handlePickupGround(state, player, corpse.uid).ok).toBe(true);
+    const inBag = player.inventory.find((s) => s.uid === corpse.uid)!;
+    expect(inBag.droppedBy).toBeUndefined();
+    expect(inBag.revealedTo).toBeUndefined();
+
+    // 丢回地面后应当是普通掉落：任何人都能看见
+    player.inventory = player.inventory.filter((s) => s.uid !== corpse.uid);
+    zone.groundItems.push(inBag);
+    expect(canAccessGroundItem(other, inBag)).toBe(true);
+    expect(auditItemIntegrity(state).ok).toBe(true);
+  });
 });

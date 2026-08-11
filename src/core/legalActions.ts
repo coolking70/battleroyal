@@ -81,6 +81,21 @@ export function canAccessGroundItem(actor: Combatant, stack: ItemStack): boolean
   return stack.droppedBy === actor.id || stack.revealedTo.includes(actor.id);
 }
 
+/**
+ * 物品进入任何角色背包时清除地面归属。
+ *
+ * 归属只描述「这件东西正躺在地上、属于某具尸体」。一旦被捡进背包，
+ * 它就只是普通物品了。不清除的话，玩家腾背包时手动丢下的东西会带着
+ * 旧的 `droppedBy` 落地，被 `canAccessGroundItem` 当成尸体遗物 ——
+ * 除原主外谁都看不见也捡不走，与「非击杀掉落不受此规则约束」相悖。
+ * NPC 满包替换时丢回地面的物品同理。
+ */
+export function clearGroundOwnership(stack: ItemStack): ItemStack {
+  delete stack.droppedBy;
+  delete stack.revealedTo;
+  return stack;
+}
+
 /* ------------------------------------------------------------------ */
 /* 主入口                                                              */
 /* ------------------------------------------------------------------ */

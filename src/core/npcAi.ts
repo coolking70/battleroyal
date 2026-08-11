@@ -13,7 +13,7 @@ import {
 } from './actorActions';
 import { pushEvent } from './events';
 import { noteOwnActionCompleted } from './exposed';
-import { canAccessGroundItem } from './legalActions';
+import { canAccessGroundItem, clearGroundOwnership } from './legalActions';
 import type { SkillId } from './skills';
 import {
   addItem,
@@ -85,7 +85,7 @@ function autoLoot(state: GameState, npc: Combatant): void {
     if (!canAccessGroundItem(npc, stack)) continue;
     if (canAccept(npc, stack)) {
       zone.groundItems.splice(i, 1);
-      addItem(npc, stack);
+      addItem(npc, clearGroundOwnership(stack));
       picks -= 1;
       pushEvent(state, {
         type: 'ITEM_PICKED',
@@ -109,7 +109,7 @@ function autoLoot(state: GameState, npc: Combatant): void {
         zone.groundItems.push(worst);
       }
       zone.groundItems.splice(i, 1);
-      addItem(npc, stack);
+      addItem(npc, clearGroundOwnership(stack));
       picks -= 1;
       pushEvent(state, {
         type: 'ITEM_PICKED',
