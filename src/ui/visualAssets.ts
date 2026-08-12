@@ -119,12 +119,16 @@ export const ZONE_VISUALS: Record<string, VisualSpec> = {
   underground: spec('🚇', '#465d73', '地下通道', null),
 };
 
-/** 角色视觉（四名可选角色） */
+/** 角色视觉（所有可选角色均有显式 emoji/color fallback） */
 export const CHARACTER_VISUALS: Record<string, VisualSpec> = {
   scout: spec('🔭', '#2f6f8f', '侦察员', 'characters/scout.svg'),
   fighter: spec('⚔️', '#a04030', '斗士', 'characters/fighter.svg'),
   engineer: spec('🔧', '#7a6a2f', '工程师', 'characters/engineer.svg'),
   medic: spec('💉', '#2f7a5a', '医学生', 'characters/medic.svg'),
+  survivor: spec('🧭', '#6f7f4b', '生存专家', null),
+  scavenger: spec('🧰', '#9a7445', '拾荒者', null),
+  hunter: spec('🏹', '#4f7a44', '猎人', null),
+  trapper: spec('🪤', '#806a4a', '陷阱师', null),
 };
 
 /** 世界事件视觉（GameScreen 横幅与图例共用，取代原先散落的本地 map） */

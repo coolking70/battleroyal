@@ -135,7 +135,7 @@ export const GAME_CONFIG = {
    */
   exposedMaxDuration: 6,
 
-  /* --- 四角色签名技能（Phase 3A-1 严格回归规格） ---
+  /* --- 既有四角色签名技能（Phase 3A-1 严格回归规格） ---
    *
    * 每个技能自带 cooldown，禁止全局统一冷却。
    * 数值与 SKILL_DESIGN.md 逐字一致。
@@ -211,6 +211,50 @@ export const GAME_CONFIG = {
   skillMedicRegenStaminaCost: 3,
   skillMedicRegenDuration: 3,
   skillMedicRegenHpPerTick: 4,
+
+  /* --- Phase 4L 新职业技能 --- */
+  /** 生存专家 · 第二呼吸：正体力成本换即时体力恢复 */
+  skillSecondWindCooldown: 10,
+  skillSecondWindStaminaCost: 3,
+  skillSecondWindRestore: 12,
+  /** 生存专家 · 扎营：只提高后续 REST，不提供免费行动 */
+  skillCampRoutineCooldown: 8,
+  skillCampRoutineStaminaCost: 2,
+  skillCampRoutineDuration: 3,
+  skillCampRoutineRestBonus: 5,
+
+  /** 拾荒者 · 搜索专注：提高正式搜索的发现权重 */
+  skillScavengeFocusCooldown: 9,
+  skillScavengeFocusStaminaCost: 3,
+  skillScavengeFocusDuration: 4,
+  skillScavengeFocusFindMult: 1.35,
+  /** 拾荒者 · 筛选稀有：提高正式 loot pool 的稀有抽取机会 */
+  skillSortRareCooldown: 10,
+  skillSortRareStaminaCost: 2,
+  skillSortRareDuration: 4,
+  skillSortRareChanceBonus: 0.12,
+
+  /** 猎人 · 追踪目标：只提高搜索遭遇权重，不揭示位置 */
+  skillTrackTargetCooldown: 10,
+  skillTrackTargetStaminaCost: 3,
+  skillTrackTargetDuration: 4,
+  skillTrackTargetEnemyMult: 1.5,
+  /** 猎人 · 稳定瞄准：只提高远程攻击命中率 */
+  skillSteadyAimCooldown: 12,
+  skillSteadyAimStaminaCost: 3,
+  skillSteadyAimDuration: 3,
+  skillSteadyAimRangedHitMult: 1.15,
+
+  /** 陷阱师 · 埋伏准备：把一次防御姿态与反击窗口绑定 */
+  skillPrepareAmbushCooldown: 9,
+  skillPrepareAmbushStaminaCost: 2,
+  skillPrepareAmbushDuration: 4,
+  skillPrepareAmbushCounterBonus: 0.2,
+  /** 陷阱师 · 预留退路：为未来一次撤离保留确定性加成 */
+  skillEscapePlanCooldown: 10,
+  skillEscapePlanStaminaCost: 2,
+  skillEscapePlanDuration: 4,
+  skillEscapePlanFleeBonus: 0.2,
 
   /* --- 禁区 --- */
   /** 第一次公布禁区的时间单位 */
@@ -295,6 +339,18 @@ export const GAME_CONFIG = {
   medicHospitalFindBonus: 0.45,
   /** 巧手：材料类物品搜索权重（Phase 2A-1 从 1.6 加强到 2.2） */
   tinkererMaterialBias: 2.2,
+  /** 生存专家：休息额外恢复 */
+  enduringRestBonus: 4,
+  /** 生存专家：禁区侵蚀倍率 */
+  enduringZoneDamageMult: 0.8,
+  /** 拾荒者：发现物品权重倍率 */
+  resourcefulFindMult: 1.2,
+  /** 拾荒者：材料偏好倍率 */
+  resourcefulMaterialBias: 1.6,
+  /** 猎人：已知目标远程命中加成 */
+  trackerKnownRangedHitMult: 1.08,
+  /** 陷阱师：防御姿态反击概率加成 */
+  trapsetterCounterBonus: 0.2,
 
   /* --- 世界事件（Phase 3A Step 6，取代 Phase 3 的动态事件） --- */
   /**

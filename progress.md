@@ -895,3 +895,17 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Deliverables: `PHASE4J1_REPORT.md`, `reports/phase4j1-diagnosis.json`,
   `reports/phase4j1-comparison.json`, `reports/phase4j1-balance.json`, and the
   measurement regression test. Binary evidence remains local/ignored.
+
+## Phase 4L progress (2026-08-13)
+
+- Completed the required Phase 4K PR #18 merge first: merge commit
+  `bd5ec85dc4cb1c4770e121fb4bd3271e9a7ff25d`; created
+  `agent/phase4l-expanded-profession-roster` from the merged `main`.
+- Added Survivor, Scavenger, Hunter and Trapper with data-driven stats, passives,
+  primary/secondary skills, shared status effects, NPC decisions, AutoPlayer support,
+  save validation, UI cards and explicit emoji/color fallback visuals.
+- Added Phase 4L tests and updated historical matrix/art acceptance tests for the
+  expanded registry while preserving existing official art and old-role simulation RNG.
+- Generated the 500-game `PHASE4L` regression: 8 roles × 5 policies = 40 cells,
+  requested=actual 500, engine health PASS, balance ratio 2.71 recorded only.
+- Remaining: final gate rerun, commit/push, Draft PR, and human browser playtest.

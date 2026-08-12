@@ -6,7 +6,13 @@ import { pushEvent } from './events';
 import { addNoise } from './info';
 import { addItem, canAccept, createStack } from './inventory';
 import { charactersInZone } from './gameState';
-import { hasScoutAwareness } from './statusIds';
+import {
+  hasScoutAwareness,
+  searchEnemyMultiplier,
+  searchFindMultiplier,
+  searchMaterialBias,
+  searchRareChanceBonus,
+} from './statusIds';
 import { isZoneExhausted, takeLootItem } from './zoneLoot';
 import { worldModifiersAt } from './worldEvents';
 import type { SeededRandom } from './random';
@@ -87,6 +93,8 @@ export function computeSearchWeights(
   if (actor.passiveId === 'field_medic' && zone.id === 'hospital') {
     find *= 1 + GAME_CONFIG.medicHospitalFindBonus;
   }
+  if (actor.passiveId === 'resourceful') find *= GAME_CONFIG.resourcefulFindMult;
+  find *= searchFindMultiplier(actor);
 
   const others = charactersInZone(state, actor.currentZoneId).filter(
     (c) => c.id !== actor.id,
@@ -100,6 +108,7 @@ export function computeSearchWeights(
   if (actor.passiveId === 'keen_eye' && enemy > 0) {
     enemy *= GAME_CONFIG.keenEyeEncounterBonus;
   }
+  enemy *= searchEnemyMultiplier(actor);
 
   // 区域被翻得越多，越容易一无所获
   let nothing =
@@ -142,9 +151,17 @@ export function rollItemId(
   const zone = state.zones[actor.currentZoneId];
   if (!zone) return null;
 
-  const preferRare = rng.chance(GAME_CONFIG.rareChance);
+  const preferRare = rng.chance(
+    Math.min(0.95, GAME_CONFIG.rareChance + searchRareChanceBonus(actor)),
+  );
   // 物品类别偏好只来自角色被动，世界事件不参与（Phase 3A-1：研究异常不再加材料搜索率）
-  const materialBias = actor.passiveId === 'tinkerer' ? GAME_CONFIG.tinkererMaterialBias : 1;
+  const passiveBias =
+    actor.passiveId === 'tinkerer'
+      ? GAME_CONFIG.tinkererMaterialBias
+      : actor.passiveId === 'resourceful'
+        ? GAME_CONFIG.resourcefulMaterialBias
+        : 1;
+  const materialBias = passiveBias * searchMaterialBias(actor);
 
   return takeLootItem(zone, rng, preferRare, materialBias, 1);
 }

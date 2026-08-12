@@ -48,6 +48,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { GAME_CONFIG, GAME_VERSION } from '../src/data/gameConfig';
 import { CHARACTERS } from '../src/data/characters';
+import { getCharacterSkills, type SkillId } from '../src/core/skills';
 import { WORLD_EVENT_IDS } from '../src/core/worldEvents';
 
 import {
@@ -1028,9 +1029,12 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
   const deltaPPPassed = ['quick', 'normal', 'heavy'].every(
     (s) => (styleDeltaPP[s] ?? Infinity) < DELTA_PP_LIMIT,
   );
-  // 4 种玩家技能每种 playerUses > 0（3000 局规模）
+  // 每个职业主技能都要在玩家侧实际被使用（规模由矩阵决定）
   const skillStats = all.skillStats;
-  const skillPlayerUsesAll = ['scout_recon', 'adrenaline', 'field_craft', 'emergency_treatment'].every(
+  const primarySkillIds = characterIds
+    .map((characterId) => getCharacterSkills(characterId)[0])
+    .filter((skillId): skillId is SkillId => Boolean(skillId));
+  const skillPlayerUsesAll = primarySkillIds.every(
     (sid) => (skillStats[sid]?.playerUses ?? 0) > 0,
   );
   const phase3aPassed =
@@ -1226,7 +1230,7 @@ function renderMarkdown(report: BalanceReport): string {
   const L: string[] = [];
   const bar = '#'.repeat(64);
 
-  L.push('# Phase 3 平衡模拟报告');
+  L.push('# Simulation Regression Report');
   L.push('');
   L.push(`- 版本：${meta.version}`);
   L.push(`- mode：${meta.mode}`);

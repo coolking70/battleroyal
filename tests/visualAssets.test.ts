@@ -45,7 +45,12 @@ describe('manifest 与磁盘文件一致性', () => {
     for (const z of ZONES.filter((zone) => !LEGACY_ZONE_IDS.includes(zone.id as never))) {
       expect(set.has(`zones/${z.id}.svg`)).toBe(false);
     }
-    for (const c of CHARACTERS) expect(set.has(`characters/${c.id}.svg`), `缺 characters/${c.id}.svg`).toBe(true);
+    for (const c of CHARACTERS.filter((character) => ['scout', 'fighter', 'engineer', 'medic'].includes(character.id))) {
+      expect(set.has(`characters/${c.id}.svg`), `缺 characters/${c.id}.svg`).toBe(true);
+    }
+    for (const c of CHARACTERS.filter((character) => !['scout', 'fighter', 'engineer', 'medic'].includes(character.id))) {
+      expect(set.has(`characters/${c.id}.svg`), `新职业 ${c.id} 不应伪造图片资产`).toBe(false);
+    }
     for (const id of WORLD_EVENT_IDS) expect(set.has(`events/${id}.svg`), `缺 events/${id}.svg`).toBe(true);
   });
 });
@@ -70,7 +75,11 @@ describe('注册表覆盖与 fallback', () => {
       const v = visualFor('character', def.id);
       expect(v, `角色 ${def.id} 掉进兜底`).not.toBe(FALLBACK_VISUAL);
       expect(v.label).toBe(def.name);
-      expect(v.image, `角色 ${def.id} 应有图片`).not.toBeNull();
+      if (['scout', 'fighter', 'engineer', 'medic'].includes(def.id)) {
+        expect(v.image, `既有角色 ${def.id} 应有图片`).not.toBeNull();
+      } else {
+        expect(v.image, `新职业 ${def.id} 应明确使用 emoji fallback`).toBeNull();
+      }
     }
   });
 

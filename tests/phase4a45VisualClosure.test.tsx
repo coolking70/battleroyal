@@ -74,7 +74,7 @@ describe('Phase 4A-4.5 derived character visual state', () => {
 
   it('maps all twelve character base slots to official runtime paths', async () => {
     setAssetManifest(await manifest());
-    for (const character of CHARACTERS) {
+    for (const character of CHARACTERS.filter((candidate) => ['scout', 'fighter', 'engineer', 'medic'].includes(candidate.id))) {
       for (const slot of ['portrait', 'injured', 'combat'] as const) {
         const visual = getCharacterVisual(character.id, slot);
         expect(visual.source, `${character.id}/${slot}`).toBe('official');

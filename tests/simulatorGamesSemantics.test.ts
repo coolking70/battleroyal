@@ -1,7 +1,7 @@
 /**
  * Phase 3 · P3-P1 模拟器 `--games` 语义验收。
  *
- * 背景（必须修的缺陷）：
+ * 背景（必须修的缺陷；Phase 4L 已扩展为当前职业注册表）：
  * Phase 2A-1 里 `--games 1000` 实际跑了 4 角色 × 5 策略 × 1000 = **20 000 局**，
  * 报告却写「1000 局」。这让所有引用过该数字的文档都失真了。
  *
@@ -31,7 +31,7 @@ import { CHARACTERS } from '../src/data/characters';
 
 const ALL_CHARACTERS = CHARACTERS.map((c) => c.id);
 const ALL_POLICIES = [...AUTO_PLAYER_POLICIES];
-/** 全矩阵 cell 数：4 × 5 = 20 */
+/** 全矩阵 cell 数：当前职业注册表 × 5 策略 */
 const FULL_CELL_COUNT = ALL_CHARACTERS.length * ALL_POLICIES.length;
 
 function planFull(argv: string[]): ReturnType<typeof planGames> {
@@ -120,10 +120,10 @@ describe('[Phase 3 · P3-P1] --games 表示总对局数', () => {
     expect(plan.cellCount).toBe(FULL_CELL_COUNT);
     expect(plan.requestedTotalGames).toBe(1000);
     expect(plan.actualTotalGames).toBe(1000);
-    expect(plan.gamesPerCell).toBe(50);
-    // 1000 / 20 整除，每格恰好 50
+    expect(plan.gamesPerCell).toBe(Math.floor(1000 / FULL_CELL_COUNT));
+    // 总局数在当前完整矩阵中平均分配
     expect(plan.distribution).toHaveLength(FULL_CELL_COUNT);
-    expect(plan.distribution.every((d) => d.games === 50)).toBe(true);
+    expect(plan.distribution.every((d) => d.games === Math.floor(1000 / FULL_CELL_COUNT))).toBe(true);
     expect(plan.distribution.reduce((a, d) => a + d.games, 0)).toBe(1000);
   });
 
@@ -131,12 +131,16 @@ describe('[Phase 3 · P3-P1] --games 表示总对局数', () => {
     const plan = planFull(['--games', '1003']);
     expect(plan.requestedTotalGames).toBe(1003);
     expect(plan.actualTotalGames).toBe(1003);
-    expect(plan.gamesPerCell).toBe(50);
+    expect(plan.gamesPerCell).toBe(Math.floor(1003 / FULL_CELL_COUNT));
     expect(plan.distribution.reduce((a, d) => a + d.games, 0)).toBe(1003);
 
     const counts = plan.distribution.map((d) => d.games);
-    expect(counts.slice(0, 3)).toEqual([51, 51, 51]);
-    expect(counts.slice(3).every((n) => n === 50)).toBe(true);
+    expect(counts.slice(0, 3)).toEqual([
+      Math.floor(1003 / FULL_CELL_COUNT) + 1,
+      Math.floor(1003 / FULL_CELL_COUNT) + 1,
+      Math.floor(1003 / FULL_CELL_COUNT) + 1,
+    ]);
+    expect(counts.slice(3).every((n) => n === Math.floor(1003 / FULL_CELL_COUNT))).toBe(true);
     // 任意两格差距不超过 1（真正的「平均分配」）
     expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
   });
@@ -145,17 +149,17 @@ describe('[Phase 3 · P3-P1] --games 表示总对局数', () => {
     const plan = planFull(['--games-per-cell', '100']);
     expect(plan.mode).toBe('per-cell');
     expect(plan.gamesPerCell).toBe(100);
-    expect(plan.requestedTotalGames).toBe(2000);
-    expect(plan.actualTotalGames).toBe(2000);
+    expect(plan.requestedTotalGames).toBe(100 * FULL_CELL_COUNT);
+    expect(plan.actualTotalGames).toBe(100 * FULL_CELL_COUNT);
     expect(plan.distribution.every((d) => d.games === 100)).toBe(true);
-    expect(plan.distribution.reduce((a, d) => a + d.games, 0)).toBe(2000);
+    expect(plan.distribution.reduce((a, d) => a + d.games, 0)).toBe(100 * FULL_CELL_COUNT);
   });
 
   it('--games 2000（Phase 3 验收档）→ 每格 100 局，合计 2000', () => {
     const plan = planFull(['--games', '2000']);
     expect(plan.actualTotalGames).toBe(2000);
-    expect(plan.gamesPerCell).toBe(100);
-    expect(plan.distribution.every((d) => d.games === 100)).toBe(true);
+    expect(plan.gamesPerCell).toBe(Math.floor(2000 / FULL_CELL_COUNT));
+    expect(plan.distribution.every((d) => d.games === Math.floor(2000 / FULL_CELL_COUNT))).toBe(true);
   });
 
   it('任意总局数下 Σ 各格局数恒等于请求值', () => {
@@ -245,7 +249,7 @@ describe('[Phase 3 · P3-P1] 报告必须显示四个分配字段', () => {
     expect(cfg.gamesMode).toBe('total');
     expect(cfg.requestedTotalGames).toBe(1003);
     expect(cfg.actualTotalGames).toBe(1003);
-    expect(cfg.gamesPerCell).toBe(50);
+    expect(cfg.gamesPerCell).toBe(Math.floor(1003 / FULL_CELL_COUNT));
     expect(cfg.cellCount).toBe(FULL_CELL_COUNT);
     expect(Array.isArray(cfg.distribution)).toBe(true);
     expect(cfg.distribution).toHaveLength(FULL_CELL_COUNT);
@@ -262,8 +266,8 @@ describe('[Phase 3 · P3-P1] 报告必须显示四个分配字段', () => {
     );
     expect(report.meta.config.gamesMode).toBe('per-cell');
     expect(report.meta.config.gamesPerCell).toBe(100);
-    expect(report.meta.config.requestedTotalGames).toBe(2000);
-    expect(report.meta.config.actualTotalGames).toBe(2000);
+    expect(report.meta.config.requestedTotalGames).toBe(100 * FULL_CELL_COUNT);
+    expect(report.meta.config.actualTotalGames).toBe(100 * FULL_CELL_COUNT);
   });
 
   it('实际跑的局数与请求不一致时会如实暴露（不掩盖）', () => {
@@ -272,7 +276,7 @@ describe('[Phase 3 · P3-P1] 报告必须显示四个分配字段', () => {
     const broken = cellsFromPlan(plan).slice(0, FULL_CELL_COUNT - 1);
     const dist = distributionFromCells({ gamesMode: 'total', games: 1000 }, broken);
     expect(dist.requestedTotalGames).toBe(1000);
-    expect(dist.actualTotalGames).toBe(950);
+    expect(dist.actualTotalGames).toBe(1000 - Math.floor(1000 / FULL_CELL_COUNT));
     expect(dist.actualTotalGames).not.toBe(dist.requestedTotalGames);
   });
 

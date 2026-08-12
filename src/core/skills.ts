@@ -1,5 +1,5 @@
 /**
- * 四角色签名技能（Phase 3A Step 4 重定义）。
+ * 职业签名技能（Phase 3A / Phase 4L，数据驱动）。
  *
  * ## 为什么要重写
  *
@@ -27,7 +27,7 @@
  */
 
 import { GAME_CONFIG } from '../data/gameConfig';
-import { canPayStamina, spendStamina, type CostCheck } from './actionCosts';
+import { canPayStamina, gainStamina, spendStamina, type CostCheck } from './actionCosts';
 import { pushEvent } from './events';
 import {
   ADRENALINE_ID,
@@ -37,10 +37,17 @@ import {
 } from './statusIds';
 import {
   ENGINEER_REINFORCE_ID,
+  ESCAPE_PLAN_ID,
   FIGHTER_FOCUS_ID,
   getCharacterSkills,
+  HUNTER_TRACK_ID,
   MEDIC_REGEN_ID,
   SCOUT_SMOKE_ID,
+  SCAVENGE_FOCUS_ID,
+  SORT_RARE_ID,
+  STEADY_AIM_ID,
+  SURVIVOR_CAMP_ID,
+  TRAPPER_SETUP_ID,
   SKILLS,
   type SkillId,
 } from './skillDefinitions';
@@ -64,15 +71,22 @@ export {
 
 export {
   ENGINEER_REINFORCE_ID,
+  ESCAPE_PLAN_ID,
   FIGHTER_FOCUS_ID,
   getCharacterSkill,
   getCharacterSkills,
   getSkill,
   MEDIC_REGEN_ID,
+  HUNTER_TRACK_ID,
+  SCAVENGE_FOCUS_ID,
   SECONDARY_SKILL_UNLOCK_LEVEL,
   SECONDARY_STATUS_IDS,
   SCOUT_SMOKE_ID,
   SKILLS,
+  SORT_RARE_ID,
+  STEADY_AIM_ID,
+  SURVIVOR_CAMP_ID,
+  TRAPPER_SETUP_ID,
   type SkillDef,
   type SkillId,
 } from './skillDefinitions';
@@ -221,7 +235,7 @@ export function useSkill(
   actor.skillCooldowns[skillId] = def.cooldown;
 
   let hpHealed = 0;
-  const staminaRestored = 0;
+  let staminaRestored = 0;
   let revealed = 0;
   let detail = '';
 
@@ -336,6 +350,98 @@ export function useSkill(
         label: '持续止血',
       });
       detail = `持续 ${GAME_CONFIG.skillMedicRegenDuration} 个时间单位，每回合恢复 ${GAME_CONFIG.skillMedicRegenHpPerTick} 点生命`;
+      break;
+    }
+
+    case 'second_wind': {
+      staminaRestored = gainStamina(actor, GAME_CONFIG.skillSecondWindRestore);
+      detail = `恢复 ${staminaRestored} 点体力`;
+      break;
+    }
+
+    case 'camp_routine': {
+      addStatusEffect(actor, {
+        id: SURVIVOR_CAMP_ID,
+        remaining: GAME_CONFIG.skillCampRoutineDuration,
+        hpPerTick: 0,
+        label: '扎营节律',
+        restStaminaBonus: GAME_CONFIG.skillCampRoutineRestBonus,
+      });
+      detail = `持续 ${GAME_CONFIG.skillCampRoutineDuration} 个时间单位，休息额外恢复 ${GAME_CONFIG.skillCampRoutineRestBonus} 点体力`;
+      break;
+    }
+
+    case 'scavenge_focus': {
+      addStatusEffect(actor, {
+        id: SCAVENGE_FOCUS_ID,
+        remaining: GAME_CONFIG.skillScavengeFocusDuration,
+        hpPerTick: 0,
+        label: '搜索专注',
+        searchFindMult: GAME_CONFIG.skillScavengeFocusFindMult,
+        searchMaterialBias: GAME_CONFIG.resourcefulMaterialBias,
+      });
+      detail = `持续 ${GAME_CONFIG.skillScavengeFocusDuration} 个时间单位，提高发现物品权重`;
+      break;
+    }
+
+    case 'sort_rare': {
+      addStatusEffect(actor, {
+        id: SORT_RARE_ID,
+        remaining: GAME_CONFIG.skillSortRareDuration,
+        hpPerTick: 0,
+        label: '筛选稀有',
+        rareChanceBonus: GAME_CONFIG.skillSortRareChanceBonus,
+      });
+      detail = `持续 ${GAME_CONFIG.skillSortRareDuration} 个时间单位，提高稀有物品抽取机会`;
+      break;
+    }
+
+    case 'track_target': {
+      addStatusEffect(actor, {
+        id: HUNTER_TRACK_ID,
+        remaining: GAME_CONFIG.skillTrackTargetDuration,
+        hpPerTick: 0,
+        label: '追踪目标',
+        searchEnemyMult: GAME_CONFIG.skillTrackTargetEnemyMult,
+      });
+      detail = `持续 ${GAME_CONFIG.skillTrackTargetDuration} 个时间单位，提高搜索遭遇权重，不显示远端位置`;
+      break;
+    }
+
+    case 'steady_aim': {
+      addStatusEffect(actor, {
+        id: STEADY_AIM_ID,
+        remaining: GAME_CONFIG.skillSteadyAimDuration,
+        hpPerTick: 0,
+        label: '稳定瞄准',
+        rangedHitChanceMult: GAME_CONFIG.skillSteadyAimRangedHitMult,
+      });
+      detail = `持续 ${GAME_CONFIG.skillSteadyAimDuration} 个时间单位，仅提高远程攻击命中机会`;
+      break;
+    }
+
+    case 'prepare_ambush': {
+      actor.guarding = true;
+      addStatusEffect(actor, {
+        id: TRAPPER_SETUP_ID,
+        remaining: GAME_CONFIG.skillPrepareAmbushDuration,
+        hpPerTick: 0,
+        label: '埋伏准备',
+        counterChanceBonus: GAME_CONFIG.skillPrepareAmbushCounterBonus,
+      });
+      detail = `立即进入防御姿态，持续 ${GAME_CONFIG.skillPrepareAmbushDuration} 个时间单位提高反击机会`;
+      break;
+    }
+
+    case 'escape_plan': {
+      addStatusEffect(actor, {
+        id: ESCAPE_PLAN_ID,
+        remaining: GAME_CONFIG.skillEscapePlanDuration,
+        hpPerTick: 0,
+        label: '预留退路',
+        fleeChanceBonus: GAME_CONFIG.skillEscapePlanFleeBonus,
+      });
+      detail = `持续 ${GAME_CONFIG.skillEscapePlanDuration} 个时间单位，提高正式脱离成功率`;
       break;
     }
   }

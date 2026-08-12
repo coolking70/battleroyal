@@ -15,13 +15,26 @@ import { GAME_CONFIG } from '../../data/gameConfig';
 import { tryGetItem } from '../../data/items';
 import {
   ENGINEER_REINFORCE_ID,
+  ESCAPE_PLAN_ID,
   FIGHTER_FOCUS_ID,
+  HUNTER_TRACK_ID,
   MEDIC_REGEN_ID,
+  SCAVENGE_FOCUS_ID,
   SCOUT_SMOKE_ID,
+  SORT_RARE_ID,
   SECONDARY_STATUS_IDS,
   SKILLS,
+  STEADY_AIM_ID,
+  SURVIVOR_CAMP_ID,
+  TRAPPER_SETUP_ID,
 } from '../skills';
-import { ADRENALINE_ID, FIELD_CRAFT_ID, MEDICAL_FOCUS_ID, EXPOSED_ID } from '../statusIds';
+import {
+  ADRENALINE_ID,
+  EXPOSED_ID,
+  FIELD_CRAFT_ID,
+  MEDICAL_FOCUS_ID,
+  SCOUT_AWARENESS_ID,
+} from '../statusIds';
 import { isFiniteNumber, isRecord, type ValidationContext } from './types';
 
 const INVENTORY_SLOTS = GAME_CONFIG.inventorySlots;
@@ -253,6 +266,7 @@ export function validateNumbers(ctx: ValidationContext): void {
       ADRENALINE_ID,
       FIELD_CRAFT_ID,
       MEDICAL_FOCUS_ID,
+      SCOUT_AWARENESS_ID,
       EXPOSED_ID,
       ...SECONDARY_STATUS_IDS,
     ]);
@@ -320,6 +334,52 @@ export function validateNumbers(ctx: ValidationContext): void {
           }
           if ((e.remaining as number) > GAME_CONFIG.skillMedicRegenDuration) {
             fail(`角色 ${id} 的持续止血 remaining 超过 ${GAME_CONFIG.skillMedicRegenDuration}`);
+          }
+        }
+        const statusRules: Record<string, { duration: number; field: keyof typeof e; value: number }> = {
+          [SURVIVOR_CAMP_ID]: {
+            duration: GAME_CONFIG.skillCampRoutineDuration,
+            field: 'restStaminaBonus',
+            value: GAME_CONFIG.skillCampRoutineRestBonus,
+          },
+          [SCAVENGE_FOCUS_ID]: {
+            duration: GAME_CONFIG.skillScavengeFocusDuration,
+            field: 'searchFindMult',
+            value: GAME_CONFIG.skillScavengeFocusFindMult,
+          },
+          [SORT_RARE_ID]: {
+            duration: GAME_CONFIG.skillSortRareDuration,
+            field: 'rareChanceBonus',
+            value: GAME_CONFIG.skillSortRareChanceBonus,
+          },
+          [HUNTER_TRACK_ID]: {
+            duration: GAME_CONFIG.skillTrackTargetDuration,
+            field: 'searchEnemyMult',
+            value: GAME_CONFIG.skillTrackTargetEnemyMult,
+          },
+          [STEADY_AIM_ID]: {
+            duration: GAME_CONFIG.skillSteadyAimDuration,
+            field: 'rangedHitChanceMult',
+            value: GAME_CONFIG.skillSteadyAimRangedHitMult,
+          },
+          [TRAPPER_SETUP_ID]: {
+            duration: GAME_CONFIG.skillPrepareAmbushDuration,
+            field: 'counterChanceBonus',
+            value: GAME_CONFIG.skillPrepareAmbushCounterBonus,
+          },
+          [ESCAPE_PLAN_ID]: {
+            duration: GAME_CONFIG.skillEscapePlanDuration,
+            field: 'fleeChanceBonus',
+            value: GAME_CONFIG.skillEscapePlanFleeBonus,
+          },
+        };
+        const rule = statusRules[eid];
+        if (rule) {
+          if ((e.remaining as number) > rule.duration) {
+            fail(`角色 ${id} 的状态 ${eid} remaining 超过 ${rule.duration}`);
+          }
+          if (e.hpPerTick !== 0 || e[rule.field] !== rule.value) {
+            fail(`角色 ${id} 的状态 ${eid} 字段不符合技能定义`);
           }
         }
       }

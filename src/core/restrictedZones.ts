@@ -138,14 +138,18 @@ export function applyZoneDamage(state: GameState): void {
   for (const c of aliveCharacters(state)) {
     const zone = state.zones[c.currentZoneId];
     if (!zone || zone.status !== 'restricted') continue;
+    const actualDamage =
+      c.passiveId === 'enduring'
+        ? Math.max(1, Math.round(damage * GAME_CONFIG.enduringZoneDamageMult))
+        : damage;
     const before = c.hp;
-    const res = applyDamage(state, c, damage, null, '禁区侵蚀');
+    const res = applyDamage(state, c, actualDamage, null, '禁区侵蚀');
     pushEvent(state, {
       type: 'ZONE_DAMAGE',
       actorId: c.id,
       zoneId: zone.id,
       message: `${c.name} 在${getZoneDef(zone.id).name}的禁区中受到 ${res.damage} 点伤害（${before} → ${c.hp}）。`,
-      metadata: { damage: res.damage, died: res.died },
+      metadata: { damage: res.damage, rawDamage: damage, died: res.died },
     });
   }
 }

@@ -17,7 +17,11 @@ import {
 } from './inventory';
 import { consumeAdrenalineCharge, ADRENALINE_ID } from './skills';
 import { awardAttackExperience } from './progression';
-import { selfDamageTakenMultiplier } from './statusIds';
+import {
+  counterChanceBonus,
+  rangedHitChanceMultiplier,
+  selfDamageTakenMultiplier,
+} from './statusIds';
 import { applyDamage } from './vitals';
 import { worldModifiersAt } from './worldEvents';
 import type { SeededRandom } from './random';
@@ -60,6 +64,14 @@ export function hitChanceOf(
 
   // 状态效果：攻击方增益与防御方闪避（Phase 3 Step 3）
   let chance = adjusted;
+  if (
+    rangedBonus > 0 &&
+    attacker.passiveId === 'tracker' &&
+    attacker.knownEnemies.includes(defender.id)
+  ) {
+    chance *= GAME_CONFIG.trackerKnownRangedHitMult;
+  }
+  if (rangedBonus > 0) chance *= rangedHitChanceMultiplier(attacker);
   for (const e of attacker.statusEffects) {
     if (e.hitChanceMult) chance *= e.hitChanceMult;
   }
@@ -113,6 +125,7 @@ export function computeDamage(
   defender: Combatant,
   rng: SeededRandom,
   style: AttackStyle = 'normal',
+  includeDefenderDamageModifiers = true,
 ): number {
   const weapon = getEquippedWeapon(attacker);
   const isMelee = !weapon || getItem(weapon.itemId).weaponType === 'melee';
@@ -140,7 +153,12 @@ export function computeDamage(
     if (e.defenseBonus) damage -= e.defenseBonus;
   }
 
-  return Math.max(GAME_CONFIG.minDamage, Math.round(damage));
+  const rounded = Math.max(GAME_CONFIG.minDamage, Math.round(damage));
+  if (!includeDefenderDamageModifiers) return rounded;
+  return Math.max(
+    GAME_CONFIG.minDamage,
+    Math.round(rounded * selfDamageTakenMultiplier(defender)),
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -261,7 +279,9 @@ export function resolveAttack(
     return { hit: false, damage: 0, targetDied: false, weaponBroke, message: msg };
   }
 
-  let damage = computeDamage(attacker, defender, rng, style);
+  // 防御姿态、EXPOSED 与肾上腺素自伤代价需要按既有顺序在这里结算；
+  // 直接调用 computeDamage 时仍保留对防御方状态的完整伤害快照。
+  let damage = computeDamage(attacker, defender, rng, style, false);
   const baseDamage = damage;
 
   // Phase 3A-1 统计：肾上腺素带来的伤害加成（damage 已含 ×1.2，反推加成量）
@@ -379,6 +399,10 @@ export function counterChanceOf(
   if (defender.personality === 'aggressive') p += 0.2;
   if (defender.personality === 'cautious') p -= 0.1;
   if (defender.hp / defender.maxHp < 0.3) p -= 0.15;
+  if (defender.passiveId === 'trapsetter' && defender.guarding) {
+    p += GAME_CONFIG.trapsetterCounterBonus;
+  }
+  p += counterChanceBonus(defender);
   // 重击破绽更大，被反击的概率更高；速攻更灵活，更易脱身
   p *= GAME_CONFIG.attackStyleCounterVuln[incomingStyle];
   return Math.min(0.75, Math.max(0.05, p));

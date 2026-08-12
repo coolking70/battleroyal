@@ -145,6 +145,14 @@ export interface CreateGameOptions {
  */
 export function createGame(options: CreateGameOptions): GameState {
   const rng = new SeededRandom(options.seed);
+  // 旧角色的正式回放与历史模拟继续使用原四职业 NPC 池，避免扩张职业表
+  // 改变既有种子的 RNG/遭遇基线；以新职业开局时，NPC 使用完整注册表，
+  // 从而让每个 Phase 4L 职业都能在真实对局中作为 NPC 出现。
+  const legacyCharacterIds = new Set(['scout', 'fighter', 'engineer', 'medic']);
+  const npcTemplates = CHARACTERS.filter(
+    (character) =>
+      !legacyCharacterIds.has(options.playerCharacterId) || legacyCharacterIds.has(character.id),
+  );
 
   const state: GameState = {
     version: GAME_VERSION,
@@ -216,7 +224,7 @@ export function createGame(options: CreateGameOptions): GameState {
   const names = rng.shuffle(NPC_NAME_POOL).slice(0, GAME_CONFIG.npcCount);
   const personalities = rng.shuffle(PERSONALITIES);
   for (let i = 0; i < GAME_CONFIG.npcCount; i++) {
-    const template = rng.pick(CHARACTERS);
+    const template = rng.pick(npcTemplates);
     const npc = createCombatant({
       id: `n${i + 1}`,
       name: names[i] ?? `参赛者${i + 1}`,

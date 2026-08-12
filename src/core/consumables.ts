@@ -2,7 +2,7 @@ import { GAME_CONFIG } from '../data/gameConfig';
 import { getItem } from '../data/items';
 import { pushEvent } from './events';
 import { consumeOne, findStack } from './inventory';
-import { consumableHealMultiplier } from './statusIds';
+import { consumableHealMultiplier, restStaminaBonus } from './statusIds';
 import { worldModifiersAt } from './worldEvents';
 import type { Combatant, GameState, ItemStack } from './types';
 
@@ -139,9 +139,12 @@ export function findBestStaminaItem(actor: Combatant): ItemStack | null {
 /** 休息：恢复体力，不恢复生命 */
 export function performRest(state: GameState, actor: Combatant): number {
   const before = actor.stamina;
+  const bonus =
+    (actor.passiveId === 'enduring' ? GAME_CONFIG.enduringRestBonus : 0) +
+    restStaminaBonus(actor);
   actor.stamina = Math.min(
     actor.maxStamina,
-    actor.stamina + GAME_CONFIG.restStaminaGain,
+    actor.stamina + GAME_CONFIG.restStaminaGain + bonus,
   );
   const gained = actor.stamina - before;
   pushEvent(state, {
@@ -149,7 +152,7 @@ export function performRest(state: GameState, actor: Combatant): number {
     actorId: actor.id,
     zoneId: actor.currentZoneId,
     message: `${actor.name} 原地休整，体力 +${gained}。`,
-    metadata: { gained },
+    metadata: { gained, restBonus: bonus },
   });
   return gained;
 }
