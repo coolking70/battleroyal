@@ -267,7 +267,14 @@ function observe(result: AutoGameResult): GameObservation {
     );
   });
   const equipEvents = playerEvents.filter(
-    (event) => event.type === 'ITEM_EQUIPPED' && event.metadata?.slot === 'weapon',
+    (event) => {
+      if (event.type !== 'ITEM_EQUIPPED') return false;
+      const itemId = event.metadata?.itemId;
+      return (
+        typeof itemId === 'string' &&
+        ITEMS.find((item) => item.id === itemId)?.category === 'weapon'
+      );
+    },
   );
   const highTierWeaponIds = [...new Set(
     playerEvents

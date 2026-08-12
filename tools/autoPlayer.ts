@@ -481,7 +481,7 @@ interface RepresentativeRouteContext {
   lastSearch: { zoneId: string; time: number } | null;
 }
 
-function chooseEquipmentUpgradeAction(
+export function chooseEquipmentUpgradeAction(
   player: Combatant,
   legal: LegalAction[],
 ): LegalAction | null {
@@ -674,9 +674,14 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
       // 阻塞态只有一条出路：先把待决拾取处理掉
       chosen = choosePickupResolution(s, player, legal, policy);
     } else {
+      // 标准五策略也必须消费已经进入合法集合的装备升级动作。
+      // 这仍然只读 legalActions，不改变策略的搜索、移动、合成或战斗决策。
+      const equipmentUpgrade = options.representativeBuildLoop
+        ? null
+        : chooseEquipmentUpgradeAction(player, legal);
       const preferred = options.representativeBuildLoop
         ? chooseRepresentativeBuildAction(s, player, legal, representativeRoute)
-        : null;
+        : equipmentUpgrade;
       const decision = preferred
         ? { command: preferred.command, reason: '代表玩家闭环：目标 / 合成 / 装备' }
         : decideAutoPlayerCommand(s, player, policy, policyRng);
