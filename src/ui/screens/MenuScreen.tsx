@@ -121,8 +121,6 @@ export function MenuScreen({
                 <span>防御 {c.defense}</span>
                 <span>感知 {c.perception}</span>
                 <span>速度 {c.speed}</span>
-                <span>制作 {c.crafting}</span>
-                <span>医疗 {c.medical}</span>
               </div>
               <div className="char-passive">
                 {c.passiveName} · <span>{c.passiveDescription}</span>

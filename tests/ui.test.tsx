@@ -76,6 +76,11 @@ describe('界面冒烟', () => {
     render();
     expect(container.textContent).toContain('区域大逃杀');
     expect(container.querySelectorAll('.char-card')).toHaveLength(4);
+    expect(
+      Array.from(container.querySelectorAll('.char-stats span')).some((node) =>
+        /^(制作|医疗)\s/.test(node.textContent ?? ''),
+      ),
+    ).toBe(false);
     expect(findButton('开始新对局').disabled).toBe(false);
     // 没有存档时「继续」按钮应当是禁用的
     expect(findButton('没有可继续的存档').disabled).toBe(true);

@@ -793,3 +793,30 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   390px no-overflow, 5 resident blocks, 6 encounter actions, `[title]=0`, and zero
   console/page errors. Deliverables: `PHASE4G2_REPORT.md`, balance/runtime JSON;
   screenshots remain ignored under `output/`.
+
+## Phase 4H-0 progress (2026-08-12)
+
+- Started `codex/phase4h0-types-cleanup` from exact `main @ 5ea871e` (v0.4.0).
+- Split the semantic declarations formerly concentrated in `src/core/types.ts` into
+  item, character, zone, recipe, event, encounter, shared and game-state type modules.
+  `src/core/types.ts` remains a compatibility re-export barrel; no type semantics or
+  runtime game behavior changed. Typecheck and the dependency audit passed before the
+  clean-install gate (the first sandboxed audit invocation was blocked by tsx IPC
+  permissions and was rerun with the required local execution permission).
+- Removed only the dead numeric `crafting` / `medical` rows from `MenuScreen` cards;
+  the effective passive name/description, type fields, save schema and mechanics remain.
+  UI regression is covered by `tests/ui.test.tsx`.
+- Added `CONTRIBUTING.md` to make the evidence policy explicit: binary screenshots and
+  recordings stay in ignored local `output/`; only JSON numeric snapshots, reports and
+  tests belong in the repository.
+- Production browser smoke was rerun against the current build at 1280×720. Menu and
+  playing-state screenshots show the cleaned cards; state is `mode=playing`, time 0,
+  player Lv.1 / 0 EXP, with no console/page errors.
+- Final clean gates are green: `npm ci`, typecheck, **86 files / 1423 tests**, build,
+  save audit 89/89, dependency audit R1–R4=0, art/security audits, 500-game
+  PHASE4H0 engine-health regression (requested=actual=500; timeout/illegal/
+  hard-limit=0), and `npm audit --omit=dev` (0 vulnerabilities). Production
+  browser smoke against the clean build has no console/page errors and confirms the
+  cleaned role cards. Commit `bed0c74` is pushed, draft PR #13 is open, and CI run
+  `31512421838` verify is green. Generated audit timestamps remain intentionally
+  unstaged; binary screenshots remain local under ignored `output/`.
