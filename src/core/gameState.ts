@@ -1,7 +1,7 @@
 import { CHARACTERS, NPC_NAME_POOL, getCharacterDef } from '../data/characters';
 import { GAME_CONFIG, GAME_VERSION } from '../data/gameConfig';
 import { MATERIAL_IDS } from '../data/items';
-import { ZONES, ZONE_IDS } from '../data/zones';
+import { LEGACY_ZONE_IDS, ZONES, ZONE_IDS } from '../data/zones';
 import { pushEvent } from './events';
 import { refreshPlayerSight } from './info';
 import { addItem, createStack } from './inventory';
@@ -22,6 +22,13 @@ const PERSONALITIES: Personality[] = [
   'opportunist',
   'random',
 ];
+
+/** 新游戏的 player / NPC 出生统一从当前完整固定地图候选池抽取。 */
+export const SPAWN_ZONE_IDS: readonly string[] = ZONE_IDS;
+
+export function pickSpawnZone(rng: SeededRandom): string {
+  return rng.pick(SPAWN_ZONE_IDS) ?? SPAWN_ZONE_IDS[0] ?? 'school';
+}
 
 export const PERSONALITY_LABEL: Record<Personality, string> = {
   aggressive: '激进',
@@ -179,15 +186,21 @@ export function createGame(options: CreateGameOptions): GameState {
     endReason: null,
   };
 
+  const legacyZoneIds = new Set<string>(LEGACY_ZONE_IDS);
   for (const z of ZONES) {
     const zone = createZoneState(z.id);
     // 有限物资：开局一次性生成，之后只减不增
-    initZoneLoot(zone, generateZoneLoot(z.id, rng));
+    // 保持旧六区的主 RNG 序列不变；新增区域使用派生 RNG，避免内容扩张
+    // 改变旧种子的出生、搜索和 NPC 行为，同时仍然保证新区库存确定性。
+    const lootRng = legacyZoneIds.has(z.id)
+      ? rng
+      : new SeededRandom(`phase4k:${options.seed}:${z.id}`);
+    initZoneLoot(zone, generateZoneLoot(z.id, lootRng));
     state.zones[z.id] = zone;
   }
 
   // --- 玩家 ---
-  const playerZone = rng.pick(ZONE_IDS) ?? 'school';
+  const playerZone = pickSpawnZone(rng);
   const player = createCombatant({
     id: 'p0',
     name: options.playerName?.trim() || '你',
@@ -210,7 +223,7 @@ export function createGame(options: CreateGameOptions): GameState {
       isPlayer: false,
       characterId: template ? template.id : 'scout',
       personality: personalities[i] ?? 'random',
-      zoneId: rng.pick(ZONE_IDS) ?? 'school',
+      zoneId: pickSpawnZone(rng),
     });
     state.characters[npc.id] = npc;
     state.turnOrder.push(npc.id);

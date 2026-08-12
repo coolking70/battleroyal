@@ -109,6 +109,14 @@ export const ZONE_VISUALS: Record<string, VisualSpec> = {
   factory: spec('🏭', '#8c5b3f', '工厂', 'zones/factory.svg'),
   forest: spec('🌲', '#4f7a44', '森林', 'zones/forest.svg'),
   lab: spec('🧪', '#6a5b9a', '研究所', 'zones/lab.svg'),
+  // Phase 4K 新区域暂不增加 approved production art；保留明确的 emoji + 色块
+  // 视觉身份，VisualImage 会自然使用 fallback，不影响可玩性或信息边界。
+  commercial: spec('🛍️', '#a06b4f', '商业街', null),
+  station: spec('🚉', '#697b8d', '车站', null),
+  park: spec('🌳', '#527b61', '公园', null),
+  warehouse: spec('📦', '#806a4a', '仓库', null),
+  construction: spec('🏗️', '#9a7445', '建筑工地', null),
+  underground: spec('🚇', '#465d73', '地下通道', null),
 };
 
 /** 角色视觉（四名可选角色） */

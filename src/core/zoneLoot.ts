@@ -14,8 +14,8 @@
  */
 
 import { GAME_CONFIG } from '../data/gameConfig';
-import { getZoneDef } from '../data/zones';
-import { getItem } from '../data/items';
+import { getZoneDef, ZONES } from '../data/zones';
+import { getItem, tryGetItem } from '../data/items';
 import type { SeededRandom } from './random';
 import type {
   GameState,
@@ -27,6 +27,24 @@ import type {
 /* ------------------------------------------------------------------ */
 /* 生成                                                                */
 /* ------------------------------------------------------------------ */
+
+/** 正式校验静态资源池，避免新区出现未知 item id 后被静默跳过。 */
+export function validateZoneLootPools(
+  zoneDefs: readonly { id: string; basePool: string[]; rarePool: string[] }[] = ZONES,
+): string[] {
+  const errors: string[] = [];
+  for (const zone of zoneDefs) {
+    for (const [poolName, pool] of [['basePool', zone.basePool], ['rarePool', zone.rarePool]] as const) {
+      for (const itemId of pool) {
+        if (!tryGetItem(itemId)) errors.push(`${zone.id}.${poolName} 引用了未知物品：${itemId}`);
+      }
+    }
+  }
+  return errors;
+}
+
+const lootPoolErrors = validateZoneLootPools();
+if (lootPoolErrors.length > 0) throw new Error(lootPoolErrors.join('；'));
 
 /** 把若干抽样结果压缩成 `{itemId, count}` 形式的库存条目 */
 function collapse(ids: string[], rarity: ZoneLootEntry['rarity']): ZoneLootEntry[] {

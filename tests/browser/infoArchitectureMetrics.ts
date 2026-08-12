@@ -85,7 +85,7 @@ export function measureInfoArchitecture(): InfoArchitectureMetrics {
   ];
 
   /**
-   * 版本判定：4D-2 把常驻六区地图面板换成了小型指示器 `.zone-rail`，
+   * 版本判定：4D-2 把常驻完整地图面板换成了小型指示器 `.zone-rail`，
    * 基线没有这个节点。用它区分两版，比嗅探空态文案稳定得多。
    *
    * 基线把「同区域」当无条件常驻面板（没人时显示空态「这里暂时只有你一个人。」），

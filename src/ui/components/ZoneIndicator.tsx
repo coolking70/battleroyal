@@ -21,7 +21,7 @@ interface ZoneIndicatorProps {
  * 小型常驻地图指示器（Phase 4D-2）。
  *
  * 只表达：当前区域 + 相邻可移动区域 + 警告/禁区状态。
- * 点击「地图」或当前区域展开完整六区地图（MapDrawer），展开后信息无损。
+ * 点击「地图」或当前区域展开完整区域地图（MapDrawer），展开后信息无损。
  * 不泄露远处地面库存、NPC 位置等未发现信息（与 4B-1 / 4C-9 一致）。
  */
 export function ZoneIndicator({
@@ -48,7 +48,7 @@ export function ZoneIndicator({
         className="zone-rail-current"
         disabled={disabled}
         onClick={onExpand}
-        aria-label={`当前区域：${getZoneDef(currentZoneId).name}（${currentMeta.label}），点击展开完整六区地图`}
+        aria-label={`当前区域：${getZoneDef(currentZoneId).name}（${currentMeta.label}），点击展开完整区域地图`}
       >
         <VisualImage visual={currentVisual} alt="" className="zone-rail-current-visual" />
         <span className="zone-rail-current-name">{getZoneDef(currentZoneId).name}</span>
@@ -100,7 +100,7 @@ export function ZoneIndicator({
         ref={triggerRef}
         className="btn btn-sm btn-ghost zone-rail-expand"
         onClick={onExpand}
-        aria-label="展开完整六区地图"
+        aria-label="展开完整区域地图"
         aria-haspopup="dialog"
       >
         <span aria-hidden="true">▦</span> 地图

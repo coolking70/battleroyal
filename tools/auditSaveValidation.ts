@@ -244,6 +244,12 @@ const CASES: AuditCase[] = [
   { case: 'supply 越界', expected: false, mutate: (s) => {
     Object.values(s.state.zones)[0]!.supply = 2.5;
   } },
+  { case: '当前版本存档缺少区域 park', expected: false, mutate: (s) => {
+    delete (s.state.zones as unknown as Mutable).park;
+  } },
+  { case: '当前版本存档包含未知区域', expected: false, mutate: (s) => {
+    (s.state.zones as unknown as Mutable).unknown_zone = structuredClone(s.state.zones.school);
+  } },
 
   /* ---- 引用层（P1-4/5/9/10/11/12/13） ---- */
   { case: 'equippedWeaponId 指向非武器', expected: false, mutate: (s) => {

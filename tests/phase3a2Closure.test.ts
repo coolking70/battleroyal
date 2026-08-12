@@ -4,6 +4,7 @@ import { runNpcTurn } from '../src/core/npcAi';
 import { SeededRandom } from '../src/core/random';
 import { hasFieldCraftCharge } from '../src/core/skills';
 import { refreshZoneOccupants } from '../src/core/gameState';
+import { ZONE_IDS } from '../src/data/zones';
 import { getCharacterDef } from '../src/data/characters';
 import { clearInventory, give, newGame, npcs, player } from './helpers';
 
@@ -124,6 +125,13 @@ function encounterSetup(characterId: string): { state: ReturnType<typeof newGame
   const p = player(state);
   const npc = configureCharacter(npcs(state)[0]!, characterId);
   npc.currentZoneId = p.currentZoneId;
+  // Phase 4K adds spawn candidates; keep this encounter fixture focused on the
+  // configured opponent instead of letting a second naturally spawned NPC
+  // absorb the attack intended to validate reconInitiative.
+  const elsewhere = ZONE_IDS.find((zoneId) => zoneId !== p.currentZoneId) ?? 'school';
+  for (const other of npcs(state)) {
+    if (other.id !== npc.id && other.currentZoneId === p.currentZoneId) other.currentZoneId = elsewhere;
+  }
   npc.knownEnemies = [p.id];
   p.knownEnemies = [npc.id];
   npc.hp = npc.maxHp;
@@ -187,7 +195,10 @@ describe('Phase 3A-2 reconInitiative lifecycle', () => {
     let attacked = false;
     for (let i = 0; i < 40 && !attacked; i++) {
       runNpcTurn(state, npc, rng);
-      attacked = npc.lastAction === 'attack';
+      // Phase 4K does not alter hit formulas; this fixture only needs to prove
+      // that the next attack opportunity is no longer suppressed by the flag.
+      // Keep advancing after a miss so the assertion is not coupled to one RNG roll.
+      attacked = npc.lastAction === 'attack' && p.hp < hpBefore;
     }
     expect(attacked).toBe(true);
     expect(p.hp).toBeLessThan(hpBefore);

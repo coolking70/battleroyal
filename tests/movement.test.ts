@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { executeCommand } from '../src/core/gameEngine';
-import { getZoneDef } from '../src/data/zones';
+import { getZoneDef, ZONE_IDS } from '../src/data/zones';
 import { newGame, player } from './helpers';
 
 describe('移动', () => {
@@ -18,7 +18,7 @@ describe('移动', () => {
     const state = newGame();
     const p = player(state);
     const def = getZoneDef(p.currentZoneId);
-    const nonAdjacent = ['school', 'hospital', 'residential', 'factory', 'forest', 'lab'].find(
+    const nonAdjacent = ZONE_IDS.find(
       (id) => id !== p.currentZoneId && !def.adjacent.includes(id),
     )!;
 

@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { CHARACTERS } from '../../src/data/characters';
 import { ITEMS } from '../../src/data/items';
-import { ZONES } from '../../src/data/zones';
+import { LEGACY_ZONE_IDS, ZONES } from '../../src/data/zones';
 import { WORLD_EVENT_IDS } from '../../src/core/worldEvents';
 import { listCandidates } from './reviewer';
 import { loadTasks } from './taskPlanner';
@@ -131,7 +131,8 @@ async function buildManifestCoverage(config: ArtConfig, manifest: ArtManifest, t
     const task = tasks.find((candidate) => candidate.id === taskId);
     const publicPath = manifestPathForTask(manifest, taskId);
     const slots = manifest.zones[zone.id] ?? {};
-    zoneRecords.push({ taskId, gameDataId: zone.id, artTask: Boolean(task), background: typeof publicPath === 'string', official: typeof publicPath === 'string', warning: slots.warning ?? null, restricted: slots.restricted ?? null, optionalVariants: { warning: 'optional future variant; not a Phase 4A base-art blocker', restricted: 'optional future variant; not a Phase 4A base-art blocker' }, ...(task && publicPath ? { file: await inspectPublicFile(config, task, publicPath) } : {}) });
+    const officialRequired = (LEGACY_ZONE_IDS as readonly string[]).includes(zone.id);
+    zoneRecords.push({ taskId, gameDataId: zone.id, artTask: Boolean(task), background: typeof publicPath === 'string', official: typeof publicPath === 'string', officialRequired, fallbackOnly: !officialRequired, warning: slots.warning ?? null, restricted: slots.restricted ?? null, optionalVariants: { warning: 'optional future variant; not a Phase 4A base-art blocker', restricted: 'optional future variant; not a Phase 4A base-art blocker' }, ...(task && publicPath ? { file: await inspectPublicFile(config, task, publicPath) } : {}) });
   }
   const itemTasks = tasks.filter((task) => task.category === 'item');
   const itemRecords: Array<Record<string, unknown>> = [];
@@ -148,7 +149,7 @@ async function buildManifestCoverage(config: ArtConfig, manifest: ArtManifest, t
   }
   const files = [...characterRecords, ...zoneRecords, ...itemRecords, ...eventRecords].flatMap((record) => record.file ? [record.file as AssetFileAudit] : []);
   const issues = files.filter((file) => !file.exists || !file.readable).map((file) => `${file.taskId}: missing or undecodable public file`);
-  const allBaseOfficial = characterRecords.every((record) => record.official) && zoneRecords.every((record) => record.official) && itemRecords.every((record) => record.official) && eventRecords.filter((record) => !record.fallbackOnly).every((record) => record.official);
+  const allBaseOfficial = characterRecords.every((record) => record.official) && zoneRecords.filter((record) => record.officialRequired).every((record) => record.official) && itemRecords.every((record) => record.official) && eventRecords.filter((record) => !record.fallbackOnly).every((record) => record.official);
   return {
     generatedAt: new Date().toISOString(),
     source: { characters: 'src/data/characters.ts', zones: 'src/data/zones.ts', items: 'art/tasks/items.json via ArtTask definitions plus src/data/items.ts identity check', worldEvents: 'src/core/worldEvents.ts' },

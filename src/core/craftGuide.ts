@@ -12,7 +12,7 @@
  * - 正式禁区直接排除；预警区明显扣分；
  * - 「公开资源状态」只使用玩家可见的模糊分档（rich / normal / scarce / empty），
  *   取自 `supplyStatusOf(zone)`（由 zone.supply 派生），绝不低于 zone.loot；
- * - 距离用 6 区域邻接图上的 BFS 计算（`getZoneDistance`）。
+ * - 距离用固定区域邻接图上的 BFS 计算（`getZoneDistance`）。
  *
  * 反作弊不变量（2A-H）：推荐**绝不读取 `zone.loot` / `zone.remainingLootCount`**
  * 等随搜索枯竭的隐藏信息——把某区域库存清空，推荐结果（按 zoneId 排序）不变。
@@ -100,7 +100,7 @@ function missingRawMaterialsForGoal(
 }
 
 /**
- * 6 区域邻接图上的 BFS 最短距离。
+ * 固定区域邻接图上的 BFS 最短距离。
  * 不连通时返回 -1（本游戏邻接图连通，正常情况下不会发生）。
  */
 export function getZoneDistance(fromZoneId: string, toZoneId: string): number {

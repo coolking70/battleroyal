@@ -10,6 +10,7 @@ import type { GameState } from './types';
  */
 
 import { validateSaveData } from './saveValidation';
+import { migrateMissingZoneStates } from './saveMigration';
 
 export { validateSaveData, type ValidationReport } from './saveValidation';
 
@@ -144,6 +145,8 @@ export function loadGame(): LoadResult {
     };
   }
 
+  // 0.4.0 的旧六区存档在校验前补齐 Phase 4K 区域；其他版本仍按原规则拒绝。
+  parsed = migrateMissingZoneStates(parsed);
   const report = validateSaveData(parsed);
   if (!report.ok) {
     return {

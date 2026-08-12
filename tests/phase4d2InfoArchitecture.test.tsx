@@ -13,6 +13,7 @@ import { visibleEventsForPlayer } from '../src/ui/components/EventLog';
 import { GameScreen } from '../src/ui/screens/GameScreen';
 import { setAssetManifest, type AssetManifest } from '../src/ui/visualAssets';
 import type { Combatant, GameEvent, GameState } from '../src/core/types';
+import { ZONES } from '../src/data/zones';
 
 let root: Root;
 let container: HTMLDivElement;
@@ -224,7 +225,7 @@ describe('Phase 4D-2 §3.3 上下文触发：无内容不渲染、不占位', ()
 });
 
 describe('Phase 4D-2 §3.2 按需展开', () => {
-  it('完整六区地图默认不展开，点击地图指示器后展开且信息无损', () => {
+  it('完整区域地图默认不展开，点击地图指示器后展开且信息无损', () => {
     const { state, player } = newGame('PHASE4D2-MAP');
     isolatePlayer(state, player);
     render(state, player);
@@ -237,8 +238,8 @@ describe('Phase 4D-2 §3.2 按需展开', () => {
     act(() => trigger.click());
 
     expect(container.querySelector('.map-slot-open')).not.toBeNull();
-    // 展开后六区完整可见（与基线常驻地图信息等价）
-    expect(container.querySelectorAll('.map-drawer-panel .zone-item')).toHaveLength(6);
+    // 展开后全部区域完整可见（与基线常驻地图信息等价）
+    expect(container.querySelectorAll('.map-drawer-panel .zone-item')).toHaveLength(ZONES.length);
     expect(document.activeElement).toBe(container.querySelector('.map-drawer-close'));
 
     act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })));
@@ -246,7 +247,7 @@ describe('Phase 4D-2 §3.2 按需展开', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  it('地图指示器常驻时只给当前 + 相邻 + 警告，不铺开六区', () => {
+  it('地图指示器常驻时只给当前 + 相邻 + 警告，不铺开完整地图', () => {
     const { state, player } = newGame('PHASE4D2-RAIL');
     isolatePlayer(state, player);
     render(state, player);
@@ -255,8 +256,8 @@ describe('Phase 4D-2 §3.2 按需展开', () => {
     expect(rail.querySelector('.zone-rail-current')).not.toBeNull();
     const chips = rail.querySelectorAll('.zone-chip');
     expect(chips.length).toBeGreaterThan(0);
-    expect(chips.length).toBeLessThan(6);
-    // 指示器自身不含完整六区网格
+    expect(chips.length).toBeLessThan(ZONES.length);
+    // 指示器自身不含完整区域网格
     expect(rail.querySelectorAll('.zone-item')).toHaveLength(0);
   });
 

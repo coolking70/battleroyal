@@ -355,6 +355,7 @@ interface CellStats {
 
   avgZonesExhausted: number;
   avgDeaths: number;
+  deathCauseCounts: Record<string, number>;
   avgEventCount: number;
 
   avgSteps: number;
@@ -460,6 +461,7 @@ function aggregateCell(
 
     avgZonesExhausted: n > 0 ? sum((r) => r.zonesExhausted) / n : 0,
     avgDeaths: n > 0 ? sum((r) => r.deaths) / n : 0,
+    deathCauseCounts: mergeDeathCauseCounts(results),
     avgEventCount: n > 0 ? sum((r) => r.eventCount) / n : 0,
 
     avgSteps: n > 0 ? sum((r) => r.steps) / n : 0,
@@ -491,6 +493,19 @@ function aggregateCell(
   };
 }
 
+function mergeDeathCauseCounts(results: AutoGameResult[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const result of results) {
+    if (result.survived) continue;
+    const cause = result.playerDeathSnapshot?.cause
+      ?? (result.playerKilledBy ? `killed_by:${result.playerKilledBy}` : null)
+      ?? result.endReason
+      ?? 'unknown';
+    out[cause] = (out[cause] ?? 0) + 1;
+  }
+  return out;
+}
+
 /** 把多局结果的 { key: count } 字典按 key 累加 */
 function mergeCounts(
   pick: (r: AutoGameResult) => Record<string, number>,
@@ -500,6 +515,19 @@ function mergeCounts(
   for (const r of results) {
     for (const [k, v] of Object.entries(pick(r))) {
       out[k] = (out[k] ?? 0) + v;
+    }
+  }
+  return out;
+}
+
+function mergeCellCounts(
+  cells: CellStats[],
+  pick: (cell: CellStats) => Record<string, number>,
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const cell of cells) {
+    for (const [key, value] of Object.entries(pick(cell))) {
+      out[key] = (out[key] ?? 0) + value;
     }
   }
   return out;
@@ -622,6 +650,7 @@ export interface GlobalSummary {
   avgKills: number;
   avgDamageDealt: number;
   avgDamageTaken: number;
+  deathCauseCounts: Record<string, number>;
 }
 
 interface BalanceReport {
@@ -790,6 +819,7 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
 
       avgZonesExhausted: w((c) => c.avgZonesExhausted),
       avgDeaths: w((c) => c.avgDeaths),
+      deathCauseCounts: mergeSummaryCounts(subset, (c) => c.deathCauseCounts),
       avgEventCount: w((c) => c.avgEventCount),
 
       avgSteps: w((c) => c.avgSteps),
@@ -1176,6 +1206,7 @@ function aggregateGlobalFromCells(
     avgKills: w((c) => c.avgKills),
     avgDamageDealt: w((c) => c.avgDamageDealt),
     avgDamageTaken: w((c) => c.avgDamageTaken),
+    deathCauseCounts: mergeCellCounts(cells, (c) => c.deathCauseCounts),
   };
 }
 
@@ -1426,6 +1457,19 @@ function renderMarkdown(report: BalanceReport): string {
   L.push(`| 平均击杀 | ${fmtNum(s.avgKills)} |`);
   L.push(`| 平均造成伤害 | ${fmtNum(s.avgDamageDealt)} |`);
   L.push(`| 平均承受伤害 | ${fmtNum(s.avgDamageTaken)} |`);
+  L.push('');
+  L.push('### 玩家死亡原因（仅统计失败对局）');
+  L.push('');
+  const deathCauses = Object.entries(s.deathCauseCounts);
+  if (deathCauses.length === 0) {
+    L.push('无失败对局或没有可用死亡快照。');
+  } else {
+    L.push('| 原因 | 次数 |');
+    L.push('| --- | ---: |');
+    for (const [cause, count] of deathCauses.sort(([a], [b]) => a.localeCompare(b))) {
+      L.push(`| ${cause} | ${count} |`);
+    }
+  }
   L.push('');
 
   // ---- 矩阵 ----

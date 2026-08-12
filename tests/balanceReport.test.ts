@@ -75,6 +75,7 @@ function makeCell(
     avgPlayerInventorySize: zero(),
     avgZonesExhausted: zero(),
     avgDeaths: zero(),
+    deathCauseCounts: {},
     avgEventCount: zero(),
     avgSteps: zero(),
     totalSteps: 0,

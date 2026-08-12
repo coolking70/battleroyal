@@ -36,11 +36,11 @@ describe('Phase 4J-1 标准自动玩家装备修复', () => {
   });
 
   it.each([
-    ['aggressive', 'PHASE4J1-1-fighter-aggressive', 'fighter'],
-    ['cautious', 'PHASE4J1-0-scout-cautious', 'scout'],
-    ['collector', 'PHASE4J1-0-scout-collector', 'scout'],
-    ['opportunist', 'PHASE4J1-2-engineer-opportunist', 'engineer'],
-    ['random', 'PHASE4J1-1-fighter-random', 'fighter'],
+    ['aggressive', 'PHASE4J1-AF-aggressive-0', 'fighter'],
+    ['cautious', 'PHASE4J1-AF-cautious-0', 'scout'],
+    ['collector', 'PHASE4J1-AF-collector-0', 'scout'],
+    ['opportunist', 'PHASE4J1-AF-opportunist-0', 'engineer'],
+    ['random', 'PHASE4J1-AF-random-0', 'fighter'],
   ] as const)('%s 标准对局实际发出 EQUIP', (policy, seed, characterId) => {
     const result = runAutoGame({ seed, characterId, policy });
 

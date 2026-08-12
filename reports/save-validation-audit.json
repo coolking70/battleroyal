@@ -2,10 +2,10 @@
   "meta": {
     "tool": "audit-save-validation",
     "version": "0.4.0",
-    "generatedAt": "2026-08-12T07:02:15.421Z",
+    "generatedAt": "2026-08-12T17:11:28.770Z",
     "control": "normal-save-accepted",
-    "totalCases": 89,
-    "passedCases": 89,
+    "totalCases": 91,
+    "passedCases": 91,
     "failedCases": 0,
     "constructionFailedCases": 0,
     "verdict": "PASS"
@@ -380,6 +380,22 @@
       "constructionFailed": false
     },
     {
+      "case": "当前版本存档缺少区域 park",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "缺少当前版本区域：park",
+      "constructionFailed": false
+    },
+    {
+      "case": "当前版本存档包含未知区域",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "存档包含未知区域：unknown_zone",
+      "constructionFailed": false
+    },
+    {
       "case": "equippedWeaponId 指向非武器",
       "expected": false,
       "actual": false,
@@ -400,7 +416,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "区域 factory 的地面 的尸体掉落缺少合法 revealedTo 数组",
+      "errorMessage": "区域 commercial 的地面 的尸体掉落缺少合法 revealedTo 数组",
       "constructionFailed": false
     },
     {
@@ -408,7 +424,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "区域 forest 的地面 的 droppedBy 不是合法角色引用（42）",
+      "errorMessage": "区域 warehouse 的地面 的 droppedBy 不是合法角色引用（42）",
       "constructionFailed": false
     },
     {
@@ -416,7 +432,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "区域 residential 的地面 的尸体掉落缺少合法 revealedTo 数组",
+      "errorMessage": "区域 forest 的地面 的尸体掉落缺少合法 revealedTo 数组",
       "constructionFailed": false
     },
     {
@@ -424,7 +440,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "区域 residential 的地面 的 revealedTo 含非法角色引用（ghost）",
+      "errorMessage": "区域 forest 的地面 的 revealedTo 含非法角色引用（ghost）",
       "constructionFailed": false
     },
     {
@@ -432,7 +448,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "区域 residential 的地面 的 revealedTo 超过 6 个角色（7）",
+      "errorMessage": "区域 forest 的地面 的 revealedTo 超过 6 个角色（7）",
       "constructionFailed": false
     },
     {
@@ -576,7 +592,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "区域 school 的存活名单存在重复 ID",
+      "errorMessage": "区域 hospital 的存活名单存在重复 ID",
       "constructionFailed": false
     },
     {

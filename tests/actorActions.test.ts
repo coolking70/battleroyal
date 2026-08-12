@@ -35,7 +35,7 @@ function rngOf(state: GameState): SeededRandom {
   return SeededRandom.fromState(state.rngState);
 }
 
-/** 找一个与 `from` 不相邻的区域 id（6 区地图上一定存在） */
+/** 找一个与 `from` 不相邻的区域 id（当前固定图上一定存在） */
 function nonAdjacentZone(state: GameState, from: string): string {
   const adj = new Set(getZoneDef(from).adjacent);
   const found = Object.keys(state.zones).find((z) => z !== from && !adj.has(z));
