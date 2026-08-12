@@ -153,7 +153,7 @@ player 和 NPC 都通过同一个 `SPAWN_ZONE_IDS = ZONE_IDS` 完整候选池出
 | hard limit | 0 |
 | average duration | 64.156 时间单位 |
 
-玩家死亡原因（452 个失败对局）：
+玩家死亡原因（457 个失败对局）：
 
 - 战斗：276
 - 禁区侵蚀：93
