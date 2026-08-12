@@ -1,0 +1,121 @@
+{
+  "phase": "Phase 4J-1",
+  "status": "MEASUREMENT_FIX_ONLY",
+  "scope": {
+    "productionCodeChanged": false,
+    "uiChanged": false,
+    "gameplayValuesChanged": false,
+    "sameSeedMatrix": true,
+    "matrix": "20 seed groups × 5 policies = 100 games",
+    "before": "reports/phase4j0-diagnosis.json",
+    "after": "reports/phase4j1-diagnosis.json"
+  },
+  "matrix100": {
+    "overall": {
+      "winRate": { "before": 0.02, "after": 0.06 },
+      "survivalRate": { "before": 0.02, "after": 0.06 },
+      "averageKills": { "before": 0.06, "after": 0.15 },
+      "averageDamageTaken": { "before": 139.51, "after": 141.27 },
+      "averageDuration": { "before": 41.21, "after": 49.52 },
+      "finalLevelDistribution": {
+        "before": { "2": 3, "3": 46, "4": 41, "5": 10 },
+        "after": { "2": 5, "3": 35, "4": 44, "5": 16 }
+      },
+      "weaponObtainedRate": { "before": 0.45, "after": 0.35 },
+      "weaponEquippedRate": { "before": 0, "after": 0.35 },
+      "encounterAfterWeaponEquippedRate": { "before": 0, "after": 0.06 },
+      "highTierWeaponCraftedRate": { "before": 0.1, "after": 0 },
+      "deathBuckets": {
+        "before": { "battle": 89, "zone_erosion": 2, "exhaustion": 7, "other": 0 },
+        "after": { "battle": 64, "zone_erosion": 13, "exhaustion": 16, "other": 1 }
+      },
+      "expSourcePotentialShare": {
+        "before": {
+          "combatParticipation": 0.9543389912,
+          "killBonus": 0.0014343772,
+          "craft": 0.0089477818,
+          "exploration": 0.0352788498
+        },
+        "after": {
+          "combatParticipation": 0.9587058861,
+          "killBonus": 0.0033174307,
+          "craft": 0.0049919434,
+          "exploration": 0.0329847398
+        }
+      },
+      "timeActionShare": {
+        "before": {
+          "search": 0.1118660519,
+          "move": 0.1388012618,
+          "craft": 0.0169861684,
+          "rest": 0.0169861684,
+          "combat": 0.6915797137,
+          "otherTimeAdvancing": 0.0237806358
+        },
+        "after": {
+          "search": 0.0864297254,
+          "move": 0.1243941842,
+          "craft": 0.0096930533,
+          "rest": 0.0226171244,
+          "combat": 0.7354604200,
+          "otherTimeAdvancing": 0.0214054927
+        }
+      }
+    },
+    "policy": {
+      "aggressive": {
+        "before": { "winRate": 0, "averageKills": 0, "averageDamageTaken": 144.45, "averageDuration": 42.65, "equipGames": 0 },
+        "after": { "winRate": 0.05, "averageKills": 0.1, "averageDamageTaken": 136.8, "averageDuration": 48.85, "equipGames": 5 }
+      },
+      "cautious": {
+        "before": { "winRate": 0.05, "averageKills": 0.2, "averageDamageTaken": 140.1, "averageDuration": 40.7, "equipGames": 0 },
+        "after": { "winRate": 0.05, "averageKills": 0.1, "averageDamageTaken": 138.55, "averageDuration": 51.5, "equipGames": 7 }
+      },
+      "collector": {
+        "before": { "winRate": 0, "averageKills": 0.05, "averageDamageTaken": 142.9, "averageDuration": 45.7, "equipGames": 0 },
+        "after": { "winRate": 0.15, "averageKills": 0.45, "averageDamageTaken": 149.05, "averageDuration": 58.45, "equipGames": 9 }
+      },
+      "opportunist": {
+        "before": { "winRate": 0, "averageKills": 0.05, "averageDamageTaken": 136.95, "averageDuration": 37.8, "equipGames": 0 },
+        "after": { "winRate": 0, "averageKills": 0, "averageDamageTaken": 140.6, "averageDuration": 39.9, "equipGames": 8 }
+      },
+      "random": {
+        "before": { "winRate": 0.05, "averageKills": 0, "averageDamageTaken": 133.15, "averageDuration": 39.2, "equipGames": 0 },
+        "after": { "winRate": 0.05, "averageKills": 0.1, "averageDamageTaken": 141.35, "averageDuration": 48.9, "equipGames": 6 }
+      }
+    }
+  },
+  "regression500": {
+    "before": {
+      "requested": 500,
+      "actual": 500,
+      "winRate": 0.016,
+      "survivalRate": 0.016,
+      "averageKills": 0.058,
+      "averageDamageTaken": 141.536,
+      "averageDuration": 42.772,
+      "timeouts": 0,
+      "illegal": 0,
+      "hardLimit": 0
+    },
+    "after": {
+      "requested": 500,
+      "actual": 500,
+      "winRate": 0.09,
+      "survivalRate": 0.09,
+      "averageKills": 0.166,
+      "averageDamageTaken": 139.77,
+      "averageDuration": 51.532,
+      "timeouts": 0,
+      "illegal": 0,
+      "hardLimit": 0
+    },
+    "afterPolicy": {
+      "aggressive": { "winRate": 0.03, "averageKills": 0.06, "averageDamageTaken": 140.41, "averageDuration": 45.54, "equipCommands": 60 },
+      "cautious": { "winRate": 0.13, "averageKills": 0.18, "averageDamageTaken": 136.84, "averageDuration": 53.75, "equipCommands": 75 },
+      "collector": { "winRate": 0.19, "averageKills": 0.34, "averageDamageTaken": 136.08, "averageDuration": 58.77, "equipCommands": 122 },
+      "opportunist": { "winRate": 0.08, "averageKills": 0.13, "averageDamageTaken": 141.54, "averageDuration": 48.96, "equipCommands": 85 },
+      "random": { "winRate": 0.02, "averageKills": 0.12, "averageDamageTaken": 143.98, "averageDuration": 50.64, "equipCommands": 65 }
+    }
+  }
+}

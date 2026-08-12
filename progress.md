@@ -874,3 +874,24 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   regression (requested=actual=500; trustworthy=500; timeout/deadlock/illegal/
   hard-limit=0), and production `npm audit --omit=dev`. Binary evidence remains
   local/ignored; only JSON snapshots are tracked.
+
+## Phase 4J-1 progress (2026-08-12)
+
+- Started `codex/phase4j1-auto-equip` from exact `main @ 38dbf1e`.
+- Fixed only the external measurement driver: standard autoPlayer strategies now
+  reuse `chooseEquipmentUpgradeAction` whenever a strictly stronger legal EQUIP
+  action exists. The action still comes from `getLegalPlayerCommands` and executes
+  through `executeCommand`; representativeBuildLoop behavior is unchanged.
+- Added 13 regressions covering all five policies, legal EQUIP execution, no-upgrade
+  behavior, and same-seed determinism. No `src/core/**`, `src/data/**`, UI, gameplay
+  value/rule, RNG or asset changes.
+- Re-ran the matched 20×5 matrix: player weapon-equipped games changed from 0/100
+  to 35/100; win rate 2%→6%; average kills 0.06→0.15; battle deaths 89→64.
+  At 500 games, win rate moved 1.6%→9.0%, with requested=actual 500 and zero
+  timeout/illegal/hard-limit; balance remains observation only.
+- Re-evaluated all six 4J-0 measurements. The zero player-equipment conclusion is
+  rejected as a controller artifact; aggressive remains below collector and is below
+  cautious in the 500-game sample, while the 100-game cautious gap is tied.
+- Deliverables: `PHASE4J1_REPORT.md`, `reports/phase4j1-diagnosis.json`,
+  `reports/phase4j1-comparison.json`, `reports/phase4j1-balance.json`, and the
+  measurement regression test. Binary evidence remains local/ignored.
