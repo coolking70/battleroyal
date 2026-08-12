@@ -144,7 +144,7 @@ test('Phase 4G-1 production evidence: immediate loot, equal bars, and full-frame
 
   await page.setViewportSize({ width: 390, height: 844 });
   await loadFixture(page, stageActiveEncounter('PHASE4G1-BROWSER-ACTIVE-MOBILE'));
-  await expect(page.locator('.actionbar-combat-actions > button, .actionbar-combat-actions > .combat-skill-pair')).toHaveCount(6);
+  await expect(page.locator('.actionbar-combat-actions > button')).toHaveCount(7);
   const mobileMetrics = await page.evaluate(() => ({
     bodyScrollWidth: document.body.scrollWidth,
     documentScrollWidth: document.documentElement.scrollWidth,

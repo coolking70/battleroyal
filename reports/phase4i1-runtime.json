@@ -6,15 +6,82 @@
     "usable": false,
     "reason": "达到 Lv.3 后解锁"
   },
-  "unlocked": {
-    "secondary": "fighter_focus",
-    "usable": true,
-    "feedback": "精准节拍"
+  "level3UnlockMoment": {
+    "beforeLevel": 2,
+    "afterLevel": 3,
+    "secondaryEnabled": true
   },
-  "mobile": {
-    "slots": 6,
+  "secondaryEffects": [
+    {
+      "characterId": "scout",
+      "skillId": "scout_smoke",
+      "used": true,
+      "cooldownVisible": true
+    },
+    {
+      "characterId": "fighter",
+      "skillId": "fighter_focus",
+      "used": true,
+      "cooldownVisible": true
+    },
+    {
+      "characterId": "engineer",
+      "skillId": "engineer_reinforce",
+      "used": true,
+      "cooldownVisible": true
+    },
+    {
+      "characterId": "medic",
+      "skillId": "medic_regen",
+      "used": true,
+      "cooldownVisible": true
+    }
+  ],
+  "desktop": {
     "controls": 7,
     "controlsInView": 7,
+    "bodyScrollWidth": 1280,
+    "documentScrollWidth": 1280
+  },
+  "mobile": {
+    "slots": 7,
+    "controls": 7,
+    "existingActions": 6,
+    "secondaryActions": 1,
+    "controlsInView": 7,
+    "planningIntersectsActions": false,
+    "skillButtons": [
+      {
+        "role": "primary",
+        "className": "btn",
+        "gridColumn": "auto",
+        "rect": {
+          "x": 260,
+          "y": 699.1875,
+          "width": 116,
+          "height": 49,
+          "top": 699.1875,
+          "right": 376,
+          "bottom": 748.1875,
+          "left": 260
+        }
+      },
+      {
+        "role": "secondary",
+        "className": "btn combat-secondary-skill",
+        "gridColumn": "1 / -1",
+        "rect": {
+          "x": 14,
+          "y": 755.1875,
+          "width": 362,
+          "height": 49,
+          "top": 755.1875,
+          "right": 376,
+          "bottom": 804.1875,
+          "left": 14
+        }
+      }
+    ],
     "bodyScrollWidth": 390,
     "documentScrollWidth": 390,
     "titleCount": 0

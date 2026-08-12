@@ -112,7 +112,7 @@ test('Phase 4F-2 player growth presentation on clean production preview', async 
   const encounter = stageEncounter('PHASE4F2-BROWSER-UPGRADE-ENCOUNTER');
   await loadFixture(page, encounter.state);
   await expect(page.locator('.encounter-hero')).toBeVisible();
-  await expect(page.locator('.actionbar-combat-actions > button, .actionbar-combat-actions > .combat-skill-pair')).toHaveCount(6);
+  await expect(page.locator('.actionbar-combat-actions > button')).toHaveCount(7);
   await expect(page.locator('.actionbar-combat-actions [data-action="skill"]')).toHaveCount(2);
   await page.locator('button[data-attack-style="normal"]').click();
   await expect(page.locator('.toast')).toContainText('升级 Lv.2');
@@ -121,7 +121,7 @@ test('Phase 4F-2 player growth presentation on clean production preview', async 
   await expect(page.locator('.toast')).toContainText('最大生命 +10');
   await expect(page.locator('.toast')).toHaveAttribute('role', 'status');
   await expect(page.locator('.toast')).toHaveAttribute('aria-live', 'polite');
-  await expect(page.locator('.actionbar-combat-actions > button, .actionbar-combat-actions > .combat-skill-pair')).toHaveCount(6);
+  await expect(page.locator('.actionbar-combat-actions > button')).toHaveCount(7);
   await expect(page.locator('.encounter-hero')).not.toContainText(/等级\s*[:：=]?\s*\d+/);
   await expect(page.locator('.encounter-hero')).not.toContainText(/经验\s*[:：=]?\s*\d+/);
   await screenshot(page, '02-desktop-encounter-level-up');

@@ -175,7 +175,7 @@ test('Phase 4G-2 production evidence: owned loot, hidden third-party loot, and h
   await screenshot(page, '04-mobile-world-event-banners');
 
   await loadFixture(page, stageActiveEncounter('PHASE4G2-BROWSER-ACTIVE-MOBILE'));
-  await expect(page.locator('.actionbar-combat-actions > button, .actionbar-combat-actions > .combat-skill-pair')).toHaveCount(6);
+  await expect(page.locator('.actionbar-combat-actions > button')).toHaveCount(7);
   const encounterMetrics = await page.evaluate(() => ({
     bodyScrollWidth: document.body.scrollWidth,
     documentScrollWidth: document.documentElement.scrollWidth,

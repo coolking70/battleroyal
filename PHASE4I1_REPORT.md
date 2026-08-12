@@ -6,7 +6,7 @@ Phase 4I-1 已完成。四个角色各增加一个 Lv.3 第二技能；解锁由
 `level` 纯函数推导，不新增存档字段、不改 `GAME_VERSION`（仍为 `0.4.0`）。
 主技能查询保持兼容，玩家和 NPC 均通过同一个 `canUseSkill` / `useSkill` 通道。
 
-最终门禁为 **87 test files / 1432 tests，全部通过**；基线 86 / 1423 未减少。
+最终门禁为 **87 test files / 1433 tests，全部通过**；基线 86 / 1423 未减少。
 
 ## 技能与互补性
 
@@ -55,7 +55,9 @@ engineer_reinforce 734  medic_regen 641
 新增测试覆盖：
 
 - Lv.2 的第二技能不可用，Lv.3 后可用，且不产生单独解锁状态；
-- 四个第二技能分别写入正确效果字段、持续时间和冷却；
+- 四个第二技能分别写入正确效果字段、持续时间和冷却，并由实际命中率、伤害、持续恢复
+  与时间推进回归验证其效果确实进入既有结算管线；
+- 四个第二技能的冷却均在推进一个时间单位后按规则递减；
 - 零体力第二技能返回失败，不扣体力、不写冷却、不写状态；
 - 合法行动集合只枚举已解锁且可支付的 `USE_SKILL`，保持既有命令通道；
 - 同种子、同操作序列的技能结果和 RNG 状态一致；
@@ -74,19 +76,23 @@ engineer_reinforce 734  medic_regen 641
 
 ## UI 与可达性
 
-行动栏保留原来的 3 个攻击、 防御、脱离五个动作，不压缩它们。第六个顶层布局
-格为“技能格”，内部有主技能和第二技能两个独立原生按钮：因此实际测得 6 个
-顶层布局格、7 个可操作控件，两个技能入口都可见且各自带解锁/冷却状态。
-这解决了“既显示第二技能又不把既有六格布局挤出视口”的冲突；没有新增常驻块或
-阻塞式弹窗。
+行动栏保留原来的 3 个攻击、防御、逃跑和主技能六个独立动作格，不压缩它们。
+第二技能作为第七个独立原生按钮占据下一行；因此实际测得原有动作 6 个、第二技能 1 个，
+共 7 个可操作控件，
+原有六个动作和新增技能入口都可见且各自带解锁/冷却状态。1280×720 与 390×844
+均无需滚动即可触达全部控件；没有新增常驻块或阻塞式弹窗。
 
 最终生产 preview 证据（截图留在被忽略的 `output/phase4i1-browser/`，不提交）：
 
 - `01-desktop-locked-secondary-skill.png`：Lv.2 副技能可见、禁用、显示 Lv.3 解锁；
-- `02-desktop-unlocked-secondary-skill.png`：Lv.3 副技能可用，点击后进入冷却；
-- `03-mobile-unlocked-secondary-skill.png`：390×844，两个技能均在技能格内；
+- `02-desktop-level-3-unlock-moment.png`：攻击结算后实际从 Lv.2 升到 Lv.3，副技能立即可用；
+- `03-desktop-scout-secondary-used.png`、`04-desktop-fighter-secondary-used.png`、
+  `05-desktop-engineer-secondary-used.png`、`06-desktop-medic-secondary-used.png`：
+  四个角色的第二技能分别释放并进入冷却；
+- `07-mobile-seven-action-controls.png`：390×844，七个控件全部在视口内，原有六动作未被挤出；
 - [runtime JSON](/Users/coolking70/Documents/同步空间/battleroyal/reports/phase4i1-runtime.json)：
-  6 slots / 7 controls / 7 controls in view，body/document scroll width 均 390，
+  1280×720 与 390×844 均为 existingActions=6、secondaryActions=1、controls=7、
+  controlsInView=7，body/document scroll width 分别为 1280 与 390，
   `[title]` 为 0，console/page errors 均为空。
 
 技能按钮为原生 `<button>`，保留既有 `:focus-visible` 规则；锁定原因通过可见文本
@@ -102,11 +108,13 @@ UI 不读取或显示 NPC level/exp，遭遇主视觉和战报的信息边界保
 - `src/core/saveValidation/numbers.ts`：白名单及四种新状态字段校验。
 - `src/data/gameConfig.ts`：只新增第二技能的体力、冷却、持续时间和效果占位数值；既有经验、战斗和经济数值未动。
 - `src/ui/combatActionsPresentation.ts`：提供完整技能集合、锁定状态、原因和兼容的主技能别名。
-- `src/ui/components/ActionBar.tsx`：技能格呈现两个独立入口，保持六个顶层布局格和无障碍语义。
+- `src/ui/components/ActionBar.tsx`：保留六个既有动作格，第二技能独立占下一行，并保持无障碍语义。
+- `src/ui/styles.css`：仅调整遭遇态移动端规划触发器位置，避免其遮挡原有战斗动作；不改变玩法样式之外的布局架构。
 - `src/ui/screens/GameScreen.tsx`：探索态技能入口同步呈现主/副技能并沿用 `USE_SKILL`。
-- `tests/phase4i1SkillGrowth.test.ts`：解锁、效果、冷却、零体力、合法命令、NPC 执行、存档和确定性回归。
+- `tests/phase4i1SkillGrowth.test.ts`：解锁、四个实际效果、冷却递减、零体力、合法命令、NPC 执行、存档和确定性回归。
 - `tests/browser/phase4i1-skill-growth-evidence.spec.ts`：生产 preview 的锁定/解锁、视口、触控和错误证据。
-- 既有受行动栏数量断言影响的浏览器证据测试：改为同时断言六个顶层布局格和七个实际控件，未降低可达性断言。
+- 既有受行动栏数量断言影响的浏览器证据测试：改为断言七个独立控件，并新增桌面/移动
+  全部控件在视口内的断言；原有六个动作保持独立格，不以技能嵌套压缩。
 
 行数审计：`audit:deps` 扫描 77 个文件，R1/R2/R3 违例均 0，R4 超行 0；
 core/data 最大文件仍为 `commandHandlers.ts` 500 行。
@@ -117,7 +125,7 @@ core/data 最大文件仍为 `commandHandlers.ts` 500 行。
 | --- | --- |
 | `rm -rf node_modules && npm ci` | PASS；126 packages，0 vulnerabilities |
 | `npm run typecheck` | PASS |
-| `npm test` | PASS，87 files / 1432 tests |
+| `npm test` | PASS，87 files / 1433 tests |
 | `npm run build` | PASS |
 | `npm run audit:save` | PASS，89/89 |
 | `npm run audit:deps` | PASS，R1~R4 全 0 |

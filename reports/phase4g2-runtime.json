@@ -50,22 +50,22 @@
       "bannerRects": [
         {
           "x": 27,
-          "y": 458.29071044921875,
+          "y": 457.859375,
           "width": 336,
           "height": 53.296875,
-          "top": 458.29071044921875,
+          "top": 457.859375,
           "right": 363,
-          "bottom": 511.58758544921875,
+          "bottom": 511.15625,
           "left": 27
         },
         {
           "x": 27,
-          "y": 515.5875854492188,
+          "y": 515.15625,
           "width": 336,
           "height": 53.296875,
-          "top": 515.5875854492188,
+          "top": 515.15625,
           "right": 363,
-          "bottom": 568.8844604492188,
+          "bottom": 568.453125,
           "left": 27
         }
       ],
@@ -81,7 +81,7 @@
   "encounter": {
     "bodyScrollWidth": 390,
     "documentScrollWidth": 390,
-    "actionButtons": 6,
+    "actionButtons": 7,
     "titleCount": 0
   },
   "consoleErrors": [],

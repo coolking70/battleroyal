@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { createGame } from '../src/core/gameState';
+import { createGame, refreshZoneOccupants } from '../src/core/gameState';
+import { advanceTime } from '../src/core/gameEngine';
+import { computeDamage, hitChanceIn } from '../src/core/combat';
 import { npcCombatSkill } from '../src/core/npcSkillDecide';
 import { SeededRandom } from '../src/core/random';
 import { useSkill, canUseSkill, getCharacterSkills, isSkillUnlocked } from '../src/core/skills';
@@ -117,6 +119,70 @@ describe('Phase 4I-1 第二技能：等级推导与效果', () => {
       expect(player.stamina).toBe(beforeStamina - item.staminaCost);
       expect(player.statusEffects.some((effect) => effect.id === item.statusId)).toBe(true);
       item.check(player);
+    }
+  });
+
+  it('四个第二技能实际影响战斗或时间结算，并按时间递减冷却', () => {
+    const duel = (characterId: string): { state: GameState; player: Combatant; enemy: Combatant } => {
+      const state = newGame(characterId);
+      const player = playerOf(state);
+      const enemy = Object.values(state.characters).find((character) => !character.isPlayer && character.alive)!;
+      player.currentZoneId = 'residential';
+      enemy.currentZoneId = player.currentZoneId;
+      refreshZoneOccupants(state);
+      player.level = GAME_CONFIG.skillSecondaryUnlockLevel;
+      player.stamina = player.maxStamina;
+      return { state, player, enemy };
+    };
+    const isolatePlayerForTimeTick = (state: GameState): void => {
+      for (const character of Object.values(state.characters)) {
+        if (!character.isPlayer) {
+          character.currentZoneId = 'school';
+          character.stamina = 0;
+        }
+      }
+      refreshZoneOccupants(state);
+    };
+
+    {
+      const { state, player, enemy } = duel('scout');
+      const before = hitChanceIn(state, enemy, player);
+      useSkill(state, player, 'scout_smoke', new SeededRandom(21));
+      expect(hitChanceIn(state, enemy, player)).toBeLessThan(before);
+      isolatePlayerForTimeTick(state);
+      advanceTime(state, new SeededRandom(22));
+      expect(player.skillCooldowns.scout_smoke).toBe(GAME_CONFIG.skillScoutSmokeCooldown - 1);
+    }
+
+    {
+      const { state, player, enemy } = duel('fighter');
+      const before = hitChanceIn(state, player, enemy);
+      useSkill(state, player, 'fighter_focus', new SeededRandom(23));
+      expect(hitChanceIn(state, player, enemy)).toBeGreaterThan(before);
+      isolatePlayerForTimeTick(state);
+      advanceTime(state, new SeededRandom(24));
+      expect(player.skillCooldowns.fighter_focus).toBe(GAME_CONFIG.skillFighterFocusCooldown - 1);
+    }
+
+    {
+      const { state, player, enemy } = duel('engineer');
+      const before = computeDamage(enemy, player, new SeededRandom(25));
+      useSkill(state, player, 'engineer_reinforce', new SeededRandom(26));
+      expect(computeDamage(enemy, player, new SeededRandom(25))).toBeLessThan(before);
+      isolatePlayerForTimeTick(state);
+      advanceTime(state, new SeededRandom(27));
+      expect(player.skillCooldowns.engineer_reinforce).toBe(GAME_CONFIG.skillEngineerReinforceCooldown - 1);
+    }
+
+    {
+      const { state, player } = duel('medic');
+      player.hp = player.maxHp - GAME_CONFIG.skillMedicRegenHpPerTick;
+      const beforeHp = player.hp;
+      useSkill(state, player, 'medic_regen', new SeededRandom(28));
+      isolatePlayerForTimeTick(state);
+      advanceTime(state, new SeededRandom(29));
+      expect(player.hp).toBe(beforeHp + GAME_CONFIG.skillMedicRegenHpPerTick);
+      expect(player.skillCooldowns.medic_regen).toBe(GAME_CONFIG.skillMedicRegenCooldown - 1);
     }
   });
 

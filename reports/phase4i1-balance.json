@@ -3,7 +3,7 @@
     "tool": "phase3-balance",
     "mode": "regression",
     "version": "0.4.0",
-    "generatedAt": "2026-08-12T06:05:08.100Z",
+    "generatedAt": "2026-08-12T07:03:02.922Z",
     "config": {
       "gamesMode": "total",
       "requestedTotalGames": 500,

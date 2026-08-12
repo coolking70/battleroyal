@@ -14,7 +14,7 @@ interface ActionBarProps {
   onRest: () => void;
   /**
    * 遭遇态视图模型（Phase 4D-3 §2.5）。
-   * 非 null 时**整条行动栏**切换成 6 个布局格：速攻 / 普通 / 重击 / 防御 / 逃跑 / 技能格。
+   * 非 null 时**整条行动栏**切换成 6 个既有动作格，并在下一行呈现已解锁状态的第二技能。
    * 探索态传 null，显示搜索 / 休息 / 移动入口。
    */
   combat?: CombatActionBarView | null;
@@ -28,12 +28,12 @@ interface ActionBarProps {
  * 底部行动条：**探索态与遭遇态共用同一条**，按上下文切换（Phase 4D-3 §2.5）。
  *
  * - 探索态：搜索 / 休息 + 移动入口提示。
- * - 遭遇态：速攻 / 普通 / 重击 / 防御 / 逃跑 / 技能，命中率、脱离率与体力成本
+ * - 遭遇态：速攻 / 普通 / 重击 / 防御 / 逃跑 / 主技能，以及独立的第二技能入口，命中率、脱离率与体力成本
  *   全部来自 `buildCombatActionBar`（与核心结算同源），合法性提示落在 `#actionbar-hint`，
  *   所有战斗按钮用 `aria-describedby` 指向它。
  *
  * 行动栏在 `.game` 的 flex 布局里是 `flex: none` 的页脚，永远钉在视口底部 ——
- * 因此 6 个战斗动作**无需滚动**即可触达（§4 五视口约束）。
+ * 因此原有 6 个战斗动作与新增第二技能**无需滚动**即可触达（§4 五视口约束）。
  */
 export function ActionBar({
   state,
@@ -111,20 +111,7 @@ export function ActionBar({
               脱离 {combat.flee.chancePct}% · {combat.flee.cost === 0 ? '免费' : `体力 ${combat.flee.cost}`}
             </span>
           </button>
-          {combat.skills.length > 0 && (
-            <div
-              className="combat-skill-pair"
-              aria-label="技能"
-              style={{
-                display: 'grid',
-                gridTemplateRows: `repeat(${combat.skills.length}, minmax(0, 1fr))`,
-                gap: 2,
-                minWidth: 0,
-                minHeight: 0,
-                height: '100%',
-              }}
-            >
-              {combat.skills.map((skill) => {
+          {combat.skills.map((skill, index) => {
                 const statusText = !skill.unlocked
                   ? `Lv.${skill.unlockLevel} 解锁`
                   : skill.ready
@@ -138,9 +125,10 @@ export function ActionBar({
                 return (
                   <button
                     key={skill.id}
-                    className="btn"
+                    className={cx('btn', index > 0 && 'combat-secondary-skill')}
                     data-action="skill"
                     data-skill-id={skill.id}
+                    data-skill-role={index > 0 ? 'secondary' : 'primary'}
                     data-skill-locked={!skill.unlocked ? 'true' : 'false'}
                     disabled={!skill.usable}
                     onClick={() => onSkill?.(skill.id)}
@@ -152,14 +140,6 @@ export function ActionBar({
                           : `${skill.name}：${skill.reason ?? '当前不可用'}`
                     }
                     aria-describedby="actionbar-hint"
-                    style={{
-                      minWidth: 0,
-                      minHeight: 44,
-                      height: 'auto',
-                      padding: '3px 2px',
-                      fontSize: 10,
-                      lineHeight: 1.15,
-                    }}
                   >
                     <span>{skill.name}</span>
                     <span className="action-cost">
@@ -169,8 +149,6 @@ export function ActionBar({
                   </button>
                 );
               })}
-            </div>
-          )}
         </div>
       ) : (
         <>

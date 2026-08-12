@@ -832,15 +832,20 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Player legal actions and exploration/encounter UI now share the same skill set and
   `canUseSkill` gate. NPC decision paths select and execute the second skill after Lv.3;
   the execution test uses a real NPC and `useSkill`, not only static definitions.
-- The encounter action bar keeps 6 top-level layout slots: five existing action slots
-  plus one skill slot containing two native skill buttons. Production preview evidence
-  measured 6 slots / 7 controls, all 7 in view at 390×844, `[title]=0`, and no
-  console/page errors. Screenshots remain local under ignored `output/`; only JSON
-  snapshots are tracked.
+- The encounter action bar keeps the six existing actions as independent buttons and
+  places the second skill on its own row, so the existing actions are not compressed.
+  Production preview evidence now measures existingActions=6, secondaryActions=1,
+  controls=7 / 7 in view at both 1280×720 and 390×844, with no horizontal overflow,
+  `[title]=0`, and no console/page errors.
+  Screenshots remain local under ignored `output/`; only JSON snapshots are tracked.
+- Added effect-level regressions: smoke changes actual incoming hit chance, focus changes
+  actual outgoing hit chance, reinforce changes computed damage, regen heals on a real
+  time tick, and all four cooldowns decrement. Browser evidence covers the Lv.3 unlock
+  moment plus one production-preview use of each secondary skill.
 - Save validation accepts only the four defined second-skill status shapes and rejects
   unknown ids, wrong types and duration/effect bounds. Unlock state is derived from
   `level`, so `GAME_VERSION` remains `0.4.0`; audit-save remains 89/89.
-- Final clean gates: `npm ci`, typecheck, **87 files / 1432 tests**, build,
+- Final clean gates: `npm ci`, typecheck, **87 files / 1433 tests**, build,
   audit:save, audit:deps R1–R4=0, art doctor/validate/audit/security, 500-game
   PHASE4I1 engine-health regression (requested=actual=500; timeout/illegal/
   hard-limit=0), and `npm audit --omit=dev` all PASS. Balance output is recorded only;
