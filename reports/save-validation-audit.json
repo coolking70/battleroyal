@@ -2,7 +2,7 @@
   "meta": {
     "tool": "audit-save-validation",
     "version": "0.4.0",
-    "generatedAt": "2026-08-12T07:02:15.421Z",
+    "generatedAt": "2026-08-12T16:23:34.304Z",
     "control": "normal-save-accepted",
     "totalCases": 89,
     "passedCases": 89,
@@ -408,7 +408,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "区域 forest 的地面 的 droppedBy 不是合法角色引用（42）",
+      "errorMessage": "区域 park 的地面 的 droppedBy 不是合法角色引用（42）",
       "constructionFailed": false
     },
     {

@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { measureInfoArchitecture, type InfoArchitectureMetrics } from './infoArchitectureMetrics';
+import { ZONES } from '../../src/data/zones';
 
 /**
  * Phase 4D-2 信息架构证据。
@@ -135,14 +136,14 @@ test(`Phase 4D-2 information architecture metrics (${label})`, async ({ page }) 
       await expect(page.locator('.craft-goal-bar')).toBeVisible();
       await expect(page.locator('.actionbar')).toBeVisible();
 
-      // ---- §3.2：完整六区地图按需展开，展开后信息无损 ----
+      // ---- §3.2：完整区域地图按需展开，展开后信息无损 ----
       const mapTrigger = page.locator('.zone-rail-expand');
       await expect(mapTrigger).toBeVisible();
       await mapTrigger.click();
       await expect(page.locator('.map-slot-open')).toHaveCount(1);
       const mapPanel = page.locator('.map-drawer-panel');
       await expect(mapPanel).toBeVisible();
-      await expect(mapPanel.locator('.zone-item')).toHaveCount(6);
+      await expect(mapPanel.locator('.zone-item')).toHaveCount(ZONES.length);
       const mapOpen = await capture(page, `${viewport.name}-02-map-open`, { surface: 'map-drawer' });
       expect(mapOpen.horizontalOverflow.overflow).toBe(false);
       expect(mapOpen.titleAttributeCount).toBe(0);

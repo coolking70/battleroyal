@@ -1,7 +1,7 @@
 # 存档独立验收报告（Phase 3）
 
 - 版本：0.4.0
-- 生成时间：2026-08-12T07:02:15.422Z
+- 生成时间：2026-08-12T16:23:34.305Z
 - 对照组：1 个正常存档
 - 损坏用例：89 个
 - 通过：89 / 89
@@ -61,7 +61,7 @@
 | 46 | equippedWeaponId 指向非武器 | 拒绝 | 拒绝 | ✓ | 角色 p0 的 equippedWeaponId 指向的不是武器（cloth_armor） |
 | 47 | equipment 出现 material | 拒绝 | 拒绝 | ✓ | 角色 p0 的 equipment 里出现了不可装备物品（木材） |
 | 48 | 尸体掉落缺 revealedTo | 拒绝 | 拒绝 | ✓ | 区域 factory 的地面 的尸体掉落缺少合法 revealedTo 数组 |
-| 49 | 尸体掉落 droppedBy 类型错误 | 拒绝 | 拒绝 | ✓ | 区域 forest 的地面 的 droppedBy 不是合法角色引用（42） |
+| 49 | 尸体掉落 droppedBy 类型错误 | 拒绝 | 拒绝 | ✓ | 区域 park 的地面 的 droppedBy 不是合法角色引用（42） |
 | 50 | 尸体掉落 revealedTo 类型错误 | 拒绝 | 拒绝 | ✓ | 区域 residential 的地面 的尸体掉落缺少合法 revealedTo 数组 |
 | 51 | 尸体掉落 revealedTo 非法角色 | 拒绝 | 拒绝 | ✓ | 区域 residential 的地面 的 revealedTo 含非法角色引用（ghost） |
 | 52 | 尸体掉落 revealedTo 超过上限 | 拒绝 | 拒绝 | ✓ | 区域 residential 的地面 的 revealedTo 超过 6 个角色（7） |

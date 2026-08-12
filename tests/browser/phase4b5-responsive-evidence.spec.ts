@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { SAVE_KEY } from '../../src/data/gameConfig';
+import { ZONES } from '../../src/data/zones';
 import { pendingPickupFixture } from './pendingPickupFixture';
 import { scrollEncounterActionsIntoView } from './scrollHelpers';
 
@@ -164,13 +165,13 @@ test('Phase 4B-5 production responsive closure across five viewports', async ({ 
     expect(base.documentScrollWidth).toBe(viewport.width);
     expect(base.search).toBe(true);
     expect(base.rest).toBe(true);
-    expect(base.movementEntries).toBe(6);
+      expect(base.movementEntries).toBe(ZONES.length);
     expect(base.visibleAdjacentChips).toBeGreaterThan(0);
 
-    // 完整六区仍然一步可达，且展开后是真正可见的（不是藏在 DOM 里凑数）。
+    // 完整区域地图仍然一步可达，且展开后是真正可见的（不是藏在 DOM 里凑数）。
     await page.locator('.zone-rail-expand').click();
     await expect(page.locator('.map-slot-open')).toHaveCount(1);
-    await expect(page.locator('.map-drawer-panel .zone-item')).toHaveCount(6);
+    await expect(page.locator('.map-drawer-panel .zone-item')).toHaveCount(ZONES.length);
     const mapOverflow = await page.evaluate(() => ({
       bodyScrollWidth: document.body.scrollWidth,
       documentScrollWidth: document.documentElement.scrollWidth,
@@ -181,7 +182,7 @@ test('Phase 4B-5 production responsive closure across five viewports', async ({ 
     }));
     expect(mapOverflow.bodyScrollWidth).toBe(viewport.width);
     expect(mapOverflow.documentScrollWidth).toBe(viewport.width);
-    expect(mapOverflow.visibleZoneItems).toBe(6);
+    expect(mapOverflow.visibleZoneItems).toBe(ZONES.length);
     await snapshot(page, `${viewport.name}-map-open`);
     await page.keyboard.press('Escape');
     await expect(page.locator('.map-slot-open')).toHaveCount(0);

@@ -83,6 +83,7 @@ function cell(characterId: string, policy: AutoPlayerPolicy, games: number): Cel
     avgPlayerInventorySize: zero,
     avgZonesExhausted: zero,
     avgDeaths: zero,
+    deathCauseCounts: {},
     avgEventCount: zero,
     avgSteps: zero,
     totalSteps: 0,

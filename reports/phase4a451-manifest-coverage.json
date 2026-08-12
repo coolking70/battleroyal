@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-10T07:40:25.017Z",
+  "generatedAt": "2026-08-12T16:25:24.768Z",
   "source": {
     "characters": "src/data/characters.ts",
     "zones": "src/data/zones.ts",
@@ -9,7 +9,7 @@
   "counts": {
     "characterVariantsRequired": 12,
     "characterVariantsOfficial": 12,
-    "zoneBackgroundRequired": 6,
+    "zoneBackgroundRequired": 12,
     "zoneBackgroundOfficial": 6,
     "itemArtTasks": 12,
     "itemArtOfficial": 12,
@@ -253,6 +253,8 @@
       "artTask": true,
       "background": true,
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "warning": null,
       "restricted": null,
       "optionalVariants": {
@@ -278,6 +280,8 @@
       "artTask": true,
       "background": true,
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "warning": null,
       "restricted": null,
       "optionalVariants": {
@@ -303,6 +307,8 @@
       "artTask": true,
       "background": true,
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "warning": null,
       "restricted": null,
       "optionalVariants": {
@@ -328,6 +334,8 @@
       "artTask": true,
       "background": true,
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "warning": null,
       "restricted": null,
       "optionalVariants": {
@@ -353,6 +361,8 @@
       "artTask": true,
       "background": true,
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "warning": null,
       "restricted": null,
       "optionalVariants": {
@@ -378,6 +388,8 @@
       "artTask": true,
       "background": true,
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "warning": null,
       "restricted": null,
       "optionalVariants": {
@@ -395,6 +407,96 @@
         "width": 1312,
         "height": 736,
         "readable": true
+      }
+    },
+    {
+      "taskId": "zone/commercial/background",
+      "gameDataId": "commercial",
+      "artTask": false,
+      "background": false,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true,
+      "warning": null,
+      "restricted": null,
+      "optionalVariants": {
+        "warning": "optional future variant; not a Phase 4A base-art blocker",
+        "restricted": "optional future variant; not a Phase 4A base-art blocker"
+      }
+    },
+    {
+      "taskId": "zone/station/background",
+      "gameDataId": "station",
+      "artTask": false,
+      "background": false,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true,
+      "warning": null,
+      "restricted": null,
+      "optionalVariants": {
+        "warning": "optional future variant; not a Phase 4A base-art blocker",
+        "restricted": "optional future variant; not a Phase 4A base-art blocker"
+      }
+    },
+    {
+      "taskId": "zone/park/background",
+      "gameDataId": "park",
+      "artTask": false,
+      "background": false,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true,
+      "warning": null,
+      "restricted": null,
+      "optionalVariants": {
+        "warning": "optional future variant; not a Phase 4A base-art blocker",
+        "restricted": "optional future variant; not a Phase 4A base-art blocker"
+      }
+    },
+    {
+      "taskId": "zone/warehouse/background",
+      "gameDataId": "warehouse",
+      "artTask": false,
+      "background": false,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true,
+      "warning": null,
+      "restricted": null,
+      "optionalVariants": {
+        "warning": "optional future variant; not a Phase 4A base-art blocker",
+        "restricted": "optional future variant; not a Phase 4A base-art blocker"
+      }
+    },
+    {
+      "taskId": "zone/construction/background",
+      "gameDataId": "construction",
+      "artTask": false,
+      "background": false,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true,
+      "warning": null,
+      "restricted": null,
+      "optionalVariants": {
+        "warning": "optional future variant; not a Phase 4A base-art blocker",
+        "restricted": "optional future variant; not a Phase 4A base-art blocker"
+      }
+    },
+    {
+      "taskId": "zone/underground/background",
+      "gameDataId": "underground",
+      "artTask": false,
+      "background": false,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true,
+      "warning": null,
+      "restricted": null,
+      "optionalVariants": {
+        "warning": "optional future variant; not a Phase 4A base-art blocker",
+        "restricted": "optional future variant; not a Phase 4A base-art blocker"
       }
     }
   ],

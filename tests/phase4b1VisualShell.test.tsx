@@ -9,6 +9,7 @@ import { ZoneMap } from '../src/ui/components/ZoneMap';
 import { StatusBar } from '../src/ui/components/StatusBar';
 import { GameScreen } from '../src/ui/screens/GameScreen';
 import { getZoneDef } from '../src/data/zones';
+import { ZONES } from '../src/data/zones';
 import { zoneStatusMeta } from '../src/ui/zonePresentation';
 
 let root: Root;
@@ -38,7 +39,7 @@ describe('Phase 4B-1 visual shell', () => {
     expect(container.querySelector('.zone-hero')?.textContent).toContain('安全');
   });
 
-  it('keeps all six navigable Zone entries and renders non-color status cues', () => {
+  it('keeps all navigable Zone entries and renders non-color status cues', () => {
     const state = createGame({ seed: 'PHASE4B1-MAP', playerCharacterId: 'scout', playerName: '测试者' });
     const player = getPlayer(state);
     state.zones.school!.status = 'warning';
@@ -47,7 +48,7 @@ describe('Phase 4B-1 visual shell', () => {
       <ZoneMap state={state} player={player} disabled={false} freshIntelZones={new Set()} onMove={() => undefined} />,
     ));
 
-    expect(container.querySelectorAll('.zone-item')).toHaveLength(6);
+    expect(container.querySelectorAll('.zone-item')).toHaveLength(ZONES.length);
     expect(container.querySelector('.cue-warning')?.textContent).toContain('预警');
     expect(container.querySelector('.cue-warning .zone-state-icon')?.textContent).toBe('⚠');
     expect(container.querySelector('.cue-restricted')?.textContent).toContain('禁区');

@@ -19,8 +19,8 @@ interface ZoneMapProps {
 }
 
 /**
- * 左栏区域地图。
- * 用列表 + 色条表示 6 个区域，只有相邻区域可点击。
+ * 完整区域地图。
+ * 用数据驱动的列表 + 色条表示全部区域，只有相邻区域可点击。
  *
  * 第二阶段起地图不再泄露"每个区域有几个人"：
  * - 取而代之显示**噪音等级**（安静 / 有动静 / 嘈杂），由搜索、战斗、死亡产生并衰减；
@@ -39,7 +39,7 @@ export function ZoneMap({
     <section className="panel zone-nav-panel col-grow">
       <div className="panel-title">
         <span>路线规划</span>
-        <span className="faint">六区 · 相邻可移动</span>
+        <span className="faint">{ZONES.length} 区 · 相邻可移动</span>
       </div>
 
       <div className="zone-list scroll">
@@ -67,6 +67,7 @@ export function ZoneMap({
             <button
               key={def.id}
               className={cx('zone-item', isCurrent && 'current')}
+              data-zone-id={def.id}
               style={{ ['--zone-color' as string]: zoneVisual.color }}
               disabled={disabled || isCurrent || !adjacent}
               onClick={() => onMove(def.id)}

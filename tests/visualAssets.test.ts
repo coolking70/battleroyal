@@ -14,7 +14,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { CHARACTERS } from '../src/data/characters';
-import { ZONES } from '../src/data/zones';
+import { LEGACY_ZONE_IDS, ZONES } from '../src/data/zones';
 import { ITEMS } from '../src/data/items';
 import { WORLD_EVENT_IDS } from '../src/core/worldEvents';
 import {
@@ -38,10 +38,13 @@ describe('manifest 与磁盘文件一致性', () => {
       expect(existsSync(resolve(ASSETS_ROOT, rel)), `缺失资产文件：${rel}`).toBe(true);
     }
   });
-  it('manifest 至少包含 fallback 与全部区域/角色/事件', () => {
+  it('manifest 至少包含 fallback、旧区域/角色/事件；新区明确走 SVG/emoji fallback', () => {
     const set = new Set(VISUAL_ASSET_MANIFEST);
     expect(set.has('fallback.svg')).toBe(true);
-    for (const z of ZONES) expect(set.has(`zones/${z.id}.svg`), `缺 zones/${z.id}.svg`).toBe(true);
+    for (const id of LEGACY_ZONE_IDS) expect(set.has(`zones/${id}.svg`), `缺 zones/${id}.svg`).toBe(true);
+    for (const z of ZONES.filter((zone) => !LEGACY_ZONE_IDS.includes(zone.id as never))) {
+      expect(set.has(`zones/${z.id}.svg`)).toBe(false);
+    }
     for (const c of CHARACTERS) expect(set.has(`characters/${c.id}.svg`), `缺 characters/${c.id}.svg`).toBe(true);
     for (const id of WORLD_EVENT_IDS) expect(set.has(`events/${id}.svg`), `缺 events/${id}.svg`).toBe(true);
   });
@@ -54,7 +57,11 @@ describe('注册表覆盖与 fallback', () => {
       expect(v, `区域 ${def.id} 掉进兜底`).not.toBe(FALLBACK_VISUAL);
       expect(v.color).toBe(def.color);
       expect(v.label).toBe(def.name);
-      expect(v.image, `区域 ${def.id} 应有图片`).not.toBeNull();
+      if (LEGACY_ZONE_IDS.includes(def.id as never)) {
+        expect(v.image, `旧区域 ${def.id} 应有图片`).not.toBeNull();
+      } else {
+        expect(v.image, `新区 ${def.id} 应明确使用 fallback`).toBeNull();
+      }
     }
   });
 

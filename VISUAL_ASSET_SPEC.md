@@ -17,7 +17,7 @@ src/ui/visualAssets.ts          注册表 + fallback 逻辑 + 查询入口
 src/ui/assets/
   manifest.json                 全部资产文件清单（生成物）
   fallback.svg                  兜底图（❓ 灰块）
-  zones/<id>.svg                6 个区域
+  zones/<id>.svg                legacy 六区正式资产；新区使用受控 fallback
   characters/<id>.svg           4 个角色
   events/<id>.svg               6 个世界事件
 ```

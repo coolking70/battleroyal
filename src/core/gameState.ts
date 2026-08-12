@@ -1,7 +1,7 @@
 import { CHARACTERS, NPC_NAME_POOL, getCharacterDef } from '../data/characters';
 import { GAME_CONFIG, GAME_VERSION } from '../data/gameConfig';
 import { MATERIAL_IDS } from '../data/items';
-import { ZONES, ZONE_IDS } from '../data/zones';
+import { LEGACY_ZONE_IDS, ZONES, ZONE_IDS } from '../data/zones';
 import { pushEvent } from './events';
 import { refreshPlayerSight } from './info';
 import { addItem, createStack } from './inventory';
@@ -22,6 +22,21 @@ const PERSONALITIES: Personality[] = [
   'opportunist',
   'random',
 ];
+
+const NEW_ZONE_IDS = ZONE_IDS.filter((id) => !LEGACY_ZONE_IDS.includes(id as never));
+
+/**
+ * 出生仍由固定区域表驱动。旧六区存档/种子的主 RNG 序列必须保持不变，
+ * 所以兼容路径先沿用旧区域抽样，再用 seed 派生流把新区纳入候选；派生流
+ * 不会影响后续搜索、战斗或 NPC 决策的随机序列。
+ */
+function pickSpawnZone(seed: string, roleIndex: number, rng: SeededRandom): string {
+  const legacy = rng.pick(LEGACY_ZONE_IDS) ?? 'school';
+  if (NEW_ZONE_IDS.length === 0) return legacy;
+  const extensionRng = new SeededRandom(`phase4k:spawn:${seed}:${roleIndex}`);
+  if (!extensionRng.chance(0.05)) return legacy;
+  return extensionRng.pick(NEW_ZONE_IDS) ?? legacy;
+}
 
 export const PERSONALITY_LABEL: Record<Personality, string> = {
   aggressive: '激进',
@@ -179,15 +194,21 @@ export function createGame(options: CreateGameOptions): GameState {
     endReason: null,
   };
 
+  const legacyZoneIds = new Set<string>(LEGACY_ZONE_IDS);
   for (const z of ZONES) {
     const zone = createZoneState(z.id);
     // 有限物资：开局一次性生成，之后只减不增
-    initZoneLoot(zone, generateZoneLoot(z.id, rng));
+    // 保持旧六区的主 RNG 序列不变；新增区域使用派生 RNG，避免内容扩张
+    // 改变旧种子的出生、搜索和 NPC 行为，同时仍然保证新区库存确定性。
+    const lootRng = legacyZoneIds.has(z.id)
+      ? rng
+      : new SeededRandom(`phase4k:${options.seed}:${z.id}`);
+    initZoneLoot(zone, generateZoneLoot(z.id, lootRng));
     state.zones[z.id] = zone;
   }
 
   // --- 玩家 ---
-  const playerZone = rng.pick(ZONE_IDS) ?? 'school';
+  const playerZone = pickSpawnZone(options.seed, 0, rng);
   const player = createCombatant({
     id: 'p0',
     name: options.playerName?.trim() || '你',
@@ -210,7 +231,7 @@ export function createGame(options: CreateGameOptions): GameState {
       isPlayer: false,
       characterId: template ? template.id : 'scout',
       personality: personalities[i] ?? 'random',
-      zoneId: rng.pick(ZONE_IDS) ?? 'school',
+      zoneId: pickSpawnZone(options.seed, i + 1, rng),
     });
     state.characters[npc.id] = npc;
     state.turnOrder.push(npc.id);

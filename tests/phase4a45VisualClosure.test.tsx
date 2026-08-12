@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { allCharacters, createGame, getPlayer } from '../src/core/gameState';
 import { CHARACTERS } from '../src/data/characters';
 import { ITEMS } from '../src/data/items';
-import { ZONES } from '../src/data/zones';
+import { LEGACY_ZONE_IDS } from '../src/data/zones';
 import { WORLD_EVENT_IDS } from '../src/core/worldEvents';
 import { buildCombatActionBar } from '../src/ui/combatActionsPresentation';
 import { EncounterHero } from '../src/ui/components/EncounterHero';
@@ -83,9 +83,9 @@ describe('Phase 4A-4.5 derived character visual state', () => {
     }
   });
 
-  it('maps all six zone backgrounds to official runtime paths', async () => {
+  it('keeps all legacy zone backgrounds on their approved runtime paths', async () => {
     setAssetManifest(await manifest());
-    for (const zone of ZONES) expect(getZoneVisual(zone.id).source).toBe('official');
+    for (const zoneId of LEGACY_ZONE_IDS) expect(getZoneVisual(zoneId).source).toBe('official');
   });
 
   it('maps every current Item ArtTask to an official runtime icon', async () => {

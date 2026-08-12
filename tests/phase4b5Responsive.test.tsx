@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createGame, getPlayer } from '../src/core/gameState';
 import { GameScreen } from '../src/ui/screens/GameScreen';
+import { ZONES } from '../src/data/zones';
 
 let root: Root;
 let container: HTMLDivElement;
@@ -54,7 +55,7 @@ describe('Phase 4B-5 responsive shell', () => {
     });
 
     expect(container.querySelector('.actionbar-actions button')).not.toBeNull();
-    expect(container.querySelectorAll('.zone-item')).toHaveLength(6);
+    expect(container.querySelectorAll('.zone-item')).toHaveLength(ZONES.length);
     expect(container.querySelector('.log-panel')).not.toBeNull();
     expect(container.textContent).not.toContain('flee_combat');
     expect(container.textContent).not.toContain('物资 100%');
