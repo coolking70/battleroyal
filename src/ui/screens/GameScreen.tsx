@@ -12,7 +12,7 @@ import { zoneDamagePerTick } from '../../core/restrictedZones';
 import {
   SKILLS,
   canUseSkill,
-  getCharacterSkill,
+  getCharacterSkills,
   isSkillReady,
 } from '../../core/skills';
 import type { AttackStyle, Combatant, Command, GameState } from '../../core/types';
@@ -146,11 +146,23 @@ export function GameScreen({
   const lockedAll = Boolean(pending);
   const lockedGeneral = lockedAll || inActiveEncounter;
 
-  // 玩家专属技能（Phase 3 Step 3）：随时可用（自增益 / 治疗 / 修理）
-  const playerSkillId = getCharacterSkill(player.characterId);
-  const playerSkillReady = playerSkillId ? isSkillReady(player, playerSkillId) : false;
-  const playerSkillUsable = playerSkillId ? canUseSkill(player, playerSkillId).ok : false;
-  const playerSkillCooldown = playerSkillId ? player.skillCooldowns[playerSkillId] ?? 0 : 0;
+  // 玩家技能（主技能 + Lv.3 第二技能）：探索态也保留锁定入口，锁定原因直出文本。
+  const playerSkills = getCharacterSkills(player.characterId).map((skillId) => {
+    const def = SKILLS[skillId];
+    const check = canUseSkill(player, skillId);
+    return {
+      id: skillId,
+      name: def.name,
+      description: def.description,
+      cost: def.staminaCost,
+      ready: isSkillReady(player, skillId),
+      cooldown: player.skillCooldowns[skillId] ?? 0,
+      usable: check.ok,
+      unlocked: player.level >= def.unlockLevel,
+      unlockLevel: def.unlockLevel,
+      reason: check.reason,
+    };
+  });
 
   // 遭遇态共用行动栏的视图模型（Phase 4D-3 §2.5）。
   // 待处理拾取时核心只给拾取解决命令，所以那一刻不切战斗行动栏。
@@ -481,22 +493,34 @@ export function GameScreen({
               </div>
             )}
 
-            {playerSkillId && !inActiveEncounter && (
+            {playerSkills.length > 0 && !inActiveEncounter && (
               <div className="presence-actions" style={{ marginTop: 8 }}>
-                <button
-                  className="btn btn-sm"
-                  disabled={lockedAll || !playerSkillUsable}
-                  onClick={() => act({ type: 'USE_SKILL', skillId: playerSkillId })}
-                  aria-label={
-                    playerSkillReady
-                      ? `${SKILLS[playerSkillId].name}：${SKILLS[playerSkillId].description}（消耗 ${SKILLS[playerSkillId].staminaCost} 点体力）`
-                      : `${SKILLS[playerSkillId].name}冷却中（剩余 ${playerSkillCooldown} 回合）`
-                  }
-                >
-                  {SKILLS[playerSkillId].name}（
-                  {playerSkillReady ? `体力 ${SKILLS[playerSkillId].staminaCost}` : `冷却 ${playerSkillCooldown}`}
-                  ）
-                </button>
+                {playerSkills.map((skill) => {
+                  const status = !skill.unlocked
+                    ? `Lv.${skill.unlockLevel} 解锁`
+                    : skill.ready
+                      ? `体力 ${skill.cost}`
+                      : `冷却 ${skill.cooldown}`;
+                  return (
+                    <button
+                      key={skill.id}
+                      className="btn btn-sm"
+                      data-skill-id={skill.id}
+                      data-skill-locked={!skill.unlocked ? 'true' : 'false'}
+                      disabled={lockedAll || !skill.usable}
+                      onClick={() => act({ type: 'USE_SKILL', skillId: skill.id })}
+                      aria-label={
+                        !skill.unlocked
+                          ? `${skill.name}：未解锁，需要达到 Lv.${skill.unlockLevel}`
+                          : skill.usable
+                            ? `${skill.name}：${skill.description}（消耗 ${skill.cost} 点体力）`
+                            : `${skill.name}：${skill.reason ?? '当前不可用'}`
+                      }
+                    >
+                      {skill.name}（{status}）
+                    </button>
+                  );
+                })}
               </div>
             )}
 
@@ -546,10 +570,7 @@ export function GameScreen({
         }}
         onGuard={() => dispatch({ type: 'GUARD' })}
         onFlee={() => dispatch({ type: 'FLEE' })}
-        onSkill={() => {
-          const sid = getCharacterSkill(player.characterId);
-          if (sid) dispatch({ type: 'USE_SKILL', skillId: sid });
-        }}
+        onSkill={(skillId) => dispatch({ type: 'USE_SKILL', skillId })}
       />
 
       {/* ---------- 按需展开：规划抽屉（背包+装备 / 合成+图鉴 / 历史日志） ---------- */}

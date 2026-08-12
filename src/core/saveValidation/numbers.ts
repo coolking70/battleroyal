@@ -13,7 +13,14 @@
 
 import { GAME_CONFIG } from '../../data/gameConfig';
 import { tryGetItem } from '../../data/items';
-import { SKILLS } from '../skills';
+import {
+  ENGINEER_REINFORCE_ID,
+  FIGHTER_FOCUS_ID,
+  MEDIC_REGEN_ID,
+  SCOUT_SMOKE_ID,
+  SECONDARY_STATUS_IDS,
+  SKILLS,
+} from '../skills';
 import { ADRENALINE_ID, FIELD_CRAFT_ID, MEDICAL_FOCUS_ID, EXPOSED_ID } from '../statusIds';
 import { isFiniteNumber, isRecord, type ValidationContext } from './types';
 
@@ -247,6 +254,7 @@ export function validateNumbers(ctx: ValidationContext): void {
       FIELD_CRAFT_ID,
       MEDICAL_FOCUS_ID,
       EXPOSED_ID,
+      ...SECONDARY_STATUS_IDS,
     ]);
     if (!Array.isArray(c.statusEffects)) {
       fail(`角色 ${id} 的 statusEffects 类型错误`);
@@ -280,6 +288,38 @@ export function validateNumbers(ctx: ValidationContext): void {
           }
           if ((e.remaining as number) > GAME_CONFIG.exposedMaxDuration) {
             fail(`角色 ${id} 的 EXPOSED remaining 超过兜底上限 ${GAME_CONFIG.exposedMaxDuration}`);
+          }
+        }
+        if (eid === SCOUT_SMOKE_ID) {
+          if ((e.hpPerTick as number) !== 0 || e.evasionHitMult !== GAME_CONFIG.skillScoutSmokeEvasionMult) {
+            fail(`角色 ${id} 的烟幕转位状态字段不符合技能定义`);
+          }
+          if ((e.remaining as number) > GAME_CONFIG.skillScoutSmokeDuration) {
+            fail(`角色 ${id} 的烟幕转位 remaining 超过 ${GAME_CONFIG.skillScoutSmokeDuration}`);
+          }
+        }
+        if (eid === FIGHTER_FOCUS_ID) {
+          if ((e.hpPerTick as number) !== 0 || e.hitChanceMult !== GAME_CONFIG.skillFighterFocusHitChanceMult) {
+            fail(`角色 ${id} 的精准节拍状态字段不符合技能定义`);
+          }
+          if ((e.remaining as number) > GAME_CONFIG.skillFighterFocusDuration) {
+            fail(`角色 ${id} 的精准节拍 remaining 超过 ${GAME_CONFIG.skillFighterFocusDuration}`);
+          }
+        }
+        if (eid === ENGINEER_REINFORCE_ID) {
+          if ((e.hpPerTick as number) !== 0 || e.defenseBonus !== GAME_CONFIG.skillEngineerReinforceDefenseBonus) {
+            fail(`角色 ${id} 的临时加固状态字段不符合技能定义`);
+          }
+          if ((e.remaining as number) > GAME_CONFIG.skillEngineerReinforceDuration) {
+            fail(`角色 ${id} 的临时加固 remaining 超过 ${GAME_CONFIG.skillEngineerReinforceDuration}`);
+          }
+        }
+        if (eid === MEDIC_REGEN_ID) {
+          if (e.hpPerTick !== GAME_CONFIG.skillMedicRegenHpPerTick) {
+            fail(`角色 ${id} 的持续止血 hpPerTick 应为 ${GAME_CONFIG.skillMedicRegenHpPerTick}`);
+          }
+          if ((e.remaining as number) > GAME_CONFIG.skillMedicRegenDuration) {
+            fail(`角色 ${id} 的持续止血 remaining 超过 ${GAME_CONFIG.skillMedicRegenDuration}`);
           }
         }
       }

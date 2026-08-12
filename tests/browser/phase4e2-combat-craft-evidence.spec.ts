@@ -252,7 +252,8 @@ test('Phase 4E-2 生产预览：五视口无横向溢出且战斗动作可达', 
   for (const [width, height] of viewports) {
     await page.setViewportSize({ width, height });
     await loadFixture(page, killFixture(`PHASE4E2-BROWSER-VIEW-${width}-${height}`));
-    await expect(page.locator('.actionbar-combat-actions button')).toHaveCount(6);
+    await expect(page.locator('.actionbar-combat-actions button')).toHaveCount(7);
+    await expect(page.locator('.actionbar-combat-actions > button')).toHaveCount(7);
     await noHorizontalOverflow(page);
   }
 });

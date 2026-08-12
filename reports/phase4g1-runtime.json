@@ -2,9 +2,9 @@
   "version": "0.4.0",
   "levelExpThresholds": [
     30,
-    275,
-    550,
-    900
+    100,
+    140,
+    160
   ],
   "desktop": {
     "residentMetricCount": 3,
@@ -67,12 +67,12 @@
     "bodyScrollWidth": 390,
     "documentScrollWidth": 390,
     "titleCount": 0,
-    "actionButtons": 6,
+    "actionButtons": 7,
     "actionbarBottom": 844
   },
   "loot": {
-    "count": 3,
-    "feedback": "击杀战利品：3 件已落地，可拾取。"
+    "promptHasQuantity": false,
+    "feedback": "击杀战利品：该对手遗留了物资，可拾取。"
   },
   "consoleErrors": [],
   "pageErrors": []

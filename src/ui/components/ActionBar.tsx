@@ -14,26 +14,26 @@ interface ActionBarProps {
   onRest: () => void;
   /**
    * 遭遇态视图模型（Phase 4D-3 §2.5）。
-   * 非 null 时**整条行动栏**切换成 6 个战斗动作：速攻 / 普通 / 重击 / 防御 / 逃跑 / 技能。
+   * 非 null 时**整条行动栏**切换成 6 个既有动作格，并在下一行呈现已解锁状态的第二技能。
    * 探索态传 null，显示搜索 / 休息 / 移动入口。
    */
   combat?: CombatActionBarView | null;
   onAttack?: (style: AttackStyle) => void;
   onGuard?: () => void;
   onFlee?: () => void;
-  onSkill?: () => void;
+  onSkill?: (skillId: import('../../core/skills').SkillId) => void;
 }
 
 /**
  * 底部行动条：**探索态与遭遇态共用同一条**，按上下文切换（Phase 4D-3 §2.5）。
  *
  * - 探索态：搜索 / 休息 + 移动入口提示。
- * - 遭遇态：速攻 / 普通 / 重击 / 防御 / 逃跑 / 技能，命中率、脱离率与体力成本
+ * - 遭遇态：速攻 / 普通 / 重击 / 防御 / 逃跑 / 主技能，以及独立的第二技能入口，命中率、脱离率与体力成本
  *   全部来自 `buildCombatActionBar`（与核心结算同源），合法性提示落在 `#actionbar-hint`，
  *   所有战斗按钮用 `aria-describedby` 指向它。
  *
  * 行动栏在 `.game` 的 flex 布局里是 `flex: none` 的页脚，永远钉在视口底部 ——
- * 因此 6 个战斗动作**无需滚动**即可触达（§4 五视口约束）。
+ * 因此原有 6 个战斗动作与新增第二技能**无需滚动**即可触达（§4 五视口约束）。
  */
 export function ActionBar({
   state,
@@ -111,30 +111,44 @@ export function ActionBar({
               脱离 {combat.flee.chancePct}% · {combat.flee.cost === 0 ? '免费' : `体力 ${combat.flee.cost}`}
             </span>
           </button>
-          {combat.skill && (
-            <button
-              className="btn"
-              data-action="skill"
-              disabled={!combat.skill.usable}
-              onClick={onSkill}
-              aria-label={
-                combat.skill.ready
-                  ? `${combat.skill.name}：消耗 ${combat.skill.cost} 点体力`
-                  : `${combat.skill.name}冷却中（剩余 ${combat.skill.cooldown} 回合）`
-              }
-              aria-describedby="actionbar-hint"
-            >
-              <span>{combat.skill.name}</span>
-              <span className="action-cost">
-                <span className="combat-cue-icon" aria-hidden="true">
-                  {combat.skill.ready
+          {combat.skills.map((skill, index) => {
+                const statusText = !skill.unlocked
+                  ? `Lv.${skill.unlockLevel} 解锁`
+                  : skill.ready
+                    ? `体力 ${skill.cost}`
+                    : `冷却 ${skill.cooldown}`;
+                const statusIcon = !skill.unlocked
+                  ? '🔒'
+                  : skill.ready
                     ? COMBAT_STATUS_META.skillReady.icon
-                    : COMBAT_STATUS_META.skillCooldown.icon}
-                </span>
-                {combat.skill.ready ? `体力 ${combat.skill.cost}` : `冷却 ${combat.skill.cooldown}`}
-              </span>
-            </button>
-          )}
+                    : COMBAT_STATUS_META.skillCooldown.icon;
+                return (
+                  <button
+                    key={skill.id}
+                    className={cx('btn', index > 0 && 'combat-secondary-skill')}
+                    data-action="skill"
+                    data-skill-id={skill.id}
+                    data-skill-role={index > 0 ? 'secondary' : 'primary'}
+                    data-skill-locked={!skill.unlocked ? 'true' : 'false'}
+                    disabled={!skill.usable}
+                    onClick={() => onSkill?.(skill.id)}
+                    aria-label={
+                      !skill.unlocked
+                        ? `${skill.name}：未解锁，需要达到 Lv.${skill.unlockLevel}`
+                        : skill.usable
+                          ? `${skill.name}：${skill.description}，消耗 ${skill.cost} 点体力`
+                          : `${skill.name}：${skill.reason ?? '当前不可用'}`
+                    }
+                    aria-describedby="actionbar-hint"
+                  >
+                    <span>{skill.name}</span>
+                    <span className="action-cost">
+                      <span className="combat-cue-icon" aria-hidden="true">{statusIcon}</span>
+                      {statusText}
+                    </span>
+                  </button>
+                );
+              })}
         </div>
       ) : (
         <>

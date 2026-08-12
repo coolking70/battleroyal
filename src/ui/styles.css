@@ -1582,7 +1582,8 @@ span.encounter-enemy-visual {
 }
 
 /* ---- 行动栏遭遇态（Phase 4D-3 §2.5）----
-   与探索态共用 `.actionbar`，只换内容：6 个战斗动作单行铺开。
+   与探索态共用 `.actionbar`，只换内容：6 个既有战斗动作保持原格，
+   第二技能单独占下一行。
    行动栏本身是 `.game` flex 布局里的 `flex: none` 页脚，永远在视口内，
    所以 6 个动作**零滚动**可达。 */
 
@@ -1601,6 +1602,10 @@ span.encounter-enemy-visual {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
+}
+
+.actionbar-combat-actions .combat-secondary-skill {
+  grid-column: 1 / -1;
 }
 
 .actionbar-combat-actions .btn {
@@ -3516,6 +3521,19 @@ span.encounter-enemy-visual {
   .planning-slot-open .planning-drawer-trigger {
     bottom: calc(108px + var(--safe-area-bottom));
   }
+
+  /* 遭遇态新增独立第二技能行后，规划触发器上移，避免遮住原有主技能按钮。 */
+  .app:has(.actionbar-combat) .planning-drawer-trigger {
+    bottom: calc(260px + var(--safe-area-bottom));
+  }
+
+  .app:has(.actionbar-combat) .planning-slot-open .planning-drawer-panel {
+    bottom: calc(260px + var(--safe-area-bottom));
+  }
+
+  .app:has(.actionbar-combat) .planning-slot-open .planning-drawer-trigger {
+    bottom: calc(260px + var(--safe-area-bottom));
+  }
   .debug {
     width: calc(100vw - 24px);
   }
@@ -3753,7 +3771,7 @@ span.encounter-enemy-visual {
   .eh-log-head { padding: 4px 7px; font-size: 9px; }
   .eh-log-body { padding: 5px 8px 6px; font-size: 9px; line-height: 1.45; }
 
-  /* 横屏宽度够，6 个战斗动作保持单行 */
+  /* 横屏宽度够，6 个既有战斗动作保持单行，第二技能独占下一行 */
   .actionbar-combat-actions {
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 4px;
