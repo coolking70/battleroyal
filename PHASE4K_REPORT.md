@@ -151,7 +151,7 @@ player 和 NPC 都通过同一个 `SPAWN_ZONE_IDS = ZONE_IDS` 完整候选池出
 | illegal commands | 0 |
 | deadlock / livelock / stalled | 0 |
 | hard limit | 0 |
-| average duration | 63.71 时间单位 |
+| average duration | 64.156 时间单位 |
 
 玩家死亡原因（452 个失败对局）：
 
