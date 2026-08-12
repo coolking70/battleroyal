@@ -1,0 +1,46 @@
+{
+  "phase": "Phase 4J-0",
+  "status": "OPTIONS_ONLY_NOT_IMPLEMENTED",
+  "options": [
+    {
+      "id": "raise-combat-participation-exp",
+      "parameter": "src/data/gameConfig.ts: GAME_CONFIG.expCombatParticipation",
+      "currentValue": 8,
+      "mechanism": "让每次有成本的攻击结算更快转化为成长属性，可能提高后续战斗存活率。",
+      "risk": "会同时加速 NPC 成长、提前解锁第二技能并增加等级滚雪球；当前来源重建中参战已占 95.43%，放大后可能挤压其他来源。",
+      "relationship": "与 levelExpThresholds 联动；若同时下调阈值，满级风险叠加。"
+    },
+    {
+      "id": "lower-early-level-thresholds",
+      "parameter": "src/data/gameConfig.ts: GAME_CONFIG.levelExpThresholds",
+      "currentValue": [30, 100, 140, 160],
+      "mechanism": "让 attack/defense/maxHp 的早期升级更早到达，直接缩短脆弱窗口。",
+      "risk": "当前 Lv.5 已为 10/100；继续降低可能重新造成满级常态、NPC/玩家滚雪球和技能过早普及。",
+      "relationship": "与 expCombatParticipation 互斥于同一轮诊断；应先固定一个变量再测。"
+    },
+    {
+      "id": "reduce-counterattack-risk",
+      "parameter": "src/data/gameConfig.ts: GAME_CONFIG.baseCounterChance",
+      "currentValue": 0.35,
+      "mechanism": "降低玩家命中后的反击频率，直接减少参战承伤和战斗死因。",
+      "risk": "会降低战斗危险度、改变防御/逃走的价值，并可能让攻击策略收益被高估。",
+      "relationship": "与任何经验增益方案叠加会同时降低风险并提高成长速度，不能在同一轮归因。"
+    },
+    {
+      "id": "raise-kill-reward",
+      "parameter": "src/data/gameConfig.ts: GAME_CONFIG.expKillBonus",
+      "currentValue": 7,
+      "mechanism": "把击杀后的成长收益拉开，强化完成战斗的回报。",
+      "risk": "本样本平均击杀仅 0.06，首轮生存问题可能几乎不受影响；一旦能稳定击杀，会增强领先者滚雪球。",
+      "relationship": "依赖先提高首战存活或击杀转化率；单独调它不能解释/修复 89 例战斗死亡。"
+    },
+    {
+      "id": "increase-rest-recovery",
+      "parameter": "src/data/gameConfig.ts: GAME_CONFIG.restStaminaGain",
+      "currentValue": 15,
+      "mechanism": "提高休息的时间经济价值，为战斗前恢复提供更强替代。",
+      "risk": "可能逆转 4F 的少休息意图；也会改变搜索/消耗品/防御之间的时间竞争，但不应给休息增加经验。",
+      "relationship": "与 expSearch/expExplore 不直接冲突，但须单独观察休息占比和战斗参与度。"
+    }
+  ]
+}
