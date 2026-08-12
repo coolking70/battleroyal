@@ -26,6 +26,7 @@ import {
   getCharacterSkills,
   isSkillReady,
   SKILLS,
+  SURVIVOR_CAMP_ID,
   type SkillId,
 } from './skills';
 import { findBestHealItem } from './consumables';
@@ -93,11 +94,6 @@ export function npcSurvivalSkill(state: GameState, npc: Combatant): SkillId | nu
       break;
     }
 
-    case 'camp_routine': {
-      if (npc.stamina / npc.maxStamina < 0.6) return skillId;
-      break;
-    }
-
     case 'scavenge_focus': {
       const zone = state.zones[npc.currentZoneId];
       if (zone && zone.remainingLootCount > 0) return skillId;
@@ -129,6 +125,11 @@ export function npcSurvivalSkill(state: GameState, npc: Combatant): SkillId | nu
     case 'sort_rare': {
       const zone = state.zones[npc.currentZoneId];
       return zone && zone.remainingLootCount > 0 ? secondary : null;
+    }
+    case 'camp_routine': {
+      const hasCampStatus = npc.statusEffects.some((effect) => effect.id === SURVIVOR_CAMP_ID);
+      const staminaRatio = npc.stamina / npc.maxStamina;
+      return !hasCampStatus && staminaRatio < 0.6 ? secondary : null;
     }
     case 'escape_plan':
       return hpRatio < 0.7 || state.zones[npc.currentZoneId]?.status !== 'safe'

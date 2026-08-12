@@ -4,7 +4,7 @@ import { GAME_CONFIG } from '../src/data/gameConfig';
 import { applyZoneDamage } from '../src/core/restrictedZones';
 import { executeCommand } from '../src/core/gameEngine';
 import { getLegalPlayerCommands } from '../src/core/legalActions';
-import { createGame, getPlayer } from '../src/core/gameState';
+import { createGame, getPlayer, NPC_CHARACTER_POOL, refreshZoneOccupants } from '../src/core/gameState';
 import { performRest } from '../src/core/consumables';
 import { SeededRandom } from '../src/core/random';
 import {
@@ -15,6 +15,11 @@ import {
   type SkillId,
 } from '../src/core/skills';
 import { createMemoryStorage, loadGame, saveGame, setStorage } from '../src/core/saveLoad';
+import { SAVE_KEY } from '../src/data/gameConfig';
+import { addItem, createStack, equipItem } from '../src/core/inventory';
+import { experienceToNextLevel, gainExperience } from '../src/core/progression';
+import { useSkillActor } from '../src/core/actorActions';
+import type { Command } from '../src/core/types';
 import { npcCombatSkill, npcSurvivalSkill } from '../src/core/npcSkillDecide';
 import type { Combatant, GameState } from '../src/core/types';
 import { runAutoGame } from '../tools/autoPlayer';
@@ -68,6 +73,10 @@ function itemCount(state: GameState): number {
     total += actor.equipment.reduce((sum, stack) => sum + stack.count, 0);
   }
   return total;
+}
+
+function npcProfessionSequence(state: GameState): string[] {
+  return npcs(state).map((npc) => npc.characterId);
 }
 
 afterEach(() => setStorage(null));
@@ -174,10 +183,27 @@ describe('Phase 4L roster registry and gameplay contract', () => {
       expect(getLegalPlayerCommands(state).some((entry) => entry.command.type === 'FLEE')).toBe(true);
     }
   });
+
+  it('uses the full current CHARACTERS pool for every player profession and stays deterministic', () => {
+    expect(NPC_CHARACTER_POOL).toBe(CHARACTERS);
+    const expected = new Set(CHARACTERS.map((character) => character.id));
+    for (const playerCharacterId of ['scout', 'survivor']) {
+      const covered = new Set<string>();
+      for (let i = 0; i < 512; i++) {
+        const seed = `PHASE4L-NPC-POOL-${playerCharacterId}-${i}`;
+        const first = createGame({ seed, playerCharacterId });
+        const second = createGame({ seed, playerCharacterId });
+        const firstSequence = npcProfessionSequence(first);
+        expect(npcProfessionSequence(second)).toEqual(firstSequence);
+        firstSequence.forEach((id) => covered.add(id));
+      }
+      expect(covered).toEqual(expected);
+    }
+  });
 });
 
 describe('Phase 4L NPC, progression, and save/load contract', () => {
-  it('lets NPCs choose and execute each new role skill through the shared path', () => {
+  it('covers NPC primary skill decisions and shared execution', () => {
     for (const characterId of NEW_ROLES) {
       const state = newGame('scout');
       const npc = npcs(state)[0]!;
@@ -185,19 +211,159 @@ describe('Phase 4L NPC, progression, and save/load contract', () => {
       if (characterId === 'survivor') {
         npc.stamina = Math.floor(npc.maxStamina * 0.2);
         expect(npcSurvivalSkill(state, npc)).toBe('second_wind');
-        cast(state, npc, 'second_wind');
+        const before = npc.stamina;
+        expect(useSkillActor(state, npc, 'second_wind', new SeededRandom('npc-second-wind')).ok).toBe(true);
+        expect(npc.stamina).toBeGreaterThan(before);
       } else if (characterId === 'scavenger') {
         expect(npcSurvivalSkill(state, npc)).toBe('scavenge_focus');
-        cast(state, npc, 'scavenge_focus');
+        expect(useSkillActor(state, npc, 'scavenge_focus', new SeededRandom('npc-scavenge-focus')).ok).toBe(true);
       } else if (characterId === 'hunter') {
         npc.knownEnemies = [];
         expect(npcSurvivalSkill(state, npc)).toBe('track_target');
-        cast(state, npc, 'track_target');
+        expect(useSkillActor(state, npc, 'track_target', new SeededRandom('npc-track-target')).ok).toBe(true);
       } else {
         expect(npcCombatSkill(npc)).toBe('prepare_ambush');
-        cast(state, npc, 'prepare_ambush');
+        expect(useSkillActor(state, npc, 'prepare_ambush', new SeededRandom('npc-prepare-ambush')).ok).toBe(true);
+      }
+      const primary = getCharacterSkills(characterId)[0]!;
+      expect(npc.skillCooldowns[primary]).toBe(SKILLS[primary].cooldown);
+    }
+  });
+
+  it('covers NPC secondary skill decisions and shared execution', () => {
+    const cases: Array<{ characterId: typeof NEW_ROLES[number]; skillId: SkillId; decide: (state: GameState, npc: Combatant) => SkillId | null; setup: (state: GameState, npc: Combatant) => void }> = [
+      {
+        characterId: 'survivor',
+        skillId: 'camp_routine',
+        decide: npcSurvivalSkill,
+        setup: (_state, npc) => { npc.stamina = Math.floor(npc.maxStamina * 0.5); },
+      },
+      {
+        characterId: 'scavenger',
+        skillId: 'sort_rare',
+        decide: npcSurvivalSkill,
+        setup: (_state, npc) => { npc.skillCooldowns.scavenge_focus = 1; },
+      },
+      {
+        characterId: 'hunter',
+        skillId: 'steady_aim',
+        decide: (_state, npc) => npcCombatSkill(npc),
+        setup: (_state, npc) => {
+          npc.skillCooldowns.track_target = 1;
+          npc.knownEnemies = ['p0'];
+        },
+      },
+      {
+        characterId: 'trapper',
+        skillId: 'escape_plan',
+        decide: npcSurvivalSkill,
+        setup: (_state, npc) => { npc.hp = Math.floor(npc.maxHp * 0.6); },
+      },
+    ];
+
+    for (const testCase of cases) {
+      const state = newGame('scout');
+      const npc = npcs(state)[0]!;
+      installRole(npc, testCase.characterId);
+      testCase.setup(state, npc);
+      expect(testCase.decide(state, npc), testCase.skillId).toBe(testCase.skillId);
+      const result = useSkillActor(state, npc, testCase.skillId, new SeededRandom(`npc-${testCase.skillId}`));
+      expect(result.ok, testCase.skillId).toBe(true);
+      expect(npc.skillCooldowns[testCase.skillId]).toBe(SKILLS[testCase.skillId].cooldown);
+      if (testCase.skillId !== 'second_wind') {
+        const statusId = testCase.skillId === 'camp_routine' ? 'survivor_camp' : testCase.skillId;
+        expect(npc.statusEffects.some((effect) => effect.id === statusId)).toBe(true);
       }
     }
+  });
+
+  it.each(NEW_ROLES)('%s reaches Lv.3 through formal progression and keeps secondary legal at max level', (characterId) => {
+    const state = newGame(characterId);
+    const player = getPlayer(state);
+    const [primary, secondary] = getCharacterSkills(characterId);
+    expect(player.level).toBe(1);
+    expect(canUseSkill(player, primary!).ok).toBe(true);
+    expect(canUseSkill(player, secondary!).ok).toBe(false);
+    gainExperience(player, experienceToNextLevel(1));
+    expect(player.level).toBe(2);
+    expect(canUseSkill(player, secondary!).ok).toBe(false);
+    gainExperience(player, experienceToNextLevel(2));
+    expect(player.level).toBe(3);
+    expect(canUseSkill(player, secondary!).ok).toBe(true);
+    for (let level = 3; level < GAME_CONFIG.maxLevel; level++) {
+      gainExperience(player, experienceToNextLevel(level));
+    }
+    expect(player.level).toBe(GAME_CONFIG.maxLevel);
+    expect(player.exp).toBe(0);
+    expect(canUseSkill(player, secondary!).ok).toBe(true);
+    expect(gainExperience(player, 99).gained).toBe(0);
+    expect(player.exp).toBe(0);
+  });
+
+  it('keeps the old four roles on the same progression and skill unlock contract', () => {
+    for (const characterId of ['scout', 'fighter', 'engineer', 'medic']) {
+      const state = newGame(characterId);
+      const player = getPlayer(state);
+      const [primary, secondary] = getCharacterSkills(characterId);
+      gainExperience(player, experienceToNextLevel(1));
+      gainExperience(player, experienceToNextLevel(2));
+      expect(player.level).toBe(3);
+      expect(canUseSkill(player, primary!).ok).toBe(true);
+      expect(canUseSkill(player, secondary!).ok).toBe(true);
+    }
+  });
+
+  it.each([
+    ['scavenger', 'scavenge_focus', 'searchMaterialBias', 999],
+    ['scavenger', 'scavenge_focus', 'searchFindMult', -1],
+    ['hunter', 'steady_aim', 'rangedHitChanceMult', 100],
+    ['trapper', 'escape_plan', 'fleeChanceBonus', -5],
+    ['survivor', 'camp_routine', 'restStaminaBonus', 999],
+    ['trapper', 'prepare_ambush', 'counterChanceBonus', NaN],
+  ] as const)('rejects corrupted Phase 4L status field %s.%s', (characterId, skillId, field, value) => {
+    const state = newGame(characterId);
+    const player = getPlayer(state);
+    player.level = 3;
+    cast(state, player, skillId as SkillId);
+    const effect = player.statusEffects[0]! as unknown as Record<string, unknown>;
+    effect[field] = value;
+    setStorage(createMemoryStorage());
+    expect(saveGame(state).ok).toBe(true);
+    const loaded = loadGame();
+    expect(loaded.ok).toBe(false);
+    expect(loaded.error).toContain(field);
+    const statusId = skillId === 'prepare_ambush' ? 'trapper_setup' : skillId === 'camp_routine' ? 'survivor_camp' : skillId;
+    expect(loaded.error).toContain(statusId);
+  });
+
+  it('rejects an over-duration and unknown Phase 4L-like status on load', () => {
+    const storage = createMemoryStorage();
+    const state = newGame('scavenger');
+    const player = getPlayer(state);
+    player.level = 3;
+    cast(state, player, 'scavenge_focus');
+    setStorage(storage);
+    expect(saveGame(state).ok).toBe(true);
+    const overDuration = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: GameState };
+    overDuration.state.characters[overDuration.state.playerId]!.statusEffects[0]!.remaining =
+      GAME_CONFIG.skillScavengeFocusDuration + 1;
+    storage.setItem(SAVE_KEY, JSON.stringify(overDuration));
+    const rejectedDuration = loadGame();
+    expect(rejectedDuration.ok).toBe(false);
+    expect(rejectedDuration.error).toContain('scavenge_focus');
+    expect(rejectedDuration.error).toContain('remaining');
+
+    const unknownState = newGame('scavenger');
+    const unknownPlayer = getPlayer(unknownState);
+    unknownPlayer.level = 3;
+    cast(unknownState, unknownPlayer, 'scavenge_focus');
+    expect(saveGame(unknownState).ok).toBe(true);
+    const unknown = JSON.parse(storage.getItem(SAVE_KEY)!) as { state: GameState };
+    unknown.state.characters[unknown.state.playerId]!.statusEffects[0]!.id = 'phase4l_unknown';
+    storage.setItem(SAVE_KEY, JSON.stringify(unknown));
+    const rejectedUnknown = loadGame();
+    expect(rejectedUnknown.ok).toBe(false);
+    expect(rejectedUnknown.error).toContain('phase4l_unknown');
   });
 
   it('persists new-role skill cooldowns and status effects through save/load', () => {
@@ -214,6 +380,42 @@ describe('Phase 4L NPC, progression, and save/load contract', () => {
     expect(restored.characterId).toBe('trapper');
     expect(restored.skillCooldowns.escape_plan).toBe(GAME_CONFIG.skillEscapePlanCooldown);
     expect(restored.statusEffects.some((effect) => effect.id === 'escape_plan')).toBe(true);
+  });
+
+  it.each([
+    ['scavenger', 'scavenge_focus', { type: 'SEARCH' } as Command],
+    ['survivor', 'camp_routine', { type: 'REST' } as Command],
+    ['hunter', 'steady_aim', { type: 'REST' } as Command],
+  ] as const)('round-trips complex %s state and continues the same deterministic command', (characterId, skillId, command) => {
+    const state = newGame(characterId);
+    const player = getPlayer(state);
+    player.level = 3;
+    player.exp = 1;
+    player.currentZoneId = 'underground';
+    player.stamina = characterId === 'survivor' ? 60 : player.maxStamina;
+    for (const npc of npcs(state)) npc.currentZoneId = 'school';
+    refreshZoneOccupants(state);
+    addItem(player, createStack(state, 'battery'));
+    const weapon = createStack(state, 'simple_bow');
+    addItem(player, weapon);
+    expect(equipItem(player, weapon.uid).ok).toBe(true);
+    if (characterId === 'hunter') player.knownEnemies = [npcs(state)[0]!.id];
+    cast(state, player, skillId);
+    const before = structuredClone(state);
+    setStorage(createMemoryStorage());
+    expect(saveGame(state).ok).toBe(true);
+    const loaded = loadGame();
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+    expect(loaded.data.state).toEqual(before);
+
+    const direct = executeCommand(structuredClone(before), command);
+    const resumed = executeCommand(loaded.data.state, command);
+    expect(resumed.ok).toBe(direct.ok);
+    expect(resumed.state.rngState).toBe(direct.state.rngState);
+    expect(resumed.state.time).toBe(direct.state.time);
+    expect(resumed.state.characters).toEqual(direct.state.characters);
+    expect(resumed.state.events.at(-1)).toEqual(direct.state.events.at(-1));
   });
 
   it('supports all new roles in deterministic AutoPlayer runs without illegal actions or deadlocks', () => {

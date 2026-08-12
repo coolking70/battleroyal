@@ -271,115 +271,89 @@ export function validateNumbers(ctx: ValidationContext): void {
       ...SECONDARY_STATUS_IDS,
     ]);
     if (!Array.isArray(c.statusEffects)) {
-      fail(`角色 ${id} 的 statusEffects 类型错误`);
+          fail(`角色 ${id}（${String(c.characterId)}）的 statusEffects 类型错误`);
     } else {
       const seenStatusIds = new Set<string>();
       for (const e of c.statusEffects.filter(isRecord)) {
         const eid = e.id;
         if (typeof eid !== 'string' || !STATUS_EFFECT_IDS.has(eid)) {
-          fail(`角色 ${id} 的 statusEffects 含有未知状态（${String(eid)}）`);
+          fail(`角色 ${id}（${String(c.characterId)}）的 statusEffects 含有未知状态（${String(eid)}）`);
           continue;
         }
         if (seenStatusIds.has(eid)) {
           // EXPOSED 明确不可叠加；其它签名技能状态也不应重复挂在同一个人身上
-          fail(`角色 ${id} 的状态效果重复生效（${eid}）`);
+          fail(`角色 ${id}（${String(c.characterId)}）的状态效果重复生效（${eid}）`);
         } else {
           seenStatusIds.add(eid);
         }
         if (!isFiniteNumber(e.remaining) || !Number.isInteger(e.remaining) || (e.remaining as number) <= 0) {
-          fail(`角色 ${id} 的状态效果 ${eid} 的 remaining 非法（${String(e.remaining)}）`);
+          fail(`角色 ${id}（${String(c.characterId)}）的状态效果 ${eid} 的 remaining 非法（${String(e.remaining)}）`);
         }
         if (!isFiniteNumber(e.hpPerTick)) {
-          fail(`角色 ${id} 的状态效果 ${eid} 的 hpPerTick 非法`);
+          fail(`角色 ${id}（${String(c.characterId)}）的状态效果 ${eid} 的 hpPerTick 非法`);
         }
         if (eid === EXPOSED_ID) {
           // EXPOSED 红线：只作用在攻击类战斗伤害上，绝不通过 hpPerTick 直接扣血
           if ((e.hpPerTick as number) !== 0) {
-            fail(`角色 ${id} 的 EXPOSED 不应带 hpPerTick 伤害（${String(e.hpPerTick)}）`);
+            fail(`角色 ${id}（${String(c.characterId)}）的 EXPOSED 不应带 hpPerTick 伤害（${String(e.hpPerTick)}）`);
           }
           if (!isFiniteNumber(e.damageTakenMult) || (e.damageTakenMult as number) !== GAME_CONFIG.exposedDamageMult) {
-            fail(`角色 ${id} 的 EXPOSED damageTakenMult 应为 ${GAME_CONFIG.exposedDamageMult}`);
+            fail(`角色 ${id}（${String(c.characterId)}）的 EXPOSED damageTakenMult 应为 ${GAME_CONFIG.exposedDamageMult}`);
           }
           if ((e.remaining as number) > GAME_CONFIG.exposedMaxDuration) {
-            fail(`角色 ${id} 的 EXPOSED remaining 超过兜底上限 ${GAME_CONFIG.exposedMaxDuration}`);
+            fail(`角色 ${id}（${String(c.characterId)}）的 EXPOSED remaining 超过兜底上限 ${GAME_CONFIG.exposedMaxDuration}`);
           }
         }
         if (eid === SCOUT_SMOKE_ID) {
           if ((e.hpPerTick as number) !== 0 || e.evasionHitMult !== GAME_CONFIG.skillScoutSmokeEvasionMult) {
-            fail(`角色 ${id} 的烟幕转位状态字段不符合技能定义`);
+            fail(`角色 ${id}（${String(c.characterId)}）的烟幕转位状态字段不符合技能定义`);
           }
           if ((e.remaining as number) > GAME_CONFIG.skillScoutSmokeDuration) {
-            fail(`角色 ${id} 的烟幕转位 remaining 超过 ${GAME_CONFIG.skillScoutSmokeDuration}`);
+            fail(`角色 ${id}（${String(c.characterId)}）的烟幕转位 remaining 超过 ${GAME_CONFIG.skillScoutSmokeDuration}`);
           }
         }
         if (eid === FIGHTER_FOCUS_ID) {
           if ((e.hpPerTick as number) !== 0 || e.hitChanceMult !== GAME_CONFIG.skillFighterFocusHitChanceMult) {
-            fail(`角色 ${id} 的精准节拍状态字段不符合技能定义`);
+            fail(`角色 ${id}（${String(c.characterId)}）的精准节拍状态字段不符合技能定义`);
           }
           if ((e.remaining as number) > GAME_CONFIG.skillFighterFocusDuration) {
-            fail(`角色 ${id} 的精准节拍 remaining 超过 ${GAME_CONFIG.skillFighterFocusDuration}`);
+            fail(`角色 ${id}（${String(c.characterId)}）的精准节拍 remaining 超过 ${GAME_CONFIG.skillFighterFocusDuration}`);
           }
         }
         if (eid === ENGINEER_REINFORCE_ID) {
           if ((e.hpPerTick as number) !== 0 || e.defenseBonus !== GAME_CONFIG.skillEngineerReinforceDefenseBonus) {
-            fail(`角色 ${id} 的临时加固状态字段不符合技能定义`);
+            fail(`角色 ${id}（${String(c.characterId)}）的临时加固状态字段不符合技能定义`);
           }
           if ((e.remaining as number) > GAME_CONFIG.skillEngineerReinforceDuration) {
-            fail(`角色 ${id} 的临时加固 remaining 超过 ${GAME_CONFIG.skillEngineerReinforceDuration}`);
+            fail(`角色 ${id}（${String(c.characterId)}）的临时加固 remaining 超过 ${GAME_CONFIG.skillEngineerReinforceDuration}`);
           }
         }
         if (eid === MEDIC_REGEN_ID) {
           if (e.hpPerTick !== GAME_CONFIG.skillMedicRegenHpPerTick) {
-            fail(`角色 ${id} 的持续止血 hpPerTick 应为 ${GAME_CONFIG.skillMedicRegenHpPerTick}`);
+            fail(`角色 ${id}（${String(c.characterId)}）的持续止血 hpPerTick 应为 ${GAME_CONFIG.skillMedicRegenHpPerTick}`);
           }
           if ((e.remaining as number) > GAME_CONFIG.skillMedicRegenDuration) {
-            fail(`角色 ${id} 的持续止血 remaining 超过 ${GAME_CONFIG.skillMedicRegenDuration}`);
+            fail(`角色 ${id}（${String(c.characterId)}）的持续止血 remaining 超过 ${GAME_CONFIG.skillMedicRegenDuration}`);
           }
         }
-        const statusRules: Record<string, { duration: number; field: keyof typeof e; value: number }> = {
-          [SURVIVOR_CAMP_ID]: {
-            duration: GAME_CONFIG.skillCampRoutineDuration,
-            field: 'restStaminaBonus',
-            value: GAME_CONFIG.skillCampRoutineRestBonus,
-          },
-          [SCAVENGE_FOCUS_ID]: {
-            duration: GAME_CONFIG.skillScavengeFocusDuration,
-            field: 'searchFindMult',
-            value: GAME_CONFIG.skillScavengeFocusFindMult,
-          },
-          [SORT_RARE_ID]: {
-            duration: GAME_CONFIG.skillSortRareDuration,
-            field: 'rareChanceBonus',
-            value: GAME_CONFIG.skillSortRareChanceBonus,
-          },
-          [HUNTER_TRACK_ID]: {
-            duration: GAME_CONFIG.skillTrackTargetDuration,
-            field: 'searchEnemyMult',
-            value: GAME_CONFIG.skillTrackTargetEnemyMult,
-          },
-          [STEADY_AIM_ID]: {
-            duration: GAME_CONFIG.skillSteadyAimDuration,
-            field: 'rangedHitChanceMult',
-            value: GAME_CONFIG.skillSteadyAimRangedHitMult,
-          },
-          [TRAPPER_SETUP_ID]: {
-            duration: GAME_CONFIG.skillPrepareAmbushDuration,
-            field: 'counterChanceBonus',
-            value: GAME_CONFIG.skillPrepareAmbushCounterBonus,
-          },
-          [ESCAPE_PLAN_ID]: {
-            duration: GAME_CONFIG.skillEscapePlanDuration,
-            field: 'fleeChanceBonus',
-            value: GAME_CONFIG.skillEscapePlanFleeBonus,
-          },
+        const statusRules: Record<string, { duration: number; fields: Record<string, number> }> = {
+          [SURVIVOR_CAMP_ID]: { duration: GAME_CONFIG.skillCampRoutineDuration, fields: { hpPerTick: 0, restStaminaBonus: GAME_CONFIG.skillCampRoutineRestBonus } },
+          [SCAVENGE_FOCUS_ID]: { duration: GAME_CONFIG.skillScavengeFocusDuration, fields: { hpPerTick: 0, searchFindMult: GAME_CONFIG.skillScavengeFocusFindMult, searchMaterialBias: GAME_CONFIG.resourcefulMaterialBias } },
+          [SORT_RARE_ID]: { duration: GAME_CONFIG.skillSortRareDuration, fields: { hpPerTick: 0, rareChanceBonus: GAME_CONFIG.skillSortRareChanceBonus } },
+          [HUNTER_TRACK_ID]: { duration: GAME_CONFIG.skillTrackTargetDuration, fields: { hpPerTick: 0, searchEnemyMult: GAME_CONFIG.skillTrackTargetEnemyMult } },
+          [STEADY_AIM_ID]: { duration: GAME_CONFIG.skillSteadyAimDuration, fields: { hpPerTick: 0, rangedHitChanceMult: GAME_CONFIG.skillSteadyAimRangedHitMult } },
+          [TRAPPER_SETUP_ID]: { duration: GAME_CONFIG.skillPrepareAmbushDuration, fields: { hpPerTick: 0, counterChanceBonus: GAME_CONFIG.skillPrepareAmbushCounterBonus } },
+          [ESCAPE_PLAN_ID]: { duration: GAME_CONFIG.skillEscapePlanDuration, fields: { hpPerTick: 0, fleeChanceBonus: GAME_CONFIG.skillEscapePlanFleeBonus } },
         };
         const rule = statusRules[eid];
         if (rule) {
           if ((e.remaining as number) > rule.duration) {
-            fail(`角色 ${id} 的状态 ${eid} remaining 超过 ${rule.duration}`);
+            fail(`角色 ${id}（${String(c.characterId)}）的状态 ${eid} remaining 超过 ${rule.duration}`);
           }
-          if (e.hpPerTick !== 0 || e[rule.field] !== rule.value) {
-            fail(`角色 ${id} 的状态 ${eid} 字段不符合技能定义`);
+          for (const [field, expected] of Object.entries(rule.fields)) {
+            if (!isFiniteNumber(e[field]) || e[field] !== expected) {
+              fail(`角色 ${id}（${String(c.characterId)}）的状态 ${eid} 字段 ${field} 不符合技能定义（应为 ${expected}）`);
+            }
           }
         }
       }

@@ -57,7 +57,7 @@ Phase 4L 将可玩职业从 4 个扩展到 8 个，新增：
 ## 6. NPC、AutoPlayer 与成长
 
 - NPC survival/combat skill decision 已覆盖 8 个职业的战略触发条件。
-- 新职业开局使用完整 NPC 注册表；历史四职业开局保留旧四职业 NPC RNG 基线，以免扩张职业表改变既有确定性回归。
+- 所有当前新游戏都从完整 `CHARACTERS` 注册表生成 NPC profession templates；玩家选择旧职业或新职业都不会改变候选池。历史 seed 在内容扩张后的 NPC profession sequence 不属于兼容保证。
 - AutoPlayer 不新增旁路，所有新职业均可通过标准合法命令闭环运行。
 - 技能等级仍由 `level` 推导：主技能 Lv.1，第二技能 Lv.3；冷却保存于 `skillCooldowns`。
 - 技能释放仍支付正体力成本并推进时间；零体力时 REST / FLEE / GUARD 的旧出口继续有效。
@@ -75,7 +75,7 @@ Phase 4L 将可玩职业从 4 个扩展到 8 个，新增：
 已通过：
 
 - `npm run typecheck`
-- `npm test` — 91 files / 1481 tests
+- `npm test` — 91 files / 1506 tests
 - `npm run build`
 - `npm run audit:save`
 - `npm run audit:deps`
@@ -85,18 +85,20 @@ Phase 4L 将可玩职业从 4 个扩展到 8 个，新增：
 - `npm run art:security:browser`
 - `npm run art:security:repo`
 - `npm audit --omit=dev`
-- `npm run simulate -- --games 500 --seed-prefix PHASE4L --regression --output reports/phase4l-regression.json`
+- `npm run simulate -- --games 500 --seed-prefix PHASE4L-AF --regression --output reports/phase4l-regression.json`
 
 500 局回归证据：
 
 - [reports/phase4l-regression.json](reports/phase4l-regression.json)
 - [reports/phase4l-regression.md](reports/phase4l-regression.md)
-- 8 职业 × 5 策略 = 40 cells，requested = actual = 500
+- 8 职业 × 5 策略 = 40 cells，requested = actual = 500，可信率 100%
 - timeout / illegalState / deadlock / livelock / empty legal set / hard limit：均为 0
+- `camp_routine`：playerUses = 54，npcUses = 280，不再是 NPC dead code
 - Phase 3A 玩法门槛：PASS
-- 角色胜率比：2.71，超过 2.5；按 Phase 4L 政策仅记录观察，不做平衡调参
+- 角色胜率比：2.77，超过 2.5；按 Phase 4L 政策仅记录观察，不做平衡调参
 
 历史 `reports/phase3-balance.json` 与 `reports/phase3-balance.md` 未被重写。
+历史 `reports/phase4k-regression.json` 与 `reports/phase4k-regression.md` 未被重写；本轮仅更新 `reports/phase4l-regression.*`。
 
 ## 9. 人工试玩与延期项
 
@@ -104,3 +106,28 @@ Phase 4L 将可玩职业从 4 个扩展到 8 个，新增：
 - 当前状态：`NEEDS-HUMAN-PLAYTEST`
 - 未在本阶段做：平衡调参、Crafting 2.0、PvE、胜利条件、正式新美术生产。
 - 进入下一阶段前需先完成新职业的人工可玩性、信息边界、手机布局和长局存档恢复检查。
+
+## 10. Acceptance Fix
+
+本轮只关闭 Phase 4L 独立验收发现的问题，不进入 Phase 4M，也不进行平衡调参。
+
+1. **NPC roster split by player profession**
+   - Root cause：首版按玩家是否为旧四职业选择 NPC 模板池，形成了隐藏的 legacy-only world。
+   - Fix：NPC templates 统一引用当前完整 `CHARACTERS` 注册表。
+   - Tests：旧职业玩家与新职业玩家各使用 512 个固定 seed，覆盖全部 8 个职业；同 seed / 同玩家职业序列确定性回归。
+   - Verification：candidate pool identity、覆盖和 determinism 测试通过。
+2. **Survivor `camp_routine` unreachable for NPC**
+   - Root cause：技能只出现在 primary switch，未进入真正的 secondary decision path。
+   - Fix：将其放入 secondary heuristic，在体力低于 60% 且未挂同类状态时选择，同时保留低体力 REST fallback。
+   - Tests：NPC primary / secondary 技能拆分覆盖，包含决策、共享执行、冷却和状态效果。
+   - Verification：`camp_routine` 不再是 dead code；500 局 regression 记录 `playerUses = 54`、`npcUses = 280`。
+3. **Incomplete Phase 4L status save validation**
+   - Root cause：多字段状态规则只精确比较了一个 modifier，漏掉 `searchMaterialBias`。
+   - Fix：状态规则改为 per-status `fields` schema，逐字段校验 `hpPerTick` 与全部 gameplay-effective modifier。
+   - Tests：新增 Phase 4L 状态损坏单测与正式 `audit:save` corruption cases。
+   - Verification：正式 audit 为 102 个 damaged cases、102 个 rejected、0 个 construction failures。
+4. **Missing progression / save acceptance coverage**
+   - Root cause：首版只验证技能命令推进时间，未完整证明新职业从 Lv.1 到 Lv.3 的成长解锁和复杂存档恢复后继续执行。
+   - Fix：补充四个新职业 Lv.1 → Lv.3 → 满级成长测试，以及 Scavenger / Survivor / Hunter 复杂 round-trip 的下一命令 determinism 测试。
+   - Tests：正式 `gainExperience`、secondary unlock、cooldown/status/inventory/equipment/new-zone/knownEnemies 和后续合法命令均覆盖。
+   - Verification：相关 Phase 4L acceptance tests 与全量 gates 通过。

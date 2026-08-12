@@ -905,7 +905,25 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   primary/secondary skills, shared status effects, NPC decisions, AutoPlayer support,
   save validation, UI cards and explicit emoji/color fallback visuals.
 - Added Phase 4L tests and updated historical matrix/art acceptance tests for the
-  expanded registry while preserving existing official art and old-role simulation RNG.
+  expanded registry while preserving existing official art. Current NPC generation
+  uses the complete roster for every player profession; historical pre-expansion NPC
+  profession sequences are not a compatibility contract.
 - Generated the 500-game `PHASE4L` regression: 8 roles × 5 policies = 40 cells,
   requested=actual 500, engine health PASS, balance ratio 2.71 recorded only.
-- Remaining: final gate rerun, commit/push, Draft PR, and human browser playtest.
+- Baseline delivery evidence was followed by the targeted acceptance-fix pass below;
+  human browser playtest remains intentionally open.
+
+## Phase 4L acceptance fix (2026-08-13)
+
+- Removed player-profession-dependent NPC template filtering: every new game now
+  draws NPCs from the full `CHARACTERS` registry, with 512-seed coverage and
+  same-seed sequence determinism for both legacy and new-role players.
+- Routed Survivor `camp_routine` through the real secondary NPC decision path and
+  added primary/secondary shared-execution coverage for all eight Phase 4L skills.
+- Replaced the one-field Phase 4L status rule with a complete per-status field
+  schema, expanding formal save audit evidence from 91 to 102 damaged cases.
+- Added formal Lv.1 → Lv.3 → max-level progression coverage and three complex
+  Save/Load round-trips that continue with deterministic commands.
+- Final `PHASE4L-AF` regression: 500/500 trustworthy, engine health PASS, all
+  illegal/deadlock/livelock/stall/empty-legal-set/hard-limit counters 0; balance
+  ratio 2.77 remains observation only. Human playtest remains required.

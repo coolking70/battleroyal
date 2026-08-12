@@ -26,6 +26,9 @@ const PERSONALITIES: Personality[] = [
 /** 新游戏的 player / NPC 出生统一从当前完整固定地图候选池抽取。 */
 export const SPAWN_ZONE_IDS: readonly string[] = ZONE_IDS;
 
+/** NPC profession templates always use the current playable roster. */
+export const NPC_CHARACTER_POOL = CHARACTERS;
+
 export function pickSpawnZone(rng: SeededRandom): string {
   return rng.pick(SPAWN_ZONE_IDS) ?? SPAWN_ZONE_IDS[0] ?? 'school';
 }
@@ -145,14 +148,9 @@ export interface CreateGameOptions {
  */
 export function createGame(options: CreateGameOptions): GameState {
   const rng = new SeededRandom(options.seed);
-  // 旧角色的正式回放与历史模拟继续使用原四职业 NPC 池，避免扩张职业表
-  // 改变既有种子的 RNG/遭遇基线；以新职业开局时，NPC 使用完整注册表，
-  // 从而让每个 Phase 4L 职业都能在真实对局中作为 NPC 出现。
-  const legacyCharacterIds = new Set(['scout', 'fighter', 'engineer', 'medic']);
-  const npcTemplates = CHARACTERS.filter(
-    (character) =>
-      !legacyCharacterIds.has(options.playerCharacterId) || legacyCharacterIds.has(character.id),
-  );
+  // The player profession never changes the NPC world: all current roles share
+  // one candidate pool so content cannot split into legacy/new worlds.
+  const npcTemplates = NPC_CHARACTER_POOL;
 
   const state: GameState = {
     version: GAME_VERSION,
