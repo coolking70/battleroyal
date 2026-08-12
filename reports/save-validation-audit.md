@@ -1,10 +1,10 @@
 # 存档独立验收报告（Phase 3）
 
 - 版本：0.4.0
-- 生成时间：2026-08-12T17:11:28.773Z
+- 生成时间：2026-08-12T18:47:43.409Z
 - 对照组：1 个正常存档
-- 损坏用例：91 个
-- 通过：91 / 91
+- 损坏用例：102 个
+- 通过：102 / 102
 - 构造失败：0 个（P3-P2：任意一个即整轮 FAIL）
 
 - 正常存档被接受：PASS
@@ -98,12 +98,23 @@
 | 83 | activeWorldEvents remaining=0 | 拒绝 | 拒绝 | ✓ | activeWorldEvents 的 remaining 非法（0） |
 | 84 | 同一种世界事件重复生效 | 拒绝 | 拒绝 | ✓ | activeWorldEvents 中同种事件重复生效（rain） |
 | 85 | worldEventHistory 结束早于开始 | 拒绝 | 拒绝 | ✓ | worldEventHistory 的时间区间非法（结束早于开始） |
-| 86 | statusEffects 含未知状态 id | 拒绝 | 拒绝 | ✓ | 角色 p0 的 statusEffects 含有未知状态（panic） |
-| 87 | EXPOSED 带 hpPerTick 伤害（红线） | 拒绝 | 拒绝 | ✓ | 角色 p0 的 EXPOSED 不应带 hpPerTick 伤害（-3） |
-| 88 | EXPOSED damageTakenMult 与配置不符 | 拒绝 | 拒绝 | ✓ | 角色 p0 的 EXPOSED damageTakenMult 应为 1.2 |
-| 89 | statusEffects 重复 EXPOSED | 拒绝 | 拒绝 | ✓ | 角色 p0 的 EXPOSED damageTakenMult 应为 1.2 |
-| 90 | skillCooldowns 含未知技能 | 拒绝 | 拒绝 | ✓ | 角色 p0 的 skillCooldowns 含有未知技能（fake_skill） |
-| 91 | skillCooldowns 负值 | 拒绝 | 拒绝 | ✓ | 角色 p0 的技能冷却 adrenaline 非法（-1） |
+| 86 | statusEffects 含未知状态 id | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的 statusEffects 含有未知状态（panic） |
+| 87 | EXPOSED 带 hpPerTick 伤害（红线） | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的 EXPOSED 不应带 hpPerTick 伤害（-3） |
+| 88 | EXPOSED damageTakenMult 与配置不符 | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的 EXPOSED damageTakenMult 应为 1.2 |
+| 89 | statusEffects 重复 EXPOSED | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的 EXPOSED damageTakenMult 应为 1.2 |
+| 90 | Phase 4L scavenge_focus.searchMaterialBias 越界 | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的状态 scavenge_focus 字段 searchMaterialBias 不符合技能定义（应为 1.6） |
+| 91 | Phase 4L scavenge_focus.searchFindMult 为负 | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的状态 scavenge_focus 字段 searchFindMult 不符合技能定义（应为 1.35） |
+| 92 | Phase 4L steady_aim.rangedHitChanceMult 越界 | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的状态 steady_aim 字段 rangedHitChanceMult 不符合技能定义（应为 1.15） |
+| 93 | Phase 4L escape_plan.fleeChanceBonus 为负 | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的状态 escape_plan 字段 fleeChanceBonus 不符合技能定义（应为 0.2） |
+| 94 | Phase 4L survivor_camp.restStaminaBonus 越界 | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的状态 survivor_camp 字段 restStaminaBonus 不符合技能定义（应为 5） |
+| 95 | Phase 4L survivor_camp.hpPerTick 非零 | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的状态 survivor_camp 字段 hpPerTick 不符合技能定义（应为 0） |
+| 96 | Phase 4L sort_rare.rareChanceBonus 越界 | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的状态 sort_rare 字段 rareChanceBonus 不符合技能定义（应为 0.12） |
+| 97 | Phase 4L hunter_track.searchEnemyMult 越界 | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的状态 hunter_track 字段 searchEnemyMult 不符合技能定义（应为 1.5） |
+| 98 | Phase 4L trapper_setup.counterChanceBonus 非有限数 | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的状态 trapper_setup 字段 counterChanceBonus 不符合技能定义（应为 0.2） |
+| 99 | Phase 4L status remaining 超过定义 duration | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的状态 steady_aim remaining 超过 3 |
+| 100 | 未知 Phase 4L-like status id | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的 statusEffects 含有未知状态（phase4l_unknown） |
+| 101 | skillCooldowns 含未知技能 | 拒绝 | 拒绝 | ✓ | 角色 p0 的 skillCooldowns 含有未知技能（fake_skill） |
+| 102 | skillCooldowns 负值 | 拒绝 | 拒绝 | ✓ | 角色 p0 的技能冷却 adrenaline 非法（-1） |
 
 **结论：PASS（全部损坏存档均被拒绝，且无用例构造失败）**
 

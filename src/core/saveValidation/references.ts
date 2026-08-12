@@ -14,6 +14,7 @@
  */
 
 import { tryGetItem } from '../../data/items';
+import { tryGetCharacterDef } from '../../data/characters';
 import { tryGetRecipe } from '../../data/recipes';
 import { validateStack } from './numbers';
 import {
@@ -59,6 +60,17 @@ export function validateReferences(ctx: ValidationContext): void {
   for (const [id, raw] of Object.entries(characters)) {
     if (!isRecord(raw)) continue;
     const c = raw;
+
+    if (typeof c.characterId !== 'string') {
+      fail(`角色 ${id} 缺少合法 characterId`);
+    } else {
+      const characterDef = tryGetCharacterDef(c.characterId);
+      if (!characterDef) {
+        fail(`角色 ${id} 引用了未知职业（${c.characterId}）`);
+      } else if (c.passiveId !== characterDef.passiveId) {
+        fail(`角色 ${id} 的 passiveId 与职业 ${c.characterId} 不匹配`);
+      }
+    }
 
     if (typeof c.currentZoneId !== 'string' || !zoneIds.has(c.currentZoneId)) {
       fail(`角色 ${id} 位于不存在的区域（${String(c.currentZoneId)}）`);

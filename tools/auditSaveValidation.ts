@@ -448,6 +448,50 @@ const CASES: AuditCase[] = [
     p.statusEffects = [...p.statusEffects, { id: 'exposed', remaining: 3, hpPerTick: 0, label: '露出破绽' }] as never;
     p.statusEffects = [...p.statusEffects, { id: 'exposed', remaining: 2, hpPerTick: 0, label: '露出破绽' }] as never;
   } },
+  { case: 'Phase 4L scavenge_focus.searchMaterialBias 越界', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [{ id: 'scavenge_focus', remaining: 4, hpPerTick: 0, label: '搜索专注', searchFindMult: 1.35, searchMaterialBias: 999 }] as never;
+  } },
+  { case: 'Phase 4L scavenge_focus.searchFindMult 为负', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [{ id: 'scavenge_focus', remaining: 4, hpPerTick: 0, label: '搜索专注', searchFindMult: -1, searchMaterialBias: 1.6 }] as never;
+  } },
+  { case: 'Phase 4L steady_aim.rangedHitChanceMult 越界', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [{ id: 'steady_aim', remaining: 3, hpPerTick: 0, label: '稳定瞄准', rangedHitChanceMult: 100 }] as never;
+  } },
+  { case: 'Phase 4L escape_plan.fleeChanceBonus 为负', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [{ id: 'escape_plan', remaining: 4, hpPerTick: 0, label: '预留退路', fleeChanceBonus: -5 }] as never;
+  } },
+  { case: 'Phase 4L survivor_camp.restStaminaBonus 越界', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [{ id: 'survivor_camp', remaining: 3, hpPerTick: 0, label: '扎营节律', restStaminaBonus: 999 }] as never;
+  } },
+  { case: 'Phase 4L survivor_camp.hpPerTick 非零', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [{ id: 'survivor_camp', remaining: 3, hpPerTick: -1, label: '扎营节律', restStaminaBonus: 5 }] as never;
+  } },
+  { case: 'Phase 4L sort_rare.rareChanceBonus 越界', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [{ id: 'sort_rare', remaining: 4, hpPerTick: 0, label: '筛选稀有', rareChanceBonus: 9 }] as never;
+  } },
+  { case: 'Phase 4L hunter_track.searchEnemyMult 越界', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [{ id: 'hunter_track', remaining: 4, hpPerTick: 0, label: '追踪目标', searchEnemyMult: 0 }] as never;
+  } },
+  { case: 'Phase 4L trapper_setup.counterChanceBonus 非有限数', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [{ id: 'trapper_setup', remaining: 4, hpPerTick: 0, label: '埋伏准备', counterChanceBonus: Number.NaN }] as never;
+  } },
+  { case: 'Phase 4L status remaining 超过定义 duration', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [{ id: 'steady_aim', remaining: 4, hpPerTick: 0, label: '稳定瞄准', rangedHitChanceMult: 1.15 }] as never;
+  } },
+  { case: '未知 Phase 4L-like status id', expected: false, mutate: (s) => {
+    const p = s.state.characters[s.state.playerId]!;
+    p.statusEffects = [{ id: 'phase4l_unknown', remaining: 3, hpPerTick: 0, label: '未知状态' }] as never;
+  } },
 
   /* ---- 技能冷却（Phase 3A Step 8） ---- */
   { case: 'skillCooldowns 含未知技能', expected: false, mutate: (s) => {

@@ -2,10 +2,10 @@
   "meta": {
     "tool": "audit-save-validation",
     "version": "0.4.0",
-    "generatedAt": "2026-08-12T17:11:28.770Z",
+    "generatedAt": "2026-08-12T18:47:43.408Z",
     "control": "normal-save-accepted",
-    "totalCases": 91,
-    "passedCases": 91,
+    "totalCases": 102,
+    "passedCases": 102,
     "failedCases": 0,
     "constructionFailedCases": 0,
     "verdict": "PASS"
@@ -704,7 +704,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "角色 p0 的 statusEffects 含有未知状态（panic）",
+      "errorMessage": "角色 p0（scout）的 statusEffects 含有未知状态（panic）",
       "constructionFailed": false
     },
     {
@@ -712,7 +712,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "角色 p0 的 EXPOSED 不应带 hpPerTick 伤害（-3）",
+      "errorMessage": "角色 p0（scout）的 EXPOSED 不应带 hpPerTick 伤害（-3）",
       "constructionFailed": false
     },
     {
@@ -720,7 +720,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "角色 p0 的 EXPOSED damageTakenMult 应为 1.2",
+      "errorMessage": "角色 p0（scout）的 EXPOSED damageTakenMult 应为 1.2",
       "constructionFailed": false
     },
     {
@@ -728,7 +728,95 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "角色 p0 的 EXPOSED damageTakenMult 应为 1.2",
+      "errorMessage": "角色 p0（scout）的 EXPOSED damageTakenMult 应为 1.2",
+      "constructionFailed": false
+    },
+    {
+      "case": "Phase 4L scavenge_focus.searchMaterialBias 越界",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0（scout）的状态 scavenge_focus 字段 searchMaterialBias 不符合技能定义（应为 1.6）",
+      "constructionFailed": false
+    },
+    {
+      "case": "Phase 4L scavenge_focus.searchFindMult 为负",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0（scout）的状态 scavenge_focus 字段 searchFindMult 不符合技能定义（应为 1.35）",
+      "constructionFailed": false
+    },
+    {
+      "case": "Phase 4L steady_aim.rangedHitChanceMult 越界",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0（scout）的状态 steady_aim 字段 rangedHitChanceMult 不符合技能定义（应为 1.15）",
+      "constructionFailed": false
+    },
+    {
+      "case": "Phase 4L escape_plan.fleeChanceBonus 为负",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0（scout）的状态 escape_plan 字段 fleeChanceBonus 不符合技能定义（应为 0.2）",
+      "constructionFailed": false
+    },
+    {
+      "case": "Phase 4L survivor_camp.restStaminaBonus 越界",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0（scout）的状态 survivor_camp 字段 restStaminaBonus 不符合技能定义（应为 5）",
+      "constructionFailed": false
+    },
+    {
+      "case": "Phase 4L survivor_camp.hpPerTick 非零",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0（scout）的状态 survivor_camp 字段 hpPerTick 不符合技能定义（应为 0）",
+      "constructionFailed": false
+    },
+    {
+      "case": "Phase 4L sort_rare.rareChanceBonus 越界",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0（scout）的状态 sort_rare 字段 rareChanceBonus 不符合技能定义（应为 0.12）",
+      "constructionFailed": false
+    },
+    {
+      "case": "Phase 4L hunter_track.searchEnemyMult 越界",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0（scout）的状态 hunter_track 字段 searchEnemyMult 不符合技能定义（应为 1.5）",
+      "constructionFailed": false
+    },
+    {
+      "case": "Phase 4L trapper_setup.counterChanceBonus 非有限数",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0（scout）的状态 trapper_setup 字段 counterChanceBonus 不符合技能定义（应为 0.2）",
+      "constructionFailed": false
+    },
+    {
+      "case": "Phase 4L status remaining 超过定义 duration",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0（scout）的状态 steady_aim remaining 超过 3",
+      "constructionFailed": false
+    },
+    {
+      "case": "未知 Phase 4L-like status id",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 p0（scout）的 statusEffects 含有未知状态（phase4l_unknown）",
       "constructionFailed": false
     },
     {

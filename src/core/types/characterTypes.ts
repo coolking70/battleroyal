@@ -5,7 +5,15 @@ import type { ItemStack } from './itemTypes';
 /* 角色                                                                */
 /* ------------------------------------------------------------------ */
 
-export type PassiveId = 'keen_eye' | 'brawler' | 'tinkerer' | 'field_medic';
+export type PassiveId =
+  | 'keen_eye'
+  | 'brawler'
+  | 'tinkerer'
+  | 'field_medic'
+  | 'enduring'
+  | 'resourceful'
+  | 'tracker'
+  | 'trapsetter';
 
 export interface CharacterDef {
   id: string;
@@ -58,6 +66,22 @@ export interface StatusEffect {
   attackStaminaDelta?: number;
   /** Phase 3A：自身承受战斗伤害的倍率（肾上腺素换来的自伤代价） */
   selfDamageTakenMult?: number;
+  /** 生存专家：休息额外恢复体力 */
+  restStaminaBonus?: number;
+  /** 拾荒者：搜索发现物品权重倍率 */
+  searchFindMult?: number;
+  /** 猎人：搜索遭遇权重倍率 */
+  searchEnemyMult?: number;
+  /** 拾荒者：搜索材料偏好倍率 */
+  searchMaterialBias?: number;
+  /** 拾荒者：搜索稀有物品概率加成 */
+  rareChanceBonus?: number;
+  /** 猎人：远程攻击命中率倍率 */
+  rangedHitChanceMult?: number;
+  /** 陷阱师：防御姿态下反击概率加成 */
+  counterChanceBonus?: number;
+  /** 陷阱师：脱离成功率加成 */
+  fleeChanceBonus?: number;
   /** Phase 3A：剩余免费合成次数（工程师野外工造） */
   remainingCrafts?: number;
   /** Phase 3A：治疗物品效果倍率（医学生 MEDICAL_FOCUS +25%） */

@@ -9,6 +9,7 @@ import { StrictMode, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import App from '../src/App';
+import { CHARACTERS } from '../src/data/characters';
 import { SAVE_KEY } from '../src/data/gameConfig';
 
 let container: HTMLDivElement;
@@ -72,15 +73,19 @@ function click(text: string): void {
 }
 
 describe('界面冒烟', () => {
-  it('主菜单能渲染标题与 4 名可选角色', () => {
+  it('主菜单能渲染完整职业阵容与技能摘要', () => {
     render();
     expect(container.textContent).toContain('区域大逃杀');
-    expect(container.querySelectorAll('.char-card')).toHaveLength(4);
+    expect(CHARACTERS.length).toBeGreaterThanOrEqual(8);
+    expect(container.querySelectorAll('.char-card')).toHaveLength(CHARACTERS.length);
     expect(
       Array.from(container.querySelectorAll('.char-stats span')).some((node) =>
         /^(制作|医疗)\s/.test(node.textContent ?? ''),
       ),
-    ).toBe(false);
+    ).toBe(true);
+    expect(container.querySelectorAll('.char-skills')).toHaveLength(CHARACTERS.length);
+    expect(container.querySelector('[data-character-id="survivor"]')?.textContent).toContain('第二呼吸');
+    expect(container.querySelector('[data-character-id="trapper"]')?.textContent).toContain('埋伏准备');
     expect(findButton('开始新对局').disabled).toBe(false);
     // 没有存档时「继续」按钮应当是禁用的
     expect(findButton('没有可继续的存档').disabled).toBe(true);

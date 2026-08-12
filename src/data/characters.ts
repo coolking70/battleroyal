@@ -1,8 +1,8 @@
 import type { CharacterDef } from '../core/types';
 
 /**
- * 4 名可选角色模板。全部为原创占位设定。
- * 每名角色只实现一个简单被动（passiveId），不实现主动技能。
+ * 8 名可选角色模板。角色身份、属性、被动与技能映射均由数据注册表承载。
+ * 新角色使用既有主动技能通道，不另起一套职业规则。
  */
 export const CHARACTERS: CharacterDef[] = [
   {
@@ -72,6 +72,74 @@ export const CHARACTERS: CharacterDef[] = [
     passiveId: 'field_medic',
     passiveName: '临床',
     passiveDescription: '消耗品治疗量提高 50%，在医院搜索有额外收获加成。',
+  },
+  {
+    id: 'survivor',
+    name: '生存专家',
+    description:
+      '懂得把每一次休息都变成下一段路程的储备。体力与禁区耐受更稳，但不擅长快速搜集或正面决斗。',
+    maxHp: 105,
+    maxStamina: 115,
+    attack: 6,
+    defense: 6,
+    perception: 5,
+    speed: 6,
+    crafting: 3,
+    medical: 4,
+    passiveId: 'enduring',
+    passiveName: '耐性',
+    passiveDescription: '休息额外恢复体力，且禁区侵蚀伤害降低 20%。',
+  },
+  {
+    id: 'scavenger',
+    name: '拾荒者',
+    description:
+      '不靠运气赌装备，而是从有限物资里挑出真正有用的零件。搜索路线与材料管理是它的强项。',
+    maxHp: 98,
+    maxStamina: 105,
+    attack: 6,
+    defense: 4,
+    perception: 8,
+    speed: 7,
+    crafting: 7,
+    medical: 3,
+    passiveId: 'resourceful',
+    passiveName: '资源嗅觉',
+    passiveDescription: '更容易发现物品并偏向材料；不会改变区域有限库存或凭空生成物品。',
+  },
+  {
+    id: 'hunter',
+    name: '猎人',
+    description:
+      '把已经掌握的线索转化成接敌优势。擅长追踪与远程命中，但必须先建立情报，不能透视全图。',
+    maxHp: 98,
+    maxStamina: 105,
+    attack: 8,
+    defense: 4,
+    perception: 8,
+    speed: 9,
+    crafting: 3,
+    medical: 2,
+    passiveId: 'tracker',
+    passiveName: '追猎',
+    passiveDescription: '对已知目标的远程攻击命中机会提高，不公开远端角色位置。',
+  },
+  {
+    id: 'trapper',
+    name: '陷阱师',
+    description:
+      '用提前布置换取接敌主动权。防御、反击与撤退准备更有价值，但移动和持续搜索能力一般。',
+    maxHp: 102,
+    maxStamina: 100,
+    attack: 6,
+    defense: 8,
+    perception: 5,
+    speed: 5,
+    crafting: 5,
+    medical: 3,
+    passiveId: 'trapsetter',
+    passiveName: '预设反制',
+    passiveDescription: '处于防御姿态时反击概率提高，鼓励先布置再接敌。',
   },
 ];
 

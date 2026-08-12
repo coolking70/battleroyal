@@ -25,8 +25,9 @@ import {
   type AutoGameOutcome,
   type AutoGameResult,
 } from './autoPlayer';
+import { CHARACTERS as CHARACTER_DEFS } from '../src/data/characters';
 
-const CHARACTERS = ['scout', 'fighter', 'engineer', 'medic'] as const;
+const CHARACTERS = CHARACTER_DEFS.map((character) => character.id);
 
 function parseCount(): number {
   const raw = process.argv[2];

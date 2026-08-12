@@ -14,6 +14,7 @@ import type { ArtConfig, ArtManifest, ArtTask, CandidateMetadata } from './types
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
 const CHARACTER_SLOTS = ['portrait', 'injured', 'combat'] as const;
 const ZONE_SLOTS = ['background', 'warning', 'restricted'] as const;
+const LEGACY_CHARACTER_IDS = new Set(['scout', 'fighter', 'engineer', 'medic']);
 
 export interface AssetFileAudit {
   taskId: string;
@@ -122,7 +123,7 @@ async function buildManifestCoverage(config: ArtConfig, manifest: ArtManifest, t
       const taskId = `character/${character.id}/${slot}`;
       const task = tasks.find((candidate) => candidate.id === taskId);
       const publicPath = manifestPathForTask(manifest, taskId);
-      characterRecords.push({ taskId, gameDataId: character.id, artTask: Boolean(task), manifestPath: publicPath, official: typeof publicPath === 'string', ...(task && publicPath ? { file: await inspectPublicFile(config, task, publicPath) } : {}) });
+      characterRecords.push({ taskId, gameDataId: character.id, artTask: Boolean(task), manifestPath: publicPath, official: typeof publicPath === 'string', officialRequired: LEGACY_CHARACTER_IDS.has(character.id), fallbackOnly: !LEGACY_CHARACTER_IDS.has(character.id), ...(task && publicPath ? { file: await inspectPublicFile(config, task, publicPath) } : {}) });
     }
   }
   const zoneRecords: Array<Record<string, unknown>> = [];
@@ -149,7 +150,7 @@ async function buildManifestCoverage(config: ArtConfig, manifest: ArtManifest, t
   }
   const files = [...characterRecords, ...zoneRecords, ...itemRecords, ...eventRecords].flatMap((record) => record.file ? [record.file as AssetFileAudit] : []);
   const issues = files.filter((file) => !file.exists || !file.readable).map((file) => `${file.taskId}: missing or undecodable public file`);
-  const allBaseOfficial = characterRecords.every((record) => record.official) && zoneRecords.filter((record) => record.officialRequired).every((record) => record.official) && itemRecords.every((record) => record.official) && eventRecords.filter((record) => !record.fallbackOnly).every((record) => record.official);
+  const allBaseOfficial = characterRecords.filter((record) => record.officialRequired).every((record) => record.official) && zoneRecords.filter((record) => record.officialRequired).every((record) => record.official) && itemRecords.every((record) => record.official) && eventRecords.filter((record) => !record.fallbackOnly).every((record) => record.official);
   return {
     generatedAt: new Date().toISOString(),
     source: { characters: 'src/data/characters.ts', zones: 'src/data/zones.ts', items: 'art/tasks/items.json via ArtTask definitions plus src/data/items.ts identity check', worldEvents: 'src/core/worldEvents.ts' },

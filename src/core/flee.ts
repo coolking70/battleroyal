@@ -11,6 +11,7 @@ import { getZoneDef } from '../data/zones';
 import { pushEvent } from './events';
 import { refreshZoneOccupants } from './gameState';
 import { totalAttack, totalDefense } from './inventory';
+import { fleeChanceBonus } from './statusIds';
 import type { SeededRandom } from './random';
 import type { Combatant, GameState } from './types';
 
@@ -36,6 +37,7 @@ export function fleeChanceOf(actor: Combatant, enemy: Combatant): number {
   if (actor.passiveId === 'keen_eye') p += GAME_CONFIG.keenEyeFleeBonus;
   if (actor.personality === 'cautious') p += 0.1;
   if (actor.personality === 'aggressive') p -= 0.05;
+  p += fleeChanceBonus(actor);
   return Math.min(0.9, Math.max(0.1, p));
 }
 

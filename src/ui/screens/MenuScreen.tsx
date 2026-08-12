@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { generateRandomSeed } from '../../core/random';
+import { getCharacterSkills, SKILLS } from '../../core/skills';
 import type { LegacySaveInfo } from '../../core/saveLoad';
 import { CHARACTERS } from '../../data/characters';
 import { DEFAULT_SEED, GAME_CONFIG, GAME_VERSION } from '../../data/gameConfig';
+import { ZONE_IDS } from '../../data/zones';
 import { cx, normalizeSeed } from '../../utils/format';
 import { getCharacterVisual } from '../visualAssets';
 import { VisualImage } from '../components/VisualImage';
@@ -72,7 +74,7 @@ export function MenuScreen({
         )}
 
         <div className="panel menu-brief">
-          <b>{GAME_CONFIG.totalContestants}</b> 名参赛者被投放进 6 个互相连通的区域。
+          <b>{GAME_CONFIG.totalContestants}</b> 名参赛者被投放进 {ZONE_IDS.length} 个互相连通的区域。
           你每做一次行动就推进 <b>1</b> 个时间单位，随后 {GAME_CONFIG.npcCount} 名 NPC
           各自行动。第 <b>{GAME_CONFIG.firstZoneEventTime}</b> 个时间单位起，区域会被逐个封锁，
           预警 <b>{GAME_CONFIG.zoneWarningDuration}</b> 个时间单位后正式成为禁区，
@@ -107,6 +109,8 @@ export function MenuScreen({
             <button
               key={c.id}
               className={cx('char-card', characterId === c.id && 'selected')}
+              data-character-id={c.id}
+              aria-pressed={characterId === c.id}
               onClick={() => setCharacterId(c.id)}
             >
               <div className="char-heading">
@@ -121,9 +125,21 @@ export function MenuScreen({
                 <span>防御 {c.defense}</span>
                 <span>感知 {c.perception}</span>
                 <span>速度 {c.speed}</span>
+                <span>制作 {c.crafting}</span>
+                <span>医疗 {c.medical}</span>
               </div>
               <div className="char-passive">
                 {c.passiveName} · <span>{c.passiveDescription}</span>
+              </div>
+              <div className="char-skills">
+                {getCharacterSkills(c.id).map((skillId) => {
+                  const skill = SKILLS[skillId];
+                  return (
+                    <div className="char-skill" key={skillId}>
+                      <b>{skill.name}</b> · {skill.description}
+                    </div>
+                  );
+                })}
               </div>
             </button>
           ))}

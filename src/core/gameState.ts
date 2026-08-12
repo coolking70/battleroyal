@@ -26,6 +26,9 @@ const PERSONALITIES: Personality[] = [
 /** 新游戏的 player / NPC 出生统一从当前完整固定地图候选池抽取。 */
 export const SPAWN_ZONE_IDS: readonly string[] = ZONE_IDS;
 
+/** NPC profession templates always use the current playable roster. */
+export const NPC_CHARACTER_POOL = CHARACTERS;
+
 export function pickSpawnZone(rng: SeededRandom): string {
   return rng.pick(SPAWN_ZONE_IDS) ?? SPAWN_ZONE_IDS[0] ?? 'school';
 }
@@ -145,6 +148,9 @@ export interface CreateGameOptions {
  */
 export function createGame(options: CreateGameOptions): GameState {
   const rng = new SeededRandom(options.seed);
+  // The player profession never changes the NPC world: all current roles share
+  // one candidate pool so content cannot split into legacy/new worlds.
+  const npcTemplates = NPC_CHARACTER_POOL;
 
   const state: GameState = {
     version: GAME_VERSION,
@@ -216,7 +222,7 @@ export function createGame(options: CreateGameOptions): GameState {
   const names = rng.shuffle(NPC_NAME_POOL).slice(0, GAME_CONFIG.npcCount);
   const personalities = rng.shuffle(PERSONALITIES);
   for (let i = 0; i < GAME_CONFIG.npcCount; i++) {
-    const template = rng.pick(CHARACTERS);
+    const template = rng.pick(npcTemplates);
     const npc = createCombatant({
       id: `n${i + 1}`,
       name: names[i] ?? `参赛者${i + 1}`,

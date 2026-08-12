@@ -18,6 +18,7 @@
  *    开等于自杀（状态期间自身受伤 +25%），所以设了健康度下限。
  */
 
+import { GAME_CONFIG } from '../data/gameConfig';
 import { tryGetRecipe } from '../data/recipes';
 import {
   canUseSkill,
@@ -25,6 +26,7 @@ import {
   getCharacterSkills,
   isSkillReady,
   SKILLS,
+  SURVIVOR_CAMP_ID,
   type SkillId,
 } from './skills';
 import { findBestHealItem } from './consumables';
@@ -53,6 +55,10 @@ function hasHealingConsumable(npc: Combatant): boolean {
 export function npcSurvivalSkill(state: GameState, npc: Combatant): SkillId | null {
   const skillId = readySkill(npc);
   const hpRatio = npc.hp / npc.maxHp;
+
+  // 体力已跌入通用休息阈值时，优先保留既有的 REST 兜底；
+  // field_craft 例外保留旧契约：它只有在恰好能支付技能成本、且紧接着有合成目标时才抢占 REST。
+  if (npc.stamina < GAME_CONFIG.npcRestThreshold && skillId !== 'field_craft') return null;
 
   switch (skillId) {
     case 'emergency_treatment': {
@@ -83,6 +89,25 @@ export function npcSurvivalSkill(state: GameState, npc: Combatant): SkillId | nu
       break;
     }
 
+    case 'second_wind': {
+      if (npc.stamina / npc.maxStamina < 0.35) return skillId;
+      break;
+    }
+
+    case 'scavenge_focus': {
+      const zone = state.zones[npc.currentZoneId];
+      if (zone && zone.remainingLootCount > 0) return skillId;
+      break;
+    }
+
+    case 'track_target': {
+      const knowsSomeone = npc.knownEnemies.some(
+        (id) => state.characters[id]?.alive === true,
+      );
+      if (!knowsSomeone) return skillId;
+      break;
+    }
+
     default:
       break;
   }
@@ -97,12 +122,25 @@ export function npcSurvivalSkill(state: GameState, npc: Combatant): SkillId | nu
     case 'medic_regen':
       // 与应急处理错开：低于 60% 仍保留既有治疗品优先逻辑。
       return hpRatio >= 0.6 && hpRatio < 0.85 ? secondary : null;
+    case 'sort_rare': {
+      const zone = state.zones[npc.currentZoneId];
+      return zone && zone.remainingLootCount > 0 ? secondary : null;
+    }
+    case 'camp_routine': {
+      const hasCampStatus = npc.statusEffects.some((effect) => effect.id === SURVIVOR_CAMP_ID);
+      const staminaRatio = npc.stamina / npc.maxStamina;
+      return !hasCampStatus && staminaRatio < 0.6 ? secondary : null;
+    }
+    case 'escape_plan':
+      return hpRatio < 0.7 || state.zones[npc.currentZoneId]?.status !== 'safe'
+        ? secondary
+        : null;
     default:
       return null;
   }
 }
 
-/** 开打前的技能决策（主技能肾上腺素，Lv.3 后增加精准节拍）。 */
+/** 开打前的技能决策（按职业战略维度选择战斗技能）。 */
 export function npcCombatSkill(npc: Combatant): SkillId | null {
   const skillId = readySkill(npc);
   const hpRatio = npc.hp / npc.maxHp;
@@ -112,9 +150,18 @@ export function npcCombatSkill(npc: Combatant): SkillId | null {
     // 健康 + 体力吃紧 = 肾上腺素的黄金窗口
     if (hpRatio > 0.55 && staminaRatio < 0.6) return skillId;
   }
+  if (skillId === 'prepare_ambush' && hpRatio > 0.45 && !npc.guarding) {
+    return skillId;
+  }
 
   const secondary = readySecondarySkill(npc);
-  if (secondary !== 'fighter_focus') return null;
-  // 精准节拍补充命中稳定性，只有健康且尚未濒临体力耗尽时才开。
-  return hpRatio > 0.55 && npc.stamina >= SKILLS[secondary].staminaCost ? secondary : null;
+  if (secondary === 'fighter_focus') {
+    // 精准节拍补充命中稳定性，只有健康且尚未濒临体力耗尽时才开。
+    return hpRatio > 0.55 && npc.stamina >= SKILLS[secondary].staminaCost ? secondary : null;
+  }
+  if (secondary === 'steady_aim') {
+    const knowsSomeone = npc.knownEnemies.length > 0;
+    return knowsSomeone && hpRatio > 0.55 ? secondary : null;
+  }
+  return null;
 }

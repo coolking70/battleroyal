@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-12T16:25:24.768Z",
+  "generatedAt": "2026-08-12T18:09:57.386Z",
   "source": {
     "characters": "src/data/characters.ts",
     "zones": "src/data/zones.ts",
@@ -7,7 +7,7 @@
     "worldEvents": "src/core/worldEvents.ts"
   },
   "counts": {
-    "characterVariantsRequired": 12,
+    "characterVariantsRequired": 24,
     "characterVariantsOfficial": 12,
     "zoneBackgroundRequired": 12,
     "zoneBackgroundOfficial": 6,
@@ -23,6 +23,8 @@
       "artTask": true,
       "manifestPath": "/assets/characters/scout/portrait.png",
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "file": {
         "taskId": "character/scout/portrait",
         "manifestPath": "/assets/characters/scout/portrait.png",
@@ -42,6 +44,8 @@
       "artTask": true,
       "manifestPath": "/assets/characters/scout/injured.png",
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "file": {
         "taskId": "character/scout/injured",
         "manifestPath": "/assets/characters/scout/injured.png",
@@ -61,6 +65,8 @@
       "artTask": true,
       "manifestPath": "/assets/characters/scout/combat.png",
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "file": {
         "taskId": "character/scout/combat",
         "manifestPath": "/assets/characters/scout/combat.png",
@@ -80,6 +86,8 @@
       "artTask": true,
       "manifestPath": "/assets/characters/fighter/portrait.png",
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "file": {
         "taskId": "character/fighter/portrait",
         "manifestPath": "/assets/characters/fighter/portrait.png",
@@ -99,6 +107,8 @@
       "artTask": true,
       "manifestPath": "/assets/characters/fighter/injured.png",
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "file": {
         "taskId": "character/fighter/injured",
         "manifestPath": "/assets/characters/fighter/injured.png",
@@ -118,6 +128,8 @@
       "artTask": true,
       "manifestPath": "/assets/characters/fighter/combat.png",
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "file": {
         "taskId": "character/fighter/combat",
         "manifestPath": "/assets/characters/fighter/combat.png",
@@ -137,6 +149,8 @@
       "artTask": true,
       "manifestPath": "/assets/characters/engineer/portrait.png",
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "file": {
         "taskId": "character/engineer/portrait",
         "manifestPath": "/assets/characters/engineer/portrait.png",
@@ -156,6 +170,8 @@
       "artTask": true,
       "manifestPath": "/assets/characters/engineer/injured.png",
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "file": {
         "taskId": "character/engineer/injured",
         "manifestPath": "/assets/characters/engineer/injured.png",
@@ -175,6 +191,8 @@
       "artTask": true,
       "manifestPath": "/assets/characters/engineer/combat.png",
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "file": {
         "taskId": "character/engineer/combat",
         "manifestPath": "/assets/characters/engineer/combat.png",
@@ -194,6 +212,8 @@
       "artTask": true,
       "manifestPath": "/assets/characters/medic/portrait.png",
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "file": {
         "taskId": "character/medic/portrait",
         "manifestPath": "/assets/characters/medic/portrait.png",
@@ -213,6 +233,8 @@
       "artTask": true,
       "manifestPath": "/assets/characters/medic/injured.png",
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "file": {
         "taskId": "character/medic/injured",
         "manifestPath": "/assets/characters/medic/injured.png",
@@ -232,6 +254,8 @@
       "artTask": true,
       "manifestPath": "/assets/characters/medic/combat.png",
       "official": true,
+      "officialRequired": true,
+      "fallbackOnly": false,
       "file": {
         "taskId": "character/medic/combat",
         "manifestPath": "/assets/characters/medic/combat.png",
@@ -244,6 +268,114 @@
         "height": 1152,
         "readable": true
       }
+    },
+    {
+      "taskId": "character/survivor/portrait",
+      "gameDataId": "survivor",
+      "artTask": false,
+      "manifestPath": null,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true
+    },
+    {
+      "taskId": "character/survivor/injured",
+      "gameDataId": "survivor",
+      "artTask": false,
+      "manifestPath": null,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true
+    },
+    {
+      "taskId": "character/survivor/combat",
+      "gameDataId": "survivor",
+      "artTask": false,
+      "manifestPath": null,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true
+    },
+    {
+      "taskId": "character/scavenger/portrait",
+      "gameDataId": "scavenger",
+      "artTask": false,
+      "manifestPath": null,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true
+    },
+    {
+      "taskId": "character/scavenger/injured",
+      "gameDataId": "scavenger",
+      "artTask": false,
+      "manifestPath": null,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true
+    },
+    {
+      "taskId": "character/scavenger/combat",
+      "gameDataId": "scavenger",
+      "artTask": false,
+      "manifestPath": null,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true
+    },
+    {
+      "taskId": "character/hunter/portrait",
+      "gameDataId": "hunter",
+      "artTask": false,
+      "manifestPath": null,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true
+    },
+    {
+      "taskId": "character/hunter/injured",
+      "gameDataId": "hunter",
+      "artTask": false,
+      "manifestPath": null,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true
+    },
+    {
+      "taskId": "character/hunter/combat",
+      "gameDataId": "hunter",
+      "artTask": false,
+      "manifestPath": null,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true
+    },
+    {
+      "taskId": "character/trapper/portrait",
+      "gameDataId": "trapper",
+      "artTask": false,
+      "manifestPath": null,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true
+    },
+    {
+      "taskId": "character/trapper/injured",
+      "gameDataId": "trapper",
+      "artTask": false,
+      "manifestPath": null,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true
+    },
+    {
+      "taskId": "character/trapper/combat",
+      "gameDataId": "trapper",
+      "artTask": false,
+      "manifestPath": null,
+      "official": false,
+      "officialRequired": false,
+      "fallbackOnly": true
     }
   ],
   "zones": [

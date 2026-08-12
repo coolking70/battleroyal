@@ -13,6 +13,25 @@
  */
 
 import type { Combatant } from './types';
+import {
+  ESCAPE_PLAN_ID,
+  HUNTER_TRACK_ID,
+  SCAVENGE_FOCUS_ID,
+  SORT_RARE_ID,
+  STEADY_AIM_ID,
+  SURVIVOR_CAMP_ID,
+  TRAPPER_SETUP_ID,
+} from './skillDefinitions';
+
+export {
+  ESCAPE_PLAN_ID,
+  HUNTER_TRACK_ID,
+  SCAVENGE_FOCUS_ID,
+  SORT_RARE_ID,
+  STEADY_AIM_ID,
+  SURVIVOR_CAMP_ID,
+  TRAPPER_SETUP_ID,
+} from './skillDefinitions';
 
 /** 斗士「肾上腺素」 */
 export const ADRENALINE_ID = 'adrenaline';
@@ -58,4 +77,50 @@ export function consumableHealMultiplier(actor: Combatant): number {
 /** 警觉侦察：角色当前是否处于警觉状态 */
 export function hasScoutAwareness(actor: Combatant): boolean {
   return actor.statusEffects.some((s) => s.id === SCOUT_AWARENESS_ID);
+}
+
+function statusNumber(actor: Combatant, id: string, field: keyof Combatant['statusEffects'][number], fallback: number): number {
+  const effect = actor.statusEffects.find((s) => s.id === id);
+  const value = effect?.[field];
+  return typeof value === 'number' ? value : fallback;
+}
+
+/** 生存专家：扎营状态只提高 REST 的收益。 */
+export function restStaminaBonus(actor: Combatant): number {
+  return statusNumber(actor, SURVIVOR_CAMP_ID, 'restStaminaBonus', 0);
+}
+
+/** 拾荒者：搜索发现物品权重的状态倍率。 */
+export function searchFindMultiplier(actor: Combatant): number {
+  return statusNumber(actor, SCAVENGE_FOCUS_ID, 'searchFindMult', 1);
+}
+
+/** 猎人：搜索遭遇权重的状态倍率。 */
+export function searchEnemyMultiplier(actor: Combatant): number {
+  return statusNumber(actor, HUNTER_TRACK_ID, 'searchEnemyMult', 1);
+}
+
+/** 拾荒者：搜索时的材料偏好倍率。 */
+export function searchMaterialBias(actor: Combatant): number {
+  return statusNumber(actor, SCAVENGE_FOCUS_ID, 'searchMaterialBias', 1);
+}
+
+/** 拾荒者：从正式 loot pool 抽取稀有物品的概率加成。 */
+export function searchRareChanceBonus(actor: Combatant): number {
+  return statusNumber(actor, SORT_RARE_ID, 'rareChanceBonus', 0);
+}
+
+/** 猎人：仅作用于远程攻击的命中倍率。 */
+export function rangedHitChanceMultiplier(actor: Combatant): number {
+  return statusNumber(actor, STEADY_AIM_ID, 'rangedHitChanceMult', 1);
+}
+
+/** 陷阱师：防御姿态下的反击概率加成。 */
+export function counterChanceBonus(actor: Combatant): number {
+  return statusNumber(actor, TRAPPER_SETUP_ID, 'counterChanceBonus', 0);
+}
+
+/** 陷阱师：正式脱离的成功率加成。 */
+export function fleeChanceBonus(actor: Combatant): number {
+  return statusNumber(actor, ESCAPE_PLAN_ID, 'fleeChanceBonus', 0);
 }

@@ -9,7 +9,15 @@ export type SkillId =
   | 'field_craft'
   | 'engineer_reinforce'
   | 'emergency_treatment'
-  | 'medic_regen';
+  | 'medic_regen'
+  | 'second_wind'
+  | 'camp_routine'
+  | 'scavenge_focus'
+  | 'sort_rare'
+  | 'track_target'
+  | 'steady_aim'
+  | 'prepare_ambush'
+  | 'escape_plan';
 
 export interface SkillDef {
   id: SkillId;
@@ -21,7 +29,7 @@ export interface SkillDef {
   /** 冷却时间单位（每个技能各自定义，禁止全局统一冷却） */
   cooldown: number;
   /** 战略维度标签（UI 与文档用） */
-  dimension: '信息' | '战斗节奏' | '合成' | '消耗品经济';
+  dimension: '信息' | '战斗节奏' | '合成' | '消耗品经济' | '生存' | '搜索' | '追踪' | '区域控制';
   description: string;
   /** 技能可用的最低等级；主技能保持 Lv.1。 */
   unlockLevel: number;
@@ -29,17 +37,31 @@ export interface SkillDef {
   isPrimary: boolean;
 }
 
-/** 四个第二技能使用的状态 id；状态结构复用既有 StatusEffect 字段。 */
+/** 各职业第二技能及 Phase 4L 新技能使用的状态 id；状态结构复用既有 StatusEffect 字段。 */
 export const SCOUT_SMOKE_ID = 'scout_smoke';
 export const FIGHTER_FOCUS_ID = 'fighter_focus';
 export const ENGINEER_REINFORCE_ID = 'engineer_reinforce';
 export const MEDIC_REGEN_ID = 'medic_regen';
+export const SURVIVOR_CAMP_ID = 'survivor_camp';
+export const SCAVENGE_FOCUS_ID = 'scavenge_focus';
+export const SORT_RARE_ID = 'sort_rare';
+export const HUNTER_TRACK_ID = 'hunter_track';
+export const STEADY_AIM_ID = 'steady_aim';
+export const TRAPPER_SETUP_ID = 'trapper_setup';
+export const ESCAPE_PLAN_ID = 'escape_plan';
 
 export const SECONDARY_STATUS_IDS = [
   SCOUT_SMOKE_ID,
   FIGHTER_FOCUS_ID,
   ENGINEER_REINFORCE_ID,
   MEDIC_REGEN_ID,
+  SURVIVOR_CAMP_ID,
+  SCAVENGE_FOCUS_ID,
+  SORT_RARE_ID,
+  HUNTER_TRACK_ID,
+  STEADY_AIM_ID,
+  TRAPPER_SETUP_ID,
+  ESCAPE_PLAN_ID,
 ] as const;
 
 const PRIMARY_LEVEL = 1;
@@ -143,6 +165,94 @@ export const SKILLS: Record<SkillId, SkillDef> = {
     unlockLevel: SECONDARY_SKILL_UNLOCK_LEVEL,
     isPrimary: false,
   },
+  second_wind: {
+    id: 'second_wind',
+    name: '第二呼吸',
+    characterId: 'survivor',
+    staminaCost: GAME_CONFIG.skillSecondWindStaminaCost,
+    cooldown: GAME_CONFIG.skillSecondWindCooldown,
+    dimension: '生存',
+    description: `支付 ${GAME_CONFIG.skillSecondWindStaminaCost} 点体力，立即恢复 ${GAME_CONFIG.skillSecondWindRestore} 点体力。`,
+    unlockLevel: PRIMARY_LEVEL,
+    isPrimary: true,
+  },
+  camp_routine: {
+    id: 'camp_routine',
+    name: '扎营节律',
+    characterId: 'survivor',
+    staminaCost: GAME_CONFIG.skillCampRoutineStaminaCost,
+    cooldown: GAME_CONFIG.skillCampRoutineCooldown,
+    dimension: '生存',
+    description: `持续 ${GAME_CONFIG.skillCampRoutineDuration} 回合，REST 额外恢复 ${GAME_CONFIG.skillCampRoutineRestBonus} 点体力。`,
+    unlockLevel: SECONDARY_SKILL_UNLOCK_LEVEL,
+    isPrimary: false,
+  },
+  scavenge_focus: {
+    id: 'scavenge_focus',
+    name: '搜索专注',
+    characterId: 'scavenger',
+    staminaCost: GAME_CONFIG.skillScavengeFocusStaminaCost,
+    cooldown: GAME_CONFIG.skillScavengeFocusCooldown,
+    dimension: '搜索',
+    description: `持续 ${GAME_CONFIG.skillScavengeFocusDuration} 回合，提高正式搜索的发现物品权重。`,
+    unlockLevel: PRIMARY_LEVEL,
+    isPrimary: true,
+  },
+  sort_rare: {
+    id: 'sort_rare',
+    name: '筛选稀有',
+    characterId: 'scavenger',
+    staminaCost: GAME_CONFIG.skillSortRareStaminaCost,
+    cooldown: GAME_CONFIG.skillSortRareCooldown,
+    dimension: '搜索',
+    description: `持续 ${GAME_CONFIG.skillSortRareDuration} 回合，提高从正式 loot pool 抽取稀有物品的机会。`,
+    unlockLevel: SECONDARY_SKILL_UNLOCK_LEVEL,
+    isPrimary: false,
+  },
+  track_target: {
+    id: 'track_target',
+    name: '追踪目标',
+    characterId: 'hunter',
+    staminaCost: GAME_CONFIG.skillTrackTargetStaminaCost,
+    cooldown: GAME_CONFIG.skillTrackTargetCooldown,
+    dimension: '追踪',
+    description: `持续 ${GAME_CONFIG.skillTrackTargetDuration} 回合，提高搜索遭遇权重，不显示远端精确位置。`,
+    unlockLevel: PRIMARY_LEVEL,
+    isPrimary: true,
+  },
+  steady_aim: {
+    id: 'steady_aim',
+    name: '稳定瞄准',
+    characterId: 'hunter',
+    staminaCost: GAME_CONFIG.skillSteadyAimStaminaCost,
+    cooldown: GAME_CONFIG.skillSteadyAimCooldown,
+    dimension: '追踪',
+    description: `持续 ${GAME_CONFIG.skillSteadyAimDuration} 回合，仅提高远程攻击命中机会。`,
+    unlockLevel: SECONDARY_SKILL_UNLOCK_LEVEL,
+    isPrimary: false,
+  },
+  prepare_ambush: {
+    id: 'prepare_ambush',
+    name: '埋伏准备',
+    characterId: 'trapper',
+    staminaCost: GAME_CONFIG.skillPrepareAmbushStaminaCost,
+    cooldown: GAME_CONFIG.skillPrepareAmbushCooldown,
+    dimension: '区域控制',
+    description: `立即进入防御姿态，持续 ${GAME_CONFIG.skillPrepareAmbushDuration} 回合提高反击机会。`,
+    unlockLevel: PRIMARY_LEVEL,
+    isPrimary: true,
+  },
+  escape_plan: {
+    id: 'escape_plan',
+    name: '预留退路',
+    characterId: 'trapper',
+    staminaCost: GAME_CONFIG.skillEscapePlanStaminaCost,
+    cooldown: GAME_CONFIG.skillEscapePlanCooldown,
+    dimension: '区域控制',
+    description: `持续 ${GAME_CONFIG.skillEscapePlanDuration} 回合，提高正式脱离成功率。`,
+    unlockLevel: SECONDARY_SKILL_UNLOCK_LEVEL,
+    isPrimary: false,
+  },
 };
 
 const CHARACTER_SKILL_IDS: Record<string, SkillId[]> = {
@@ -150,6 +260,10 @@ const CHARACTER_SKILL_IDS: Record<string, SkillId[]> = {
   fighter: ['adrenaline', 'fighter_focus'],
   engineer: ['field_craft', 'engineer_reinforce'],
   medic: ['emergency_treatment', 'medic_regen'],
+  survivor: ['second_wind', 'camp_routine'],
+  scavenger: ['scavenge_focus', 'sort_rare'],
+  hunter: ['track_target', 'steady_aim'],
+  trapper: ['prepare_ambush', 'escape_plan'],
 };
 
 /** 返回角色的技能集合，主技能始终位于第一个位置。 */
