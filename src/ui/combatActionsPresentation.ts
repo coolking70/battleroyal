@@ -3,7 +3,8 @@ import { ATTACK_STYLE_LABEL, fleeChanceIn, hitChanceIn } from '../core/combat';
 import type { AttackStyle, Combatant, GameState } from '../core/types';
 import {
   canUseSkill,
-  getCharacterSkill,
+  getCharacterSkills,
+  isSkillUnlocked,
   isSkillReady,
   SKILLS,
   type SkillId,
@@ -18,18 +19,27 @@ export interface AttackActionView {
   isHeavy: boolean;
 }
 
+export interface SkillActionView {
+  id: SkillId;
+  name: string;
+  description: string;
+  ready: boolean;
+  cooldown: number;
+  usable: boolean;
+  unlocked: boolean;
+  unlockLevel: number;
+  cost: number;
+  reason: string | null;
+}
+
 export interface CombatActionBarView {
   attacks: AttackActionView[];
   guard: { cost: number; disabled: boolean };
   flee: { chancePct: number; cost: number };
-  skill: {
-    id: SkillId;
-    name: string;
-    ready: boolean;
-    cooldown: number;
-    usable: boolean;
-    cost: number;
-  } | null;
+  /** 当前角色的全部技能，主技能在第一位；锁定技能也保留给 UI 呈现。 */
+  skills: SkillActionView[];
+  /** 向后兼容的主技能别名，既有只读调用点仍可使用。 */
+  skill: SkillActionView | null;
   /** 行动栏下方的合法提示（零体力 / 体力不足等情形） */
   legalNote: string;
 }
@@ -68,19 +78,22 @@ export function buildCombatActionBar(
   const flee = Math.round(fleeChanceIn(state, player, enemy) * 100);
   const fleeCost = getActionStaminaCost(player, 'FLEE');
 
-  const skillId = getCharacterSkill(player.characterId);
-  let skill: CombatActionBarView['skill'] = null;
-  if (skillId) {
+  const skills: SkillActionView[] = getCharacterSkills(player.characterId).map((skillId) => {
     const def = SKILLS[skillId];
-    skill = {
+    const check = canUseSkill(player, skillId);
+    return {
       id: skillId,
       name: def.name,
+      description: def.description,
       ready: isSkillReady(player, skillId),
       cooldown: player.skillCooldowns[skillId] ?? 0,
-      usable: canUseSkill(player, skillId).ok,
+      usable: check.ok,
+      unlocked: isSkillUnlocked(player, skillId),
+      unlockLevel: def.unlockLevel,
       cost: def.staminaCost,
+      reason: check.reason,
     };
-  }
+  });
 
   // 行动栏下方的合法提示（与 4D-2 遭遇面板同源的措辞）
   const normalCost = getAttackStyleStaminaCost('normal');
@@ -99,7 +112,8 @@ export function buildCombatActionBar(
     attacks,
     guard: { cost: guardCost, disabled: guardDisabled },
     flee: { chancePct: flee, cost: fleeCost },
-    skill,
+    skills,
+    skill: skills[0] ?? null,
     legalNote,
   };
 }

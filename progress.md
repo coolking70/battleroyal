@@ -820,3 +820,30 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   cleaned role cards. Commit `bed0c74` is pushed, draft PR #13 is open, and CI run
   `31512421838` verify is green. Generated audit timestamps remain intentionally
   unstaged; binary screenshots remain local under ignored `output/`.
+
+## Phase 4I-1 progress (2026-08-12)
+
+- Started `codex/phase4i1-skill-growth` from exact `main @ 6f8a054` (v0.4.0).
+- Split skill definitions into `src/core/skillDefinitions.ts`; retained
+  `getCharacterSkill()` as the explicit primary-skill compatibility query and added
+  `getCharacterSkills()` for the primary/secondary pair. Four Lv.3 second skills use
+  existing `StatusEffect` fields and positive stamina costs; no new resource, RNG,
+  experience rule, combat formula, drop, recipe, world-event, or save field was added.
+- Player legal actions and exploration/encounter UI now share the same skill set and
+  `canUseSkill` gate. NPC decision paths select and execute the second skill after Lv.3;
+  the execution test uses a real NPC and `useSkill`, not only static definitions.
+- The encounter action bar keeps 6 top-level layout slots: five existing action slots
+  plus one skill slot containing two native skill buttons. Production preview evidence
+  measured 6 slots / 7 controls, all 7 in view at 390×844, `[title]=0`, and no
+  console/page errors. Screenshots remain local under ignored `output/`; only JSON
+  snapshots are tracked.
+- Save validation accepts only the four defined second-skill status shapes and rejects
+  unknown ids, wrong types and duration/effect bounds. Unlock state is derived from
+  `level`, so `GAME_VERSION` remains `0.4.0`; audit-save remains 89/89.
+- Final clean gates: `npm ci`, typecheck, **87 files / 1432 tests**, build,
+  audit:save, audit:deps R1–R4=0, art doctor/validate/audit/security, 500-game
+  PHASE4I1 engine-health regression (requested=actual=500; timeout/illegal/
+  hard-limit=0), and `npm audit --omit=dev` all PASS. Balance output is recorded only;
+  no balance value was adjusted.
+- Deliverables: `PHASE4I1_REPORT.md`, `reports/phase4i1-balance.json`,
+  `reports/phase4i1-runtime.json`, and browser evidence under ignored `output/`.

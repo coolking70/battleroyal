@@ -11,7 +11,7 @@ import { getItem, tryGetItem } from '../data/items';
 import { RECIPES } from '../data/recipes';
 import { canPayActionCost, canPayMove } from './actionCosts';
 import { canAttack } from './combat';
-import { SKILLS, canUseSkill, getCharacterSkill, type SkillId } from './skills';
+import { SKILLS, canUseSkill, getCharacterSkills } from './skills';
 import { advancesTime, commandLabel } from './commands';
 import { hasRoomForOutput } from './crafting';
 import { enemiesInZone } from './gameState';
@@ -177,24 +177,24 @@ export function combatActions(state: GameState, player: Combatant): LegalAction[
 
 /**
  * 角色技能（Phase 3 Step 3）。
- * 每个角色拥有一枚专属签名技能，可随时释放（自增益 / 治疗 / 修理），
- * 只要冷却就绪且付得起体力。技能不要求处于遭遇中，因此在这里单独成块，
- * 并在遭遇内与主列表两处都纳入合法集合。
+ * 每个角色拥有主技能与（达到 Lv.3 后）第二技能，可随时释放。
+ * 锁定技能不进入合法集合，UI 另行展示其解锁原因；只有通过同一条
+ * canUseSkill 闸门的技能才会产生 USE_SKILL 命令。
  */
 export function skillActions(player: Combatant): LegalAction[] {
-  const skillId = getCharacterSkill(player.characterId);
-  if (!skillId) return [];
-  const check = canUseSkill(player, skillId as SkillId);
-  if (!check.ok) return [];
-  const def = SKILLS[skillId as SkillId];
-  return [
-    action(
-      { type: 'USE_SKILL', skillId },
-      'combat',
-      check.cost,
-      `${def.name}：${def.description}`,
-    ),
-  ];
+  return getCharacterSkills(player.characterId).flatMap((skillId) => {
+    const check = canUseSkill(player, skillId);
+    if (!check.ok) return [];
+    const def = SKILLS[skillId];
+    return [
+      action(
+        { type: 'USE_SKILL', skillId },
+        'combat',
+        check.cost,
+        `${def.name}：${def.description}`,
+      ),
+    ];
+  });
 }
 
 /** 玩家脚下是否是禁区 / 预警区（决定遭遇战中能否撤离，与 NPC 同一判据） */

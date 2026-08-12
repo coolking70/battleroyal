@@ -35,14 +35,17 @@ import {
   MEDICAL_FOCUS_ID,
   SCOUT_AWARENESS_ID,
 } from './statusIds';
+import {
+  ENGINEER_REINFORCE_ID,
+  FIGHTER_FOCUS_ID,
+  getCharacterSkills,
+  MEDIC_REGEN_ID,
+  SCOUT_SMOKE_ID,
+  SKILLS,
+  type SkillId,
+} from './skillDefinitions';
 import { applyHealing } from './vitals';
 import type { Combatant, GameState, StatusEffect } from './types';
-
-export type SkillId =
-  | 'scout_recon'
-  | 'adrenaline'
-  | 'field_craft'
-  | 'emergency_treatment';
 
 // 状态 id 与只读查询集中在 statusIds.ts（避免与 actionCosts / combat 形成循环依赖），
 // 这里原样再导出，调用方 import 哪一边都行。
@@ -59,77 +62,20 @@ export {
   selfDamageTakenMultiplier,
 } from './statusIds';
 
-export interface SkillDef {
-  id: SkillId;
-  name: string;
-  /** 拥有该技能的角色 id */
-  characterId: string;
-  /** 体力成本 */
-  staminaCost: number;
-  /** 冷却时间单位（每个技能各自定义，禁止全局统一冷却） */
-  cooldown: number;
-  /** 战略维度标签（UI 与文档用） */
-  dimension: '信息' | '战斗节奏' | '合成' | '消耗品经济';
-  description: string;
-}
-
-/** 角色 -> 专属技能（每角色一枚签名技能；数值与 SKILL_DESIGN.md 逐字一致） */
-export const SKILLS: Record<SkillId, SkillDef> = {
-  scout_recon: {
-    id: 'scout_recon',
-    name: '警觉侦察',
-    characterId: 'scout',
-    staminaCost: GAME_CONFIG.skillReconStaminaCost,
-    cooldown: GAME_CONFIG.skillReconCooldown,
-    dimension: '信息',
-    description: '提升噪音情报质量，并在搜索遭遇时抢占先手（不提供精确角色位置）。',
-  },
-  adrenaline: {
-    id: 'adrenaline',
-    name: '肾上腺素',
-    characterId: 'fighter',
-    staminaCost: GAME_CONFIG.skillAdrenalineStaminaCost,
-    cooldown: GAME_CONFIG.skillAdrenalineCooldown,
-    dimension: '战斗节奏',
-    description: `接下来 ${GAME_CONFIG.skillAdrenalineAttacks} 次攻击伤害 +${Math.round(
-      (GAME_CONFIG.skillAdrenalineDamageMult - 1) * 100,
-    )}%、体力 -1（下限 1）；代价是这期间自己受到的战斗伤害 +${Math.round(
-      (GAME_CONFIG.skillAdrenalineSelfDamageMult - 1) * 100,
-    )}%。`,
-  },
-  field_craft: {
-    id: 'field_craft',
-    name: '现场加工',
-    characterId: 'engineer',
-    staminaCost: GAME_CONFIG.skillFieldCraftStaminaCost,
-    cooldown: GAME_CONFIG.skillFieldCraftCooldown,
-    dimension: '合成',
-    description: `下一次成功合成不消耗体力（${GAME_CONFIG.skillFieldCraftDuration} 个时间单位内有效，失败不消耗）。`,
-  },
-  emergency_treatment: {
-    id: 'emergency_treatment',
-    name: '应急处理',
-    characterId: 'medic',
-    staminaCost: GAME_CONFIG.skillTreatmentStaminaCost,
-    cooldown: GAME_CONFIG.skillTreatmentCooldown,
-    dimension: '消耗品经济',
-    description: `立即恢复 ${GAME_CONFIG.skillTreatmentInstantHeal} 点生命，并在 ${GAME_CONFIG.skillTreatmentDuration} 个时间单位内让治疗类消耗品效果 +${Math.round(
-      (GAME_CONFIG.skillTreatmentConsumableMult - 1) * 100,
-    )}%。`,
-  },
-};
-
-/** 返回某角色拥有的技能 id（没有则返回 null） */
-export function getCharacterSkill(characterId: string): SkillId | null {
-  for (const def of Object.values(SKILLS)) {
-    if (def.characterId === characterId) return def.id;
-  }
-  return null;
-}
-
-export function getSkill(skillId: SkillId): SkillDef {
-  return SKILLS[skillId];
-}
+export {
+  ENGINEER_REINFORCE_ID,
+  FIGHTER_FOCUS_ID,
+  getCharacterSkill,
+  getCharacterSkills,
+  getSkill,
+  MEDIC_REGEN_ID,
+  SECONDARY_SKILL_UNLOCK_LEVEL,
+  SECONDARY_STATUS_IDS,
+  SCOUT_SMOKE_ID,
+  SKILLS,
+  type SkillDef,
+  type SkillId,
+} from './skillDefinitions';
 
 /** 冷却是否为 0（或从未使用过） */
 export function isSkillReady(actor: Combatant, skillId: SkillId): boolean {
@@ -137,15 +83,27 @@ export function isSkillReady(actor: Combatant, skillId: SkillId): boolean {
   return cd === undefined || cd <= 0;
 }
 
-/** 前置校验：存活 + 拥有该技能 + 冷却就绪 + 体力足够 */
+/** 技能解锁由持久化 level 推导，不增加第二份解锁状态。 */
+export function isSkillUnlocked(actor: Combatant, skillId: SkillId): boolean {
+  return actor.level >= SKILLS[skillId].unlockLevel;
+}
+
+/** 前置校验：存活 + 拥有该技能 + 等级解锁 + 冷却就绪 + 体力足够 */
 export function canUseSkill(actor: Combatant, skillId: SkillId): CostCheck {
   const def = SKILLS[skillId];
   const payStamina = canPayStamina; // 捕获引用，规避循环依赖下的绑定解析异常
   if (!actor.alive) {
     return { ok: false, reason: '已经死亡的角色无法行动。', cost: def.staminaCost };
   }
-  if (getCharacterSkill(actor.characterId) !== skillId) {
+  if (!getCharacterSkills(actor.characterId).includes(skillId)) {
     return { ok: false, reason: '当前角色没有这个技能。', cost: def.staminaCost };
+  }
+  if (!isSkillUnlocked(actor, skillId)) {
+    return {
+      ok: false,
+      reason: `等级不足：达到 Lv.${def.unlockLevel} 后解锁。`,
+      cost: def.staminaCost,
+    };
   }
   if (!isSkillReady(actor, skillId)) {
     return {
@@ -331,6 +289,53 @@ export function useSkill(
         `${GAME_CONFIG.skillTreatmentDuration} 个时间单位内治疗类消耗品效果 +${Math.round(
           (GAME_CONFIG.skillTreatmentConsumableMult - 1) * 100,
         )}%`;
+      break;
+    }
+
+    case 'scout_smoke': {
+      addStatusEffect(actor, {
+        id: SCOUT_SMOKE_ID,
+        remaining: GAME_CONFIG.skillScoutSmokeDuration,
+        hpPerTick: 0,
+        label: '烟幕转位',
+        evasionHitMult: GAME_CONFIG.skillScoutSmokeEvasionMult,
+      });
+      detail = `持续 ${GAME_CONFIG.skillScoutSmokeDuration} 个时间单位，降低被命中的机会`;
+      break;
+    }
+
+    case 'fighter_focus': {
+      addStatusEffect(actor, {
+        id: FIGHTER_FOCUS_ID,
+        remaining: GAME_CONFIG.skillFighterFocusDuration,
+        hpPerTick: 0,
+        label: '精准节拍',
+        hitChanceMult: GAME_CONFIG.skillFighterFocusHitChanceMult,
+      });
+      detail = `持续 ${GAME_CONFIG.skillFighterFocusDuration} 个时间单位，提升攻击命中机会`;
+      break;
+    }
+
+    case 'engineer_reinforce': {
+      addStatusEffect(actor, {
+        id: ENGINEER_REINFORCE_ID,
+        remaining: GAME_CONFIG.skillEngineerReinforceDuration,
+        hpPerTick: 0,
+        label: '临时加固',
+        defenseBonus: GAME_CONFIG.skillEngineerReinforceDefenseBonus,
+      });
+      detail = `持续 ${GAME_CONFIG.skillEngineerReinforceDuration} 个时间单位，防御 +${GAME_CONFIG.skillEngineerReinforceDefenseBonus}`;
+      break;
+    }
+
+    case 'medic_regen': {
+      addStatusEffect(actor, {
+        id: MEDIC_REGEN_ID,
+        remaining: GAME_CONFIG.skillMedicRegenDuration,
+        hpPerTick: GAME_CONFIG.skillMedicRegenHpPerTick,
+        label: '持续止血',
+      });
+      detail = `持续 ${GAME_CONFIG.skillMedicRegenDuration} 个时间单位，每回合恢复 ${GAME_CONFIG.skillMedicRegenHpPerTick} 点生命`;
       break;
     }
   }

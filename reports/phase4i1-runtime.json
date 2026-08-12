@@ -1,0 +1,24 @@
+{
+  "version": "0.4.0",
+  "locked": {
+    "secondary": "fighter_focus",
+    "visible": true,
+    "usable": false,
+    "reason": "达到 Lv.3 后解锁"
+  },
+  "unlocked": {
+    "secondary": "fighter_focus",
+    "usable": true,
+    "feedback": "精准节拍"
+  },
+  "mobile": {
+    "slots": 6,
+    "controls": 7,
+    "controlsInView": 7,
+    "bodyScrollWidth": 390,
+    "documentScrollWidth": 390,
+    "titleCount": 0
+  },
+  "consoleErrors": [],
+  "pageErrors": []
+}

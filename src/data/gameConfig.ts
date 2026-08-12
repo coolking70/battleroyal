@@ -140,6 +140,9 @@ export const GAME_CONFIG = {
    * 每个技能自带 cooldown，禁止全局统一冷却。
    * 数值与 SKILL_DESIGN.md 逐字一致。
    */
+  /** 第二技能统一在 Lv.3 解锁；解锁状态由角色 level 推导，不入存档。 */
+  skillSecondaryUnlockLevel: 3,
+
   /* 侦察员 · 警觉侦察（信息） */
   /** 冷却 */
   skillReconCooldown: 10,
@@ -185,6 +188,29 @@ export const GAME_CONFIG = {
   skillTreatmentDuration: 4,
   /** 状态期间治疗类消耗品最终治疗量倍率 */
   skillTreatmentConsumableMult: 1.25,
+
+  /* --- Lv.3 第二技能（Phase 4I-1） ---
+   * 只复用既有体力、冷却与 StatusEffect 字段，不新增资源或随机抽取。
+   */
+  skillScoutSmokeCooldown: 10,
+  skillScoutSmokeStaminaCost: 3,
+  skillScoutSmokeDuration: 3,
+  skillScoutSmokeEvasionMult: 0.75,
+
+  skillFighterFocusCooldown: 12,
+  skillFighterFocusStaminaCost: 3,
+  skillFighterFocusDuration: 3,
+  skillFighterFocusHitChanceMult: 1.15,
+
+  skillEngineerReinforceCooldown: 10,
+  skillEngineerReinforceStaminaCost: 2,
+  skillEngineerReinforceDuration: 4,
+  skillEngineerReinforceDefenseBonus: 2,
+
+  skillMedicRegenCooldown: 10,
+  skillMedicRegenStaminaCost: 3,
+  skillMedicRegenDuration: 3,
+  skillMedicRegenHpPerTick: 4,
 
   /* --- 禁区 --- */
   /** 第一次公布禁区的时间单位 */
