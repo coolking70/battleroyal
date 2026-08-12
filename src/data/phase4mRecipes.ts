@@ -5,7 +5,7 @@ export const PHASE4M_RECIPES: Recipe[] = [
   { id: 'r_metal_plate', name: '金属板', ingredients: [{ itemId: 'iron', count: 2 }], outputItemId: 'metal_plate', outputCount: 1, description: '把两份铁料压平成通用板件。' },
   { id: 'r_sharpened_metal', name: '磨利金属', ingredients: [{ itemId: 'metal_plate', count: 1 }, { itemId: 'stone', count: 1 }], outputItemId: 'sharpened_metal', outputCount: 1, description: '用石材处理金属边缘。' },
   { id: 'r_metal_parts', name: '金属零件', ingredients: [{ itemId: 'scrap', count: 2 }, { itemId: 'iron', count: 1 }], outputItemId: 'metal_parts', outputCount: 1, description: '拆解废金属并分类成标准零件。' },
-  { id: 'r_reinforced_frame', name: '加固框架', ingredients: [{ itemId: 'metal_parts', count: 1 }, { itemId: 'metal_plate', count: 1 }], outputItemId: 'reinforced_frame', outputCount: 1, description: '把零件与金属板组合成承重骨架。' },
+  { id: 'r_reinforced_frame', name: '加固框架', ingredients: [{ itemId: 'metal_plate', count: 1 }, { itemId: 'metal_parts', count: 1 }], outputItemId: 'reinforced_frame', outputCount: 1, description: '把零件与金属板组合成承重骨架。' },
   { id: 'r_processed_wood', name: '处理木材', ingredients: [{ itemId: 'wood', count: 2 }], outputItemId: 'processed_wood', outputCount: 1, description: '削平并烘干木料。' },
   { id: 'r_wooden_handle', name: '木制握柄', ingredients: [{ itemId: 'processed_wood', count: 1 }, { itemId: 'rope_bundle', count: 1 }], outputItemId: 'wooden_handle', outputCount: 1, description: '用绳束加固处理木材。' },
   { id: 'r_bow_limb', name: '弓臂', ingredients: [{ itemId: 'processed_wood', count: 1 }, { itemId: 'rope_bundle', count: 1 }], outputItemId: 'bow_limb', outputCount: 1, description: '把处理木材弯成有弹性的弓臂。' },

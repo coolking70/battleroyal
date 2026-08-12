@@ -944,3 +944,23 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   audits and production npm audit pass; PHASE4M regression is 500/500
   trustworthy with all engine-health zero gates. Human playtest remains
   `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4M-AF progress (2026-08-13)
+
+- Verified PR #20 remains open/Draft at starting head
+  `1c0cafcf0e96d42f8f57c68f65b9b654aca07d46`; no merge, rebase or new PR.
+- Unified current-state route semantics on `buildCraftPlan()`: UI presentation
+  no longer performs a second runtime dependency traversal, and historical
+  `ITEM_CRAFTED` events no longer satisfy current requirements.
+- Added structural multiplicity and current allocation semantics, including
+  `war_axe` `metal_plate ×2`, raw-ready vs final-craft-ready fields, Codex
+  quantity presentation, deep NPC route, Engineer anti-chain regression and
+  utility `searchFindMult` validation.
+- Full suite: 93 files / 1535 tests PASS. Build, save/dependency/art/security
+  gates and production npm audit PASS. Phase4M-AF regression: 500/500
+  trustworthy, all engine-health counters 0; balance ratio 2.40 remains
+  `BALANCE OBSERVATION ONLY — BALANCE DEFERRED`.
+- Production browser smoke passed with the bundled Playwright client; gameplay
+  screenshot/state showed the factory goal banner and no console errors.
+- TODO: commit once, push the same branch, update Draft PR #20, wait for CI,
+  then stop for independent acceptance. Human playtest remains required.

@@ -389,6 +389,9 @@ export function validateItemRegistry(items: readonly ItemDef[] = ITEMS): string[
     }
     if (item.category === 'armor' && item.craftTier === 'final' && item.equipmentSlot !== 'armor') errors.push(`最终防具 ${item.id} 缺少 armor 槽位`);
     if (item.category === 'utility' && (item.craftTier !== 'final' || item.equipmentSlot !== 'utility')) errors.push(`utility ${item.id} 必须是最终 utility 装备`);
+    if (item.searchFindMult !== undefined && (typeof item.searchFindMult !== 'number' || !Number.isFinite(item.searchFindMult) || item.searchFindMult <= 0)) {
+      errors.push(`物品 ${item.id} searchFindMult 必须是有限正数`);
+    }
     if (item.category === 'consumable' && item.craftTier === 'final' && (item.healHp ?? 0) <= 0 && (item.healStamina ?? 0) <= 0) errors.push(`消耗品 ${item.id} 缺少正向效果`);
   }
   return errors;

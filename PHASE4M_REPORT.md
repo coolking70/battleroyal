@@ -84,11 +84,93 @@ following answers record the seam decisions used by this phase.
 - [x] Validate unique IDs, references, duplicate ingredients/outputs, cycles,
   raw leaves, component consumers and deterministic recipe depth.
 - [x] Add recursive `buildCraftPlan(state, actor, targetRecipeId)`.
+- [x] Phase4M-AF: consolidate all runtime route state onto `buildCraftPlan`.
 - [x] Add one utility equipment slot and save/equip/UI/NPC support.
 - [x] Preserve atomic crafting, Engineer `field_craft` charge semantics and
   weapon durability bounds.
-- [x] Complete Phase4M A–N tests, 8×5 matrix and 500-game regression evidence.
-- [ ] Complete browser evidence, human-playtest handoff, push and Draft PR.
+- [x] Complete Phase4M A–N tests, Phase4M-AF acceptance tests, 8×5 matrix and
+  500-game regression evidence.
+- [x] Complete automated browser evidence; human playtest remains open.
+
+## Acceptance Fix
+
+### Planner consolidation
+
+`src/core/craftPlan.ts` is now the only runtime authority for current-state
+craft routing. It computes structural route quantities, current inventory
+allocation, raw gaps, `nextStep`, `suggestedNextCraft`, direct craftability and
+final craftability. The previous UI-side runtime recursion in
+`craftPathPresentation.ts` (`OUTPUT_RECIPE_MAP`, `recipeDepth`,
+`buildCraftTreeSteps`, and the inventory/event completion walk) was removed.
+`craftGuide.ts` no longer maintains a second missing-raw traversal.
+
+UI components consume `craftPathSummary()`, which is now a presentation adapter
+over `buildCraftPlan()`. Codex retains only static dependency/source lookups for
+the public graph; all current route status and quantities come from the plan.
+NPC and AutoPlayer continue to consume `buildCraftPlan()` directly.
+
+### Shared dependency multiplicity
+
+`r_war_axe` structurally requires `metal_plate ×2`: one through
+`sharpened_metal`, and one through `reinforced_frame`. The plan keeps structural
+quantity separate from current ownership. After one plate is crafted and
+consumed by `r_sharpened_metal`, current `metal_plate` ownership is zero and the
+plan reports `required: 2, missing: 1`; it does not accept the historical craft
+event as completion. The remaining route recommends `r_metal_plate` before the
+second branch continues.
+
+The new `tests/phase4mAcceptanceFix.test.tsx` covers core multiplicity,
+consumption/reappearance, presentation quantity (`metal_plate ×2`), and the
+static Codex selector. React keys remain path/recipe-instance-safe without
+deduplicating the requirement count.
+
+### Current-state completion semantics
+
+`ITEM_CRAFTED(outputItemId)` history is retained for telemetry and progress
+feedback only. It is not authoritative evidence that a current dependency is
+satisfied. Completion is based on current inventory/equipped target state and
+the actual route allocation in `buildCraftPlan()`.
+
+### Raw-ready vs craft-ready
+
+The plan and UI now distinguish:
+
+- `rawReady`: all raw leaves are currently held;
+- `suggestedNextCraft` / `nextStep`: the next intermediate that can advance or
+  is first incomplete in the route;
+- `finalCraftable`: the final recipe's direct ingredients, stamina, output room
+  and playing-state checks are all currently legal.
+
+Thus a raw-complete `r_composite_bow_upgrade` route reports “原料齐全” and a
+next intermediate, not “可直接合成”; only `finalCraftable` produces the direct
+craft message. `CraftGoalBar`, Craft Panel, Codex, `describeCraftGoal()` and
+AutoPlayer route selection all use this unified state.
+
+### NPC and AutoPlayer
+
+The acceptance suite now runs a deterministic NPC `war_axe` deep route through
+real multi-step CRAFT turns and formal EQUIP, with no mid-route item injection.
+The representative AutoPlayer regression remains command-closed-loop:
+`SET_CRAFT_GOAL → MOVE/SEARCH → CRAFT → EQUIP`, with
+`DEBUG_GIVE_MATERIAL = 0`, component and final `ITEM_CRAFTED` evidence.
+
+### Engineer field craft and utility validation
+
+`field_craft` remains one formal charge for one successful free craft. The AF
+regression proves a failed craft preserves the charge, a successful craft
+consumes it, the following intermediate craft resumes its positive cost, and
+zero stamina cannot chain another free craft. `validateItemRegistry()` now
+rejects utility `searchFindMult` values that are NaN, infinite, zero or
+negative; `field_kit`'s value is unchanged.
+
+### Deferred
+
+Save backward compatibility: **DEFERRED UNTIL PRE-RELEASE SAVE FORMAT
+STABILIZATION**. No reinforced_handle migration or GAME_VERSION migration was
+added.
+
+Balance: **BALANCE OBSERVATION ONLY — BALANCE DEFERRED**. No gameplay values
+were changed to affect the regression ratio.
 
 ## Verification Record
 
@@ -99,7 +181,7 @@ after the full Phase4M implementation and regression run complete.
 ### Automated gates — 2026-08-13
 
 - `npm run typecheck`: PASS.
-- `npm test -- --run`: PASS — 92 files / 1524 tests.
+- `npm test -- --run`: PASS — 93 files / 1535 tests.
 - `npm run build`: PASS.
 - `npm run audit:save`: PASS — 102 malformed cases rejected, 102 control cases accepted.
 - `npm run audit:deps`: PASS — core/data max file 500 lines; R1/R2/R3/R4 = 0.
@@ -109,11 +191,12 @@ after the full Phase4M implementation and regression run complete.
 - `npm run art:security:browser`: PASS.
 - `npm run art:security:repo`: PASS.
 - `npm audit --omit=dev`: PASS — 0 vulnerabilities.
-- Required regression command completed with requested = actual = 500,
+- Required Phase4M-AF regression command completed with requested = actual = 500,
   trustworthy = 500 / 100%, timeout = 0, illegalState = 0, deadlock = 0,
   livelock = 0, stalled = 0, empty legal set = 0, hard-limit = 0 and crash = 0.
-  The historical character-balance ratio remains an observation (`10.15`),
-  while the engine/CI regression gate is PASS as specified by the phase.
+  Wins = 67, losses = 433, win rate = 13.4%, character-balance ratio = 2.40.
+  Balance remains observation only; the engine/CI regression gate is PASS as
+  specified by the phase.
 
 Machine-readable regression evidence: `reports/phase4m-regression.json` and
 `reports/phase4m-regression.md`.

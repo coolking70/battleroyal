@@ -30,8 +30,9 @@ function visibleRecipes(): Recipe[] {
 }
 
 /**
- * 公开合成图鉴：展示数据层的完整依赖关系与静态来源。
- * 这里不读取 zone.loot、其他角色或任何未来事件，只接收公开配方和玩家自身状态。
+ * 公开合成图鉴：静态配方关系与当前 actor plan 分层展示。
+ * 静态来源只读公开配方/区域池；当前状态、数量和 readiness 只消费
+ * craftPathSummary -> buildCraftPlan，不再在 Codex 内递归制作路线。
  */
 export function CraftingCodex({
   state,
@@ -100,6 +101,7 @@ export function CraftingCodex({
 
               {path && path.steps.length > 0 && (
                 <div className="craft-codex-steps" aria-label={`${recipe.name}依赖步骤`}>
+                  <div className="craft-codex-step-recipe">当前路线需求（共享部件按数量合并）</div>
                   {path.steps.map((step) => {
                     const stepRecipe = tryGetRecipe(step.recipeId);
                     return (
@@ -107,13 +109,14 @@ export function CraftingCodex({
                         className={`craft-codex-step craft-codex-step-${step.status}`}
                         data-codex-depth={step.depth}
                         data-codex-step-id={step.recipeId}
+                        data-codex-required={step.required}
                         key={step.recipeId}
                         style={{ '--codex-depth': step.depth } as CSSProperties}
                       >
                         <span className="craft-codex-step-marker" aria-hidden="true">
                           {step.status === 'complete' ? '✓' : step.status === 'ready' ? '○' : '!'}
                         </span>
-                        <strong>{step.name}</strong>
+                        <strong>{step.name}{step.required > 1 ? ` ×${step.required}` : ''}</strong>
                         <span className="craft-codex-step-depth">第 {step.depth} 层 · {STATUS_LABEL[step.status]}</span>
                         {stepRecipe && (
                           <span className="craft-codex-step-recipe">

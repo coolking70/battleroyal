@@ -1,10 +1,11 @@
-import type { Combatant, GameState, Recipe } from '../core/types';
-import { listRecipes } from '../core/crafting';
+import { buildCraftPlan } from '../core/craftPlan';
+import type { CraftPlanStep } from '../core/craftPlan';
 import { getZoneDistance } from '../core/craftGuide';
 import { weaponAttackOf } from '../core/inventory';
 import { getItem } from '../data/items';
-import { RECIPES, recipeVisibility, tryGetRecipe } from '../data/recipes';
+import { getRecipeDepth, RECIPES, recipeVisibility, tryGetRecipe } from '../data/recipes';
 import { ZONES } from '../data/zones';
+import type { Combatant, GameState } from '../core/types';
 
 /** 合成路线中的原始材料；来源只读取静态公开物资池，不读取 zone.loot。 */
 export interface RawCraftMaterial {
@@ -21,6 +22,7 @@ export interface IntermediateCraftStep {
   outputItemId: string;
   name: string;
   depth: number;
+  required: number;
 }
 
 export type CraftStepStatus = 'complete' | 'ready' | 'blocked';
@@ -31,6 +33,10 @@ export interface CraftTreeStep {
   outputItemId: string;
   name: string;
   depth: number;
+  required: number;
+  owned: number;
+  missing: number;
+  batchesRequired: number;
   status: CraftStepStatus;
 }
 
@@ -54,20 +60,19 @@ export interface CraftPathSummary {
   steps: CraftTreeStep[];
   /** 当前最先未完成的子目标；随着玩家物品变化自动推进。 */
   nextStep: CraftTreeStep | null;
+  /** raw leaf 已齐，但不等于目标配方可以直接执行。 */
+  rawReady: boolean;
+  /** 目标配方本身当前可执行。 */
+  finalCraftable: boolean;
+  /** 当前背包/目标装备中真实拥有目标成品。 */
+  targetComplete: boolean;
 }
 
-const OUTPUT_RECIPE_MAP = new Map(
+// Static-only query used by Codex source display. Runtime route state must use
+// buildCraftPlan below; this map never reads inventory or computes readiness.
+const STATIC_RECIPE_BY_OUTPUT = new Map(
   RECIPES.map((recipe) => [recipe.outputItemId, recipe]),
 );
-
-function staticSourceZones(itemId: string, state: GameState): string[] {
-  return ZONES
-    .filter((zone) => {
-      const isStaticSource = zone.basePool.includes(itemId) || zone.rarePool.includes(itemId);
-      return isStaticSource && state.zones[zone.id]?.status !== 'restricted';
-    })
-    .map((zone) => zone.id);
-}
 
 /** 图鉴可用的静态公开来源，不读取当前区域库存。 */
 export function publicSourceZones(itemId: string): string[] {
@@ -82,7 +87,7 @@ export function rawMaterialIdsForRecipe(recipeId: string): string[] {
   if (!recipe) return [];
   const result = new Set<string>();
   const visit = (itemId: string, seen: Set<string>): void => {
-    const child = OUTPUT_RECIPE_MAP.get(itemId);
+    const child = STATIC_RECIPE_BY_OUTPUT.get(itemId);
     if (!child || seen.has(child.id)) {
       result.add(itemId);
       return;
@@ -94,70 +99,18 @@ export function rawMaterialIdsForRecipe(recipeId: string): string[] {
   return [...result].sort();
 }
 
-function recipeDepth(recipe: Recipe, seen = new Set<string>()): number {
-  if (seen.has(recipe.id)) return 1;
-  const nextSeen = new Set(seen).add(recipe.id);
-  return 1 + Math.max(
-    0,
-    ...recipe.ingredients.map((ingredient) => {
-      const child = OUTPUT_RECIPE_MAP.get(ingredient.itemId);
-      return child ? recipeDepth(child, nextSeen) : 0;
-    }),
-  );
-}
-
-function ownedCount(player: Combatant, itemId: string): number {
-  return [...player.inventory, ...player.equipment]
-    .filter((stack) => stack.itemId === itemId)
-    .reduce((sum, stack) => sum + stack.count, 0);
-}
-
-function hasCraftedOutput(state: GameState, player: Combatant, itemId: string): boolean {
-  return state.events.some(
-    (event) =>
-      event.type === 'ITEM_CRAFTED' &&
-      event.actorId === player.id &&
-      event.metadata.outputItemId === itemId,
-  );
-}
-
-function buildCraftTreeSteps(
-  recipe: Recipe,
-  state: GameState,
-  player: Combatant,
-  seen = new Set<string>(),
-): CraftTreeStep[] {
-  if (seen.has(recipe.id)) return [];
-  // `seen` is a traversal-wide set, not only a recursion-path set. Shared
-  // components (for example rope_bundle and metal_plate) appear under many
-  // final recipes; rendering them once keeps the dependency tree a DAG and
-  // prevents duplicate React keys without hiding any dependency edge.
-  seen.add(recipe.id);
-  const children = recipe.ingredients.flatMap((ingredient) => {
-    const child = OUTPUT_RECIPE_MAP.get(ingredient.itemId);
-    return child ? buildCraftTreeSteps(child, state, player, seen) : [];
-  });
-  const view = listRecipes(state, player).find((candidate) => candidate.recipe.id === recipe.id);
-  const output = getItem(recipe.outputItemId);
-  // 中间部件可能已经被下一步消耗；玩家自己的合成事件仍是合法的进度证据。
-  const complete =
-    ownedCount(player, recipe.outputItemId) >= recipe.outputCount ||
-    hasCraftedOutput(state, player, recipe.outputItemId);
-  const status: CraftStepStatus = complete
-    ? 'complete'
-    : view?.craftable
-      ? 'ready'
-      : 'blocked';
-  return [
-    ...children,
-    {
-      recipeId: recipe.id,
-      outputItemId: recipe.outputItemId,
-      name: output.name,
-      depth: recipeDepth(recipe),
-      status,
-    },
-  ];
+function presentPlanStep(step: CraftPlanStep): CraftTreeStep {
+  return {
+    recipeId: step.recipeId,
+    outputItemId: step.outputItemId,
+    name: step.name,
+    depth: step.depth,
+    required: step.required,
+    owned: step.owned,
+    missing: step.missing,
+    batchesRequired: step.batchesRequired,
+    status: step.status === 'craftable' ? 'ready' : step.status,
+  };
 }
 
 /**
@@ -171,69 +124,29 @@ export function craftPathSummary(
   player: Combatant,
 ): CraftPathSummary | null {
   const target = tryGetRecipe(recipeId);
-  if (!target) return null;
-
-  const available = new Map<string, number>();
-  for (const stack of player.inventory) {
-    available.set(stack.itemId, (available.get(stack.itemId) ?? 0) + stack.count);
-  }
-
-  const raw = new Map<string, RawCraftMaterial>();
-  const intermediate = new Map<string, IntermediateCraftStep>();
-
-  const visitItem = (
-    itemId: string,
-    requested: number,
-    depth: number,
-    visiting: Set<string>,
-  ): void => {
-    const held = Math.min(requested, available.get(itemId) ?? 0);
-    if (held > 0) available.set(itemId, (available.get(itemId) ?? 0) - held);
-    const missing = requested - held;
-    const recipe = OUTPUT_RECIPE_MAP.get(itemId);
-
-    if (missing <= 0) return;
-    if (!recipe || visiting.has(itemId)) {
-      const existing = raw.get(itemId) ?? {
-        itemId,
-        required: 0,
-        held: 0,
-        missing: 0,
-        sourceZoneIds: staticSourceZones(itemId, state),
-      };
-      existing.required += requested;
-      existing.held += held;
-      existing.missing += missing;
-      raw.set(itemId, existing);
-      return;
-    }
-
-    const outputBatches = Math.ceil(missing / recipe.outputCount);
-    const nextVisiting = new Set(visiting).add(itemId);
-    for (const ingredient of recipe.ingredients) {
-      visitItem(ingredient.itemId, ingredient.count * outputBatches, depth + 1, nextVisiting);
-    }
-    intermediate.set(itemId, {
-      recipeId: recipe.id,
-      outputItemId: itemId,
-      name: getItem(itemId).name,
-      depth,
-    });
-  };
-
-  for (const ingredient of target.ingredients) {
-    visitItem(ingredient.itemId, ingredient.count, 1, new Set([target.outputItemId]));
-  }
-
-  const steps = buildCraftTreeSteps(target, state, player);
-  const nextStep = steps.find((step) => step.status !== 'complete') ?? null;
+  const plan = buildCraftPlan(state, player, recipeId);
+  if (!target || !plan) return null;
+  const steps = plan.steps.map(presentPlanStep);
+  const nextStep = plan.nextStep ? presentPlanStep(plan.nextStep) : null;
+  const intermediateSteps = steps
+    .filter((step) => step.recipeId !== target.id)
+    .map((step) => ({
+      recipeId: step.recipeId,
+      outputItemId: step.outputItemId,
+      name: step.name,
+      depth: step.depth,
+      required: step.required,
+    }));
 
   return {
-    depth: recipeDepth(target),
-    rawMaterials: [...raw.values()],
-    intermediateSteps: [...intermediate.values()].sort((a, b) => b.depth - a.depth || a.recipeId.localeCompare(b.recipeId)),
+    depth: getRecipeDepth(target.id),
+    rawMaterials: plan.rawGaps,
+    intermediateSteps,
     steps,
     nextStep,
+    rawReady: plan.rawReady,
+    finalCraftable: plan.finalCraftable,
+    targetComplete: plan.targetStep.status === 'complete',
   };
 }
 
@@ -280,7 +193,9 @@ export function getCraftGoalSuggestion(
       sourceZoneIds,
       reason: nextStep
         ? `攻击 +${attack} · 当前先做「${nextStep.name}」 · 公开来源可在图鉴查看`
-        : `攻击 +${attack} · 材料与步骤已齐，可直接合成`,
+        : path.finalCraftable
+          ? `攻击 +${attack} · 当前材料已齐，可直接合成`
+          : `攻击 +${attack} · 当前路线正在等待可执行步骤`,
     } satisfies CraftGoalSuggestion;
   }).filter((candidate): candidate is CraftGoalSuggestion => candidate !== null);
 
@@ -318,6 +233,8 @@ export interface CraftGoalBanner {
   outputItemId: string;
   name: string;
   completed: boolean;
+  rawReady: boolean;
+  finalCraftable: boolean;
   /** 当前最先未完成的子目标名；全部步骤就绪时为 null */
   nextStepName: string | null;
   /** 缺口最大的原始材料（最多 3 项） */
@@ -332,7 +249,6 @@ const BANNER_ZONE_LIMIT = 3;
 function bannerFromPath(
   kind: CraftGoalBanner['kind'],
   recipeId: string,
-  completed: boolean,
   state: GameState,
   player: Combatant,
 ): CraftGoalBanner | null {
@@ -373,7 +289,9 @@ function bannerFromPath(
     recipeId,
     outputItemId: recipe.outputItemId,
     name: getItem(recipe.outputItemId).name,
-    completed,
+    completed: path.targetComplete,
+    rawReady: path.rawReady,
+    finalCraftable: path.finalCraftable,
     nextStepName: path.nextStep?.name ?? null,
     gaps,
     sourceZoneNames,
@@ -398,14 +316,13 @@ export function craftGoalBanner(
     return bannerFromPath(
       'goal',
       state.craftGoalRecipeId,
-      state.craftGoalCompleted,
       state,
       player,
     );
   }
   const suggestion = getCraftGoalSuggestion(state, player);
   if (!suggestion) return null;
-  return bannerFromPath('suggestion', suggestion.recipeId, false, state, player);
+  return bannerFromPath('suggestion', suggestion.recipeId, state, player);
 }
 
 /** 玩家自己的最近一次合成，用于复用 4B-3 的原地结果卡形态。 */
