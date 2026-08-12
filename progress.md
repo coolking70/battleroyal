@@ -852,3 +852,25 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   no balance value was adjusted.
 - Deliverables: `PHASE4I1_REPORT.md`, `reports/phase4i1-balance.json`,
   `reports/phase4i1-runtime.json`, and browser evidence under ignored `output/`.
+
+## Phase 4J-0 progress (2026-08-12)
+
+- Started `codex/phase4j0-balance-diagnosis` from exact `main @ 637ee4e`.
+- Added only the read-only `tools/phase4j0BalanceDiagnosis.ts` diagnostic and JSON
+  outputs; `src/core/**`, `src/data/**`, UI, gameplay values/rules, RNG and assets
+  remain unchanged.
+- Completed the 20 seed groups × 5 policy observation: requested=actual 100,
+  trustworthy 100/100, no timeout/deadlock/illegal/hard-limit. Measured 2 wins,
+  98 deaths, 89 battle deaths, average kills 0.06, final levels Lv.2 3%, Lv.3 46%,
+  Lv.4 41%, Lv.5 10%, and rest 1.70% of advancing action time.
+- The report explicitly separates measured facts from inference and human-playtest
+  needs. It records that the standard autoPlayer obtained weapons in 45% of games but
+  emitted no player EQUIP command, so equipment conversion is not treated as a human
+  conclusion. No adjustment option was implemented.
+- Deliverables: `PHASE4J0_DIAGNOSIS.md`,
+  `reports/phase4j0-diagnosis.json`, `reports/phase4j0-options.json`, and the
+  diagnostic tool. Clean gates pass: `npm ci`, typecheck, **87 files / 1433 tests**,
+  build, save/dependency/art/security audits, 500-game PHASE4J0 engine-health
+  regression (requested=actual=500; trustworthy=500; timeout/deadlock/illegal/
+  hard-limit=0), and production `npm audit --omit=dev`. Binary evidence remains
+  local/ignored; only JSON snapshots are tracked.
