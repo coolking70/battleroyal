@@ -75,7 +75,7 @@ Phase 4L 将可玩职业从 4 个扩展到 8 个，新增：
 已通过：
 
 - `npm run typecheck`
-- `npm test` — 91 files / 1506 tests
+- `npm test` — 91 files / 1509 tests
 - `npm run build`
 - `npm run audit:save`
 - `npm run audit:deps`

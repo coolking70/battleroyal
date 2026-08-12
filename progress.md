@@ -927,3 +927,4 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Final `PHASE4L-AF` regression: 500/500 trustworthy, engine health PASS, all
   illegal/deadlock/livelock/stall/empty-legal-set/hard-limit counters 0; balance
   ratio 2.77 remains observation only. Human playtest remains required.
+- Final Phase 4L gate metadata: `npm test` — 91 files / 1509 tests.
