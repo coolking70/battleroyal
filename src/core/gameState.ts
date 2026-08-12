@@ -23,19 +23,11 @@ const PERSONALITIES: Personality[] = [
   'random',
 ];
 
-const NEW_ZONE_IDS = ZONE_IDS.filter((id) => !LEGACY_ZONE_IDS.includes(id as never));
+/** 新游戏的 player / NPC 出生统一从当前完整固定地图候选池抽取。 */
+export const SPAWN_ZONE_IDS: readonly string[] = ZONE_IDS;
 
-/**
- * 出生仍由固定区域表驱动。旧六区存档/种子的主 RNG 序列必须保持不变，
- * 所以兼容路径先沿用旧区域抽样，再用 seed 派生流把新区纳入候选；派生流
- * 不会影响后续搜索、战斗或 NPC 决策的随机序列。
- */
-function pickSpawnZone(seed: string, roleIndex: number, rng: SeededRandom): string {
-  const legacy = rng.pick(LEGACY_ZONE_IDS) ?? 'school';
-  if (NEW_ZONE_IDS.length === 0) return legacy;
-  const extensionRng = new SeededRandom(`phase4k:spawn:${seed}:${roleIndex}`);
-  if (!extensionRng.chance(0.05)) return legacy;
-  return extensionRng.pick(NEW_ZONE_IDS) ?? legacy;
+export function pickSpawnZone(rng: SeededRandom): string {
+  return rng.pick(SPAWN_ZONE_IDS) ?? SPAWN_ZONE_IDS[0] ?? 'school';
 }
 
 export const PERSONALITY_LABEL: Record<Personality, string> = {
@@ -208,7 +200,7 @@ export function createGame(options: CreateGameOptions): GameState {
   }
 
   // --- 玩家 ---
-  const playerZone = pickSpawnZone(options.seed, 0, rng);
+  const playerZone = pickSpawnZone(rng);
   const player = createCombatant({
     id: 'p0',
     name: options.playerName?.trim() || '你',
@@ -231,7 +223,7 @@ export function createGame(options: CreateGameOptions): GameState {
       isPlayer: false,
       characterId: template ? template.id : 'scout',
       personality: personalities[i] ?? 'random',
-      zoneId: pickSpawnZone(options.seed, i + 1, rng),
+      zoneId: pickSpawnZone(rng),
     });
     state.characters[npc.id] = npc;
     state.turnOrder.push(npc.id);

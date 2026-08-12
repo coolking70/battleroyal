@@ -17,7 +17,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { GAME_CONFIG } from '../src/data/gameConfig';
-import { createGame } from '../src/core/gameState';
+import { createGame, refreshZoneOccupants } from '../src/core/gameState';
 import {
   runWorldEvents,
   WORLD_EVENT_IDS,
@@ -250,6 +250,7 @@ describe('研究异常 research_anomaly — 行为规则', () => {
     const npc = Object.values(s.characters).find((c) => !c.isPlayer)!;
     npc.currentZoneId = lab.id;
     npc.hp = 50;
+    refreshZoneOccupants(s);
     const before = npc.stats.damageTaken;
     const eventCountBefore = s.events.length;
     applyWorldEventTickDamage(s);

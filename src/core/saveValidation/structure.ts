@@ -9,6 +9,7 @@
  */
 
 import { GAME_VERSION } from '../../data/gameConfig';
+import { ZONE_IDS } from '../../data/zones';
 import { isFiniteNumber, isRecord, ZONE_ID_SET, type ValidationContext } from './types';
 
 /**
@@ -94,6 +95,17 @@ export function buildContext(raw: unknown, errors: string[]): ValidationContext 
 
   const characters = state.characters as Record<string, unknown>;
   const zones = state.zones as Record<string, unknown>;
+  const expectedZoneIds = new Set(ZONE_IDS);
+  for (const zoneId of ZONE_IDS) {
+    if (!Object.prototype.hasOwnProperty.call(zones, zoneId)) {
+      fail(`缺少当前版本区域：${zoneId}`);
+    }
+  }
+  for (const zoneId of Object.keys(zones)) {
+    if (!expectedZoneIds.has(zoneId)) {
+      fail(`存档包含未知区域：${zoneId}`);
+    }
+  }
   const ctx: ValidationContext = {
     raw,
     state,

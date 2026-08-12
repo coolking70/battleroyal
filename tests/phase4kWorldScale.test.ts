@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { GAME_CONFIG } from '../src/data/gameConfig';
+import { GAME_CONFIG, SAVE_KEY } from '../src/data/gameConfig';
 import {
   LEGACY_ZONE_IDS,
   ZONE_IDS,
@@ -14,13 +14,15 @@ import { advancePhase } from '../src/core/phase';
 import { executeCommand } from '../src/core/gameEngine';
 import { clearInventory, newGame, npcs, player } from './helpers';
 import { announceWarning, promoteWarnings, safeZoneIds } from '../src/core/restrictedZones';
-import { refreshZoneOccupants } from '../src/core/gameState';
+import { refreshZoneOccupants, SPAWN_ZONE_IDS } from '../src/core/gameState';
 import { SeededRandom } from '../src/core/random';
 import {
   createMemoryStorage,
   loadGame,
   saveGame,
   setStorage,
+  type SaveData,
+  type StorageLike,
 } from '../src/core/saveLoad';
 import type { GameState } from '../src/core/types';
 import { validateZoneLootPools } from '../src/core/zoneLoot';
@@ -56,6 +58,23 @@ function setPlayerZone(state: GameState, zoneId: string): void {
   refreshZoneOccupants(state);
 }
 
+function writeRawSave(
+  storage: StorageLike,
+  state: GameState,
+  mutate: (raw: SaveData) => void = () => undefined,
+): void {
+  const raw: SaveData = {
+    version: state.version,
+    savedAt: Date.now(),
+    seed: state.seed,
+    time: state.time,
+    rngState: state.rngState,
+    state: structuredClone(state),
+  };
+  mutate(raw);
+  storage.setItem(SAVE_KEY, JSON.stringify(raw));
+}
+
 describe('Phase 4K · fixed world graph and zone content', () => {
   it('contains at least 12 playable zones with a connected, symmetric simple graph', () => {
     expect(ZONES.length).toBeGreaterThanOrEqual(12);
@@ -76,7 +95,8 @@ describe('Phase 4K · fixed world graph and zone content', () => {
         expect(tryGetItem(itemId), `${zone.id} -> ${itemId}`).not.toBeNull();
       }
     }
-    expect(new Set(ZONES.slice(6).map((zone) => zone.basePool.join('|'))).size).toBe(6);
+    const newZoneBasePools = NEW_ZONE_IDS.map((id) => getZoneDef(id).basePool.join('|'));
+    expect(new Set(newZoneBasePools).size).toBe(NEW_ZONE_IDS.length);
   });
 
   it('searches every new zone without a hidden six-zone branch', () => {
@@ -197,16 +217,23 @@ describe('Phase 4K · restricted zones, craft routes and spawns', () => {
     }
   });
 
-  it('allows both player and NPC spawn selection to reach new zones', () => {
+  it('uses one unified 12-zone spawn candidate pool for player and NPCs', () => {
+    expect(SPAWN_ZONE_IDS).toEqual(ZONE_IDS);
     const playerZones = new Set<string>();
     const npcZones = new Set<string>();
-    for (let i = 0; i < 256; i++) {
+    for (let i = 0; i < 1024; i++) {
       const state = newGame(`PHASE4K-SPAWN-${i}`);
       playerZones.add(player(state).currentZoneId);
       for (const npc of npcs(state)) npcZones.add(npc.currentZoneId);
     }
-    expect(NEW_ZONE_IDS.some((id) => playerZones.has(id))).toBe(true);
-    expect(NEW_ZONE_IDS.some((id) => npcZones.has(id))).toBe(true);
+    expect([...playerZones].sort()).toEqual([...ZONE_IDS].sort());
+    expect([...npcZones].sort()).toEqual([...ZONE_IDS].sort());
+
+    const first = newGame('PHASE4K-SPAWN-DETERMINISTIC');
+    const second = newGame('PHASE4K-SPAWN-DETERMINISTIC');
+    expect(Object.fromEntries(Object.entries(first.characters).map(([id, c]) => [id, c.currentZoneId]))).toEqual(
+      Object.fromEntries(Object.entries(second.characters).map(([id, c]) => [id, c.currentZoneId])),
+    );
   });
 });
 
@@ -249,20 +276,73 @@ describe('Phase 4K · save/load compatibility', () => {
     const state = newGame('PHASE4K-SAVE-LEGACY');
     for (const character of Object.values(state.characters)) character.currentZoneId = 'school';
     refreshZoneOccupants(state);
-    const raw = {
-      version: state.version,
-      savedAt: Date.now(),
-      seed: state.seed,
-      time: state.time,
-      rngState: state.rngState,
-      state: structuredClone(state),
-    };
-    for (const id of NEW_ZONE_IDS) delete (raw.state.zones as Record<string, unknown>)[id];
-    storage.setItem('zone-br.save.v2', JSON.stringify(raw));
+    const originalRngState = state.rngState;
+    writeRawSave(storage, state, (raw) => {
+      for (const id of NEW_ZONE_IDS) delete (raw.state.zones as Record<string, unknown>)[id];
+    });
     const loaded = loadGame();
     expect(loaded.ok).toBe(true);
     if (!loaded.ok) return;
     expect(Object.keys(loaded.data.state.zones)).toEqual(ZONE_IDS);
     expect(loaded.data.state.characters[state.playerId]!.currentZoneId).toBe('school');
+    expect(loaded.data.state.rngState).toBe(originalRngState);
+  });
+
+  it.each([
+    ['缺少一个新区', (raw: SaveData) => { delete (raw.state.zones as Record<string, unknown>).park; }, '缺少当前版本区域：park'],
+    ['缺少多个但不是全部新区', (raw: SaveData) => {
+      delete (raw.state.zones as Record<string, unknown>).park;
+      delete (raw.state.zones as Record<string, unknown>).underground;
+    }, '缺少当前版本区域：park'],
+    ['legacy 六区加一个新区', (raw: SaveData) => {
+      for (const id of NEW_ZONE_IDS) {
+        if (id !== 'commercial') delete (raw.state.zones as Record<string, unknown>)[id];
+      }
+    }, '缺少当前版本区域：station'],
+    ['完整当前存档加未知区域', (raw: SaveData) => {
+      (raw.state.zones as Record<string, unknown>).unknown_zone = structuredClone(raw.state.zones.school);
+    }, '存档包含未知区域：unknown_zone'],
+    ['legacy 六区加未知区域', (raw: SaveData) => {
+      for (const id of NEW_ZONE_IDS) delete (raw.state.zones as Record<string, unknown>)[id];
+      (raw.state.zones as Record<string, unknown>).unknown_zone = structuredClone(raw.state.zones.school);
+    }, '缺少当前版本区域：commercial'],
+  ])('拒绝损坏或非 exact legacy 的存档：%s', (_label, mutate, errorText) => {
+    const storage = createMemoryStorage();
+    setStorage(storage);
+    writeRawSave(storage, newGame(`PHASE4K-SAVE-CORRUPT-${_label}`), mutate);
+    const loaded = loadGame();
+    expect(loaded.ok).toBe(false);
+    expect(loaded.error).toContain('存档校验未通过');
+    expect(loaded.error).toContain(errorText);
+  });
+
+  it('legacy migration does not alter rngState and keeps the next command deterministic', () => {
+    const state = newGame('PHASE4K-SAVE-MIGRATION-DETERMINISTIC');
+    for (const character of Object.values(state.characters)) character.currentZoneId = 'school';
+    refreshZoneOccupants(state);
+    const storageA = createMemoryStorage();
+    const storageB = createMemoryStorage();
+    const writeLegacy = (storage: StorageLike): number => {
+      writeRawSave(storage, state, (raw) => {
+        for (const id of NEW_ZONE_IDS) delete (raw.state.zones as Record<string, unknown>)[id];
+      });
+      const raw = JSON.parse(storage.getItem(SAVE_KEY)!) as SaveData;
+      return raw.state.rngState;
+    };
+    const originalRngState = writeLegacy(storageA);
+    writeLegacy(storageB);
+
+    setStorage(storageA);
+    const a = loadGame();
+    setStorage(storageB);
+    const b = loadGame();
+    expect(a.ok && b.ok).toBe(true);
+    if (!a.ok || !b.ok) return;
+    expect(a.data.state.rngState).toBe(originalRngState);
+    expect(b.data.state.rngState).toBe(originalRngState);
+    const target = getZoneDef('school').adjacent[0]!;
+    const nextA = executeCommand(a.data.state, { type: 'MOVE', zoneId: target });
+    const nextB = executeCommand(b.data.state, { type: 'MOVE', zoneId: target });
+    expect(nextB).toEqual(nextA);
   });
 });

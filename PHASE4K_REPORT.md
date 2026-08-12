@@ -89,7 +89,8 @@ construction -- underground
 - 无 self-loop；
 - 无 duplicate adjacency；
 - BFS 全图连通；
-- 每个节点有 2–4 个邻接点。
+
+每个节点 2–4 个邻接点由 `tests/phase4kWorldScale.test.ts` 单独验证；这是内容拓扑约束，不是 `validateZoneGraph()` 的通用图结构检查。
 
 `tests/phase4kWorldScale.test.ts` 的 graph integrity 用例通过，结果为 `validateZoneGraph() = []`。
 
@@ -115,29 +116,38 @@ construction -- underground
 
 ## 11. Spawn Compatibility
 
-player 和 NPC 都通过统一的可扩展 spawn 选择逻辑参与新区出生。为保留旧区域主 RNG 序列，旧六区选择仍消耗原 RNG，新区候选通过 `phase4k:spawn:${seed}:${roleIndex}` 派生 RNG 进入；256 个固定 seed 的测试已确认 player 与 NPC 都能出生在新区。没有加入角色、职业或新的出生公平性调参。
+player 和 NPC 都通过同一个 `SPAWN_ZONE_IDS = ZONE_IDS` 完整候选池出生。已移除 legacy-first、5% 新区切换和旧 seed 出生位置兼容路径；当前版本只保证同版本、同 seed、同角色和同输入可确定复现。1024 个固定 seed 已验证 player 与 NPC 都覆盖全部 12 区，没有人为压低新区概率，也没有加入出生公平性调参。
 
 ## 12. Save Compatibility
 
 - 新区 round-trip：玩家位于 `underground`，含 inventory、equipment、stats、NPC、warning/restricted 状态时 serialize → deserialize 后状态一致，并可继续执行确定性移动。
-- 旧存档：移除新区 ZoneState 的同版本六区存档仍可加载；迁移会为每个缺失新区补建 safe 状态和确定性初始 loot。
+- 旧存档：只有 `state.zones` key 集合精确等于 legacy 六区时才迁移；迁移会为每个新区补建 safe 状态和确定性初始 loot，并保持原 `state.rngState`。
+- 部分缺失新区的当前存档、7–11 区部分存档、legacy 六区加新区、unknown zone 均不会迁移，正式 save validation 会拒绝并给出缺失/未知区域错误。
 - 其他版本仍由原有版本闸门拒绝，没有扩大静默迁移范围。
 
 ## 13. Information Boundary
 
 地图 UI 只显示当前公开区域状态、邻接可移动状态和当前区域地面可见信息；没有为了显示 12 区而读取或显示未发现 NPC 的精确位置、NPC inventory/equipment/intention、隐藏事件、远端 ground item 或未公开搜索结果。现有 `visibleEventsForPlayer` / projection 边界保持不变，信息架构回归测试通过。
 
-## 14. Regression Simulation
+## 14. Acceptance Fix
 
-执行：`npm run simulate -- --games 500 --seed-prefix PHASE4K --regression`
+本轮独立验收发现并修复三个阻断问题：
+
+1. **legacy-first 5% new-zone spawn bias**：根因是旧六区抽样后仅以 0.05 概率切换新区；修复为 player/NPC 共用完整 `ZONE_IDS` 候选池。出生测试覆盖全部 12 区及同 seed 确定性。
+2. **partial-current-save incorrectly treated as legacy migration**：根因是迁移器只检查 legacy 六区存在；修复为 exact legacy key signature，任何当前存档缺区或 unknown zone 均由 validation 拒绝。新增 5 类损坏/非 legacy 迁移测试，并扩展 `audit:save` 缺区/未知区用例。
+3. **Phase 4K regression overwrote historical Phase 3 evidence**：根因是模拟命令使用默认 `reports/phase3-balance.*` 输出；已恢复 base commit 的历史 Phase 3 文件，并将本轮回归写入独立 `reports/phase4k-regression.json` / `.md`。
+
+## 15. Regression Simulation
+
+执行：`npm run simulate -- --games 500 --seed-prefix PHASE4K --regression --output reports/phase4k-regression.json`
 
 | 指标 | 结果 |
 | --- | ---: |
 | requested games | 500 |
 | actual games | 500 |
 | trustworthy games | 500 / 500（100%） |
-| wins / losses | 48 / 452 |
-| win rate | 9.6% |
+| wins / losses | 43 / 457 |
+| win rate | 8.6% |
 | illegal commands | 0 |
 | deadlock / livelock / stalled | 0 |
 | hard limit | 0 |
@@ -145,14 +155,13 @@ player 和 NPC 都通过统一的可扩展 spawn 选择逻辑参与新区出生�
 
 玩家死亡原因（452 个失败对局）：
 
-- 战斗：262
-- 禁区侵蚀：112
-- 衰竭：75
-- 研究设施异常：3
+- 战斗：276
+- 禁区侵蚀：93
+- 衰竭：88
 
-Regression gate 和引擎健康 gate 通过。角色平衡观察项为 ratio 2.57、标记 FAIL，但这不影响本阶段 Regression；**BALANCE OBSERVATION ONLY — BALANCE DEFERRED**。胜率和角色胜率不作为 Phase 4K 验收标准，本阶段没有进行 balance tuning。
+结果文件：[reports/phase4k-regression.json](/Users/coolking70/Documents/同步空间/battleroyal/reports/phase4k-regression.json)、[reports/phase4k-regression.md](/Users/coolking70/Documents/同步空间/battleroyal/reports/phase4k-regression.md)。Regression gate 和引擎健康 gate 通过。角色平衡仅作观察，不影响本轮 PASS/FAIL；**BALANCE OBSERVATION ONLY — BALANCE DEFERRED**。胜率和角色胜率不作为 Phase 4K 验收标准，本阶段没有进行 balance tuning。
 
-## 15. Human Playtest
+## 16. Human Playtest
 
 ### VERIFIED
 
@@ -164,24 +173,24 @@ Regression gate 和引擎健康 gate 通过。角色平衡观察项为 ratio 2.5
 
 自动测试不能证明真实桌面/移动端的视觉密度、文字覆盖、节点可读性和手指点击舒适度。请按 `PHASE4K_HUMAN_PLAYTEST.md` 完成 Desktop、Mobile 和实际 MOVE/SEARCH/PICKUP/CRAFT/restricted transition 验收。
 
-## 16. Regression Gates
+## 17. Regression Gates
 
 | Gate | 结果 |
 | --- | --- |
 | `npm run typecheck` | PASS |
-| `npm test` | PASS — 90 files, 1464 tests |
+| `npm test` | PASS — 90 files, 1472 tests |
 | `npm run build` | PASS |
-| `npm run audit:save` | PASS — damaged 89, rejected 89, construction failures 0 |
+| `npm run audit:save` | PASS — damaged 91, rejected 91, construction failures 0 |
 | `npm run audit:deps` | PASS — 78 scans, core/data max 500 lines, R1/R2/R3/R4 = 0 |
 | `npm run art:doctor -- --offline` | PASS — 36 tasks |
 | `npm run art:validate` | PASS |
 | `npm run art:audit:phase4a` | PASS — manifest/provenance/candidate/runtime all PASS |
 | `npm run art:security:browser` | PASS — 213 files |
-| `npm run art:security:repo` | PASS — 900 tracked files |
+| `npm run art:security:repo` | PASS — 905 tracked files |
 | `npm audit --omit=dev` | PASS — 0 vulnerabilities |
-| 500-game regression | PASS — requested/actual一致、引擎健康通过 |
+| 500-game regression | PASS — 独立 `reports/phase4k-regression.*`，requested/actual一致、引擎健康通过 |
 
-## 17. Deferred Work
+## 18. Deferred Work
 
 本阶段明确没有提前实现：
 
@@ -191,7 +200,7 @@ Regression gate 和引擎健康 gate 通过。角色平衡观察项为 ratio 2.5
 - Phase 4O 多胜利条件；
 - content-complete balance pass。
 
-## 18. Roadmap
+## 19. Roadmap
 
 - **Phase 4L — Expanded Character / Profession Roster**：扩充至约 8–10 个具有明显职业、被动和技能身份的角色。
 - **Phase 4M — Equipment & Crafting 2.0**：建立多层、多分支 crafting graph，扩充材料、中间件、武器、防具和 utility equipment。

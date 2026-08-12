@@ -45,8 +45,13 @@ export function migrateMissingZoneStates(raw: unknown): unknown {
   if (!isRecord(raw) || !isRecord(raw.state) || !isRecord(raw.state.zones)) return raw;
 
   const zones = raw.state.zones;
-  const isLegacyMap = LEGACY_ZONE_IDS.every((id) => isRecord(zones[id]));
-  if (!isLegacyMap) return raw;
+  const legacyIds = new Set<string>(LEGACY_ZONE_IDS);
+  const zoneKeys = Object.keys(zones);
+  const isExactLegacyMap =
+    zoneKeys.length === LEGACY_ZONE_IDS.length &&
+    zoneKeys.every((id) => legacyIds.has(id)) &&
+    LEGACY_ZONE_IDS.every((id) => isRecord(zones[id]));
+  if (!isExactLegacyMap) return raw;
 
   const seed = typeof raw.state.seed === 'string' ? raw.state.seed : 'invalid-save';
   for (const def of ZONES) {
