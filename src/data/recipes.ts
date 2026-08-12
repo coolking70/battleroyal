@@ -1,10 +1,12 @@
 import type { Recipe } from '../core/types';
+import { PHASE4M_RECIPES } from './phase4mRecipes';
+import { ITEMS as ITEMS_FOR_GRAPH } from './items';
 
 /**
  * Phase 4C-1 共 17 条配方：11 条武器、3 条防具、3 条治疗。
  * 武器树允许“基础材料 → 中间武器 → 高阶武器”的多步链路。
  */
-export const RECIPES: Recipe[] = [
+const LEGACY_RECIPES: Recipe[] = [
   {
     id: 'r_stick',
     name: '木棍',
@@ -195,9 +197,128 @@ export const RECIPES: Recipe[] = [
   },
 ];
 
+export const RECIPES: Recipe[] = [...LEGACY_RECIPES, ...PHASE4M_RECIPES];
+
+/** 配方图谱的唯一来源：一件输出物只能有一个正式配方。 */
 const RECIPE_MAP: Record<string, Recipe> = Object.fromEntries(
   RECIPES.map((r) => [r.id, r]),
 );
+const RECIPE_OUTPUT_MAP: Record<string, Recipe> = Object.fromEntries(
+  RECIPES.map((r) => [r.outputItemId, r]),
+);
+
+export function recipeForOutput(itemId: string): Recipe | null {
+  return RECIPES.find((recipe) => recipe.outputItemId === itemId) ?? null;
+}
+
+/**
+ * 验证制作图：引用、唯一输出、正数、自环/环、raw 叶子与中间件可达性。
+ * 返回稳定排序的错误列表，既可在模块加载时自检，也可由验收测试直接调用。
+ */
+export function validateRecipeGraph(recipes: readonly Recipe[] = RECIPES): string[] {
+  const errors: string[] = [];
+  const ids = new Set<string>();
+  const outputs = new Map<string, Recipe>();
+  const itemIds = new Set(ITEMS_FOR_GRAPH.map((item) => item.id));
+  for (const recipe of recipes) {
+    if (ids.has(recipe.id)) errors.push(`重复配方 id：${recipe.id}`);
+    ids.add(recipe.id);
+    if (!/^r_[a-z][a-z0-9_]*$/.test(recipe.id)) errors.push(`配方 id 非稳定 snake_case：${recipe.id}`);
+    if (!itemIds.has(recipe.outputItemId)) errors.push(`配方 ${recipe.id} 输出未知物品：${recipe.outputItemId}`);
+    if (!Number.isInteger(recipe.outputCount) || recipe.outputCount <= 0) errors.push(`配方 ${recipe.id} outputCount 非法`);
+    if (outputs.has(recipe.outputItemId)) errors.push(`物品 ${recipe.outputItemId} 存在多个输出配方`);
+    outputs.set(recipe.outputItemId, recipe);
+    const ingredientIds = new Set<string>();
+    for (const ingredient of recipe.ingredients) {
+      if (!itemIds.has(ingredient.itemId)) errors.push(`配方 ${recipe.id} 引用了未知材料：${ingredient.itemId}`);
+      if (!Number.isInteger(ingredient.count) || ingredient.count <= 0) errors.push(`配方 ${recipe.id} 的 ${ingredient.itemId} 数量非法`);
+      if (ingredientIds.has(ingredient.itemId)) errors.push(`配方 ${recipe.id} 重复引用材料：${ingredient.itemId}`);
+      ingredientIds.add(ingredient.itemId);
+      if (ingredient.itemId === recipe.outputItemId) errors.push(`配方 ${recipe.id} 存在 self-reference`);
+    }
+  }
+
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  const walk = (itemId: string, path: string[]): void => {
+    const child = outputs.get(itemId);
+    if (!child) return;
+    if (visiting.has(child.id)) {
+      errors.push(`配方图存在环：${[...path, child.id].join(' -> ')}`);
+      return;
+    }
+    if (visited.has(child.id)) return;
+    visiting.add(child.id);
+    for (const ingredient of child.ingredients) walk(ingredient.itemId, [...path, child.id]);
+    visiting.delete(child.id);
+    visited.add(child.id);
+  };
+  for (const recipe of recipes) walk(recipe.outputItemId, []);
+
+  const consumers = new Set<string>();
+  for (const recipe of recipes) for (const ingredient of recipe.ingredients) consumers.add(ingredient.itemId);
+  const reachableComponents = new Set<string>();
+  const reachable = (itemId: string, seen = new Set<string>()): void => {
+    if (seen.has(itemId)) return;
+    const next = new Set(seen).add(itemId);
+    const recipe = outputs.get(itemId);
+    if (!recipe) return;
+    for (const ingredient of recipe.ingredients) {
+      const item = ITEMS_FOR_GRAPH.find((candidate) => candidate.id === ingredient.itemId);
+      if (item?.craftTier === 'component') reachableComponents.add(ingredient.itemId);
+      reachable(ingredient.itemId, next);
+    }
+  };
+  for (const recipe of recipes) {
+    const output = ITEMS_FOR_GRAPH.find((item) => item.id === recipe.outputItemId);
+    if (output?.craftTier === 'final') reachable(recipe.outputItemId);
+  }
+  for (const item of ITEMS_FOR_GRAPH) {
+    if (item.craftTier !== 'component') continue;
+    if (!outputs.has(item.id)) errors.push(`中间件 ${item.id} 没有输出配方`);
+    if (!consumers.has(item.id)) errors.push(`中间件 ${item.id} 没有消费者`);
+    if (!reachableComponents.has(item.id)) errors.push(`中间件 ${item.id} 不可从最终产物到达`);
+  }
+
+  // 每个最终装备 / 最终消耗品都必须能递归落到 raw 叶子。
+  const leafCheck = (itemId: string, path: string[] = []): void => {
+    const item = ITEMS_FOR_GRAPH.find((candidate) => candidate.id === itemId);
+    const recipe = outputs.get(itemId);
+    if (!item || !recipe) return;
+    for (const ingredient of recipe.ingredients) {
+      const ingredientDef = ITEMS_FOR_GRAPH.find((candidate) => candidate.id === ingredient.itemId);
+      if (!ingredientDef) continue;
+      if (!outputs.has(ingredient.itemId) && ingredientDef.craftTier !== 'raw') {
+        errors.push(`最终配方 ${itemId} 的叶子 ${ingredient.itemId} 不是 raw`);
+      }
+      if (path.includes(ingredient.itemId)) errors.push(`配方图路径环：${[...path, ingredient.itemId].join(' -> ')}`);
+      else leafCheck(ingredient.itemId, [...path, itemId]);
+    }
+  };
+  for (const item of ITEMS_FOR_GRAPH) {
+    if (item.craftTier === 'final' && (item.category === 'weapon' || item.category === 'armor' || item.category === 'utility' || item.category === 'consumable')) {
+      leafCheck(item.id);
+    }
+  }
+  return [...new Set(errors)].sort();
+}
+
+export function getRecipeDepth(recipeId: string): number {
+  const recipe = RECIPE_MAP[recipeId];
+  if (!recipe) return 0;
+  const depthOfItem = (itemId: string, seen: Set<string>): number => {
+    const child = RECIPE_OUTPUT_MAP[itemId];
+    if (!child || seen.has(child.id)) return 0;
+    const next = new Set(seen).add(child.id);
+    return 1 + Math.max(0, ...child.ingredients.map((ingredient) => depthOfItem(ingredient.itemId, next)));
+  };
+  return depthOfItem(recipe.outputItemId, new Set());
+}
+
+export const getCraftDepth = getRecipeDepth;
+
+const recipeGraphErrors = validateRecipeGraph();
+if (recipeGraphErrors.length > 0) throw new Error(recipeGraphErrors.join('；'));
 
 /**
  * 图鉴可见性接缝。

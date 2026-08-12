@@ -1,6 +1,6 @@
 import { GAME_CONFIG } from '../../data/gameConfig';
 import { getItem } from '../../data/items';
-import { getEquippedArmor, getEquippedWeapon } from '../../core/inventory';
+import { getEquippedArmor, getEquippedUtility, getEquippedWeapon } from '../../core/inventory';
 import type { Combatant, ItemStack } from '../../core/types';
 import { CATEGORY_LABEL, itemSummary, stackLabel } from '../../utils/format';
 import { bestInventoryEquipment } from '../equipmentPresentation';
@@ -13,7 +13,7 @@ interface InventoryProps {
   disabled: boolean;
   onUse: (uid: string) => void;
   onEquip: (uid: string) => void;
-  onUnequip: (slot: 'weapon' | 'armor') => void;
+  onUnequip: (slot: 'weapon' | 'armor' | 'utility') => void;
   onDrop: (uid: string) => void;
 }
 
@@ -34,7 +34,7 @@ function EquipSlot({
   const candidatePresented = candidate ? stackPresentation(candidate) : null;
   return (
     <div className="equip-slot" data-slot={label} data-equipped={presented ? 'true' : 'false'}>
-      <div className="lbl"><span aria-hidden="true">{label === '武器' ? '⚔' : '▣'}</span> {label}</div>
+      <div className="lbl"><span aria-hidden="true">{label === '武器' ? '⚔' : label === '防具' ? '▣' : '⌁'}</span> {label}</div>
       {presented ? (
         <div className="equip-item-main">
           <VisualImage
@@ -85,6 +85,7 @@ export function Inventory({
 }: InventoryProps): JSX.Element {
   const weapon = getEquippedWeapon(player);
   const armor = getEquippedArmor(player);
+  const utility = getEquippedUtility(player);
   const weaponCandidate = bestInventoryEquipment(player, 'weapon');
   const armorCandidate = bestInventoryEquipment(player, 'armor');
 
@@ -105,6 +106,13 @@ export function Inventory({
           disabled={disabled}
           onUnequip={() => onUnequip('armor')}
         />
+        <EquipSlot
+          label="工具"
+          stack={utility}
+          candidate={bestInventoryEquipment(player, 'utility')}
+          disabled={disabled}
+          onUnequip={() => onUnequip('utility')}
+        />
       </div>
 
       <div className="inv-list scroll">
@@ -116,7 +124,7 @@ export function Inventory({
           const def = getItem(stack.itemId);
           const presented = presentItem(stack.itemId, stack);
           const categoryMeta = ITEM_CATEGORY_META[def.category];
-          const equipable = def.category === 'weapon' || def.category === 'armor';
+          const equipable = Boolean(def.equipmentSlot);
           const usable = def.category === 'consumable';
           return (
             <div className="inv-item" key={stack.uid} data-item-id={stack.itemId}>

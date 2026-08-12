@@ -144,9 +144,11 @@ export const WORLD_EVENT_VISUALS: Record<WorldEventId, VisualSpec> = {
 /** 物品类别视觉（背包 / 合成面板的物品图标） */
 export const ITEM_CATEGORY_VISUALS: Record<ItemCategory, VisualSpec> = {
   material: spec('🔩', '#8a7a4a', '材料', null),
+  component: spec('◇', '#b07d56', '中间件', null),
   consumable: spec('🧪', '#3f8f7a', '消耗品', null),
   weapon: spec('⚔️', '#a04030', '武器', null),
   armor: spec('🛡️', '#4a6fa5', '防具', null),
+  utility: spec('⌁', '#7565a5', '工具', null),
 };
 
 /* ------------------------------------------------------------------ */

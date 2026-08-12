@@ -25,6 +25,9 @@ import { RECIPES, recipeVisibility, tryGetRecipe } from '../data/recipes';
 import { SUPPLY_STATUS_LABEL, supplyStatusOf } from './zoneLoot';
 import type { Combatant, GameState } from './types';
 
+export { buildCraftPlan } from './craftPlan';
+export type { CraftPlan, CraftPlanRawGap, CraftPlanStep, CraftPlanStepStatus } from './craftPlan';
+
 export interface CraftGoalRecommendation {
   /** 推荐前往搜索的区域 id */
   zoneId: string;

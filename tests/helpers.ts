@@ -41,4 +41,5 @@ export function clearInventory(c: Combatant): void {
   c.equipment = [];
   c.equippedWeaponId = null;
   c.equippedArmorId = null;
+  c.equippedUtilityId = null;
 }

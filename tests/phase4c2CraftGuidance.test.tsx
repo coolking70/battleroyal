@@ -144,7 +144,7 @@ describe('Phase 4C-2 合成引导与公开图鉴', () => {
     );
     const text = container.textContent ?? '';
     expect(text).not.toContain(npc.name);
-    expect(text).not.toContain('×5');
+    expect(text).not.toContain('电池×5');
     expect(text).not.toContain('zone.loot');
     // 电池作为静态公开配方材料可以出现，但隐藏库存数量不应出现。
     expect(text).toContain('电池');

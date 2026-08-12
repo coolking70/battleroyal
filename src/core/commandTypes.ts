@@ -79,7 +79,7 @@ export type Command =
   | { type: 'CRAFT'; recipeId: string }
   | { type: 'USE_ITEM'; uid: string }
   | { type: 'EQUIP'; uid: string }
-  | { type: 'UNEQUIP'; slot: 'weapon' | 'armor' }
+  | { type: 'UNEQUIP'; slot: 'weapon' | 'armor' | 'utility' }
   | { type: 'DROP_ITEM'; uid: string }
   | { type: 'ATTACK'; targetId: string; style: AttackStyle }
   | { type: 'ATTACK_NEARBY'; style: AttackStyle }

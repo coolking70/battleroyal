@@ -2,8 +2,7 @@
  * 存档校验 · 引用层（第三层）。
  *
  * Phase 2A-1 扩充。在原有交叉引用存在性检查之上，新增：
- * - 装备类型：equippedWeaponId 必须指向 weapon、equippedArmorId 必须指向 armor，
- *   equipment 里不得出现 material / consumable；
+ * - 装备类型：三个装备 id 必须指向匹配槽位，equipment 里不得出现 raw / component；
  * - 玩家制作目标：craftGoalRecipeId 必须为 null 或真实配方，完成态必须有目标；
  * - NPC 计划三字段一致性；
  * - 事件：id 唯一、type / importance / time 合法、actorId / targetId / zoneId
@@ -96,14 +95,14 @@ export function validateReferences(ctx: ValidationContext): void {
       }
     }
 
-    /* 装备类型：equipment 只能放 weapon / armor，且装备位类型必须匹配 */
+    /* 装备类型：equipment 只能放正式装备，且装备位类型必须匹配 */
     for (const s of equipStacks) {
       const def = typeof s.itemId === 'string' ? tryGetItem(s.itemId) : null;
-      if (def && def.category !== 'weapon' && def.category !== 'armor') {
+      if (def && !def.equipmentSlot) {
         fail(`角色 ${id} 的 equipment 里出现了不可装备物品（${def.name}）`);
       }
     }
-    for (const slot of ['equippedWeaponId', 'equippedArmorId'] as const) {
+    for (const slot of ['equippedWeaponId', 'equippedArmorId', 'equippedUtilityId'] as const) {
       const uid = c[slot];
       if (uid !== null && uid !== undefined) {
         if (typeof uid !== 'string') {
@@ -117,11 +116,15 @@ export function validateReferences(ctx: ValidationContext): void {
         const stack = equipStacks.find((s) => s.uid === uid);
         const def = stack && typeof stack.itemId === 'string' ? tryGetItem(stack.itemId) : null;
         if (slot === 'equippedWeaponId') {
-          if (!def || def.category !== 'weapon') {
+          if (!def || def.equipmentSlot !== 'weapon') {
             fail(`角色 ${id} 的 equippedWeaponId 指向的不是武器（${String(stack?.itemId)}）`);
           }
-        } else if (!def || def.category !== 'armor') {
-          fail(`角色 ${id} 的 equippedArmorId 指向的不是防具（${String(stack?.itemId)}）`);
+        } else if (slot === 'equippedArmorId') {
+          if (!def || def.equipmentSlot !== 'armor') {
+            fail(`角色 ${id} 的 equippedArmorId 指向的不是防具（${String(stack?.itemId)}）`);
+          }
+        } else if (!def || def.equipmentSlot !== 'utility') {
+          fail(`角色 ${id} 的 equippedUtilityId 指向的不是 utility（${String(stack?.itemId)}）`);
         }
       }
     }

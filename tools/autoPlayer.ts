@@ -22,7 +22,7 @@ import { GAME_CONFIG, GAME_VERSION } from '../src/data/gameConfig';
 import { SeededRandom } from '../src/core/random';
 import { aliveCharacters, createGame, getPlayer } from '../src/core/gameState';
 import { executeCommand } from '../src/core/gameEngine';
-import { decideNpcAction } from '../src/core/npcDecide';
+import { chooseNpcGoal, decideNpcAction } from '../src/core/npcDecide';
 import {
   findDeadlock,
   getLegalPlayerCommands,
@@ -30,8 +30,9 @@ import {
   type LegalAction,
   type LegalActionCategory,
 } from '../src/core/legalActions';
-import { getEquippedArmor, getEquippedWeapon } from '../src/core/inventory';
+import { getEquippedArmor, getEquippedUtility, getEquippedWeapon } from '../src/core/inventory';
 import { getCraftGoalRecommendations, getZoneDistance } from '../src/core/craftGuide';
+import { buildCraftPlan } from '../src/core/craftPlan';
 import { tryGetItem } from '../src/data/items';
 import type { Command, Combatant, GameEvent, GameState, Personality } from '../src/core/types';
 import { craftPathSummary, getCraftGoalSuggestion } from '../src/ui/craftPathPresentation';
@@ -357,6 +358,16 @@ export function decideAutoPlayerCommand(
 ): { command: Command | null; reason: string } {
   // 换人格的副本：避免把策略写回真实状态，也避免 decideNpcAction 的中间字段污染存档
   const view: Combatant = { ...player, personality: policy as Personality };
+  if (!view.plannedRecipeId) {
+    const goal = chooseNpcGoal(view, rng);
+    if (goal) {
+      const plan = buildCraftPlan(state, view, goal.recipeId);
+      view.plannedRecipeId = goal.recipeId;
+      view.planCreatedAt = state.time;
+      view.planReason = goal.reason;
+      view.planRecommendedZoneId = plan?.suggestedMoveZoneId ?? null;
+    }
+  }
   const d = decideNpcAction(state, view, rng);
 
   switch (d.kind) {
@@ -467,7 +478,9 @@ function equipmentScore(itemId: string): number {
     ? item.attack ?? 0
     : item?.category === 'armor'
       ? item.defense ?? 0
-      : 0;
+      : item?.category === 'utility'
+        ? (item.searchFindMult ?? 1) * 100
+        : 0;
 }
 
 /**
@@ -487,8 +500,10 @@ export function chooseEquipmentUpgradeAction(
 ): LegalAction | null {
   const currentWeapon = getEquippedWeapon(player);
   const currentArmor = getEquippedArmor(player);
+  const currentUtility = getEquippedUtility(player);
   const currentWeaponScore = currentWeapon ? equipmentScore(currentWeapon.itemId) : 0;
   const currentArmorScore = currentArmor ? equipmentScore(currentArmor.itemId) : 0;
+  const currentUtilityScore = currentUtility ? equipmentScore(currentUtility.itemId) : 0;
   const equipment = legal
     .map((action) => {
       const command = action.command;
@@ -496,8 +511,12 @@ export function chooseEquipmentUpgradeAction(
       const stack = player.inventory.find((item) => item.uid === command.uid);
       if (!stack) return null;
       const item = tryGetItem(stack.itemId);
-      if (!item || (item.category !== 'weapon' && item.category !== 'armor')) return null;
-      const current = item.category === 'weapon' ? currentWeaponScore : currentArmorScore;
+      if (!item || !item.equipmentSlot) return null;
+      const current = item.category === 'weapon'
+        ? currentWeaponScore
+        : item.category === 'armor'
+          ? currentArmorScore
+          : currentUtilityScore;
       return { action, itemId: stack.itemId, score: equipmentScore(stack.itemId), current };
     })
     .filter((item): item is { action: LegalAction; itemId: string; score: number; current: number } => Boolean(item))

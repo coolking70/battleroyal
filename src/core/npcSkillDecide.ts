@@ -32,6 +32,7 @@ import {
 import { findBestHealItem } from './consumables';
 import { craftStaminaCost, hasRoomForOutput } from './crafting';
 import { hasIngredients } from './inventory';
+import { buildCraftPlan } from './craftPlan';
 import type { Combatant, GameState } from './types';
 
 /** 技能通用前置：拥有 + 等级已解锁 + 冷却好了 + 付得起体力。 */
@@ -70,7 +71,8 @@ export function npcSurvivalSkill(state: GameState, npc: Combatant): SkillId | nu
     }
 
     case 'field_craft': {
-      const planRecipe = npc.plannedRecipeId ? tryGetRecipe(npc.plannedRecipeId) : null;
+      const plan = npc.plannedRecipeId ? buildCraftPlan(state, npc, npc.plannedRecipeId) : null;
+      const planRecipe = plan?.suggestedNextCraft ? tryGetRecipe(plan.suggestedNextCraft.recipeId) : null;
       const readyToCraft =
         planRecipe != null &&
         hasIngredients(npc, planRecipe.ingredients) &&

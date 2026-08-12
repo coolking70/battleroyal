@@ -15,6 +15,7 @@ import {
   missingIngredients,
   weaponAttackOf,
 } from './inventory';
+import { buildCraftPlan } from './craftPlan';
 import type { SeededRandom } from './random';
 import type { Combatant, GameState, ItemDef, Personality, Recipe } from './types';
 
@@ -84,6 +85,8 @@ function buildGoalCandidates(npc: Combatant): GoalCandidate[] {
     const item = getItem(recipe.outputItemId);
     if (item.category === 'weapon' || item.category === 'armor') {
       if (upgradeWorthless(attack, defense, recipe.id)) continue;
+    } else if (item.category === 'utility') {
+      // utility is a valid final route; its gain is evaluated below.
     } else if (item.category !== 'consumable' || (item.healHp ?? 0) <= 0) {
       // 只考虑武器 / 防具 / 有治疗效果的消耗品
       continue;
@@ -98,6 +101,8 @@ function buildGoalCandidates(npc: Combatant): GoalCandidate[] {
           ? (item.attack ?? 0) - attack
           : item.category === 'armor'
             ? (item.defense ?? 0) - defense
+            : item.category === 'utility'
+              ? ((item.searchFindMult ?? 1) - 1) * 100
             : 0,
       missingCount: missing.reduce((s, i) => s + i.count, 0),
       materialVariety: new Set(missing.map((i) => i.itemId)).size,
@@ -141,7 +146,7 @@ function scoreCandidate(
       return -100; // 激进不考虑消耗品（除非没有其他候选）
     case 'cautious':
       if (out.category === 'armor') {
-        return gain * 3 + 2 - missingCount * 2 - depth * 2 + craftableBonus;
+        return gain * 4 + 8 - missingCount * 2 - depth * 2 + craftableBonus;
       }
       if (out.category === 'consumable') {
         return (
@@ -172,7 +177,7 @@ function goalOf(
     const hint = personality === 'cautious' ? '补充治疗' : '储备医疗';
     return { recipeId: cand.recipe.id, reason: `计划制作${name}（${hint}）` };
   }
-  const kind = cand.out.category === 'weapon' ? '武器' : '防具';
+  const kind = cand.out.category === 'weapon' ? '武器' : cand.out.category === 'armor' ? '防具' : '工具';
   return {
     recipeId: cand.recipe.id,
     reason: `计划强化为${name}（${kind}${cand.missingCount === 0 ? '，材料已齐' : ''}）`,
@@ -215,9 +220,23 @@ export function chooseNpcGoal(
   return goalOf(scored[0]!.cand, npc.personality);
 }
 
-/** 计算某配方的材料完成度（供 planProgress 字段） */
-function computePlanProgress(npc: Combatant, recipe: Recipe): number {
-  return completionOf(npc, recipe);
+/**
+ * 计算多层目标的完成度（供 planProgress 字段）。
+ *
+ * 只看最终配方的直接材料会让 NPC 做出中间件后仍被判定为“没有进展”，
+ * 最终在无进展阈值处放弃长链。这里把依赖树上的每个步骤纳入进度：
+ * 已有成品记满分，材料已齐可制作记 75%，部分持有记 50%。这仍是纯
+ * 规划指标，不会消费库存，也不会把 component 当成 raw。
+ */
+function computePlanProgress(state: GameState, npc: Combatant, recipe: Recipe): number {
+  const plan = buildCraftPlan(state, npc, recipe.id);
+  if (!plan || plan.steps.length === 0) return completionOf(npc, recipe);
+  const score = plan.steps.reduce((sum, step) => {
+    if (step.status === 'complete') return sum + 1;
+    if (step.status === 'craftable') return sum + 0.75;
+    return sum + (step.owned > 0 ? 0.5 : 0);
+  }, 0);
+  return score / plan.steps.length;
 }
 
 /** 推荐搜索区域：静态物资池覆盖缺失材料，禁区排除、预警区扣分、就近加分 */
@@ -226,8 +245,9 @@ function pickRecommendedZone(
   npc: Combatant,
   recipe: Recipe,
 ): string | null {
+  const plan = buildCraftPlan(state, npc, recipe.id);
   const missingIds = new Set(
-    missingIngredients(npc, recipe.ingredients).map((i) => i.itemId),
+    plan?.rawGaps.filter((gap) => gap.missing > 0).map((gap) => gap.itemId) ?? [],
   );
   if (missingIds.size === 0) return null;
 
@@ -256,7 +276,7 @@ function allMissingZonesRestricted(
   npc: Combatant,
   recipe: Recipe,
 ): boolean {
-  const missing = missingIngredients(npc, recipe.ingredients);
+  const missing = buildCraftPlan(state, npc, recipe.id)?.rawGaps.filter((gap) => gap.missing > 0) ?? [];
   if (missing.length === 0) return false;
   for (const ing of missing) {
     const supplyZones = ZONE_IDS.filter((zoneId) => {
@@ -292,7 +312,7 @@ export function planNpcGoal(
 
   /* ---- 每回合刷新进度 / 无进展计数 ---- */
   if (currentRecipe) {
-    const progress = computePlanProgress(npc, currentRecipe);
+    const progress = computePlanProgress(state, npc, currentRecipe);
     if (progress <= npc.planProgress + 0.0001) {
       npc.planNoProgressTurns += 1;
     } else {
@@ -345,7 +365,7 @@ export function planNpcGoal(
   npc.lastReplanReason = replanReason;
   npc.planNoProgressTurns = 0;
   npc.planProgress = goal
-    ? computePlanProgress(npc, tryGetRecipe(goal.recipeId)!)
+    ? computePlanProgress(state, npc, tryGetRecipe(goal.recipeId)!)
     : 0;
   npc.planRecommendedZoneId = goal
     ? pickRecommendedZone(state, npc, tryGetRecipe(goal.recipeId)!)

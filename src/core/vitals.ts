@@ -18,6 +18,7 @@ import { addNoise } from './info';
 import {
   getEquippedArmor,
   getEquippedWeapon,
+  getEquippedUtility,
   topValueStacks,
 } from './inventory';
 import type { Combatant, GameState, ItemStack } from './types';
@@ -117,8 +118,10 @@ export function killCharacter(
   const drops: ItemStack[] = [];
   const weapon = getEquippedWeapon(victim);
   const armor = getEquippedArmor(victim);
+  const utility = getEquippedUtility(victim);
   if (weapon) drops.push(weapon);
   if (armor) drops.push(armor);
+  if (utility) drops.push(utility);
   const remaining = GAME_CONFIG.maxCorpseDrops - drops.length;
   if (remaining > 0) {
     drops.push(...topValueStacks(victim, remaining));
@@ -139,6 +142,7 @@ export function killCharacter(
   victim.equipment = [];
   victim.equippedWeaponId = null;
   victim.equippedArmorId = null;
+  victim.equippedUtilityId = null;
   victim.statusEffects = [];
   victim.plannedRecipeId = null;
   victim.planCreatedAt = null;

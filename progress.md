@@ -928,3 +928,19 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   illegal/deadlock/livelock/stall/empty-legal-set/hard-limit counters 0; balance
   ratio 2.77 remains observation only. Human playtest remains required.
 - Final Phase 4L gate metadata: `npm test` — 91 files / 1509 tests.
+
+## Phase 4M progress (2026-08-13)
+
+- Phase4L PR #19 was verified at the exact accepted head, marked Ready and
+  merged normally into `main` as `dddc9b3`; Phase4M started from that merge
+  plus the isolated Phase4L metadata correction `efe89a2`.
+- Added fixed `craftTier` raw/component/final identity, 16 reusable components,
+  12 new final outputs, one utility slot, 28 new recipes and validated 57
+  items / 45 recipes with cycle, reference, reachability and depth checks.
+- Added pure `buildCraftPlan`, multi-layer NPC/AutoPlayer routing, atomic craft
+  transactions, Engineer free-craft charge safety, utility save/equip/UI flow,
+  and Phase4M A–N coverage (14 tests) plus the 8×5 regression matrix.
+- Automated gates: 92 files / 1524 tests, build, save/dependency/art/security
+  audits and production npm audit pass; PHASE4M regression is 500/500
+  trustworthy with all engine-health zero gates. Human playtest remains
+  `NEEDS-HUMAN-PLAYTEST`.

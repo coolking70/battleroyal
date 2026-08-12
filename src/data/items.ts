@@ -1,10 +1,13 @@
-import type { ItemDef } from '../core/types';
+import type { CraftTier, ItemDef } from '../core/types';
+import { PHASE4M_ITEMS } from './phase4mItems';
 
 /**
  * Phase 4C-1 物品表：10 材料 + 11 武器 + 3 防具 + 5 消耗品 = 29 种。
  * 新增武器没有正式 PNG，统一沿用 VisualImage 的 SVG / emoji fallback。
  */
-export const ITEMS: ItemDef[] = [
+type LegacyItemDef = Omit<ItemDef, 'craftTier'> & { craftTier?: CraftTier };
+
+const LEGACY_ITEMS: LegacyItemDef[] = [
   /* ---------------- 材料 ---------------- */
   {
     id: 'wood',
@@ -318,6 +321,81 @@ export const ITEMS: ItemDef[] = [
     maxStack: 2,
   },
 ];
+
+const RAW_LEGACY_IDS = new Set([
+  'wood', 'stone', 'iron', 'cloth', 'rope', 'glass', 'battery', 'herb', 'alcohol', 'scrap', 'water', 'energy_drink',
+]);
+const COMPONENT_LEGACY_IDS = new Set(['reinforced_handle']);
+
+function enrichLegacyItem(item: LegacyItemDef): ItemDef {
+  const category = COMPONENT_LEGACY_IDS.has(item.id) ? 'component' : item.category;
+  const craftTier = item.craftTier ?? (
+    RAW_LEGACY_IDS.has(item.id)
+      ? 'raw'
+      : COMPONENT_LEGACY_IDS.has(item.id)
+        ? 'component'
+        : 'final'
+  );
+  const equipmentSlot = craftTier === 'final'
+    ? category === 'weapon'
+      ? 'weapon'
+      : category === 'armor'
+        ? 'armor'
+        : undefined
+    : undefined;
+  const weaponFamily = item.weaponFamily ?? (
+    item.weaponType === 'ranged' ? 'bow' : 'blunt'
+  );
+  return {
+    ...item,
+    category,
+    craftTier,
+    ...(equipmentSlot ? { equipmentSlot } : {}),
+    ...(item.weaponType ? { weaponFamily } : {}),
+  };
+}
+
+export const ITEMS: ItemDef[] = [
+  ...LEGACY_ITEMS.map(enrichLegacyItem),
+  ...PHASE4M_ITEMS,
+];
+
+export function validateItemRegistry(items: readonly ItemDef[] = ITEMS): string[] {
+  const errors: string[] = [];
+  const ids = new Set<string>();
+  const names = new Set<string>();
+  const categories = new Set(['material', 'component', 'weapon', 'armor', 'consumable', 'utility']);
+  const tiers = new Set(['raw', 'component', 'final']);
+  for (const item of items) {
+    if (ids.has(item.id)) errors.push(`重复物品 id：${item.id}`);
+    ids.add(item.id);
+    if (names.has(item.name)) errors.push(`重复物品名称：${item.name}`);
+    names.add(item.name);
+    if (!item.id || !/^[a-z][a-z0-9_]*$/.test(item.id)) errors.push(`物品 id 非 snake_case：${item.id}`);
+    if (!categories.has(item.category)) errors.push(`物品 ${item.id} 类别非法`);
+    if (!tiers.has(item.craftTier)) errors.push(`物品 ${item.id} craftTier 非法`);
+    if (!Number.isInteger(item.maxStack) || item.maxStack <= 0) errors.push(`物品 ${item.id} maxStack 非法`);
+    if (item.stackable && item.maxStack < 2) errors.push(`可堆叠物品 ${item.id} maxStack 必须大于 1`);
+    if (!item.stackable && item.maxStack !== 1) errors.push(`不可堆叠物品 ${item.id} maxStack 必须为 1`);
+    for (const [key, value] of Object.entries(item)) {
+      if (['value', 'maxStack', 'attack', 'defense', 'durability', 'healHp', 'healStamina'].includes(key) && value !== undefined && (typeof value !== 'number' || !Number.isFinite(value) || value < 0)) {
+        errors.push(`物品 ${item.id} 的 ${key} 不得为负或非有限数`);
+      }
+    }
+    if (item.category === 'weapon') {
+      if (item.craftTier === 'final' && item.equipmentSlot !== 'weapon') errors.push(`最终武器 ${item.id} 缺少 weapon 槽位`);
+      if (!Number.isInteger(item.durability) || (item.durability ?? 0) <= 0) errors.push(`武器 ${item.id} 初始耐久非法`);
+      if (item.weaponType === undefined || item.weaponFamily === undefined) errors.push(`武器 ${item.id} 缺少 family/type`);
+    }
+    if (item.category === 'armor' && item.craftTier === 'final' && item.equipmentSlot !== 'armor') errors.push(`最终防具 ${item.id} 缺少 armor 槽位`);
+    if (item.category === 'utility' && (item.craftTier !== 'final' || item.equipmentSlot !== 'utility')) errors.push(`utility ${item.id} 必须是最终 utility 装备`);
+    if (item.category === 'consumable' && item.craftTier === 'final' && (item.healHp ?? 0) <= 0 && (item.healStamina ?? 0) <= 0) errors.push(`消耗品 ${item.id} 缺少正向效果`);
+  }
+  return errors;
+}
+
+const itemRegistryErrors = validateItemRegistry();
+if (itemRegistryErrors.length > 0) throw new Error(itemRegistryErrors.join('；'));
 
 const ITEM_MAP: Record<string, ItemDef> = Object.fromEntries(
   ITEMS.map((i) => [i.id, i]),

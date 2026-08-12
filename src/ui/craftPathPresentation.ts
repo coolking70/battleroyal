@@ -128,10 +128,14 @@ function buildCraftTreeSteps(
   seen = new Set<string>(),
 ): CraftTreeStep[] {
   if (seen.has(recipe.id)) return [];
-  const nextSeen = new Set(seen).add(recipe.id);
+  // `seen` is a traversal-wide set, not only a recursion-path set. Shared
+  // components (for example rope_bundle and metal_plate) appear under many
+  // final recipes; rendering them once keeps the dependency tree a DAG and
+  // prevents duplicate React keys without hiding any dependency edge.
+  seen.add(recipe.id);
   const children = recipe.ingredients.flatMap((ingredient) => {
     const child = OUTPUT_RECIPE_MAP.get(ingredient.itemId);
-    return child ? buildCraftTreeSteps(child, state, player, nextSeen) : [];
+    return child ? buildCraftTreeSteps(child, state, player, seen) : [];
   });
   const view = listRecipes(state, player).find((candidate) => candidate.recipe.id === recipe.id);
   const output = getItem(recipe.outputItemId);

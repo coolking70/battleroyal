@@ -26,9 +26,11 @@ export function percent(value: number, max: number): number {
 
 export const CATEGORY_LABEL: Record<ItemCategory, string> = {
   material: '材料',
+  component: '中间件',
   weapon: '武器',
   armor: '防具',
   consumable: '消耗品',
+  utility: '工具',
 };
 
 export const ZONE_STATUS_LABEL: Record<ZoneStatus, string> = {
