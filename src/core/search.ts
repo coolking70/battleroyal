@@ -210,8 +210,8 @@ export function rollItemId(
   const zone = state.zones[actor.currentZoneId];
   if (!zone) return null;
 
-  const pursuingResearch = state.craftGoalRecipeId === 'r_research_package'
-    || actor.plannedRecipeId === 'r_research_package';
+  const craftGoalRecipeId = getActorCraftGoalRecipeId(state, actor);
+  const pursuingResearch = craftGoalRecipeId === 'r_research_package';
   if (pursuingResearch && zone.objectiveLoot.length > 0 && rng.chance(0.45)) {
     const objective = takeObjectiveLoot(zone, rng);
     if (objective) return objective;

@@ -98,12 +98,12 @@ function defeatWild(state: GameState, enemy: WildEnemyInstance, killer: Combatan
   state.stats.wildKillCount += 1;
   if (def.tier === 'elite') state.stats.eliteKillCount = (state.stats.eliteKillCount ?? 0) + 1;
   if (def.tier === 'apex') state.stats.apexKillCount = (state.stats.apexKillCount ?? 0) + 1;
-  createWildDrops(state, enemy, killer, rng);
   pushEvent(state, {
     type: 'WILD_DEFEATED', actorId: killer.id, zoneId: enemy.zoneId,
     message: `${killer.name} 击败了 ${def.name}。`,
     metadata: { wildUid: enemy.uid, wildDefId: def.id, tier: def.tier },
   });
+  createWildDrops(state, enemy, killer, rng);
   if (killer.isPlayer && state.encounter?.targetKind === 'wild' && state.encounter.enemyId === enemy.uid) {
     state.encounter.resolved = true;
   }
