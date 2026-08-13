@@ -53,7 +53,12 @@ function colocate(state: GameState, count = 1): Combatant[] {
 /** 把所有 NPC 清出玩家所在区域 */
 function isolate(state: GameState): void {
   colocate(state, 0);
-  for (const wild of Object.values(state.wildEnemies)) wild.status = 'fled';
+  for (const wild of Object.values(state.wildEnemies)) {
+    wild.status = 'defeated';
+    wild.hp = 0;
+    wild.dropResolved = true;
+    wild.defeatedAtTime = state.time;
+  }
 }
 
 function types(cmds: { command: Command }[]): string[] {

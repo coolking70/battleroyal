@@ -203,7 +203,12 @@ describe('Phase 4M Test G–J — equipment, NPC route and player route', () => 
       if (other.id !== npc.id) other.currentZoneId = 'school';
     }
     // Historical Phase 4M route fixture isolates the later Phase 4N ecology.
-    for (const wild of Object.values(state.wildEnemies)) wild.status = 'fled';
+    for (const wild of Object.values(state.wildEnemies)) {
+      wild.status = 'defeated';
+      wild.hp = 0;
+      wild.dropResolved = true;
+      wild.defeatedAtTime = state.time;
+    }
     refreshZoneOccupants(state);
 
     const actions: string[] = [];

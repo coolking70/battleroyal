@@ -10,6 +10,7 @@ Automated tests verify the data and rules, but a human still needs to confirm th
 - Search until a wild encounter appears; confirm the fallback emoji/color visual, enemy name, exact HP display, threat, behavior, and drop category are readable.
 - Confirm the encounter does not show exact drop probabilities or individual future spawn information.
 - Attack, guard, and flee; confirm the same action styles and durability behavior are understandable and that a wild kill does not change contestant alive count or victory state.
+- Find a skittish wild enemy, lower it to low HP, and confirm its self-flee ends only the encounter: no drop appears, the same zone can find the same enemy UID again, and its remaining HP is retained until a later real defeat creates the drop.
 - After a kill, confirm the drop appears on the ground and only the owning player can pick it up. Confirm the default log shows the player’s relevant wild event but not a remote NPC’s wild activity.
 - Set a public Phase 4N craft goal and follow the route. Confirm the guide names static common threats/zones, never live populations or drop rates.
 - Confirm the final component/final craft can be equipped through the normal UI action.

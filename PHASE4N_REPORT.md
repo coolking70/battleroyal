@@ -49,7 +49,7 @@ All 12 zones have static ecology tables. The map shows only the first two static
 
 ## 7. Population Model
 
-Each zone receives 1–4 deterministic instances. UIDs are stable (`w0`, `w1`, …), no command creates a replacement, and defeated/fled instances remain in the save as historical population state. Same seed produces the same population; a different seed produces a different ecology assignment.
+Each zone receives 1–4 deterministic instances. UIDs are stable (`w0`, `w1`, …), no command creates a replacement, and defeated instances remain in the save as historical population state. A wild self-flee resolves only the current encounter and leaves the same alive instance in its zone. Same seed produces the same population; a different seed produces a different ecology assignment.
 
 ## 8. PvE Encounter
 
@@ -110,6 +110,71 @@ Automated UI coverage is green, but the human visual gate remains `NEEDS-HUMAN-P
 ## 21. Deferred
 
 Backward compatibility for pre-Phase4N saves is explicitly `DEFERRED UNTIL PRE-RELEASE`. `loadGame()` rejects older versions and does not call the historical migration helper, preserving old data instead of silently fabricating consumed wild populations. Phase 4N does not add new PNGs, a boss system, weather ecology, or Phase 4O work.
+
+## Phase 4N-AF — Wild Self-Flee Ecology Fix
+
+### Problem
+
+The previous implementation treated a wild self-flee as `status=fled`. Because
+`livingWildEnemiesInZone()` only returned `alive` instances, that historical
+encounter event effectively permanently despawned the finite population entry.
+
+### Fix
+
+- Wild self-flee now resolves only the current encounter and keeps the same UID
+  `alive` in the same zone.
+- Persistent HP, `dropResolved`, and ability charges are retained; guarding and
+  transient stance state are cleared.
+- `WILD_FLED` remains a historical event with `direction: "wild"`; it no longer
+  implies a permanent population lifecycle transition.
+- Contestant FLEE remains a separate `direction: "contestant"` event and also
+  leaves the wild instance alive.
+- A later SEARCH can select the original UID again without respawn, replacement,
+  re-roll, or HP reset.
+- Only `status=defeated` calls `createWildDrops()`, preserving exact-once drops.
+- `wildFleeCount` continues to count encounter disengagement events, not
+  permanent population removals.
+
+### Status model and save schema
+
+`WildEnemyStatus` is now exactly `"alive" | "defeated"`. Current-schema
+validation rejects `"fled"`; old-save migration remains
+`DEFERRED UNTIL PRE-RELEASE`.
+
+### Acceptance tests
+
+`tests/phase4nAcceptanceFix.test.ts` covers:
+
+- self-flee retaining alive status, UID, zone, HP, population membership, and
+  ability charges;
+- no drop on flee and unchanged contestant alive/death-order/kills state;
+- same-UID re-encounter through production SEARCH;
+- later defeat creating drops exactly once;
+- contestant FLEE event direction and lifecycle separation;
+- current-schema rejection of the removed `fled` status.
+
+The existing zero-stamina FLEE/GUARD and victory-isolation regressions remain
+green. No NPC closed-loop test was added in this narrow acceptance-fix pass;
+existing Phase 4N production and AutoPlayer evidence remains unchanged.
+
+### PHASE4N-AF regression
+
+The required `PHASE4N-AF` run requested and completed 500 games, with 500/500
+trustworthy games. Engine health passed: timeout=0, illegalState=0,
+illegalCommand=0, deadlock=0, livelock=0, stall=0, emptyLegalSet=0, and
+hardLimit=0. PvE observations were 7220 encounters, 1646 kills, 4796 flees,
+2706 ground drops, and 103 wild crafts. The report's overall balance flag is
+not a Phase 4N-AF gate: `BALANCE OBSERVATION ONLY — BALANCE DEFERRED`.
+
+### AF gates
+
+- Full suite: 98 files / 1560 tests passed.
+- Typecheck and production build: PASS.
+- Save audit: 102/102 corruption cases rejected; dependency audit R1=R2=R3=R4=0.
+- Art doctor/validate/audit/security and production `npm audit --omit=dev`:
+  PASS; production audit reports 0 vulnerabilities.
+- Core/data largest file: `src/core/saveValidation/numbers.ts`, 478 lines.
+- Human visual gate remains `NEEDS-HUMAN-PLAYTEST`.
 
 ## Gates and files
 

@@ -6,7 +6,7 @@ import type { GameState, WildEnemyInstance } from './types';
 export function livingWildEnemiesInZone(state: GameState, zoneId: string): WildEnemyInstance[] {
   return (state.zones[zoneId]?.wildEnemyIds ?? [])
     .map((uid) => state.wildEnemies[uid])
-    .filter((enemy): enemy is WildEnemyInstance => enemy?.status === 'alive');
+    .filter((enemy): enemy is WildEnemyInstance => enemy?.status === 'alive' && enemy.zoneId === zoneId);
 }
 
 /** One deterministic, finite population pass. No respawn path exists. */

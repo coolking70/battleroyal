@@ -143,12 +143,15 @@ export function attackWildActor(
 
 function wildFlees(state: GameState, actor: Combatant, enemy: WildEnemyInstance): WildActionResult {
   const def = getWildEnemy(enemy.defId);
-  enemy.status = 'fled';
+  // A wild self-flee ends only this encounter. The finite population entry,
+  // persistent HP, UID, zone, and ability charges remain available for a
+  // later search; only defeat changes the population lifecycle to defeated.
   enemy.guarding = false;
+  enemy.statusEffects = [];
   state.stats.wildFleeCount += 1;
-  pushEvent(state, { type: 'WILD_FLED', targetId: actor.id, zoneId: enemy.zoneId, message: `${def.name} 逃离了这片区域。`, metadata: { wildUid: enemy.uid, wildDefId: def.id, direction: 'wild' } });
+  pushEvent(state, { type: 'WILD_FLED', targetId: actor.id, zoneId: enemy.zoneId, message: `${def.name} 脱离了交战，退回附近环境。`, metadata: { wildUid: enemy.uid, wildDefId: def.id, direction: 'wild' } });
   if (state.encounter?.targetKind === 'wild' && state.encounter.enemyId === enemy.uid) state.encounter.resolved = true;
-  return { ok: true, message: `${def.name} 逃走了。`, escaped: true };
+  return { ok: true, message: `${def.name} 脱离了交战。`, escaped: true };
 }
 
 export function resolveWildTurn(state: GameState, actor: Combatant, enemy: WildEnemyInstance, rng: SeededRandom): WildActionResult {

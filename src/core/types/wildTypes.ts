@@ -3,7 +3,7 @@ export type WildBehavior = 'aggressive' | 'defensive' | 'skittish';
 export type WildThreat = 'low' | 'medium' | 'high';
 export type WildDropCategory = 'animal' | 'mechanical' | 'experimental';
 export type WildAbilityId = 'none' | 'venom' | 'charge' | 'enrage' | 'evasive' | 'armored';
-export type WildEnemyStatus = 'alive' | 'defeated' | 'fled';
+export type WildEnemyStatus = 'alive' | 'defeated';
 
 export interface WildEnemyDef {
   id: string;

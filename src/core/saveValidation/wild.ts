@@ -53,7 +53,7 @@ export function validateWildState(ctx: ValidationContext): void {
     if (typeof raw.zoneId !== 'string' || !zoneIds.has(raw.zoneId)) fail(`野外敌人 ${uid} 区域非法（${String(raw.zoneId)}）`);
     if (listed.get(uid) !== raw.zoneId) fail(`野外敌人 ${uid} 的 zoneId 与区域名单不一致`);
     if (!isFiniteNumber(raw.hp) || !Number.isInteger(raw.hp) || (raw.hp as number) < 0 || (def && (raw.hp as number) > def.maxHp)) fail(`野外敌人 ${uid} 的 hp 越界`);
-    if (raw.status !== 'alive' && raw.status !== 'defeated' && raw.status !== 'fled') fail(`野外敌人 ${uid} 状态非法`);
+    if (raw.status !== 'alive' && raw.status !== 'defeated') fail(`野外敌人 ${uid} 状态非法`);
     if (raw.status === 'alive' && raw.hp === 0) fail(`存活野外敌人 ${uid} 的 hp 不得为 0`);
     if (raw.status === 'defeated' && raw.hp !== 0) fail(`已击败野外敌人 ${uid} 的 hp 必须为 0`);
     if (typeof raw.guarding !== 'boolean' || typeof raw.dropResolved !== 'boolean') fail(`野外敌人 ${uid} 的布尔状态损坏`);
