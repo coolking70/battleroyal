@@ -1098,3 +1098,4 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - `npm run typecheck`, `npm run build`, save/dependency/Art/security audits, and `npm audit --omit=dev --offline` passed; offline audit found 0 vulnerabilities. The networked npm audit was intentionally not run because the restricted environment blocks external dependency-metadata upload.
 - Playwright smoke reached the menu and a live new-game screen; `render_game_to_text` returned a valid playing state and the gameplay screenshot was visually inspected. No new browser console error was recorded.
 - Updated the stale Phase 4M registry ceilings to accommodate the Phase 4P roster and selected a deterministic Phase 4J-1 random fixture seed that exercises EQUIP. Full suite now passes: 102 files / 1593 tests.
+- Follow-up commit `9fc8c4a499f20cfeb090d833bdf0475d086b3abf` was pushed; Draft PR #23 remains open and unmerged. Final-head GitHub Actions CI run #120 completed successfully.
