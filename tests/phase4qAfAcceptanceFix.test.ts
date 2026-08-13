@@ -256,6 +256,7 @@ describe('Phase 4Q-AF 设施、信息边界、风险与 NPC 验收修复', () =>
     target.remainingSearches = target.loot.length;
     target.maxSearches = target.loot.length;
     target.exhausted = false;
+    refreshNpcPlanRecommendation(state, npc);
     const startZone = npc.currentZoneId;
     for (let turn = 0; turn < 100 && !state.events.some((event) => event.type === 'ITEM_CRAFTED' && event.actorId === npc.id && event.metadata.recipeId === 'r_circuit'); turn += 1) {
       runNpcTurn(state, npc, new SeededRandom(`PHASE4Q-AF-NPC-AUTONOMOUS-${turn}`));

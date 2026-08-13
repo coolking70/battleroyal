@@ -194,13 +194,6 @@ export function runNpcTurn(
   // 第二阶段：每回合按 TTL 维护 / 重规划 NPC 的制作目标
   // Phase 2A-1：随机型人格在规划时使用种子随机数（与对局同一 RNG 流隔离在调用方）
   planNpcGoal(state, npc, rng);
-  // A persisted recipe may predate the landmark recommendation (for example
-  // a loaded or test-seeded NPC plan). Build the actor-scoped recommendation
-  // in the normal production turn flow instead of requiring an external
-  // planner call.
-  if (npc.plannedRecipeId && !npc.planRecommendedLandmarkId) {
-    refreshNpcPlanRecommendation(state, npc);
-  }
   // A local landmark can become stale after another actor exhausts, locks, or
   // disables it. Refresh only when the NPC is actually there; remote runtime
   // state is intentionally outside this actor's information boundary.
