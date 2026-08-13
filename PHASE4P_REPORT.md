@@ -210,8 +210,9 @@ This section records the independent acceptance-fix pass without replacing the
 Phase 4P architecture audit above.
 
 1. Audited input head: `54db0cbaa1924fc88fd447c34c9e0d7e4eb92ca0`.
-2. Final AF head: recorded after the final documentation commit and verified
-   against the exact branch-head CI run.
+2. Final AF head: `af90003178a813cf6af280472ff2fc4caa9de0a3`; the subsequent
+   documentation-only closeout head is verified below against its exact
+   branch-head CI run.
 3. Blocker A root cause: `chooseSpawnZone()` fell back to unrelated open map
    zones when every eligible zone was restricted.
 4. Strict semantics: due Apex entries choose deterministically from their own
@@ -304,7 +305,7 @@ Phase 4P architecture audit above.
   `apexSpawned=342`, `apexEncounters=3`, `apexKills=0`, `apexFlees=0`;
   `signatureDrops=0`, `signaturePickups=0`, `signatureCrafts=0`,
   `bossKillsByType={}`. These are balance observations only.
-- Final AF branch head and exact branch-head CI evidence are recorded here
-  after the final documentation commit: `FINAL_HEAD_SHA`, GitHub Actions
-  verify run `FINAL_CI_RUN`, `completed/success`. PR #23 remains Draft and
-  unmerged. Human status remains exactly `NEEDS-HUMAN-PLAYTEST`.
+- Final implementation head: `af90003178a813cf6af280472ff2fc4caa9de0a3`;
+  its GitHub Actions CI run #123 (`31704949792`) completed with `success`.
+  The final documentation-only branch head and its exact CI run are recorded
+  in the next sentence after that closeout commit is pushed.
