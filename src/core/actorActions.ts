@@ -43,6 +43,8 @@ import { pushEvent } from './events';
 import { refreshZoneOccupants } from './gameState';
 import { addItem, stackValue } from './inventory';
 import { performSearch, type SearchOutcome } from './search';
+import { searchLandmark } from './landmarkSearch';
+import { interactFacility } from './facilities';
 import { gainCostedActionExperience } from './progression';
 import { done, fail, guard, who, type ActorActionResult } from './actorActionBase';
 import {
@@ -125,6 +127,31 @@ export function moveActor(
 
 export interface SearchActorResult extends ActorActionResult {
   outcome: SearchOutcome | null;
+}
+
+export interface LandmarkSearchActorResult extends ActorActionResult {
+  outcome: ReturnType<typeof searchLandmark>['outcome'];
+}
+
+export function searchLandmarkActor(
+  state: GameState,
+  actor: Combatant,
+  landmarkId: string,
+  rng: SeededRandom,
+): LandmarkSearchActorResult {
+  const result = searchLandmark(state, actor, landmarkId, rng);
+  if (!result.ok) return { ...fail('no_stamina', result.message), outcome: null };
+  return { ...done(result.message, result.staminaSpent), outcome: result.outcome };
+}
+
+export function interactFacilityActor(
+  state: GameState,
+  actor: Combatant,
+  landmarkId: string,
+  interactionId: string,
+): ActorActionResult {
+  const result = interactFacility(state, actor, landmarkId, interactionId);
+  return result.ok ? done(result.message, result.staminaSpent) : fail('illegal_target', result.message);
 }
 
 /**
@@ -257,6 +284,8 @@ export function useItemActor(
 export type ActorAction =
   | { type: 'MOVE'; zoneId: string }
   | { type: 'SEARCH' }
+  | { type: 'SEARCH_LANDMARK'; landmarkId: string }
+  | { type: 'INTERACT_LANDMARK'; landmarkId: string; interactionId: string }
   | { type: 'REST' }
   | { type: 'CRAFT'; recipeId: string }
   | { type: 'USE_ITEM'; uid: string }
@@ -282,6 +311,10 @@ export function executeActorCommand(
       return moveActor(state, actor, action.zoneId);
     case 'SEARCH':
       return searchActor(state, actor, rng);
+    case 'SEARCH_LANDMARK':
+      return searchLandmarkActor(state, actor, action.landmarkId, rng);
+    case 'INTERACT_LANDMARK':
+      return interactFacilityActor(state, actor, action.landmarkId, action.interactionId);
     case 'REST':
       return restActor(state, actor);
     case 'CRAFT':

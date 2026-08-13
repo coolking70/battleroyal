@@ -39,6 +39,13 @@ export interface GameGlobalStats {
   signatureDrops?: number;
   signaturePickups?: number;
   signatureCrafts?: number;
+  landmarkSearches?: number;
+  landmarkExhaustions?: number;
+  facilityUses?: number;
+  facilityActivations?: number;
+  npcLandmarkSearches?: number;
+  landmarkWildEncounters?: number;
+  landmarkItemsRecovered?: number;
 }
 
 /**
@@ -71,6 +78,8 @@ export interface GameState {
   wildUidSeq: number;
   /** Exactly one deterministic schedule per named Apex definition. */
   apexSchedule: ApexScheduleEntry[];
+  /** Data-driven finite landmark/facility runtime registry. */
+  landmarks: Record<string, import('./zoneTypes').LandmarkState>;
   zones: Record<string, ZoneState>;
   events: GameEvent[];
   /** 事件自增序号，用于生成稳定的事件 id */

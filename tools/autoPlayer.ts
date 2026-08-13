@@ -41,6 +41,7 @@ import { craftPathSummary, getCraftGoalSuggestion } from '../src/ui/craftPathPre
 import { PHASE4N_RECIPES } from '../src/data/phase4nRecipes';
 import { PHASE4P_RECIPES } from '../src/data/phase4pRecipes';
 import { getWildEnemy } from '../src/data/wildEnemies';
+import { tryGetLandmarkDef } from '../src/data/landmarks';
 
 const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
 
@@ -117,6 +118,8 @@ export interface AutoGameOptions {
   representativeBuildLoop?: boolean;
   /** Optional public recipe target for a deterministic representative route. */
   representativeRecipeId?: string;
+  /** Optional Phase 4Q targeted-source route; keeps legacy policies unchanged. */
+  representativeLandmarkId?: string;
   /** Deterministic formal-command route fixture for an alternative victory. */
   victoryGoal?: VictoryType | 'auto';
 }
@@ -371,11 +374,11 @@ export function resolveOutcome(state: GameState): AutoGameOutcome {
 
 /** 各策略对合法动作分类的偏好权重（用于策略首选不可用时的退化挑选） */
 const CATEGORY_WEIGHT: Record<AutoPlayerPolicy, Record<LegalActionCategory, number>> = {
-  aggressive: { combat: 10, search: 4, movement: 3, craft: 2, recovery: 1, item: 1, objective: 2, resolution: 0, meta: 0 },
-  cautious: { combat: 1, search: 4, movement: 4, craft: 3, recovery: 6, item: 1, objective: 2, resolution: 0, meta: 0 },
-  collector: { combat: 1, search: 9, movement: 4, craft: 5, recovery: 2, item: 1, objective: 2, resolution: 0, meta: 0 },
-  opportunist: { combat: 4, search: 6, movement: 4, craft: 3, recovery: 3, item: 1, objective: 2, resolution: 0, meta: 0 },
-  random: { combat: 3, search: 3, movement: 3, craft: 3, recovery: 3, item: 1, objective: 2, resolution: 0, meta: 0 },
+  aggressive: { combat: 10, search: 4, movement: 3, craft: 2, recovery: 1, item: 1, objective: 2, facility: 2, resolution: 0, meta: 0 },
+  cautious: { combat: 1, search: 4, movement: 4, craft: 3, recovery: 6, item: 1, objective: 2, facility: 4, resolution: 0, meta: 0 },
+  collector: { combat: 1, search: 9, movement: 4, craft: 5, recovery: 2, item: 1, objective: 2, facility: 3, resolution: 0, meta: 0 },
+  opportunist: { combat: 4, search: 6, movement: 4, craft: 3, recovery: 3, item: 1, objective: 2, facility: 3, resolution: 0, meta: 0 },
+  random: { combat: 3, search: 3, movement: 3, craft: 3, recovery: 3, item: 1, objective: 2, facility: 2, resolution: 0, meta: 0 },
 };
 
 /** 愿意为了新物品腾格子的策略 */
@@ -484,6 +487,10 @@ export function decideAutoPlayerCommand(
       return { command: { type: 'SUBMIT_RESEARCH' }, reason: d.reason };
     case 'search':
       return { command: { type: 'SEARCH' }, reason: d.reason };
+    case 'search_landmark':
+      return d.landmarkId && player.planRecommendedLandmarkId === d.landmarkId
+        ? { command: { type: 'SEARCH_LANDMARK', landmarkId: d.landmarkId }, reason: d.reason }
+        : { command: { type: 'SEARCH' }, reason: d.reason };
     default:
       return { command: null, reason: d.reason };
   }
@@ -562,6 +569,7 @@ function equipmentScore(itemId: string): number {
  */
 interface RepresentativeRouteContext {
   targetZoneId: string | null;
+  landmarkId: string | null;
   searchNoYield: number;
   lastSearch: { zoneId: string; time: number } | null;
 }
@@ -763,6 +771,28 @@ function chooseRepresentativeBuildAction(
   if (equipmentUpgrade) return equipmentUpgrade;
 
   if (!state.craftGoalRecipeId) return null;
+
+  // A representative Phase 4Q route is an explicit public fixture: once its
+  // craft goal is adopted, travel to the named landmark before falling back
+  // to the generic source ranking. This keeps ordinary policies unchanged.
+  const representativeLandmark = route.landmarkId ? tryGetLandmarkDef(route.landmarkId) : null;
+  if (representativeLandmark) {
+    route.targetZoneId = representativeLandmark.zoneId;
+    if (player.currentZoneId === representativeLandmark.zoneId) {
+      return legal.find((action) => action.command.type === 'SEARCH_LANDMARK' && action.command.landmarkId === representativeLandmark.id)
+        ?? legal.find((action) => action.command.type === 'SEARCH')
+        ?? null;
+    }
+    const currentDistance = getZoneDistance(player.currentZoneId, representativeLandmark.zoneId);
+    const moves = legal
+      .map((action) => action.command.type === 'MOVE'
+        ? { action, distance: getZoneDistance(action.command.zoneId, representativeLandmark.zoneId) }
+        : null)
+      .filter((move): move is { action: LegalAction; distance: number } => Boolean(move))
+      .sort((a, b) => a.distance - b.distance);
+    return moves.find((move) => move.distance < currentDistance)?.action ?? moves[0]?.action ?? null;
+  }
+
   const recommendations = getCraftGoalRecommendations(state, player);
   if (recommendations.length === 0) {
     route.targetZoneId = null;
@@ -787,6 +817,10 @@ function chooseRepresentativeBuildAction(
   );
   if (!target) return null;
   if (target.zoneId === player.currentZoneId) {
+    if (route.landmarkId) {
+      const landmark = legal.find((action) => action.command.type === 'SEARCH_LANDMARK' && action.command.landmarkId === route.landmarkId);
+      if (landmark) return landmark;
+    }
     return legal.find((action) => action.command.type === 'SEARCH') ?? null;
   }
 
@@ -835,6 +869,7 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
     playerCharacterId: characterId,
     playerName: options.playerName ?? `Auto-${policy}`,
   });
+  if (options.representativeLandmarkId) getPlayer(s).planRecommendedLandmarkId = options.representativeLandmarkId;
   const victoryGoal = options.victoryGoal ?? 'auto';
   if (victoryGoal !== 'auto') seedObjectiveRouteWorldFixture(s, getPlayer(s), victoryGoal);
 
@@ -858,6 +893,7 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
   let playerDeathSnapshot: PlayerDeathSnapshot | null = null;
   const representativeRoute: RepresentativeRouteContext = {
     targetZoneId: null,
+    landmarkId: options.representativeLandmarkId ?? null,
     searchNoYield: 0,
     lastSearch: null,
   };
@@ -923,7 +959,7 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
         // 这不是 bug：合法集合本来就是规则的硬约束。
         source = 'fallback';
         fallbackSteps += 1;
-        const advancing = legal.filter((a) => a.advancesTime);
+        const advancing = legal.filter((a) => a.advancesTime && a.command.type !== 'SEARCH_LANDMARK' && a.command.type !== 'INTERACT_LANDMARK');
         const pool = advancing.length > 0 ? advancing : legal;
         chosen = weightedPick(pool, policy, policyRng);
       }

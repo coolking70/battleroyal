@@ -161,6 +161,8 @@ export interface Combatant {
   planNoProgressTurns: number;
   /** 计划推荐前往搜索的区域 id（Phase 2A-1） */
   planRecommendedZoneId: string | null;
+  /** 计划推荐的区域内部来源；只表达自己的制作路线。 */
+  planRecommendedLandmarkId: string | null;
   /** 最近一次重规划的原因（调试面板展示，Phase 2A-1） */
   lastReplanReason: string | null;
   /** 最远抵达的阶段，用于结算展示 */

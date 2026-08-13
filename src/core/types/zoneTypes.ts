@@ -1,5 +1,25 @@
 import type { ItemStack } from './itemTypes';
 
+export type LandmarkStatus = 'untouched' | 'discovered' | 'partially_used' | 'exhausted' | 'activated' | 'repaired';
+
+/** 持久化的区域内部探索状态；隐藏 loot 只存在于当前存档，不进入公开投影。 */
+export interface LandmarkState {
+  landmarkId: string;
+  zoneId: string;
+  discovered: boolean;
+  remainingSearches: number;
+  maxSearches: number;
+  charges: number;
+  maxCharges: number;
+  exhausted: boolean;
+  disabled: boolean;
+  repaired: boolean;
+  activated: boolean;
+  locked: boolean;
+  lastUsedAt: number | null;
+  loot: ItemStack[];
+}
+
 /* ------------------------------------------------------------------ */
 /* 区域                                                                */
 /* ------------------------------------------------------------------ */

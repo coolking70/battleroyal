@@ -22,6 +22,7 @@ import type { Combatant, GameState, ItemDef, Personality, Recipe } from './types
 import { PHASE4P_WILD_MATERIAL_IDS } from '../data/phase4pItems';
 import { PHASE4P_RECIPES } from '../data/phase4pRecipes';
 import { currentWorldSourcesForItem } from './worldSources';
+import { refreshLandmarkRecommendation } from './npcLandmarkPlan';
 
 const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
 
@@ -292,7 +293,7 @@ function pickRecommendedZone(
       // therefore contributes only its announced zone, never old eligible
       // alternatives, and a defeated Apex contributes no future source.
       const currentSources = currentSourcesFor(gap);
-      if (currentSources.some((source) => source.zoneIds.includes(zoneId))) score += 11;
+      if (currentSources.some((source) => source.kind !== 'landmark_loot' && source.zoneIds.includes(zoneId))) score += 11;
       if (currentSources.some((source) => source.kind === 'wild_drop' && source.enemyIds.some((enemyId) =>
         getWildEnemy(enemyId).tier === 'apex' && state.apexSchedule.some((entry) =>
           entry.spawned && entry.defId === enemyId && entry.zoneId === zoneId,
@@ -319,7 +320,7 @@ function allMissingZonesRestricted(
   // Never reconstruct sources from zone pools here. Static worldSources stay
   // intact for provenance; currentWorldSourcesForItem is the shared runtime
   // contract for restrictions, Apex collapse, and no-respawn defeat state.
-  return missing.every((gap) => !currentWorldSourcesForItem(state, gap.itemId).some((source) =>
+  return missing.every((gap) => !currentWorldSourcesForItem(state, gap.itemId).some((source) => source.kind !== 'landmark_loot' &&
     source.zoneIds.some((zoneId) => state.zones[zoneId]?.status !== 'restricted'),
   ));
 }
@@ -451,10 +452,15 @@ export function planNpcGoal(
   npc.planRecommendedZoneId = goal
     ? pickRecommendedZone(state, npc, tryGetRecipe(goal.recipeId)!)
     : null;
+  npc.planRecommendedLandmarkId = null;
 }
 
 /** Production planner hook for a caller that has already selected a recipe. */
 export function refreshNpcPlanRecommendation(state: GameState, npc: Combatant): void {
   const recipe = npc.plannedRecipeId ? tryGetRecipe(npc.plannedRecipeId) : null;
   npc.planRecommendedZoneId = recipe ? pickRecommendedZone(state, npc, recipe) : null;
+  // Apex recipes retain their dedicated wild-source planner; landmark routing
+  // is applied to ordinary material goals and never diverts an Apex route.
+  if (recipe && !PHASE4P_RECIPE_IDS.has(recipe.id)) refreshLandmarkRecommendation(state, npc, recipe);
+  else npc.planRecommendedLandmarkId = null;
 }

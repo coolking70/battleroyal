@@ -105,6 +105,18 @@ export function auditItemIntegrity(state: GameState): ItemIntegrityReport {
     });
   }
 
+  if (isRecord(state.landmarks)) for (const [landmarkId, raw] of Object.entries(state.landmarks)) {
+    if (!isRecord(raw) || !Array.isArray(raw.loot)) continue;
+    for (const s of raw.loot) {
+      if (!isRecord(s)) {
+        problems.push(`地标 ${landmarkId} 的隐藏物资存在结构损坏`);
+        continue;
+      }
+      const stack = s as unknown as ItemStack;
+      located.push({ uid: String(stack.uid ?? ''), itemId: String(stack.itemId ?? ''), count: typeof stack.count === 'number' ? stack.count : NaN, where: `地标 ${landmarkId} 的隐藏物资` });
+    }
+  }
+
   /* --- 1+2+3. uid / itemId / count 校验 --- */
   const seen = new Map<string, string>();
   for (const s of located) {

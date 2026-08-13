@@ -32,6 +32,7 @@ export interface CraftPlanRawGap {
   missing: number;
   sourceZoneIds: string[];
   sourceEnemyIds: string[];
+  sourceLandmarkIds: string[];
   worldSources: WorldSource[];
 }
 
@@ -156,8 +157,9 @@ export function buildCraftPlan(
       required: 0,
       held: 0,
       missing: 0,
-      sourceZoneIds: worldSources.flatMap((source) => source.zoneIds).filter((id, index, all) => all.indexOf(id) === index),
+      sourceZoneIds: worldSources.filter((source) => source.kind !== 'landmark_loot').flatMap((source) => source.zoneIds).filter((id, index, all) => all.indexOf(id) === index),
       sourceEnemyIds: worldSources.flatMap((source) => source.kind === 'wild_drop' ? source.enemyIds : []).filter((id, index, all) => all.indexOf(id) === index),
+      sourceLandmarkIds: worldSources.flatMap((source) => source.kind === 'landmark_loot' ? source.landmarkIds : []).filter((id, index, all) => all.indexOf(id) === index),
       worldSources,
     };
     existing.required += requested;

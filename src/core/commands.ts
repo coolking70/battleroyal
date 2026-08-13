@@ -91,6 +91,8 @@ export function advancesTime(command: Command): boolean {
   switch (command.type) {
     case 'MOVE':
     case 'SEARCH':
+    case 'SEARCH_LANDMARK':
+    case 'INTERACT_LANDMARK':
     case 'REST':
     case 'CRAFT':
     case 'USE_ITEM':
@@ -113,6 +115,8 @@ export function commandLabel(command: Command): string {
   const labels: Record<Command['type'], string> = {
     MOVE: '移动',
     SEARCH: '搜索',
+    SEARCH_LANDMARK: '定向搜索地标',
+    INTERACT_LANDMARK: '使用设施',
     REST: '休息',
     CRAFT: '合成',
     USE_ITEM: '使用物品',

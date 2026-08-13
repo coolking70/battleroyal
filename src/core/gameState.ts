@@ -9,6 +9,7 @@ import { SeededRandom } from './random';
 import { generateZoneLoot, initZoneLoot } from './zoneLoot';
 import { initializeWildPopulations } from './wildPopulation';
 import { initializeApexSchedule } from './apexSchedule';
+import { initializeLandmarks } from './landmarks';
 import type {
   Combatant,
   GameState,
@@ -127,6 +128,7 @@ function createCombatant(params: {
     planProgress: 0,
     planNoProgressTurns: 0,
     planRecommendedZoneId: null,
+    planRecommendedLandmarkId: null,
     lastReplanReason: null,
     furthestPhase: 'opening',
   };
@@ -172,6 +174,7 @@ export function createGame(options: CreateGameOptions): GameState {
     wildEnemies: {},
     wildUidSeq: 0,
     apexSchedule: [],
+    landmarks: {},
     zones: {},
     events: [],
     eventSeq: 0,
@@ -209,6 +212,13 @@ export function createGame(options: CreateGameOptions): GameState {
       signatureDrops: 0,
       signaturePickups: 0,
       signatureCrafts: 0,
+      landmarkSearches: 0,
+      landmarkExhaustions: 0,
+      facilityUses: 0,
+      facilityActivations: 0,
+      npcLandmarkSearches: 0,
+      landmarkWildEncounters: 0,
+      landmarkItemsRecovered: 0,
     },
     endedAtTime: null,
     phase: 'opening',
@@ -241,6 +251,7 @@ export function createGame(options: CreateGameOptions): GameState {
     }));
     state.zones[z.id] = zone;
   }
+  initializeLandmarks(state);
   initializeWildPopulations(state);
   initializeApexSchedule(state);
 

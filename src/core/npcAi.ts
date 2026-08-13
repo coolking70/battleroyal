@@ -8,6 +8,7 @@ import {
   resolveNpcOverflow,
   restActor,
   searchActor,
+  searchLandmarkActor,
   useItemActor,
   useSkillActor,
 } from './actorActions';
@@ -25,6 +26,7 @@ import {
   stackValue,
 } from './inventory';
 import { decideNpcAction, planNpcGoal, type NpcDecision } from './npcDecide';
+import { refreshNpcPlanRecommendation } from './npcGoalPlan';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, ItemStack } from './types';
 import { attackWildActor, fleeWildEncounter, resolveWildTurn } from './wildCombat';
@@ -280,6 +282,24 @@ export function runNpcTurn(
         if (enemy && enemy.alive && !npc.knownEnemies.includes(enemy.id)) {
           npc.knownEnemies.push(enemy.id);
         }
+      }
+      autoEquip(state, npc);
+      break;
+    }
+
+    case 'search_landmark': {
+      const res = decision.landmarkId ? searchLandmarkActor(state, npc, decision.landmarkId, rng) : { ok: false, message: '缺少地标目标。', outcome: null, staminaSpent: 0 };
+      if (!res.ok) {
+        refreshNpcPlanRecommendation(state, npc);
+        fallbackToRest(res.message);
+        break;
+      }
+      (state.stats.npcLandmarkSearches ??= 0);
+      state.stats.npcLandmarkSearches += 1;
+      if (res.outcome?.kind === 'item' && res.outcome.stack && res.outcome.pending) resolveNpcOverflow(state, npc, res.outcome.stack);
+      if (res.outcome?.kind === 'enemy') {
+        (state.stats.landmarkWildEncounters ??= 0);
+        state.stats.landmarkWildEncounters += 1;
       }
       autoEquip(state, npc);
       break;

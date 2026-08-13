@@ -18,13 +18,13 @@ import { enemiesInZone } from './gameState';
 import { armorDefenseOf, hasIngredients, weaponAttackOf } from './inventory';
 import { buildCraftPlan } from './craftPlan';
 import { currentWorldSourcesForItem } from './worldSources';
+import { canSearchLandmark } from './landmarks';
 import { hasPlannedWildSourceHere, hasRecommendedApexSource, npcSearchWeight, NPC_IDLE_WEIGHTS as IDLE_WEIGHTS } from './npcWildHunt';
 import { wildCombatProfile } from './wildCombat';
 import { npcCombatSkill, npcSurvivalSkill } from './npcSkillDecide';
 import { decideNpcVictoryAction } from './npcVictoryDecide';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, Personality } from './types';
-
 /* ------------------------------------------------------------------ */
 /* 决策结构                                                            */
 /* ------------------------------------------------------------------ */
@@ -38,7 +38,7 @@ export type NpcActionKind =
   | 'flee_combat'
   | 'guard'
   | 'use_skill'
-  | 'search'
+  | 'search' | 'search_landmark'
   | 'move'
   | 'call_extraction'
   | 'extract'
@@ -52,7 +52,7 @@ export interface NpcDecision {
   targetKind?: 'contestant' | 'wild';
   zoneId?: string;
   recipeId?: string;
-  uid?: string;
+  uid?: string; landmarkId?: string;
   /** 进攻时选用的攻击风格（Phase 3 Step 1） */
   attackStyle?: AttackStyle;
   /** 释放的技能 id（Phase 3 Step 3） */
@@ -447,16 +447,17 @@ export function decideNpcAction(
       targetId: knownWild.uid, targetKind: 'wild', attackStyle: chooseAttackStyle(npc, target, rng),
     };
   }
-
   // 7. 常规行动
   const weights = IDLE_WEIGHTS[npc.personality];
   const canSearchNow = canPayActionCost(npc, 'SEARCH').ok;
   const zoneEmpty = zone ? isZoneExhausted(zone) : false;
   const searchWeight = npcSearchWeight(state, npc, plan);
   const goalZone = npc.planRecommendedZoneId;
+  if (npc.planRecommendedLandmarkId && canSearchLandmark(state, npc.id, npc.planRecommendedLandmarkId).ok) {
+    return { kind: 'search_landmark', landmarkId: npc.planRecommendedLandmarkId, reason: '沿制作目标前往当前区域的定向来源' };
+  }
   // 区域已空时，"留在原地休息"也失去意义，移动权重相应抬高
   const moveWeight = zoneEmpty ? weights.move * 2.2 : weights.move;
-
   if (
     zoneEmpty &&
     hasRecommendedApexSource(state, plan, npc.currentZoneId, goalZone) &&
@@ -469,7 +470,6 @@ export function decideNpcAction(
   if (zoneEmpty && hasPlannedWildSourceHere(state, npc, plan) && canSearchNow) {
     return { kind: 'search', reason: '当前区域物资已空，但制作目标需要搜索这里的野外来源' };
   }
-
   const goalReachable = Boolean(
     goalZone && state.zones[goalZone]?.status !== 'restricted',
   );
