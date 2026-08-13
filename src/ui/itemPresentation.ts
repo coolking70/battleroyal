@@ -24,6 +24,7 @@ export const ITEM_CATEGORY_META: Record<
   armor: { label: CATEGORY_LABEL.armor, icon: '▣' },
   consumable: { label: CATEGORY_LABEL.consumable, icon: '✚' },
   utility: { label: CATEGORY_LABEL.utility, icon: '⌁' },
+  objective: { label: CATEGORY_LABEL.objective, icon: '◎' },
 };
 
 export function presentItem(itemId: string, stack?: ItemStack): ItemPresentation {

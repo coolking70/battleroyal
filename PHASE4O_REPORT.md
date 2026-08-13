@@ -1,0 +1,374 @@
+# Phase 4O — Multiple Victory Conditions
+
+## Status
+
+Implementation branch: `agent/phase4o-multiple-victory-conditions`
+Required final status: `NEEDS-HUMAN-PLAYTEST`
+
+Phase 4O starts from the accepted Phase 4N merge on `main`:
+
+- Phase 4N accepted head: `02f88b4b6edabb1f49ff3f974b402c83eeec576f`
+- Phase 4N normal merge commit: `82d90d613da55ebabebb415854458e27be22adf8`
+- Phase 4N PR: #21, merged after exact-head and CI verification
+- Phase 4O branch base: `82d90d613da55ebabebb415854458e27be22adf8`
+
+This report is the implementation and audit record. No accepted/production-ready
+declaration is made here.
+
+## 1. Executive Summary
+
+Phase 4O adds exactly three individual victory routes: last survivor,
+extraction, and research. All routes share one persisted, first-victory-wins
+framework; no balance tuning, save migration, team mode, boss route, or new PNG
+assets were introduced.
+
+## 2. Phase 4N Merge
+
+- PR #21 accepted head: `02f88b4b6edabb1f49ff3f974b402c83eeec576f`
+- Normal merge commit: `82d90d613da55ebabebb415854458e27be22adf8`
+- Phase 4O base and branch: `agent/phase4o-multiple-victory-conditions`
+
+## Scope lock
+
+The only new victory routes in this phase are:
+
+1. `last_survivor`: the existing classic elimination route;
+2. `extraction`: public station call, delay, and beacon extraction;
+3. `research`: private research progression and lab submission.
+
+This phase does not add team victory, a fourth route, bosses, weather-specific
+wins, capture points, old-save migration, balance tuning, or new PNG assets.
+
+## 3. Victory Architecture Audit — 20 answers
+
+1. **Where is victory decided?** `checkGameEnd()` is the end-of-turn boundary.
+   It delegates contestant wins to one authoritative `declareVictory()` API;
+   a player death with multiple contestants alive leaves the match `playing`,
+   while only a true no-winner hard-limit path uses `declareDraw()`.
+2. **What is the persisted winner model?** `GameState` contains explicit
+   `victory.winnerId`, `victory.type`, and `victory.declaredAtTime`.
+3. **What is the player-facing status?** `status='won'` means the player is the
+   winner; `status='lost'` means another contestant won. Player elimination is
+   recorded on the character and does not itself create a terminal result.
+4. **Can a wild enemy win?** No. Wild enemies are never contestants and are
+   rejected by the victory API before mutation.
+5. **How is first-victory-wins enforced?** `declareVictory()` refuses every
+   later declaration once a result or non-playing status exists.
+6. **How does classic victory work?** The only living contestant produces a
+   `last_survivor` declaration after contestant deaths resolve.
+7. **Can alternative wins happen with several contestants alive?** Yes;
+   extraction and research do not require elimination.
+8. **What happens when an NPC wins an alternative route?** The NPC is persisted
+   as winner and the player-facing status becomes `lost`, even if alive.
+9. **Where are route definitions kept?** A small victory registry defines route
+   IDs, labels, commands, objective items, and disclosure semantics; core owns
+   eligibility and mutation.
+10. **What is the extraction location?** The existing fixed public `station`
+    zone; no new zone or procedural route is introduced.
+11. **How is extraction staged?** `activeExtraction` stores caller, zone, start,
+    ready time, and phase. Movement, death, defeat, or beacon loss cancels it.
+12. **What is public information?** Extraction call/cancel/ready/complete events
+    are public and contain no inventory, HP, or research-progress disclosure.
+13. **What is private information?** Research progress remains local/private
+    until final completion.
+14. **How are objective items represented?** `ItemCategory='objective'` is a
+    formal registry category; ordinary inventory transfer handles death loot.
+15. **How deep are the chains?** Extraction uses the existing battery/frame
+    component chain to produce a beacon; research uses a depth-3+ chain with
+    Phase 4N wild material, research notes, anomaly sample, stabilized sample,
+    and research package.
+16. **How are action costs enforced?** Objective commands use centralized,
+    positive stamina costs; zero-cost `FLEE`/`GUARD` remain unchanged.
+17. **How are legal actions authoritative?** `legalActions` calls the same core
+    eligibility APIs as execution, and every listed command is executable.
+18. **How do NPCs and AutoPlayer use routes?** NPCs activate a deterministic
+    seed/personality goal on formal turns, while explicit objective fixtures
+    immediately adopt the matching craft plan; both sides use the same
+    eligibility and production functions with no `DEBUG_GIVE`.
+19. **What is saved and validated?** Victory and active extraction are persisted
+    and validated; old-save migration remains `DEFERRED UNTIL PRE-RELEASE`.
+20. **What is the UI contract?** Victory Paths cards derive from core/craft
+    plans; extraction countdown is public, research is private, and ResultScreen
+    distinguishes all three routes and alive-player NPC losses.
+
+## 4. Unified Victory Model
+
+`GameState.victory` is `{ winnerId, type, declaredAtTime }`, and
+`GameState.activeExtraction` stores the one public extraction session.
+`declareVictory()` is the only contestant-winner mutation. It validates a live
+turn-order contestant, writes the result, sets player-perspective status and
+endReason, emits `VICTORY_DECLARED` plus `GAME_ENDED`, and refuses later calls.
+
+## 5. Last Survivor
+
+`checkGameEnd()` preserves the classic rule: exactly one live contestant
+produces `type='last_survivor'`. Wild enemies are isolated from
+`turnOrder`/`characters` winner selection. Player death is an individual
+outcome only; with two or more contestants still alive, the resolver continues
+formal NPC/world turns until a real winner or legal draw exists.
+
+## 6. Extraction
+
+State machine: `idle → called → ready → completed` or `cancelled`. The fixed
+public zone is `station`; `EXTRACTION_DELAY=3`. `CALL_EXTRACTION` costs stamina
+and leaves the beacon in inventory. While waiting, leaving, dying, or losing
+the beacon cancels the call. Ready is public but not an automatic win.
+`EXTRACT` requires the original caller, station, ready state, beacon, and
+positive stamina; it consumes exactly one beacon before declaring extraction.
+
+## 7. Research
+
+The research route uses `research_notes` from the data-driven hospital/lab
+objective pools plus Phase 4N wild `bio_resin` and `chemical_mix`, then
+`anomaly_sample → stabilized_sample → research_package` (depth ≥3). The final
+`SUBMIT_RESEARCH` action is positive-cost, lab-only, consumes one package, and
+immediately declares research victory.
+
+## 8. Objective Items
+
+| Item | Category | Route/source |
+| --- | --- | --- |
+| `extraction_beacon` | `objective` | battery/frame component chain |
+| `research_package` | `objective` | Phase 4N material + research chain |
+| `research_notes` | material/raw | hospital and lab objective loot |
+
+Objective items use normal inventory capacity, crafting, ground drops,
+conservation, and pickup rules; they cannot be equipped or normally used.
+
+## 9. Action Costs
+
+Central action costs are `CALL_EXTRACTION=4`, `EXTRACT=6`, and
+`SUBMIT_RESEARCH=6`. They are all positive and use the shared eligibility/pay
+layer; only the pre-existing `FLEE`/zero-stamina `GUARD` exceptions remain.
+
+## 10. Legal Actions
+
+`legalActionBuilders.objectiveActions()` calls the same core
+`canCallExtraction`, `canExtract`, and `canSubmitResearch` gates as execution.
+Objective commands are omitted when ineligible, and the legal-command contract
+is covered by focused tests plus the existing random-action suite.
+
+## 11. Information Boundary
+
+Extraction call, cancellation, ready, completion, and final victory events are
+explicitly public. They expose caller/zone/countdown state only. Research
+progress and inventory planning remain player-private; only final completion is
+public. Result views use the same public event projection.
+
+## 12. NPC
+
+NPCs use deterministic shortest-path movement and the same objective eligibility
+and production functions. Their `victoryGoal` is stable per seed/personality;
+explicit objective goals immediately choose the matching recipe, while derived
+goals enter objective competition during finale resolution. They can carry a
+beacon through station call/wait/extract and can submit a research package in
+the lab. Hidden player/NPC inventory and remote wild state are not consulted.
+
+## 13. AutoPlayer
+
+`runAutoGame({ victoryGoal: 'extraction' | 'research', representativeBuildLoop: true })`
+uses formal `SET_CRAFT_GOAL`, `CRAFT`, `MOVE`, `REST`, `CALL_EXTRACTION`,
+`EXTRACT`, and `SUBMIT_RESEARCH` commands. The research fixture seeds world
+loot and a legal wild source, not objective ingredients in the player inventory;
+the stable `PHASE4O-AF-R-14` run records PvE defeat/drop, ground pickup, seven
+formal crafts, and one `SUBMIT_RESEARCH`, with `DEBUG_GIVE_MATERIAL=0`. The
+extraction closure is stable at `PHASE4O-AF-EX-62` and records two-plus CRAFT
+commands, `CALL_EXTRACTION`, `REST`, and `EXTRACT`.
+
+## 14. Result / Ranking Semantics
+
+ResultScreen distinguishes last-survivor, extraction, and research. If an NPC
+wins an alternative route, the player is shown as lost while still alive and
+the winner is named. UI and simulator both call the pure `buildFinalRanking()`;
+the latched winner is always rank #1, followed by living contestants and then
+dead contestants under deterministic secondary ordering.
+
+## 15. Save Current Schema
+
+Current saves persist victory, active extraction, objective inventory/loot, NPC
+victory goals, and route events. Structure, number, reference, and consistency
+validators reject unknown routes, invalid winners, bad callers/times, ended
+active calls, missing current-schema goal fields, and invalid objective loot.
+Backward compatibility: `DEFERRED UNTIL PRE-RELEASE`.
+
+## 16. Conservation
+
+Calls do not duplicate beacons; failed submissions and failed extraction do not
+consume objective items; successful extraction/submission consumes exactly one.
+Objective inventory participates in existing death ground-drop and pickup
+flows, and the item-invariant test suite remains green.
+
+## 17. Tests
+
+Focused coverage includes route registry/recipe depth, extraction chain and
+countdown/cancellation/atomicity, research submission, NPC-alternative loss,
+player-elimination continuation, winner-first ranking, NPC goal adoption and
+full world-PvE research closure, legal positive-cost gates, save corruption,
+Victory Paths UI/public countdown, and route-specific ResultScreen copy for
+player and NPC outcomes. Full suite is 101 files / 1583 tests.
+
+## 18. 500-Game Regression
+
+`reports/phase4o-regression.json` and `.md` contain the required 500-game run:
+requested = actual = 500, trustworthy = 100%, `terminalWithoutWinner=0`, and
+`invalidVictoryTuple=0`. Timeout, illegal, deadlock, livelock, stalled,
+empty-legal-set, hard-limit, and crash cases are all zero. The standard matrix
+observed 448 `last_survivor` results and 52 legal draws (`victoryType=none`);
+route frequency and role balance remain observations only.
+
+## 19. Human
+
+Automated browser smoke is PASS and the Victory Paths cards were visually
+inspected in `output/web-game/shot-0.png`. Human status remains exactly
+`NEEDS-HUMAN-PLAYTEST`; see `PHASE4O_HUMAN_PLAYTEST.md`.
+
+## 20. Deferred
+
+Deferred: balance tuning, old-save migration, fourth/fifth routes, capture
+points, faction/team victory, bosses, respawn, weather-specific wins, advanced
+objective events, and production PNG generation.
+
+## Acceptance interpretation
+
+The acceptance bar is a deterministic production-path implementation with
+focused tests for all three routes, NPC/player perspective, cancellation,
+public-information boundaries, objective death transfer, save corruption,
+legal-action parity, AutoPlayer closure, UI projection, and the required
+500-game engine-health regression. Balance ratios remain observation-only unless
+the phase prompt explicitly requires a gate.
+
+## Verification evidence
+
+- `npm test`: 101 files / 1583 tests passed.
+- `npm run typecheck`: PASS.
+- `npm run build`: PASS.
+- `npm run audit:save`: 102/102 corruption cases rejected; PASS.
+- `npm run audit:deps`: PASS (R1/R2/R4 zero violations; largest core/data file
+  is 500 lines).
+- `npm run art:doctor -- --offline`, `npm run art:validate`, and
+  `npm run art:audit:phase4a`: PASS.
+- `npm run art:security:browser`, `npm run art:security:repo`, and
+  `npm audit --omit=dev`: PASS; production dependencies have 0 vulnerabilities.
+- Required regression: `reports/phase4o-regression.json` and `.md`; 500/500
+  trustworthy, `terminalWithoutWinner=0`, `invalidVictoryTuple=0`, and 0
+  timeout/illegal/deadlock/livelock/stall/empty-legal-set/hard-limit cases;
+  requested = actual = 500, regression gate PASS.
+- Deterministic AutoPlayer representative loops: extraction and research both
+  ended `won` with the matching route, no illegal commands, and formal route
+  commands (`CALL_EXTRACTION` + `EXTRACT`, or `SUBMIT_RESEARCH`). The research
+  run used world PvE acquisition and recorded `DEBUG_GIVE_MATERIAL=0`.
+- Deterministic NPC research loop: world objective loot + raw zone loot + a
+  `resin_stalker` source produced SEARCH, ATTACK, WILD_DEFEATED, ground pickup,
+  three-plus crafts, and `RESEARCH_COMPLETED`; no final objective was injected.
+- Browser smoke: `output/web-game/shot-0.png` visibly shows all three Victory
+  Paths cards; `output/web-game/state-0.json` includes the persisted victory and
+  active-extraction fields; no console-error artifact was produced.
+- Human visual gate remains `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4O-AF — Victory Semantics & Alternative Route Closure
+
+### A. Player outcome vs match outcome
+
+Player death no longer writes `status='lost'`, `endReason='player_died'`, or
+`GAME_ENDED` while multiple contestants remain. The formal resolver continues
+the same `advanceTime()` NPC/world loop after elimination and ends only on a
+real contestant victory or legal draw.
+
+### B. Terminal invariant
+
+Every `won`/`lost` terminal state has a complete `{ winnerId, type,
+declaredAtTime }` tuple pointing to a living contestant. `draw` and
+`time_limit` keep all three victory fields null. The first successful
+`declareVictory()` latch is immutable; objective consumption and emitted
+events roll back if that latch rejects the submission.
+
+### C. Winner-first ranking
+
+`buildFinalRanking()` is the shared pure ranking source for ResultScreen and
+the simulator. A latched alternative winner is rank #1 even with zero kills;
+other living contestants remain alive in the result and are ordered by kills,
+ID, then dead contestants by death order.
+
+### D. NPC alternative-route intent
+
+NPCs have a deterministic `victoryGoal` field. Explicit objective fixtures
+immediately plan `r_research_package` or `r_extraction_beacon`; normal derived
+intent is activated on formal NPC turns and enters objective competition during
+finale resolution, preserving existing personality-planning behavior before
+the route is active. NPC objective actions still use the canonical crafting,
+movement, extraction, research, and PvE systems.
+
+### E. Real route evidence
+
+The dedicated NPC research test uses fixed lab objective loot, raw zone loot,
+and a `resin_stalker`; it does not inject final objective or wild materials.
+The NPC records SEARCH, ATTACK, WILD_DEFEATED, WILD_DROP_CREATED, ITEM_PICKED,
+three or more ITEM_CRAFTED events, and RESEARCH_COMPLETED. The dedicated
+AutoPlayer research seed `PHASE4O-AF-R-14` likewise starts without route
+ingredients and records formal PvE acquisition, pickup, seven CRAFT commands,
+SUBMIT_RESEARCH, and zero DEBUG_GIVE_MATERIAL commands.
+
+### F. Save and regression closure
+
+Current-schema validation now accepts a dead player with multiple live NPCs,
+rejects missing/invalid NPC victory-goal fields, rejects player victory goals,
+and rejects `playing` saves with one or zero live contestants. The 500-game
+AF report is 500/500 trustworthy with 0 terminal-without-winner and 0 invalid
+victory tuples; 52 draws are legal no-winner outcomes.
+
+### G. Balance and migration boundary
+
+No balance tuning, new route, asset, or migration was introduced. The observed
+role-balance ratio remains `BALANCE OBSERVATION ONLY — BALANCE DEFERRED`, and
+old-save migration remains `DEFERRED UNTIL PRE-RELEASE`.
+
+### H. Human gate
+
+The acceptance status remains exactly `NEEDS-HUMAN-PLAYTEST`; the added manual
+checks are in `PHASE4O_HUMAN_PLAYTEST.md`.
+
+## Phase 4O-AF2 — Terminal Tick Freeze
+
+### A. Problem and fix
+
+An NPC Research or Extraction victory could declare the terminal result and
+then let the same `advanceTime()` call continue through wild combat, status
+effects, restricted-zone/finale/world ticks, synchronization, and later NPC
+post-action cleanup. That could damage or kill the winner, mutate terminal
+state, or append events after `GAME_ENDED`. The NPC loop now returns
+immediately after a terminal objective action; `advanceTime()` clears the
+one-tick engagement buffer and returns before any remaining world processing.
+The player `finish()` path also skips action-completion cleanup once the
+objective action has already declared a terminal result.
+
+### B. Event and winner integrity
+
+Terminal objective actions preserve the exact event tail
+`RESEARCH_COMPLETED`/`EXTRACTION_COMPLETED` → `VICTORY_DECLARED` →
+`GAME_ENDED`. No `NPC_ACTION`, DoT, world tick, or cleanup event is appended
+after `GAME_ENDED`; the winner remains alive, the objective item is consumed,
+and the terminal state remains valid under current-schema save validation.
+Normal last-survivor resolution still proceeds through the ordinary tick and
+is not frozen merely because a character died.
+
+### C. Focused evidence
+
+Added three deterministic tests in `tests/phase4oAcceptanceFix.test.ts`: NPC
+Research victory with hp=1 and lethal `wild_poison`, NPC Extraction victory
+under the same lethal pending tick, and player Research terminal cleanup. All
+assert the event tail, living winner, unchanged pending status effect, stable
+water/route-item semantics, and save validation. Focused result: 14/14 PASS.
+The required `PHASE4O-AF2` regression completed with 500/500 trustworthy games,
+zero terminal-without-winner, invalid victory tuples, timeout, illegal state,
+deadlock, livelock, stall, empty-legal-set, or hard-limit cases. Full suite
+result: 101 files / 1586 tests PASS.
+
+### D. Scope and human gate
+
+No route semantics, ranking, NPC goal logic, AutoPlayer policy, balance,
+migration, or art assets were changed. Human status remains exactly
+`NEEDS-HUMAN-PLAYTEST`; manual terminal-freeze checks were added to
+`PHASE4O_HUMAN_PLAYTEST.md`. Typecheck, build, save/dependency/Art/security
+audits, browser smoke, and offline production dependency audit all pass; the
+networked `npm audit --omit=dev` retry was unavailable in the restricted
+environment, while `npm audit --omit=dev --offline` reports zero vulnerabilities.

@@ -26,6 +26,12 @@ const PUBLIC_EVENT_TYPES = new Set<GameEventType>([
   'WORLD_EVENT',
   'WORLD_EVENT_ENDED',
   'GAME_ENDED',
+  'VICTORY_DECLARED',
+  'EXTRACTION_CALLED',
+  'EXTRACTION_CANCELLED',
+  'EXTRACTION_READY',
+  'EXTRACTION_COMPLETED',
+  'RESEARCH_COMPLETED',
 ]);
 
 const PLAYER_ACTION_TYPES = new Set<GameEventType>([
@@ -96,7 +102,14 @@ function kindOf(type: GameEventType): string {
       return 'k-attack';
     case 'CHARACTER_DIED':
     case 'GAME_ENDED':
+    case 'VICTORY_DECLARED':
+    case 'EXTRACTION_COMPLETED':
+    case 'RESEARCH_COMPLETED':
       return 'k-death';
+    case 'EXTRACTION_CALLED':
+    case 'EXTRACTION_CANCELLED':
+    case 'EXTRACTION_READY':
+      return 'k-zone';
     case 'ZONE_WARNING':
     case 'ZONE_RESTRICTED':
     case 'ZONE_DAMAGE':

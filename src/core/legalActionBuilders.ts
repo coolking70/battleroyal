@@ -16,6 +16,7 @@ import { advancesTime, commandLabel } from './commands';
 import { hasRoomForOutput } from './crafting';
 import { enemiesInZone } from './gameState';
 import { livingWildEnemiesInZone } from './wildPopulation';
+import { canCallExtraction, canExtract, canSubmitResearch } from './victory';
 import {
   getEquippedArmor,
   getEquippedWeapon,
@@ -32,6 +33,7 @@ export type LegalActionCategory =
   | 'craft'
   | 'combat'
   | 'item'
+  | 'objective'
   /** 不推进时间、但能解开阻塞状态的命令 */
   | 'resolution'
   /** 不推进时间的纯设置类命令 */
@@ -252,6 +254,18 @@ export function craftActions(player: Combatant): LegalAction[] {
       ),
     );
   }
+  return out;
+}
+
+/** Route actions are enumerated from the same eligibility gates as execution. */
+export function objectiveActions(state: GameState, player: Combatant): LegalAction[] {
+  const out: LegalAction[] = [];
+  const call = canCallExtraction(state, player);
+  if (call.ok) out.push(action({ type: 'CALL_EXTRACTION' }, 'objective', call.cost, '公开车站撤离倒计时'));
+  const extract = canExtract(state, player);
+  if (extract.ok) out.push(action({ type: 'EXTRACT' }, 'objective', extract.cost, '消耗一个撤离信标并立即获胜'));
+  const research = canSubmitResearch(state, player);
+  if (research.ok) out.push(action({ type: 'SUBMIT_RESEARCH' }, 'objective', research.cost, '提交研究成果并立即获胜'));
   return out;
 }
 

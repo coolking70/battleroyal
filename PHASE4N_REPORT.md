@@ -179,7 +179,7 @@ not a Phase 4N-AF gate: `BALANCE OBSERVATION ONLY — BALANCE DEFERRED`.
 ## Gates and files
 
 - `npm run typecheck`: PASS
-- `npm test`: PASS, 97 files / 1556 tests
+- `npm test`: PASS, 98 files / 1560 tests
 - `npm run audit:save`: PASS, 102/102 corruption cases rejected
 - 500-game regression: engine-health PASS; balance is observation-only
 - core/data source line cap: PASS; no `src/core` or `src/data` file exceeds 500 lines

@@ -51,6 +51,12 @@ export const GAME_CONFIG = {
   fleeStaminaCost: 0,
   restStaminaGain: 15,
 
+  /* --- Phase 4O objective victories --- */
+  /** Every objective command is deliberately positive-cost. */
+  extractionCallStaminaCost: 4,
+  extractionCompleteStaminaCost: 6,
+  researchSubmitStaminaCost: 6,
+
   /* --- 搜索 --- */
   /** 基础权重（发现 / 遭遇 / 空手） */
   searchBaseFindWeight: 60,

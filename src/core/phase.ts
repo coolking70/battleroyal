@@ -22,6 +22,7 @@ import { pushEvent } from './events';
 import { aliveCharacters } from './gameState';
 import { applyDamage } from './vitals';
 import { globalLootRatio } from './zoneLoot';
+import { declareDraw } from './victory';
 import type { GamePhase, GameState } from './types';
 
 export const PHASE_LABEL: Record<GamePhase, string> = {
@@ -143,23 +144,5 @@ export function enforceTimeLimit(state: GameState): boolean {
   if (state.status !== 'playing') return false;
   if (state.time < GAME_CONFIG.hardTimeLimit) return false;
 
-  const alive = aliveCharacters(state);
-  state.status = 'draw';
-  state.endedAtTime = state.time;
-  state.endReason = 'time_limit';
-  // 对局结束：不允许残留未解决的遭遇（Phase 2A-1 存档不变量）
-  state.encounter = null;
-
-  pushEvent(state, {
-    type: 'GAME_ENDED',
-    message: `到达 ${GAME_CONFIG.hardTimeLimit} 个时间单位上限，对局强制结束（时间耗尽，平局）。`,
-    metadata: {
-      result: 'draw',
-      reason: 'time_limit',
-      hardLimitReached: true,
-      time: state.time,
-      survivors: alive.length,
-    },
-  });
-  return true;
+  return declareDraw(state, 'time_limit');
 }

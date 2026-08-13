@@ -14,6 +14,8 @@ export interface ZoneDef {
   basePool: string[];
   /** 稀有物品池 */
   rarePool: string[];
+  /** Optional objective source, generated separately from legacy loot RNG. */
+  objectivePool?: string[];
   /** 色块主题色（UI 占位美术用） */
   color: string;
 }
@@ -44,6 +46,8 @@ export interface ZoneState {
   supply: number;
   /** 有限物资库存 */
   loot: ZoneLootEntry[];
+  /** Finite route-specific source kept outside legacy supply accounting. */
+  objectiveLoot: ZoneLootEntry[];
   /** 开局生成的物资总件数（普通 + 稀有） */
   initialLootCount: number;
   /** 当前剩余物资总件数 */

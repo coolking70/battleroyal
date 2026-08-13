@@ -29,6 +29,8 @@ import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, ItemStack } from './types';
 import { attackWildActor, fleeWildEncounter, resolveWildTurn } from './wildCombat';
 import { PHASE4N_WILD_MATERIAL_IDS } from '../data/phase4nItems';
+import { performObjectiveAction } from './victory';
+import { deriveNpcVictoryGoal } from './npcVictoryGoal';
 
 const WILD_MATERIALS = new Set<string>(PHASE4N_WILD_MATERIAL_IDS);
 
@@ -152,6 +154,16 @@ export function runNpcTurn(
     return { kind: 'idle', reason: '无法行动' };
   }
 
+  // 胜利意图属于正式 NPC 行为的一部分：首次行动时按 seed / 人格稳定激活，
+  // 不让它改变旧的纯 chooseNpcGoal / planNpcGoal 调用者的默认评分。
+  if (npc.victoryGoal === null) {
+    npc.victoryGoal = deriveNpcVictoryGoal(state, npc);
+    npc.victoryGoalMode = 'derived';
+  }
+  if (npc.victoryGoalMode === 'derived' && state.phase === 'finale') {
+    npc.victoryGoalMode = 'explicit';
+  }
+
   // 出手前先解除上一回合的防御姿态（防御只挡一次攻击）
   npc.guarding = false;
 
@@ -208,6 +220,24 @@ export function runNpcTurn(
     case 'craft': {
       if (decision.recipeId) craftActor(state, npc, decision.recipeId);
       autoEquip(state, npc);
+      break;
+    }
+
+    case 'call_extraction':
+    case 'extract':
+    case 'submit_research': {
+      const res = performObjectiveAction(state, npc, decision.kind === 'call_extraction'
+        ? 'CALL_EXTRACTION'
+        : decision.kind === 'extract'
+          ? 'EXTRACT'
+          : 'SUBMIT_RESEARCH');
+      if (!res.ok) fallbackToRest(res.message);
+      if (res.ok && state.status !== 'playing' && decision.kind !== 'call_extraction') {
+        // EXTRACT / SUBMIT_RESEARCH emit the complete terminal event sequence.
+        // Keep GAME_ENDED as the last event and do not append NPC_ACTION,
+        // clear recon state, or mark another post-action mutation afterward.
+        return decision;
+      }
       break;
     }
 

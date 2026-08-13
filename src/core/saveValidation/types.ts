@@ -65,6 +65,12 @@ const EVENT_TYPE_TABLE: Record<GameEventType, true> = {
   WORLD_EVENT: true,
   WORLD_EVENT_ENDED: true,
   WORLD_EVENT_DAMAGE: true,
+  VICTORY_DECLARED: true,
+  EXTRACTION_CALLED: true,
+  EXTRACTION_CANCELLED: true,
+  EXTRACTION_READY: true,
+  EXTRACTION_COMPLETED: true,
+  RESEARCH_COMPLETED: true,
   GAME_ENDED: true,
 };
 

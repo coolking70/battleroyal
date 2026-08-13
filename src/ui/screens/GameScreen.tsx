@@ -47,6 +47,7 @@ import { ZoneIndicator } from '../components/ZoneIndicator';
 import { MapDrawer } from '../components/MapDrawer';
 import { VisualImage } from '../components/VisualImage';
 import { InstantWorldEventAnnouncement, WorldEventBanner } from '../components/WorldEventFeedback';
+import { VictoryPaths } from '../components/VictoryPaths';
 import { detectCraftableHint } from '../craftableHint';
 import { CraftableHint } from '../components/CraftableHint';
 import { CraftEquipmentHint } from '../components/CraftEquipmentHint';
@@ -289,6 +290,8 @@ export function GameScreen({
         onExpand={() => setMapOpen(true)}
         triggerRef={mapTriggerRef}
       />
+
+      <VictoryPaths state={state} player={player} disabled={lockedAll || inActiveEncounter} onCommand={act} />
 
       {/* ---------- 中栏：主视觉 + 上下文保留区 ---------- */}
       <main className="board">

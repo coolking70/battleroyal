@@ -150,6 +150,7 @@ export const ITEM_CATEGORY_VISUALS: Record<ItemCategory, VisualSpec> = {
   weapon: spec('⚔️', '#a04030', '武器', null),
   armor: spec('🛡️', '#4a6fa5', '防具', null),
   utility: spec('⌁', '#7565a5', '工具', null),
+  objective: spec('◎', '#c49a3a', '目标物', null),
 };
 
 /* ------------------------------------------------------------------ */

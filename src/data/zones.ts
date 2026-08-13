@@ -28,6 +28,7 @@ export const ZONES: ZoneDef[] = [
     // 避免“这里永远出不了武器”的死角，而不抢占普通医疗物资权重。
     basePool: ['herb', 'alcohol', 'cloth', 'bandage', 'water'],
     rarePool: ['antiseptic', 'chemical_mix', 'bandage'],
+    objectivePool: ['research_notes'],
     color: '#3f8f7a',
   },
   {
@@ -68,6 +69,7 @@ export const ZONES: ZoneDef[] = [
     adjacent: ['hospital', 'factory', 'forest', 'underground'],
     basePool: ['glass', 'battery', 'alcohol', 'scrap', 'iron'],
     rarePool: ['wire', 'circuit', 'battery_pack'],
+    objectivePool: ['research_notes'],
     color: '#6a5b9a',
   },
   {

@@ -16,6 +16,7 @@ import { tryGetItem } from '../../data/items';
 import { tryGetCharacterDef } from '../../data/characters';
 import { tryGetRecipe } from '../../data/recipes';
 import { validateStack } from './numbers';
+import { validateVictoryReferences } from './victoryReferences';
 import {
   EVENT_IMPORTANCE_SET,
   EVENT_TYPE_SET,
@@ -37,6 +38,7 @@ function isJsonSerializableMetadata(v: unknown): boolean {
 
 export function validateReferences(ctx: ValidationContext): void {
   const { state, characters, zones, charIds, zoneIds, fail } = ctx;
+  validateVictoryReferences(ctx);
 
   /* --- turnOrder / deathOrder --- */
   if (Array.isArray(state.turnOrder)) {
@@ -133,6 +135,23 @@ export function validateReferences(ctx: ValidationContext): void {
       if (typeof c.killedBy !== 'string' || !charIds.has(c.killedBy)) {
         fail(`角色 ${id} 的击杀者不存在（${String(c.killedBy)}）`);
       }
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(c, 'victoryGoal')) {
+      fail(`角色 ${id} 缺少当前版本 victoryGoal 字段`);
+    }
+    if (c.victoryGoal !== null && c.victoryGoal !== undefined
+      && c.victoryGoal !== 'last_survivor'
+      && c.victoryGoal !== 'extraction'
+      && c.victoryGoal !== 'research') {
+      fail(`角色 ${id} 的 victoryGoal 非法（${String(c.victoryGoal)}）`);
+    }
+    if (c.victoryGoalMode !== null && c.victoryGoalMode !== undefined
+      && c.victoryGoalMode !== 'derived' && c.victoryGoalMode !== 'explicit') {
+      fail(`角色 ${id} 的 victoryGoalMode 非法（${String(c.victoryGoalMode)}）`);
+    }
+    if (c.isPlayer === true && c.victoryGoal !== null && c.victoryGoal !== undefined) {
+      fail(`玩家角色 ${id} 不应带 NPC victoryGoal`);
     }
 
     /* NPC 计划三字段一致性（含对玩家不适用字段的宽容处理） */
@@ -365,6 +384,19 @@ export function validateReferences(ctx: ValidationContext): void {
     } else {
       for (const s of z.groundItems) {
         validateStack(ctx, s, `区域 ${zoneId} 的地面`);
+      }
+    }
+    if (!Array.isArray(z.objectiveLoot)) {
+      fail(`区域 ${zoneId} 的 objectiveLoot 类型错误`);
+    } else {
+      for (const entry of z.objectiveLoot) {
+        if (!isRecord(entry)) {
+          fail(`区域 ${zoneId} 的 objectiveLoot 存在损坏条目`);
+          continue;
+        }
+        if (!isItemIdKnown(entry.itemId)) fail(`区域 ${zoneId} 的 objectiveLoot 引用了未知物品（${String(entry.itemId)}）`);
+        if (!isFiniteNumber(entry.count) || !Number.isInteger(entry.count) || entry.count <= 0) fail(`区域 ${zoneId} 的 objectiveLoot 数量非法（${String(entry.count)}）`);
+        if (entry.rarity !== 'normal' && entry.rarity !== 'rare') fail(`区域 ${zoneId} 的 objectiveLoot 稀有度非法（${String(entry.rarity)}）`);
       }
     }
   }

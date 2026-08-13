@@ -8,7 +8,8 @@ export type ItemCategory =
   | 'weapon'
   | 'armor'
   | 'consumable'
-  | 'utility';
+  | 'utility'
+  | 'objective';
 
 /** 制作图谱中的固定层级；不从区域掉落或物品名称推断。 */
 export type CraftTier = 'raw' | 'component' | 'final';

@@ -34,6 +34,7 @@ export function wildCombatProfile(enemy: WildEnemyInstance): Combatant {
   const personality = def.behavior === 'aggressive' ? 'aggressive' : def.behavior === 'defensive' ? 'cautious' : 'opportunist';
   return {
     id: enemy.uid, name: def.name, isPlayer: false, characterId: `wild:${def.id}`, personality,
+    victoryGoal: null,
     level: 1, exp: 0, hp: enemy.hp, maxHp: def.maxHp, stamina: 99, maxStamina: 99,
     attack: def.attack, defense: def.defense, perception: 6, speed: def.speed, crafting: 0, medical: 0,
     passiveId: 'enduring', currentZoneId: enemy.zoneId, inventory: [], equipment: [],

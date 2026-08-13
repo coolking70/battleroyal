@@ -15,7 +15,7 @@ import {
   searchMaterialBias,
   searchRareChanceBonus,
 } from './statusIds';
-import { isZoneExhausted, takeLootItem } from './zoneLoot';
+import { isZoneExhausted, takeLootItem, takeObjectiveLoot } from './zoneLoot';
 import { worldModifiersAt } from './worldEvents';
 import type { SeededRandom } from './random';
 import type { Combatant, GameState, ItemStack, LootRarity } from './types';
@@ -156,6 +156,13 @@ export function rollItemId(
 ): { itemId: string; rarity: LootRarity } | null {
   const zone = state.zones[actor.currentZoneId];
   if (!zone) return null;
+
+  const pursuingResearch = state.craftGoalRecipeId === 'r_research_package'
+    || actor.plannedRecipeId === 'r_research_package';
+  if (pursuingResearch && zone.objectiveLoot.length > 0 && rng.chance(0.45)) {
+    const objective = takeObjectiveLoot(zone, rng);
+    if (objective) return objective;
+  }
 
   const preferRare = rng.chance(
     Math.min(0.95, GAME_CONFIG.rareChance + searchRareChanceBonus(actor)),

@@ -1015,3 +1015,71 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   `agent/phase4n-pve-wild-enemies` branch and verified by PR #21 CI run #110
   (`31671477337`) with `completed/success`. PR #21 remains Draft and unmerged;
   human visual gate remains `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4O — Multiple Victory Conditions (2026-08-13)
+
+- Verified Phase 4N PR #21 exact accepted head `02f88b4b6edabb1f49ff3f974b402c83eeec576f`,
+  marked it Ready, and merged it normally into `main` as `82d90d613da55ebabebb415854458e27be22adf8`.
+- Created `agent/phase4o-multiple-victory-conditions` from that merge and completed the
+  three-route architecture: last survivor, public station extraction, and private research
+  submission, with a persisted first-victory winner latch and NPC/player symmetry.
+- Added objective item/recipe/source registries, finite research loot, positive-cost commands,
+  legal-action parity, extraction call/ready/cancel/consume semantics, research completion,
+  route-specific result UI, save validation, simulator route counts, and deterministic
+  AutoPlayer/NPC representative loops without debug grants.
+- Added `tests/phase4oVictory.test.ts` and `tests/phase4oVictoryUi.test.tsx`; the focused
+  11-test route/save/NPC/UI suite passes.
+- Full suite: 100 files / 1571 tests PASS. Build PASS, save audit 102/102 PASS, browser
+  smoke PASS with `output/web-game/shot-0.png`, and the required 500-game regression PASS.
+  Human visual status remains `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4O-AF — Victory Semantics & Alternative Route Closure (2026-08-13)
+
+- Fixed premature match termination after player elimination: a dead player plus
+  multiple live NPCs remains `playing`, then formal NPC/world resolution reaches
+  a real winner or legal draw. `player_died` is no longer a terminal reason.
+- Enforced the terminal tuple invariant: every `won`/`lost` result has a living
+  winner, route type, and declaration time; `draw` keeps all victory fields null;
+  the first winner latch is immutable and objective actions are atomic.
+- Added shared winner-first `buildFinalRanking()` for ResultScreen and simulator;
+  alternative winners are rank #1 without marking other living contestants dead.
+- Added deterministic NPC victory goals, explicit objective craft-plan adoption,
+  current-schema goal validation, and a dedicated NPC Research world-PvE loop.
+- Reworked AutoPlayer Research fixtures to seed zone/objective loot and a real
+  `resin_stalker` source. Stable run `PHASE4O-AF-R-14` records MOVE/SEARCH/
+  ATTACK/WILD_DEFEATED/WILD_DROP_CREATED/PICKUP_GROUND/CRAFT/SUBMIT_RESEARCH;
+  `DEBUG_GIVE_MATERIAL=0` and no route ingredients start in inventory.
+- Full suite: 101 files / 1583 tests PASS. Required AF regression: 500/500
+  trustworthy, `terminalWithoutWinner=0`, `invalidVictoryTuple=0`, zero engine
+  health failures, requested = actual = 500. Role balance remains observation
+  only; old-save migration remains deferred. Human status remains
+  `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4O-AF2 — Terminal Tick Freeze (2026-08-13)
+
+- Added the central `advanceTime()` terminal short-circuit immediately after
+  the NPC loop. Terminal NPC objective victories now clear transient
+  engagement state and skip wild/status/zone/finale/world/event postprocessing.
+- `runNpcTurn()` returns immediately after successful terminal `EXTRACT` or
+  `SUBMIT_RESEARCH`, preventing `NPC_ACTION`, `noteOwnActionCompleted`, and
+  recon cleanup after the canonical `GAME_ENDED` event. Player `finish()` also
+  skips action cleanup once an objective command has already ended the match.
+- Added deterministic NPC Research, NPC Extraction, and player Research
+  terminal-freeze tests with 1 HP plus lethal `wild_poison`; all assert winner
+  survival, unchanged status effect, exact terminal event tail, resource
+  semantics, and valid saves. Focused suite: 14/14 PASS.
+- Updated `PHASE4O_REPORT.md` and `PHASE4O_HUMAN_PLAYTEST.md`; no route,
+  ranking, NPC/AutoPlayer policy, balance, migration, or art changes.
+- Required Phase 4O-AF2 regression completed: 500/500 trustworthy, zero
+  terminal-without-winner/invalid-victory-tuple/timeout/illegal/deadlock/
+  livelock/stall/empty-legal-set/hard-limit cases. Full suite is 101 files /
+  1586 tests PASS; typecheck/build, save/dependency/Art/security audits,
+  browser smoke, and offline production dependency audit pass. The networked
+  `npm audit --omit=dev` retry was blocked by the restricted environment;
+  `npm audit --omit=dev --offline` reports 0 vulnerabilities.
+- Updated the same Draft PR #22 body, committed as
+  `06affdf fix: freeze gameplay tick after Phase 4O victory`, and pushed the
+  existing `agent/phase4o-multiple-victory-conditions` branch without creating
+  or merging another PR. GitHub Actions verify run `31693322254` passed all
+  checks. Remaining gate is human playtest; status remains
+  `NEEDS-HUMAN-PLAYTEST`.

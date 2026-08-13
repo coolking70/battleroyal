@@ -90,6 +90,9 @@ export type Command =
   | { type: 'RESOLVE_PICKUP'; accept: boolean; dropUid?: string }
   | { type: 'CLOSE_ENCOUNTER' }
   | { type: 'SET_CRAFT_GOAL'; recipeId: string | null }
+  | { type: 'CALL_EXTRACTION' }
+  | { type: 'EXTRACT' }
+  | { type: 'SUBMIT_RESEARCH' }
   | { type: 'DEBUG_ADVANCE_TIME' }
   | { type: 'DEBUG_GIVE_MATERIAL' }
   | { type: 'DEBUG_HEAL_PLAYER' }

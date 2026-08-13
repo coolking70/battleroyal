@@ -41,6 +41,12 @@ export type GameEventType =
   | 'WORLD_EVENT_ENDED'
   /** Phase 3A-1：世界事件造成的环境伤害（走 applyDamage 后记录） */
   | 'WORLD_EVENT_DAMAGE'
+  | 'VICTORY_DECLARED'
+  | 'EXTRACTION_CALLED'
+  | 'EXTRACTION_CANCELLED'
+  | 'EXTRACTION_READY'
+  | 'EXTRACTION_COMPLETED'
+  | 'RESEARCH_COMPLETED'
   | 'GAME_ENDED';
 
 /** 事件重要度。 */
