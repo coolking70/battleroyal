@@ -4,6 +4,8 @@ import { isFiniteNumber, isRecord, type ValidationContext } from './types';
 const WILD_STAT_FIELDS = [
   'wildEncounterCount', 'wildKillCount', 'wildFleeCount', 'wildDamageTaken',
   'wildDropsCreated', 'wildMaterialPickups', 'wildCrafts', 'wildPlayerDeaths',
+  'eliteEncounterCount', 'eliteKillCount', 'apexSpawnedCount', 'apexEncounterCount',
+  'apexKillCount', 'apexFleeCount', 'signatureDrops', 'signaturePickups', 'signatureCrafts',
 ] as const;
 const INSTANCE_STATUS_IDS = new Set(['enraged', 'evasive', 'armored']);
 
@@ -57,6 +59,7 @@ export function validateWildState(ctx: ValidationContext): void {
     if (raw.status === 'alive' && raw.hp === 0) fail(`存活野外敌人 ${uid} 的 hp 不得为 0`);
     if (raw.status === 'defeated' && raw.hp !== 0) fail(`已击败野外敌人 ${uid} 的 hp 必须为 0`);
     if (typeof raw.guarding !== 'boolean' || typeof raw.dropResolved !== 'boolean') fail(`野外敌人 ${uid} 的布尔状态损坏`);
+    if (raw.pendingIntent !== null && !['shield_cycle', 'overcharge', 'toxic_burst', 'massive_charge', 'suppression_fire'].includes(String(raw.pendingIntent))) fail(`野外敌人 ${uid} pendingIntent 非法`);
     if (!isFiniteNumber(raw.abilityCharges) || !Number.isInteger(raw.abilityCharges) || (raw.abilityCharges as number) < 0) fail(`野外敌人 ${uid} abilityCharges 非法`);
     if (raw.defeatedAtTime !== null && (!isFiniteNumber(raw.defeatedAtTime) || !Number.isInteger(raw.defeatedAtTime) || (raw.defeatedAtTime as number) < 0 || (raw.defeatedAtTime as number) > (state.time as number))) fail(`野外敌人 ${uid} defeatedAtTime 非法`);
     if (raw.status === 'defeated' && raw.defeatedAtTime === null) fail(`已击败野外敌人 ${uid} 缺少 defeatedAtTime`);

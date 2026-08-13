@@ -330,6 +330,7 @@ interface CellStats {
   hardLimitRate: number;
   terminalWithoutWinnerCount?: number;
   invalidVictoryTupleCount?: number;
+  duplicateApexSpawnCount?: number;
 
   illegalCount: number;
   illegalRate: number;
@@ -370,6 +371,16 @@ interface CellStats {
   wildDropsCreated: number;
   wildMaterialPickups: number;
   wildCrafts: number;
+  eliteEncounters?: number;
+  eliteKills?: number;
+  apexSpawned?: number;
+  apexEncounters?: number;
+  apexKills?: number;
+  apexFlees?: number;
+  signatureDrops?: number;
+  signaturePickups?: number;
+  signatureCrafts?: number;
+  bossKillsByType?: Record<string, number>;
   wildEncounterByType: Record<string, number>;
   wildEncounterByZone: Record<string, number>;
   wildKillByType: Record<string, number>;
@@ -421,6 +432,7 @@ function aggregateCell(
   const hardLimitCount = results.filter((r) => r.hardLimitReached).length;
   const terminalWithoutWinnerCount = results.filter((r) => r.terminalWithoutWinner).length;
   const invalidVictoryTupleCount = results.filter((r) => r.invalidVictoryTuple).length;
+  const duplicateApexSpawnCount = results.filter((r) => r.duplicateApexSpawn).length;
   const illegalList = results.filter(isIllegal);
   const deadlockCount = results.filter((r) => r.deadlock !== null).length;
   const stalledCount = results.filter((r) => r.stalled).length;
@@ -456,6 +468,7 @@ function aggregateCell(
     hardLimitRate: pct(hardLimitCount),
     terminalWithoutWinnerCount,
     invalidVictoryTupleCount,
+    duplicateApexSpawnCount,
 
     illegalCount: illegalList.length,
     illegalRate: pct(illegalList.length),
@@ -499,6 +512,16 @@ function aggregateCell(
     wildDropsCreated: sum((r) => r.wildDropsCreated),
     wildMaterialPickups: sum((r) => r.wildMaterialPickups),
     wildCrafts: sum((r) => r.wildCrafts),
+    eliteEncounters: sum((r) => r.eliteEncounters),
+    eliteKills: sum((r) => r.eliteKills),
+    apexSpawned: sum((r) => r.apexSpawned),
+    apexEncounters: sum((r) => r.apexEncounters),
+    apexKills: sum((r) => r.apexKills),
+    apexFlees: sum((r) => r.apexFlees),
+    signatureDrops: sum((r) => r.signatureDrops),
+    signaturePickups: sum((r) => r.signaturePickups),
+    signatureCrafts: sum((r) => r.signatureCrafts),
+    bossKillsByType: mergeCounts((r) => r.bossKillsByType, results),
     wildEncounterByType: mergeCounts((r) => r.wildEncounterByType, results),
     wildEncounterByZone: mergeCounts((r) => r.wildEncounterByZone, results),
     wildKillByType: mergeCounts((r) => r.wildKillByType, results),
@@ -690,6 +713,7 @@ export interface GlobalSummary {
   victoryByType: Record<string, number>;
   terminalWithoutWinnerCount: number;
   invalidVictoryTupleCount: number;
+  duplicateApexSpawnCount: number;
   avgTimeUsed: number;
   avgPlayerRank: number;
   avgKills: number;
@@ -733,6 +757,7 @@ interface BalanceReport {
       hardLimitReached: { count: number; flagged: boolean };
       terminalWithoutWinner: { count: number; flagged: boolean };
       invalidVictoryTuple: { count: number; flagged: boolean };
+      duplicateApexSpawn: { count: number; flagged: boolean };
       engineHealthy: boolean;
     };
     /** 角色平衡验收（Phase 2A-1：最高/最低非零胜率比 < 2.5，不允许 0 胜率） */
@@ -781,6 +806,16 @@ interface BalanceReport {
     };
     pve: {
       encounters: number;
+      eliteEncounters: number;
+      eliteKills: number;
+      apexSpawned: number;
+      apexEncounters: number;
+      apexKills: number;
+      apexFlees: number;
+      signatureDrops: number;
+      signaturePickups: number;
+      signatureCrafts: number;
+      bossKillsByType: Record<string, number>;
       kills: number;
       flees: number;
       playerDeaths: number;
@@ -826,6 +861,7 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
     const hard = sum((c) => c.hardLimitCount);
     const terminalWithoutWinner = sum((c) => c.terminalWithoutWinnerCount ?? 0);
     const invalidVictoryTuple = sum((c) => c.invalidVictoryTupleCount ?? 0);
+    const duplicateApexSpawn = sum((c) => c.duplicateApexSpawnCount ?? 0);
     const illegal = sum((c) => c.illegalCount);
     const dead = sum((c) => c.deadlockCount);
     const st = sum((c) => c.stalledCount);
@@ -859,6 +895,7 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
       hardLimitRate: totalGames ? hard / totalGames : 0,
       terminalWithoutWinnerCount: terminalWithoutWinner,
       invalidVictoryTupleCount: invalidVictoryTuple,
+      duplicateApexSpawnCount: duplicateApexSpawn,
 
       illegalCount: illegal,
       illegalRate: totalGames ? illegal / totalGames : 0,
@@ -899,6 +936,16 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
       wildDropsCreated: sum((c) => c.wildDropsCreated),
       wildMaterialPickups: sum((c) => c.wildMaterialPickups),
       wildCrafts: sum((c) => c.wildCrafts),
+      eliteEncounters: sum((c) => c.eliteEncounters ?? 0),
+      eliteKills: sum((c) => c.eliteKills ?? 0),
+      apexSpawned: sum((c) => c.apexSpawned ?? 0),
+      apexEncounters: sum((c) => c.apexEncounters ?? 0),
+      apexKills: sum((c) => c.apexKills ?? 0),
+      apexFlees: sum((c) => c.apexFlees ?? 0),
+      signatureDrops: sum((c) => c.signatureDrops ?? 0),
+      signaturePickups: sum((c) => c.signaturePickups ?? 0),
+      signatureCrafts: sum((c) => c.signatureCrafts ?? 0),
+      bossKillsByType: mergeSummaryCounts(subset, (c) => c.bossKillsByType ?? {}),
       wildEncounterByType: mergeSummaryCounts(subset, (c) => c.wildEncounterByType),
       wildEncounterByZone: mergeSummaryCounts(subset, (c) => c.wildEncounterByZone),
       wildKillByType: mergeSummaryCounts(subset, (c) => c.wildKillByType),
@@ -1131,7 +1178,8 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
     skillPlayerUsesAll;
 
   const engineHealthy = timeoutCount === 0 && illegalCount === 0 && hardLimitCount === 0
-    && terminalWithoutWinnerCount === 0 && invalidVictoryTupleCount === 0;
+    && terminalWithoutWinnerCount === 0 && invalidVictoryTupleCount === 0
+    && (all.duplicateApexSpawnCount ?? 0) === 0;
   // Phase 3A-1：CI 模式（100 局）只守规模无关门槛（胜率比/事件覆盖需 3000 局规模）
   const ciGate =
     engineHealthy && quickPassed && heavyPassed && guardPassed && deltaPPPassed && skillPlayerUsesAll;
@@ -1166,7 +1214,8 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
         illegalState: { count: illegalCount, flagged: illegalCount > 0 },
         hardLimitReached: { count: hardLimitCount, flagged: hardLimitCount > 0 },
         terminalWithoutWinner: { count: terminalWithoutWinnerCount, flagged: terminalWithoutWinnerCount > 0 },
-        invalidVictoryTuple: { count: invalidVictoryTupleCount, flagged: invalidVictoryTupleCount > 0 },
+      invalidVictoryTuple: { count: invalidVictoryTupleCount, flagged: invalidVictoryTupleCount > 0 },
+        duplicateApexSpawn: { count: all.duplicateApexSpawnCount ?? 0, flagged: (all.duplicateApexSpawnCount ?? 0) > 0 },
         engineHealthy,
       },
       characterBalance: {
@@ -1213,6 +1262,16 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
       },
       pve: {
         encounters: all.wildEncounterCount,
+        eliteEncounters: all.eliteEncounters ?? 0,
+        eliteKills: all.eliteKills ?? 0,
+        apexSpawned: all.apexSpawned ?? 0,
+        apexEncounters: all.apexEncounters ?? 0,
+        apexKills: all.apexKills ?? 0,
+        apexFlees: all.apexFlees ?? 0,
+        signatureDrops: all.signatureDrops ?? 0,
+        signaturePickups: all.signaturePickups ?? 0,
+        signatureCrafts: all.signatureCrafts ?? 0,
+        bossKillsByType: all.bossKillsByType ?? {},
         kills: all.wildKillCount,
         flees: all.wildFleeCount,
         playerDeaths: all.wildPlayerDeaths,
@@ -1313,6 +1372,7 @@ function aggregateGlobalFromCells(
     victoryByType: mergeCellCounts(cells, (c) => c.victoryByType ?? {}),
     terminalWithoutWinnerCount: sum((c) => c.terminalWithoutWinnerCount ?? 0),
     invalidVictoryTupleCount: sum((c) => c.invalidVictoryTupleCount ?? 0),
+    duplicateApexSpawnCount: sum((c) => c.duplicateApexSpawnCount ?? 0),
     avgTimeUsed: w((c) => c.avgTimeUsed),
     avgPlayerRank: w((c) => c.avgPlayerRank),
     avgKills: w((c) => c.avgKills),
@@ -1385,6 +1445,7 @@ function renderMarkdown(report: BalanceReport): string {
   L.push(`- hardLimitReached（触及 180 硬上限）：${h.hardLimitReached.count}  →  ${h.hardLimitReached.flagged ? '**FAIL**' : 'OK'}`);
   L.push(`- terminalWithoutWinner：${h.terminalWithoutWinner.count}  →  ${h.terminalWithoutWinner.flagged ? '**FAIL**' : 'OK'}`);
   L.push(`- invalidVictoryTuple：${h.invalidVictoryTuple.count}  →  ${h.invalidVictoryTuple.flagged ? '**FAIL**' : 'OK'}`);
+  L.push(`- duplicateApexSpawn：${h.duplicateApexSpawn.count}  →  ${h.duplicateApexSpawn.flagged ? '**FAIL**' : 'OK'}`);
   L.push('');
   L.push(`**引擎整体判定：${h.engineHealthy ? 'PASS' : 'FAIL'}**`);
   L.push('');
@@ -1399,6 +1460,8 @@ function renderMarkdown(report: BalanceReport): string {
   L.push('');
   L.push(`- encounters=${pve.encounters}, kills=${pve.kills}, flees=${pve.flees}, playerDeaths=${pve.playerDeaths}`);
   L.push(`- damageTaken=${pve.damageTaken}, groundDrops=${pve.groundDrops}, pickups=${pve.pickups}, wildCrafts=${pve.crafts}`);
+  L.push(`- eliteEncounters=${pve.eliteEncounters}, eliteKills=${pve.eliteKills}, apexSpawned=${pve.apexSpawned}, apexEncounters=${pve.apexEncounters}, apexKills=${pve.apexKills}, apexFlees=${pve.apexFlees}`);
+  L.push(`- signatureDrops=${pve.signatureDrops}, signaturePickups=${pve.signaturePickups}, signatureCrafts=${pve.signatureCrafts}, bossKillsByType=${JSON.stringify(pve.bossKillsByType)}`);
   L.push(`- craftGoalCompletion=${pve.craftGoalCompletions}/${pve.craftGoalAttempts} (${fmtPct(pve.craftGoalCompletionRate)})`);
   L.push(`- encounterByType: ${JSON.stringify(pve.encounterByType)}`);
   L.push(`- encounterByZone: ${JSON.stringify(pve.encounterByZone)}`);

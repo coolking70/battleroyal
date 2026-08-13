@@ -2,6 +2,7 @@ import { GAME_CONFIG } from '../data/gameConfig';
 import { getItem } from '../data/items';
 import { tryGetRecipe } from '../data/recipes';
 import { getZoneDef } from '../data/zones';
+import { getWildEnemy } from '../data/wildEnemies';
 import { canPayActionCost } from './actionCosts';
 import { hasFieldCraftCharge, SKILLS } from './skills';
 import { estimatePower } from './combat';
@@ -422,13 +423,15 @@ export function decideNpcAction(
     .filter((enemy) => enemy?.status === 'alive' && enemy.zoneId === npc.currentZoneId)
     .sort((a, b) => Number(plannedWildDefs.has(b!.defId)) - Number(plannedWildDefs.has(a!.defId)))[0];
   if (knownWild) {
+    const knownDef = getWildEnemy(knownWild.defId);
     const target = wildCombatProfile(knownWild);
     const stance = STANCES[npc.personality];
     const powerOk = estimatePower(npc) >= estimatePower(target) * stance.powerRatioToFight;
-    if (hpRatio < stance.avoidBelowHpRatio && canPayActionCost(npc, 'FLEE').ok) {
+    const apexRisk = knownDef.tier === 'apex' ? 0.18 : knownDef.tier === 'elite' ? 0.08 : 0;
+    if ((hpRatio < stance.avoidBelowHpRatio + apexRisk || (knownDef.tier === 'apex' && !powerOk && hpRatio < 0.7)) && canPayActionCost(npc, 'FLEE').ok) {
       return { kind: 'flee_combat', reason: '生命不足，脱离野外威胁', targetId: knownWild.uid, targetKind: 'wild' };
     }
-    if (!powerOk && canPayActionCost(npc, 'GUARD').ok && rng.chance(0.4)) {
+    if ((!powerOk || knownDef.tier === 'apex') && canPayActionCost(npc, 'GUARD').ok && rng.chance(knownDef.tier === 'apex' ? 0.65 : 0.4)) {
       return { kind: 'guard', reason: '野外目标威胁较高，先行防御', targetId: knownWild.uid, targetKind: 'wild' };
     }
     return {

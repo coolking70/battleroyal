@@ -39,6 +39,9 @@ import { tryGetItem } from '../src/data/items';
 import type { Command, Combatant, GameEvent, GameState, Personality, VictoryType } from '../src/core/types';
 import { craftPathSummary, getCraftGoalSuggestion } from '../src/ui/craftPathPresentation';
 import { PHASE4N_RECIPES } from '../src/data/phase4nRecipes';
+import { PHASE4P_RECIPES } from '../src/data/phase4pRecipes';
+
+const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
 
 /* ------------------------------------------------------------------ */
 /* 对外类型                                                            */
@@ -132,6 +135,7 @@ export interface AutoGameResult {
   /** Acceptance metrics for the authoritative terminal tuple. */
   terminalWithoutWinner: boolean;
   invalidVictoryTuple: boolean;
+  duplicateApexSpawn: boolean;
   /** 对局结束时的时间单位 */
   timeUsed: number;
   endedAtTime: number | null;
@@ -179,6 +183,16 @@ export interface AutoGameResult {
   wildDropsCreated: number;
   wildMaterialPickups: number;
   wildCrafts: number;
+  eliteEncounters: number;
+  eliteKills: number;
+  apexSpawned: number;
+  apexEncounters: number;
+  apexKills: number;
+  apexFlees: number;
+  signatureDrops: number;
+  signaturePickups: number;
+  signatureCrafts: number;
+  bossKillsByType: Record<string, number>;
   wildEncounterByType: Record<string, number>;
   wildEncounterByZone: Record<string, number>;
   wildKillByType: Record<string, number>;
@@ -589,6 +603,7 @@ export function seedObjectiveRouteWorldFixture(state: GameState, player: Combata
     resin.guarding = false;
     resin.abilityCharges = 0;
     resin.statusEffects = [];
+    resin.pendingIntent = null;
     resin.dropResolved = false;
     resin.defeatedAtTime = null;
     lab.wildEnemyIds.push(resin.uid);
@@ -698,7 +713,12 @@ function chooseRepresentativeBuildAction(
     if (call) return call;
   }
   if (!state.craftGoalRecipeId) {
-    const suggestion = getCraftGoalSuggestion(state, player);
+    const suggestion = getCraftGoalSuggestion(state, player, {
+      // Phase 4P adds higher-tier content to the shared public suggestion
+      // registry. Keep the historical AutoPlayer representative loop bounded
+      // to its original content unless a route explicitly opts into P.
+      excludeRecipeIds: PHASE4P_RECIPE_IDS,
+    });
     const adopt = legal.find(
       (action) =>
         action.command.type === 'SET_CRAFT_GOAL' &&
@@ -1059,7 +1079,7 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
     }
     return counts;
   };
-  const wildRecipeIds = new Set(PHASE4N_RECIPES.map((recipe) => recipe.id));
+  const wildRecipeIds = new Set([...PHASE4N_RECIPES, ...PHASE4P_RECIPES].map((recipe) => recipe.id));
   const wildCraftGoalAttempted = Boolean(s.craftGoalRecipeId && wildRecipeIds.has(s.craftGoalRecipeId));
 
   const trustworthy =
@@ -1110,6 +1130,17 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
         || ((s.status === 'won' || s.status === 'lost') && !complete)
         || (s.status === 'draw' && !empty);
     })(),
+    duplicateApexSpawn: (() => {
+      const seen = new Set<string>();
+      return ctx.fullEvents
+        .filter((event) => event.type === 'APEX_SPAWNED')
+        .some((event) => {
+          const id = typeof event.metadata.wildDefId === 'string' ? event.metadata.wildDefId : event.id;
+          if (seen.has(id)) return true;
+          seen.add(id);
+          return false;
+        });
+    })(),
     playerDiedAtTime: player.diedAtTime,
     playerKilledBy: player.killedBy,
     playerZoneId: player.currentZoneId,
@@ -1131,6 +1162,16 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
     wildDropsCreated: s.stats.wildDropsCreated,
     wildMaterialPickups: s.stats.wildMaterialPickups,
     wildCrafts: s.stats.wildCrafts,
+    eliteEncounters: s.stats.eliteEncounterCount ?? 0,
+    eliteKills: s.stats.eliteKillCount ?? 0,
+    apexSpawned: s.stats.apexSpawnedCount ?? 0,
+    apexEncounters: s.stats.apexEncounterCount ?? 0,
+    apexKills: s.stats.apexKillCount ?? 0,
+    apexFlees: s.stats.apexFleeCount ?? 0,
+    signatureDrops: s.stats.signatureDrops ?? 0,
+    signaturePickups: s.stats.signaturePickups ?? 0,
+    signatureCrafts: s.stats.signatureCrafts ?? 0,
+    bossKillsByType: eventCounts('WILD_DEFEATED', 'wildDefId'),
     wildEncounterByType: eventCounts('WILD_ENCOUNTER_STARTED', 'wildDefId'),
     wildEncounterByZone: eventCounts('WILD_ENCOUNTER_STARTED', 'zoneId'),
     wildKillByType: eventCounts('WILD_DEFEATED', 'wildDefId'),

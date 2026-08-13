@@ -1083,3 +1083,18 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   or merging another PR. GitHub Actions verify run `31693322254` passed all
   checks. Remaining gate is human playtest; status remains
   `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4P — Elite PvE and Named Apex Threats (2026-08-13)
+
+- Rebased from the Phase 4O normal merge commit `7e0c94c0f0a327bd6c78f5e0b5cb60adfb788b84` onto `agent/phase4p-elite-pve-unique-loot`; pre-existing report edits were preserved in a stash for restoration after implementation.
+- Completed `PHASE4P_REPORT.md` architecture audit and kept Wild actors in the dedicated `wildEnemies` registry. Common combat still routes through `attackWildActor`, `resolveWildTurn`, `defeatWild`, `wildFlees`, and the existing action-cost/vitals systems.
+- Added six finite elite definitions, three named Apex definitions, nine finite Phase 4P raw materials, seven components, six final equipment outputs, thirteen recipes, deterministic persisted `apexSchedule`, idempotent `APEX_SPAWNED` broadcast, deterministic restricted-zone fallback, and public UI projections that omit UID/HP/status/drop details.
+- Added persisted `pendingIntent` telegraphs and data-driven special moves. GUARD, zero-stamina redlines, self-flee persistence, exact-once ground drops, signature metrics, canonical NPC autoLoot, craft planning, save validation, simulator observations, and a formal `SET_CRAFT_GOAL → MOVE → SEARCH → GUARD/ATTACK → defeat → PICKUP_GROUND → CRAFT → EQUIP` AutoPlayer fixture are covered by `tests/phase4pEliteApex.test.ts`.
+- Phase 4P 500-game regression generated `reports/phase4p-regression.json` and `.md`: requested=actual=500, trustworthy=100%, engine health PASS, zero timeout/illegal/deadlock/livelock/stall/empty-legal/hard-limit/terminal-without-winner/invalid-victory/duplicate-Apex-spawn cases. Role balance remains observation-only in regression mode.
+- Human playtest status remains exactly `NEEDS-HUMAN-PLAYTEST`; no approved PNG or art manifest was changed.
+
+### Phase 4P validation closeout (2026-08-13)
+
+- `npm run typecheck`, `npm run build`, save/dependency/Art/security audits, and `npm audit --omit=dev --offline` passed; offline audit found 0 vulnerabilities. The networked npm audit was intentionally not run because the restricted environment blocks external dependency-metadata upload.
+- Playwright smoke reached the menu and a live new-game screen; `render_game_to_text` returned a valid playing state and the gameplay screenshot was visually inspected. No new browser console error was recorded.
+- Full suite result: 100 files, 1,590/1,593 tests passed. Remaining failures are legacy Phase 4J-1 random equipment expectation and Phase 4M item/recipe upper bounds; Phase 4P focused suite is 7/7 PASS. These constraints were not changed to mask the Phase 4P expansion.

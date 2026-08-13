@@ -1,6 +1,8 @@
 import { GAME_CONFIG } from '../data/gameConfig';
 import { getItem } from '../data/items';
+import { PHASE4P_RECIPES } from '../data/phase4pRecipes';
 import { getZoneDef } from '../data/zones';
+import { getWildEnemy } from '../data/wildEnemies';
 import { canPayActionCost, payActionCost } from './actionCosts';
 import { pushEvent } from './events';
 import { addNoise } from './info';
@@ -19,6 +21,17 @@ import { isZoneExhausted, takeLootItem, takeObjectiveLoot } from './zoneLoot';
 import { worldModifiersAt } from './worldEvents';
 import type { SeededRandom } from './random';
 import type { Combatant, GameState, ItemStack, LootRarity } from './types';
+
+const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
+
+function searchableWildEnemies(state: GameState, zoneId: string) {
+  return livingWildEnemiesInZone(state, zoneId).filter((enemy) => {
+    const def = getWildEnemy(enemy.defId);
+    if (def.tier === 'common') return true;
+    if (def.tier === 'elite') return state.time >= 48;
+    return state.apexSchedule.some((entry) => entry.uid === enemy.uid && entry.spawned);
+  });
+}
 
 export type SearchOutcome =
   | {
@@ -103,7 +116,7 @@ export function computeSearchWeights(
   const others = charactersInZone(state, actor.currentZoneId).filter(
     (c) => c.id !== actor.id,
   );
-  const wild = livingWildEnemiesInZone(state, actor.currentZoneId);
+  const wild = searchableWildEnemies(state, actor.currentZoneId);
   const encounterCount = others.length + wild.length;
   let enemy =
     encounterCount === 0
@@ -230,11 +243,32 @@ export function performSearch(
     const others = charactersInZone(state, actor.currentZoneId).filter(
       (c) => c.id !== actor.id,
     );
-    const wild = livingWildEnemiesInZone(state, actor.currentZoneId);
-    const target = rng.pick([
-      ...others.map((enemy) => ({ targetKind: 'contestant' as const, id: enemy.id })),
-      ...wild.map((enemy) => ({ targetKind: 'wild' as const, id: enemy.uid })),
-    ]);
+    const wild = searchableWildEnemies(state, actor.currentZoneId);
+    const targetCandidates = [
+      ...others.map((enemy) => ({ value: { targetKind: 'contestant' as const, id: enemy.id }, weight: 1 })),
+      ...wild.map((enemy) => ({
+        value: { targetKind: 'wild' as const, id: enemy.uid },
+        // Common ecology stays the historical default. Higher tiers remain
+        // discoverable, but a search does not silently turn every route into
+        // an Apex encounter just because the finite population was expanded.
+        weight: enemy.defId && state.wildEnemies[enemy.uid]
+          ? getWildEnemy(enemy.defId).tier === 'elite'
+            ? state.craftGoalRecipeId && !state.craftGoalRecipeId.startsWith('r_')
+              ? 0
+              : state.craftGoalRecipeId && !PHASE4P_RECIPE_IDS.has(state.craftGoalRecipeId)
+                ? 0
+                : state.time >= 48 ? 0.25 : 0
+            : getWildEnemy(enemy.defId).tier === 'apex'
+              ? state.apexSchedule.some((entry) => entry.uid === enemy.uid && entry.spawned) ? 0.25 : 0
+              : 1
+          : 1,
+      })),
+    ];
+    const availableTargets = targetCandidates.filter((candidate) => candidate.weight > 0);
+    const hasHigherTierTarget = availableTargets.some((candidate) => candidate.value.targetKind === 'wild' && candidate.weight < 1);
+    const target = hasHigherTierTarget
+      ? rng.pickWeighted<{ targetKind: 'contestant' | 'wild'; id: string }>(availableTargets)
+      : rng.pick(availableTargets.map((candidate) => candidate.value));
     if (target?.targetKind === 'contestant') {
       const enemy = state.characters[target.id];
       if (!enemy) return emptyHanded(state, actor, zone.id);

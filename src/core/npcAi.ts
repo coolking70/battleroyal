@@ -29,10 +29,17 @@ import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, ItemStack } from './types';
 import { attackWildActor, fleeWildEncounter, resolveWildTurn } from './wildCombat';
 import { PHASE4N_WILD_MATERIAL_IDS } from '../data/phase4nItems';
+import { PHASE4P_SIGNATURE_IDS, PHASE4P_WILD_MATERIAL_IDS } from '../data/phase4pItems';
 import { performObjectiveAction } from './victory';
 import { deriveNpcVictoryGoal } from './npcVictoryGoal';
 
-const WILD_MATERIALS = new Set<string>(PHASE4N_WILD_MATERIAL_IDS);
+const WILD_MATERIALS = new Set<string>([...PHASE4N_WILD_MATERIAL_IDS, ...PHASE4P_WILD_MATERIAL_IDS]);
+const SIGNATURE_MATERIALS = new Set<string>(PHASE4P_SIGNATURE_IDS);
+
+function noteWildPickup(state: GameState, itemId: string): void {
+  if (WILD_MATERIALS.has(itemId)) state.stats.wildMaterialPickups += 1;
+  if (SIGNATURE_MATERIALS.has(itemId)) state.stats.signaturePickups = (state.stats.signaturePickups ?? 0) + 1;
+}
 
 /* 决策相关 API 由 npcDecide.ts 提供，这里统一再导出，保持对外契约不变 */
 export { decideNpcAction } from './npcDecide';
@@ -102,7 +109,7 @@ function autoLoot(state: GameState, npc: Combatant): void {
     if (canAccept(npc, stack)) {
       zone.groundItems.splice(i, 1);
       addItem(npc, clearGroundOwnership(stack));
-      if (WILD_MATERIALS.has(stack.itemId)) state.stats.wildMaterialPickups += 1;
+      noteWildPickup(state, stack.itemId);
       picks -= 1;
       pushEvent(state, {
         type: 'ITEM_PICKED',
@@ -127,7 +134,7 @@ function autoLoot(state: GameState, npc: Combatant): void {
       }
       zone.groundItems.splice(i, 1);
       addItem(npc, clearGroundOwnership(stack));
-      if (WILD_MATERIALS.has(stack.itemId)) state.stats.wildMaterialPickups += 1;
+      noteWildPickup(state, stack.itemId);
       picks -= 1;
       pushEvent(state, {
         type: 'ITEM_PICKED',

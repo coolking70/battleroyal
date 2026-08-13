@@ -8,6 +8,7 @@ import { Bar } from './Bar';
 import { VisualImage } from './VisualImage';
 import { getCharacterVisual, getWildEnemyVisual } from '../visualAssets';
 import { getWildEnemy } from '../../data/wildEnemies';
+import { WILD_SPECIAL_ABILITIES } from '../../data/wildApexAbilities';
 import { resolveCharacterVisualState } from '../characterVisualState';
 import {
   COMBAT_STATUS_META,
@@ -124,6 +125,8 @@ export function EncounterHero({
         {wildDef ? (
           <>
             <div className="eh-line eh-weapon">威胁：{wildDef.threat} · 行为：{wildDef.behavior}</div>
+            <div className="eh-line">级别：{wildDef.tier}{wildDef.specialAbilityId !== 'none' ? ` · 特殊技：${WILD_SPECIAL_ABILITIES[wildDef.specialAbilityId].name}` : ''}</div>
+            {wildEnemy?.pendingIntent && <div className="eh-line">⚠ 技能预兆：{WILD_SPECIAL_ABILITIES[wildEnemy.pendingIntent].telegraph}</div>}
             <div className="eh-line">掉落类别：{wildDef.dropCategory}（具体结果需击败后确认）</div>
           </>
         ) : <div className="eh-line eh-weapon">武器：{weapon ? getItem(weapon.itemId).name : '徒手'}</div>}

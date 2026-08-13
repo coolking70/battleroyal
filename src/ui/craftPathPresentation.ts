@@ -55,6 +55,11 @@ export interface CraftGoalSuggestion {
   sourceZoneIds: string[];
 }
 
+export interface CraftGoalSuggestionOptions {
+  /** Optional compatibility filter for callers with a bounded content scope. */
+  excludeRecipeIds?: ReadonlySet<string>;
+}
+
 export interface CraftPathSummary {
   /** 目标配方的静态树深度；基础材料直出为 1。 */
   depth: number;
@@ -161,12 +166,14 @@ export function craftPathSummary(
 export function getCraftGoalSuggestion(
   state: GameState,
   player: Combatant,
+  options: CraftGoalSuggestionOptions = {},
 ): CraftGoalSuggestion | null {
   // 手动目标优先：自动建议不得覆盖玩家意图。
   if (state.craftGoalRecipeId) return null;
 
   const currentAttack = weaponAttackOf(player);
   const candidates = RECIPES.filter((recipe) => {
+    if (options.excludeRecipeIds?.has(recipe.id)) return false;
     if (recipeVisibility(recipe.id) !== 'visible') return false;
     const item = getItem(recipe.outputItemId);
     return item.category === 'weapon' && (item.attack ?? 0) > currentAttack;

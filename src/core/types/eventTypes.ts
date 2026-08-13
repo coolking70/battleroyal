@@ -18,6 +18,7 @@ export type GameEventType =
   | 'WILD_DEFEATED'
   | 'WILD_FLED'
   | 'WILD_DROP_CREATED'
+  | 'APEX_SPAWNED'
   | 'ATTACK_HIT'
   | 'ATTACK_MISSED'
   | 'CHARACTER_ESCAPED'

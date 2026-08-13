@@ -1,5 +1,6 @@
 import { getItem } from '../data/items';
 import { getWildDropTable, getWildEnemy } from '../data/wildEnemies';
+import { WILD_SPECIAL_ABILITIES } from '../data/wildApexAbilities';
 import { getZoneDef } from '../data/zones';
 import { payActionCost } from './actionCosts';
 import { canAttack, computeDamage, fleeChanceIn, fleeDestinations, hitChanceIn } from './combat';
@@ -52,10 +53,12 @@ export function startWildEncounter(state: GameState, actor: Combatant, enemy: Wi
   if (enemy.status !== 'alive' || enemy.zoneId !== actor.currentZoneId) return;
   state.stats.wildEncounterCount += 1;
   const def = getWildEnemy(enemy.defId);
+  if (def.tier === 'elite') state.stats.eliteEncounterCount = (state.stats.eliteEncounterCount ?? 0) + 1;
+  if (def.tier === 'apex') state.stats.apexEncounterCount = (state.stats.apexEncounterCount ?? 0) + 1;
   pushEvent(state, {
     type: 'WILD_ENCOUNTER_STARTED', actorId: actor.id, zoneId: enemy.zoneId,
     message: `${actor.name} 遭遇了 ${def.name}。`,
-    metadata: { wildUid: enemy.uid, wildDefId: def.id, threat: def.threat },
+    metadata: { wildUid: enemy.uid, wildDefId: def.id, threat: def.threat, tier: def.tier },
   });
 }
 
@@ -73,10 +76,11 @@ function createWildDrops(state: GameState, enemy: WildEnemyInstance, killer: Com
     stack.revealedTo = [];
     zone.groundItems.push(stack);
     state.stats.wildDropsCreated += 1;
+    if (entry.itemId === def.signatureDropItemId) state.stats.signatureDrops = (state.stats.signatureDrops ?? 0) + 1;
     pushEvent(state, {
       type: 'WILD_DROP_CREATED', actorId: killer.id, zoneId: enemy.zoneId,
       message: `${def.name} 留下了 ${getItem(entry.itemId).name}。`,
-      metadata: { wildUid: enemy.uid, wildDefId: def.id, itemId: entry.itemId, count },
+      metadata: { wildUid: enemy.uid, wildDefId: def.id, itemId: entry.itemId, count, tier: def.tier },
     });
   }
 }
@@ -88,14 +92,17 @@ function defeatWild(state: GameState, enemy: WildEnemyInstance, killer: Combatan
   enemy.hp = 0;
   enemy.guarding = false;
   enemy.statusEffects = [];
+  enemy.pendingIntent = null;
   enemy.defeatedAtTime = state.time;
   killer.stats.wildKills = (killer.stats.wildKills ?? 0) + 1;
   state.stats.wildKillCount += 1;
+  if (def.tier === 'elite') state.stats.eliteKillCount = (state.stats.eliteKillCount ?? 0) + 1;
+  if (def.tier === 'apex') state.stats.apexKillCount = (state.stats.apexKillCount ?? 0) + 1;
   createWildDrops(state, enemy, killer, rng);
   pushEvent(state, {
     type: 'WILD_DEFEATED', actorId: killer.id, zoneId: enemy.zoneId,
     message: `${killer.name} 击败了 ${def.name}。`,
-    metadata: { wildUid: enemy.uid, wildDefId: def.id },
+    metadata: { wildUid: enemy.uid, wildDefId: def.id, tier: def.tier },
   });
   if (killer.isPlayer && state.encounter?.targetKind === 'wild' && state.encounter.enemyId === enemy.uid) {
     state.encounter.resolved = true;
@@ -142,15 +149,17 @@ export function attackWildActor(
   return { ok: true, message: response ? `${message}\n${response.message}` : message, actorDied: !actor.alive };
 }
 
-function wildFlees(state: GameState, actor: Combatant, enemy: WildEnemyInstance): WildActionResult {
+export function wildFlees(state: GameState, actor: Combatant, enemy: WildEnemyInstance): WildActionResult {
   const def = getWildEnemy(enemy.defId);
   // A wild self-flee ends only this encounter. The finite population entry,
   // persistent HP, UID, zone, and ability charges remain available for a
   // later search; only defeat changes the population lifecycle to defeated.
   enemy.guarding = false;
   enemy.statusEffects = [];
+  enemy.pendingIntent = null;
   state.stats.wildFleeCount += 1;
-  pushEvent(state, { type: 'WILD_FLED', targetId: actor.id, zoneId: enemy.zoneId, message: `${def.name} 脱离了交战，退回附近环境。`, metadata: { wildUid: enemy.uid, wildDefId: def.id, direction: 'wild' } });
+  if (def.tier === 'apex') state.stats.apexFleeCount = (state.stats.apexFleeCount ?? 0) + 1;
+  pushEvent(state, { type: 'WILD_FLED', targetId: actor.id, zoneId: enemy.zoneId, message: `${def.name} 脱离了交战，退回附近环境。`, metadata: { wildUid: enemy.uid, wildDefId: def.id, tier: def.tier, direction: 'wild' } });
   if (state.encounter?.targetKind === 'wild' && state.encounter.enemyId === enemy.uid) state.encounter.resolved = true;
   return { ok: true, message: `${def.name} 脱离了交战。`, escaped: true };
 }
@@ -168,6 +177,30 @@ export function resolveWildTurn(state: GameState, actor: Combatant, enemy: WildE
   }
   const profile = wildCombatProfile(enemy);
   let charged = false;
+  let specialAbility: string | null = null;
+  let specialDamageMult = 1;
+  if (def.specialAbilityId !== 'none') {
+    const special = WILD_SPECIAL_ABILITIES[def.specialAbilityId];
+    if (enemy.pendingIntent === null && enemy.abilityCharges > 0 && rng.chance(def.tier === 'apex' ? 0.7 : 0.45)) {
+      enemy.pendingIntent = def.specialAbilityId;
+      enemy.abilityCharges -= 1;
+      const message = `${def.name}：${special.telegraph}`;
+      pushEvent(state, { type: 'WILD_ATTACK', targetId: actor.id, zoneId: enemy.zoneId, message, metadata: { wildUid: enemy.uid, wildDefId: def.id, tier: def.tier, action: 'telegraph', specialAbility: def.specialAbilityId } });
+      return { ok: true, message };
+    }
+    if (enemy.pendingIntent === def.specialAbilityId) {
+      enemy.pendingIntent = null;
+      specialAbility = def.specialAbilityId;
+      profile.attack += special.attackBonus;
+      specialDamageMult = special.damageMult;
+      if (def.specialAbilityId === 'shield_cycle') {
+        enemy.guarding = true;
+        const message = `${def.name} 完成${special.name}，进入防御姿态。`;
+        pushEvent(state, { type: 'WILD_ATTACK', targetId: actor.id, zoneId: enemy.zoneId, message, metadata: { wildUid: enemy.uid, wildDefId: def.id, tier: def.tier, action: 'special_guard', specialAbility: def.specialAbilityId } });
+        return { ok: true, message };
+      }
+    }
+  }
   if (def.abilityId === 'charge' && enemy.abilityCharges > 0) {
     profile.attack += 3;
     enemy.abilityCharges -= 1;
@@ -176,10 +209,11 @@ export function resolveWildTurn(state: GameState, actor: Combatant, enemy: WildE
   const chance = hitChanceIn(state, profile, actor);
   if (!rng.chance(chance)) {
     const message = `${def.name} 扑向 ${actor.name}，攻击落空。`;
-    pushEvent(state, { type: 'WILD_ATTACK', targetId: actor.id, zoneId: enemy.zoneId, message, metadata: { wildUid: enemy.uid, wildDefId: def.id, hit: false, chance: Math.round(chance * 100), charged } });
+    pushEvent(state, { type: 'WILD_ATTACK', targetId: actor.id, zoneId: enemy.zoneId, message, metadata: { wildUid: enemy.uid, wildDefId: def.id, tier: def.tier, hit: false, chance: Math.round(chance * 100), charged, specialAbility } });
     return { ok: true, message };
   }
-  const adjusted = adjustIncomingCombatDamage(actor, computeDamage(profile, actor, rng, 'normal', false));
+  const rawDamage = Math.round(computeDamage(profile, actor, rng, 'normal', false) * specialDamageMult);
+  const adjusted = adjustIncomingCombatDamage(actor, rawDamage);
   actor.stats.damageTaken += adjusted.damage;
   state.stats.wildDamageTaken += adjusted.damage;
   const result = applyDamage(state, actor, adjusted.damage, null, `${def.name}攻击`);
@@ -188,8 +222,9 @@ export function resolveWildTurn(state: GameState, actor: Combatant, enemy: WildE
   if (def.abilityId === 'venom' && !result.died && !actor.statusEffects.some((effect) => effect.id === 'wild_poison')) {
     actor.statusEffects.push({ id: 'wild_poison', remaining: 2, hpPerTick: -2, label: '野外毒伤' });
   }
-  const message = `${def.name} 命中 ${actor.name}，造成 ${adjusted.damage} 点伤害${charged ? '（冲撞）' : ''}。`;
-  pushEvent(state, { type: 'WILD_ATTACK', targetId: actor.id, zoneId: enemy.zoneId, message, metadata: { wildUid: enemy.uid, wildDefId: def.id, hit: true, damage: adjusted.damage, charged, venom: def.abilityId === 'venom' } });
+  const specialLabel = specialAbility ? `（${WILD_SPECIAL_ABILITIES[def.specialAbilityId].name}）` : '';
+  const message = `${def.name} 命中 ${actor.name}，造成 ${adjusted.damage} 点伤害${charged ? '（冲撞）' : ''}${specialLabel}。`;
+  pushEvent(state, { type: 'WILD_ATTACK', targetId: actor.id, zoneId: enemy.zoneId, message, metadata: { wildUid: enemy.uid, wildDefId: def.id, tier: def.tier, hit: true, damage: adjusted.damage, charged, specialAbility, venom: def.abilityId === 'venom' || specialAbility === 'toxic_burst' } });
   return { ok: true, message, actorDied: result.died };
 }
 

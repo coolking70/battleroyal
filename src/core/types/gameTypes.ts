@@ -4,7 +4,7 @@ import type { EventCounters, GameEvent } from './eventTypes';
 import type { GamePhase, GameStatus } from './sharedTypes';
 import type { ZoneState } from './zoneTypes';
 import type { WorldEventRecord, WorldEventState } from '../commandTypes';
-import type { WildEnemyInstance } from './wildTypes';
+import type { ApexScheduleEntry, WildEnemyInstance } from './wildTypes';
 import type { ActiveExtraction, VictoryState } from './victoryTypes';
 
 /* ------------------------------------------------------------------ */
@@ -29,6 +29,16 @@ export interface GameGlobalStats {
   wildDropsCreated: number;
   wildMaterialPickups: number;
   wildCrafts: number;
+  /** Phase 4P metrics are optional for hand-built historical test fixtures. */
+  eliteEncounterCount?: number;
+  eliteKillCount?: number;
+  apexSpawnedCount?: number;
+  apexEncounterCount?: number;
+  apexKillCount?: number;
+  apexFleeCount?: number;
+  signatureDrops?: number;
+  signaturePickups?: number;
+  signatureCrafts?: number;
 }
 
 /**
@@ -59,6 +69,8 @@ export interface GameState {
   /** Dedicated PvE runtime registry. Wild enemies are never contestants. */
   wildEnemies: Record<string, WildEnemyInstance>;
   wildUidSeq: number;
+  /** Exactly one deterministic schedule per named Apex definition. */
+  apexSchedule: ApexScheduleEntry[];
   zones: Record<string, ZoneState>;
   events: GameEvent[];
   /** 事件自增序号，用于生成稳定的事件 id */

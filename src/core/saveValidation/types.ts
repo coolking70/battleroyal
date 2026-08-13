@@ -46,6 +46,7 @@ const EVENT_TYPE_TABLE: Record<GameEventType, true> = {
   WILD_DEFEATED: true,
   WILD_FLED: true,
   WILD_DROP_CREATED: true,
+  APEX_SPAWNED: true,
   ATTACK_HIT: true,
   ATTACK_MISSED: true,
   CHARACTER_ESCAPED: true,

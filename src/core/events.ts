@@ -43,6 +43,7 @@ const DEFAULT_IMPORTANCE: Record<GameEventType, EventImportance> = {
   WILD_ENCOUNTER_STARTED: 'major',
   WILD_DEFEATED: 'major',
   WILD_FLED: 'major',
+  APEX_SPAWNED: 'major',
 
   ATTACK_MISSED: 'minor',
   CHARACTER_MOVED: 'minor',

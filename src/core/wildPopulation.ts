@@ -1,4 +1,4 @@
-import { WILD_ECOLOGY, getWildEnemy } from '../data/wildEnemies';
+import { ELITE_WILD_ENEMY_IDS, WILD_ECOLOGY, getWildEnemy } from '../data/wildEnemies';
 import { ZONE_IDS } from '../data/zones';
 import { SeededRandom } from './random';
 import type { GameState, WildEnemyInstance } from './types';
@@ -27,9 +27,30 @@ export function initializeWildPopulations(state: GameState): void {
       state.wildEnemies[uid] = {
         uid, defId, zoneId, hp: def.maxHp, status: 'alive', guarding: false,
         abilityCharges: def.abilityId === 'none' ? 0 : 1,
-        statusEffects: [], dropResolved: false, defeatedAtTime: null,
+        statusEffects: [], pendingIntent: null, dropResolved: false, defeatedAtTime: null,
       };
       zone.wildEnemyIds.push(uid);
     }
+  }
+
+  // Elite instances are finite and seeded independently from the historical
+  // common ecology stream. There is deliberately no respawn branch.
+  const eliteRng = new SeededRandom(`phase4p:elite:${state.seed}`);
+  for (const defId of eliteRng.shuffle(ELITE_WILD_ENEMY_IDS)) {
+    const def = getWildEnemy(defId);
+    const eligible = [...(def.eligibleZones ?? [])];
+    const pickedZoneId = eliteRng.pick(eligible);
+    if (!pickedZoneId) continue;
+    const zoneId = pickedZoneId;
+    const zone = state.zones[zoneId];
+    if (!zone || zone.wildEnemyIds.length >= 4) continue;
+    const uid = `w${state.wildUidSeq}`;
+    state.wildUidSeq += 1;
+    state.wildEnemies[uid] = {
+      uid, defId, zoneId, hp: def.maxHp, status: 'alive', guarding: false,
+      abilityCharges: 2, statusEffects: [], pendingIntent: null,
+      dropResolved: false, defeatedAtTime: null,
+    };
+    zone.wildEnemyIds.push(uid);
   }
 }

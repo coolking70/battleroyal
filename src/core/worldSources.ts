@@ -1,4 +1,4 @@
-import { WILD_DROP_TABLES, WILD_ENEMIES, commonZonesForEnemy } from '../data/wildEnemies';
+import { WILD_DROP_TABLES, ALL_WILD_ENEMIES, commonZonesForEnemy } from '../data/wildEnemies';
 import { ZONES } from '../data/zones';
 import type { GameState } from './types';
 
@@ -14,7 +14,7 @@ export function worldSourcesForItem(itemId: string, state?: GameState): WorldSou
     .map((zone) => zone.id)
     .filter(available);
   const tableIds = new Set(WILD_DROP_TABLES.filter((table) => table.entries.some((entry) => entry.itemId === itemId)).map((table) => table.id));
-  const enemyIds = WILD_ENEMIES.filter((enemy) => tableIds.has(enemy.dropTableId)).map((enemy) => enemy.id);
+  const enemyIds = ALL_WILD_ENEMIES.filter((enemy) => tableIds.has(enemy.dropTableId)).map((enemy) => enemy.id);
   const wildZoneIds = enemyIds
     .flatMap(commonZonesForEnemy)
     .filter((zoneId, index, all) => all.indexOf(zoneId) === index)

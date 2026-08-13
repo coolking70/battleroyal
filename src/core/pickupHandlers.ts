@@ -1,16 +1,19 @@
 import { tryGetItem } from '../data/items';
 import { PHASE4N_WILD_MATERIAL_IDS } from '../data/phase4nItems';
+import { PHASE4P_SIGNATURE_IDS, PHASE4P_WILD_MATERIAL_IDS } from '../data/phase4pItems';
 import { pushEvent } from './events';
 import { addItem, canAccept, removeStack } from './inventory';
 import { canAccessGroundItem, clearGroundOwnership } from './legalActions';
 import type { Combatant, GameState } from './types';
 
 interface PickupOutcome { ok: boolean; message: string | null }
-const WILD_MATERIALS = new Set<string>(PHASE4N_WILD_MATERIAL_IDS);
+const WILD_MATERIALS = new Set<string>([...PHASE4N_WILD_MATERIAL_IDS, ...PHASE4P_WILD_MATERIAL_IDS]);
+const SIGNATURE_MATERIALS = new Set<string>(PHASE4P_SIGNATURE_IDS);
 const itemName = (itemId: string): string => tryGetItem(itemId)?.name ?? '未知物品';
 
 function noteWildPickup(state: GameState, itemId: string): void {
   if (WILD_MATERIALS.has(itemId)) state.stats.wildMaterialPickups += 1;
+  if (SIGNATURE_MATERIALS.has(itemId)) state.stats.signaturePickups = (state.stats.signaturePickups ?? 0) + 1;
 }
 
 export function handlePickupGround(state: GameState, player: Combatant, uid: string): PickupOutcome {

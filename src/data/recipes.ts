@@ -2,6 +2,7 @@ import type { Recipe } from '../core/types';
 import { PHASE4M_RECIPES } from './phase4mRecipes';
 import { PHASE4N_RECIPES } from './phase4nRecipes';
 import { PHASE4O_RECIPES } from './phase4oRecipes';
+import { PHASE4P_RECIPES } from './phase4pRecipes';
 import { ITEMS as ITEMS_FOR_GRAPH } from './items';
 import { validateRawWorldSources } from '../core/worldSources';
 
@@ -200,7 +201,7 @@ const LEGACY_RECIPES: Recipe[] = [
   },
 ];
 
-export const RECIPES: Recipe[] = [...LEGACY_RECIPES, ...PHASE4M_RECIPES, ...PHASE4N_RECIPES, ...PHASE4O_RECIPES];
+export const RECIPES: Recipe[] = [...LEGACY_RECIPES, ...PHASE4M_RECIPES, ...PHASE4N_RECIPES, ...PHASE4O_RECIPES, ...PHASE4P_RECIPES];
 
 /** 配方图谱的唯一来源：一件输出物只能有一个正式配方。 */
 const RECIPE_MAP: Record<string, Recipe> = Object.fromEntries(

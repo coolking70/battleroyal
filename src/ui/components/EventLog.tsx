@@ -32,6 +32,7 @@ const PUBLIC_EVENT_TYPES = new Set<GameEventType>([
   'EXTRACTION_READY',
   'EXTRACTION_COMPLETED',
   'RESEARCH_COMPLETED',
+  'APEX_SPAWNED',
 ]);
 
 const PLAYER_ACTION_TYPES = new Set<GameEventType>([
@@ -99,6 +100,7 @@ function kindOf(type: GameEventType): string {
     case 'WILD_ATTACK':
     case 'WILD_DEFEATED':
     case 'WILD_FLED':
+    case 'APEX_SPAWNED':
       return 'k-attack';
     case 'CHARACTER_DIED':
     case 'GAME_ENDED':
@@ -143,6 +145,7 @@ function filterOf(type: GameEventType): LogFilter {
     case 'WILD_ATTACK':
     case 'WILD_DEFEATED':
     case 'WILD_FLED':
+    case 'APEX_SPAWNED':
       return 'combat';
     case 'ITEM_FOUND':
     case 'ITEM_CRAFTED':

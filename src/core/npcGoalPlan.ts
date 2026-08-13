@@ -18,6 +18,10 @@ import {
 import { buildCraftPlan } from './craftPlan';
 import type { SeededRandom } from './random';
 import type { Combatant, GameState, ItemDef, Personality, Recipe } from './types';
+import { PHASE4P_WILD_MATERIAL_IDS } from '../data/phase4pItems';
+import { PHASE4P_RECIPES } from '../data/phase4pRecipes';
+
+const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
 
 /* ------------------------------------------------------------------ */
 /* 制作目标规划（Phase 2A-1：五种人格长期规划）                          */
@@ -86,7 +90,12 @@ function buildGoalCandidates(npc: Combatant): GoalCandidate[] {
   const attack = weaponAttackOf(npc);
   const defense = armorDefenseOf(npc);
   const out: GoalCandidate[] = [];
+  const hasPhase4PMaterial = PHASE4P_WILD_MATERIAL_IDS.some((itemId) => countItem(npc, itemId) > 0);
   for (const recipe of RECIPES) {
+    // Keep the historical default objective planner stable until an NPC has
+    // legally observed or picked up a Phase 4P material. Explicit craft goals
+    // still bypass this selector and use the same public source planner.
+    if (PHASE4P_RECIPE_IDS.has(recipe.id) && !hasPhase4PMaterial) continue;
     const item = getItem(recipe.outputItemId);
     const isVictoryObjective = item.category === 'objective';
     const matchesVictoryGoal =
