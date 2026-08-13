@@ -964,3 +964,31 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   screenshot/state showed the factory goal banner and no console errors.
 - TODO: commit once, push the same branch, update Draft PR #20, wait for CI,
   then stop for independent acceptance. Human playtest remains required.
+
+## Phase 4N progress (2026-08-13)
+
+- Verified Phase4M PR #20 at its accepted head, marked it Ready, and merged it
+  normally into `main` as `bd7585e7`; Phase4N now runs on
+  `agent/phase4n-pve-wild-enemies` from that exact merge.
+- Completed the architecture audit: wild enemies will live in a dedicated
+  registry/runtime population (never `GameState.characters`), while combat
+  math, attack costs, durability, guard and flee stay on the canonical engine
+  paths through shared helpers.
+- Confirmed the existing command handler is exactly 499 lines, so Phase4N will
+  first extract existing ground-pickup handling and keep new PvE orchestration
+  in focused modules under the 500-line core/data limit.
+- TODO: add deterministic 12-zone ecology, finite populations, PvE encounters,
+  ground-only drops, world-source crafting routes, NPC/AutoPlayer support,
+  current-schema save validation, UI presentation, tests and 500-game evidence.
+## Phase 4N — PvE Wild Enemies & Drop Ecology (2026-08-13)
+
+- Verified Phase 4M merged baseline `bd7585e73184fedd874dce158074c993f6e4f71b` and implemented Phase 4N on `agent/phase4n-pve-wild-enemies`.
+- Added independent `WildEnemyDef` / `WildEnemyInstance` registries, 10 urban wild threats, deterministic finite 1–4 populations across all 12 zones, encounter discriminator, canonical-style PvE combat, deterministic AI, venom/armor/evasion/enrage/charge abilities, and no respawn.
+- Added 8 wild-only raw materials, 6 components, 4 final outputs, 10 recipes with depth ≥2, static `zone_loot` / `wild_drop` source provenance, craft-guide/codex information boundaries, and no starting-inventory bypass.
+- Added ground-only exact-once drops with `droppedBy` / `revealedTo`, NPC wild awareness/loot, player-only event projection, fallback-only wild visuals, and static map ecology labels.
+- Added current-schema save storage/validation for populations, UIDs, encounters, status and drops. Older saves are rejected and retained; compatibility is explicitly `DEFERRED UNTIL PRE-RELEASE`.
+- Added Phase 4N ecology/PvE/UI/AutoPlayer tests. Full suite: 97 files / 1556 tests PASS. `npm run audit:save`: 102/102 corruption cases rejected.
+- Required 500-game command completed: 500 actual games, 100% trustworthy, 0 timeout/illegal/deadlock/livelock/empty-legal-set/hard-limit cases. Role-balance ratio is recorded as observation-only; engine-health regression PASS.
+- Reports: `PHASE4N_REPORT.md`, `PHASE4N_HUMAN_PLAYTEST.md`, `reports/phase4n-regression.json`, `reports/phase4n-regression.md`.
+- Build, dependency, Art, security, production npm audit, and browser menu/gameplay smoke all PASS. Screenshot inspected at `output/web-game/shot-0.png`; `state-0.json` reported `mode=playing`, time 0, no browser error artifact. Human visual gate remains `NEEDS-HUMAN-PLAYTEST`.
+- Commit `d3bda6523793271128132f035c83bdb0f47ff4fe` pushed to `agent/phase4n-pve-wild-enemies`; Draft PR #21 opened against `main` with the requested title. GitHub Actions CI run #108 completed successfully. Do not merge; human visual gate remains `NEEDS-HUMAN-PLAYTEST`.

@@ -22,6 +22,7 @@
 import { getZoneDef } from '../data/zones';
 import { getItem, tryGetItem } from '../data/items';
 import { recipeVisibility, tryGetRecipe } from '../data/recipes';
+import { getWildEnemy } from '../data/wildEnemies';
 import { buildCraftPlan } from './craftPlan';
 import { SUPPLY_STATUS_LABEL, supplyStatusOf } from './zoneLoot';
 import type { Combatant, GameState } from './types';
@@ -42,6 +43,8 @@ export interface CraftGoalRecommendation {
   supplyLabel: string;
   /** 一句话理由（UI 展示用） */
   reason: string;
+  /** Static common drop sources; never a live population read. */
+  sourceEnemyIds: string[];
 }
 
 /**
@@ -107,22 +110,27 @@ export function getCraftGoalRecommendations(
     .map((gap) => ({ itemId: gap.itemId, count: gap.missing })) ?? [];
   if (needed.length === 0) return [];
 
-  const neededIds = new Set(needed.map((i) => i.itemId));
+  const gaps = plan?.rawGaps.filter((gap) => gap.missing > 0) ?? [];
   const recs: CraftGoalRecommendation[] = [];
 
   for (const zoneId of Object.keys(state.zones)) {
     const zone = state.zones[zoneId];
-    const def = getZoneDef(zoneId);
 
     // 正式禁区直接排除（Phase 2A-1）
     if (zone?.status === 'restricted') continue;
 
     const here = new Set<string>();
+    const sourceEnemyIds = new Set<string>();
     let rareCover = 0;
-    for (const id of [...def.basePool, ...def.rarePool]) {
-      if (!neededIds.has(id)) continue;
-      here.add(id);
-      if (def.rarePool.includes(id)) rareCover += 1;
+    const def = getZoneDef(zoneId);
+    for (const gap of gaps) {
+      if (!gap.sourceZoneIds.includes(zoneId)) continue;
+      here.add(gap.itemId);
+      if (def.rarePool.includes(gap.itemId)) rareCover += 1;
+      for (const source of gap.worldSources) {
+        if (source.kind !== 'wild_drop' || !source.zoneIds.includes(zoneId)) continue;
+        source.enemyIds.forEach((enemyId) => sourceEnemyIds.add(enemyId));
+      }
     }
     if (here.size === 0) continue;
 
@@ -142,7 +150,10 @@ export function getCraftGoalRecommendations(
       score,
       distance,
       supplyLabel: SUPPLY_STATUS_LABEL[supplyStatusOf(zone)],
-      reason: `可搜到 ${[...here].map((id) => tryGetItem(id)?.name ?? id).join('、')}（距离 ${distance}，${SUPPLY_STATUS_LABEL[supplyStatusOf(zone)]}）`,
+      reason: sourceEnemyIds.size > 0
+        ? `可获取 ${[...here].map((id) => tryGetItem(id)?.name ?? id).join('、')}；常见威胁：${[...sourceEnemyIds].map((id) => getWildEnemy(id).name).join('、')}（距离 ${distance}）`
+        : `可搜到 ${[...here].map((id) => tryGetItem(id)?.name ?? id).join('、')}（距离 ${distance}，${SUPPLY_STATUS_LABEL[supplyStatusOf(zone)]}）`,
+      sourceEnemyIds: [...sourceEnemyIds],
     });
   }
 

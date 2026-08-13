@@ -77,6 +77,11 @@ function makeCell(
     avgDeaths: zero(),
     deathCauseCounts: {},
     avgEventCount: zero(),
+    wildEncounterCount: 0, wildKillCount: 0, wildFleeCount: 0,
+    wildDamageTaken: 0, wildPlayerDeaths: 0, wildDropsCreated: 0,
+    wildMaterialPickups: 0, wildCrafts: 0,
+    wildEncounterByType: {}, wildEncounterByZone: {}, wildKillByType: {}, wildKillByZone: {},
+    wildCraftGoalAttempts: 0, wildCraftGoalCompletions: 0,
     avgSteps: zero(),
     totalSteps: 0,
     // Phase 3A：给夹具最小的达标使用率（quick/heavy/guard ≥2%、事件各 ≥50），

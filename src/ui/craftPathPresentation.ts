@@ -6,6 +6,8 @@ import { getItem } from '../data/items';
 import { getRecipeDepth, RECIPES, recipeVisibility, tryGetRecipe } from '../data/recipes';
 import { ZONES } from '../data/zones';
 import type { Combatant, GameState } from '../core/types';
+import { worldSourcesForItem } from '../core/worldSources';
+import type { WorldSource } from '../core/worldSources';
 
 /** 合成路线中的原始材料；来源只读取静态公开物资池，不读取 zone.loot。 */
 export interface RawCraftMaterial {
@@ -14,6 +16,8 @@ export interface RawCraftMaterial {
   held: number;
   missing: number;
   sourceZoneIds: string[];
+  sourceEnemyIds: string[];
+  worldSources: WorldSource[];
 }
 
 /** 一个需要先完成的中间部件步骤。 */
@@ -76,9 +80,9 @@ const STATIC_RECIPE_BY_OUTPUT = new Map(
 
 /** 图鉴可用的静态公开来源，不读取当前区域库存。 */
 export function publicSourceZones(itemId: string): string[] {
-  return ZONES
-    .filter((zone) => zone.basePool.includes(itemId) || zone.rarePool.includes(itemId))
-    .map((zone) => zone.id);
+  return worldSourcesForItem(itemId)
+    .flatMap((source) => source.zoneIds)
+    .filter((zoneId, index, all) => all.indexOf(zoneId) === index);
 }
 
 /** 返回配方依赖的原始材料 id，供图鉴展示完整来源，不携带库存数量。 */

@@ -31,6 +31,7 @@ import { SeededRandom } from './random';
 import { announceWarning, updateRestrictedZones } from './restrictedZones';
 import { runWorldEvents } from './worldEvents';
 import { applyWorldEventTickDamage } from './worldEventTick';
+import { advanceActiveWildEncounter } from './wildCombat';
 import {
   handleAttack,
   handleAttackNearby,
@@ -38,14 +39,13 @@ import {
   handleFlee,
   handleGuard,
   handleMove,
-  handlePickupGround,
-  handleResolvePickup,
   handleRest,
   handleSearch,
   handleUseItem,
   handleUseSkill,
   type HandlerOutcome,
 } from './commandHandlers';
+import { handlePickupGround, handleResolvePickup } from './pickupHandlers';
 import type { Command, CommandResult, Combatant, GameState } from './types';
 
 /* ------------------------------------------------------------------ */
@@ -117,6 +117,17 @@ function checkGameEnd(state: GameState): void {
 function syncEncounter(state: GameState): void {
   if (!state.encounter) return;
   const player = getPlayer(state);
+  if (state.encounter.targetKind === 'wild') {
+    const wild = state.wildEnemies[state.encounter.enemyId];
+    if (!player.alive) {
+      state.encounter = null;
+      return;
+    }
+    if (!wild || wild.status !== 'alive' || wild.zoneId !== player.currentZoneId) {
+      state.encounter.resolved = true;
+    }
+    return;
+  }
   const enemy = state.characters[state.encounter.enemyId];
   if (!player.alive) {
     state.encounter = null;
@@ -154,6 +165,8 @@ export function advanceTime(state: GameState, rng: SeededRandom): void {
     if (state.status !== 'playing') break;
     runNpcTurn(state, c, rng);
   }
+
+  advanceActiveWildEncounter(state, rng);
 
   updateStatusEffects(state);
   updateRestrictedZones(state, rng);

@@ -16,6 +16,7 @@ import {
 import { enemiesInZone } from './gameState';
 import { armorDefenseOf, hasIngredients, weaponAttackOf } from './inventory';
 import { buildCraftPlan } from './craftPlan';
+import { wildCombatProfile } from './wildCombat';
 import { npcCombatSkill, npcSurvivalSkill } from './npcSkillDecide';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, Personality } from './types';
@@ -41,6 +42,7 @@ export interface NpcDecision {
   kind: NpcActionKind;
   reason: string;
   targetId?: string;
+  targetKind?: 'contestant' | 'wild';
   zoneId?: string;
   recipeId?: string;
   uid?: string;
@@ -379,6 +381,7 @@ export function decideNpcAction(
           kind: 'attack',
           reason: `${powerOk ? '战力占优' : '仍选择交战'}（我方${Math.round(myPower)} vs ${Math.round(theirPower)}）`,
           targetId: target.id,
+          targetKind: 'contestant',
           attackStyle: chooseAttackStyle(npc, target, rng),
         };
       }
@@ -394,8 +397,34 @@ export function decideNpcAction(
         kind: 'flee_combat',
         reason: healthOk ? '战力不足，脱离接触' : `生命 ${Math.round(hpRatio * 100)}%，避战`,
         targetId: target.id,
+        targetKind: 'contestant',
       };
     }
+  }
+
+  // 6.5 A SEARCH-discovered local wild target can be hunted through the same
+  // ATTACK/GUARD/FLEE command vocabulary. Self-owned encounter events are the
+  // knowledge boundary; this never scans remote live populations.
+  const plannedWildDefs = new Set(plan?.rawGaps.flatMap((gap) => gap.sourceEnemyIds) ?? []);
+  const knownWild = state.events
+    .filter((event) => event.type === 'WILD_ENCOUNTER_STARTED' && event.actorId === npc.id)
+    .map((event) => typeof event.metadata.wildUid === 'string' ? state.wildEnemies[event.metadata.wildUid] : null)
+    .filter((enemy) => enemy?.status === 'alive' && enemy.zoneId === npc.currentZoneId)
+    .sort((a, b) => Number(plannedWildDefs.has(b!.defId)) - Number(plannedWildDefs.has(a!.defId)))[0];
+  if (knownWild) {
+    const target = wildCombatProfile(knownWild);
+    const stance = STANCES[npc.personality];
+    const powerOk = estimatePower(npc) >= estimatePower(target) * stance.powerRatioToFight;
+    if (hpRatio < stance.avoidBelowHpRatio && canPayActionCost(npc, 'FLEE').ok) {
+      return { kind: 'flee_combat', reason: '生命不足，脱离野外威胁', targetId: knownWild.uid, targetKind: 'wild' };
+    }
+    if (!powerOk && canPayActionCost(npc, 'GUARD').ok && rng.chance(0.4)) {
+      return { kind: 'guard', reason: '野外目标威胁较高，先行防御', targetId: knownWild.uid, targetKind: 'wild' };
+    }
+    return {
+      kind: 'attack', reason: plannedWildDefs.has(knownWild.defId) ? '制作目标需要该野外来源' : '清除已发现的野外威胁',
+      targetId: knownWild.uid, targetKind: 'wild', attackStyle: chooseAttackStyle(npc, target, rng),
+    };
   }
 
   // 7. 常规行动

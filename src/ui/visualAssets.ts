@@ -16,6 +16,7 @@
 import { tryGetItem } from '../data/items';
 import { tryGetCharacterDef } from '../data/characters';
 import { getZoneDef } from '../data/zones';
+import { tryGetWildEnemy } from '../data/wildEnemies';
 import type { ItemCategory, WorldEventId } from '../core/types';
 
 /* ------------------------------------------------------------------ */
@@ -275,6 +276,13 @@ export function getCharacterVisual(id: string, slot: 'portrait' | 'injured' | 'c
   const fallback = visualFor('character', id);
   if (img) return { ...fallback, image: img, fallbackImage: fallback.image, source: 'official' };
   return visualFor('character', id);
+}
+
+/** Phase 4N intentionally ships fallback-only wild visuals (no new PNG/SVG). */
+export function getWildEnemyVisual(id: string): VisualSpec {
+  const def = tryGetWildEnemy(id);
+  if (!def) return FALLBACK_VISUAL;
+  return { emoji: def.fallbackEmoji, color: def.fallbackColor, label: def.name, image: null, fallbackImage: null, source: 'emoji' };
 }
 
 export function getZoneVisual(id: string): VisualSpec {

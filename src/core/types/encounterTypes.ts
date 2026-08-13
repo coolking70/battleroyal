@@ -5,6 +5,8 @@ import type { ItemStack } from './itemTypes';
 /* ------------------------------------------------------------------ */
 
 export interface EncounterState {
+  /** Older in-memory fixtures omit this and are interpreted as contestant encounters. */
+  targetKind?: 'contestant' | 'wild';
   enemyId: string;
   zoneId: string;
   startedAtTime: number;

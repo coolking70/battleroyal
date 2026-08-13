@@ -6,6 +6,8 @@ import { pushEvent } from './events';
 import { addNoise } from './info';
 import { addItem, canAccept, createStack, getEquippedUtility } from './inventory';
 import { charactersInZone } from './gameState';
+import { livingWildEnemiesInZone } from './wildPopulation';
+import { startWildEncounter } from './wildCombat';
 import {
   hasScoutAwareness,
   searchEnemyMultiplier,
@@ -29,7 +31,7 @@ export type SearchOutcome =
       /** 背包已满，等待玩家决策 */
       pending: boolean;
     }
-  | { kind: 'enemy'; enemyId: string; reconInitiative?: boolean }
+  | { kind: 'enemy'; targetKind: 'contestant' | 'wild'; enemyId: string; reconInitiative?: boolean }
   | { kind: 'nothing' };
 
 export interface SearchCheck {
@@ -101,10 +103,12 @@ export function computeSearchWeights(
   const others = charactersInZone(state, actor.currentZoneId).filter(
     (c) => c.id !== actor.id,
   );
+  const wild = livingWildEnemiesInZone(state, actor.currentZoneId);
+  const encounterCount = others.length + wild.length;
   let enemy =
-    others.length === 0
+    encounterCount === 0
       ? 0
-      : GAME_CONFIG.searchBaseEnemyWeight * (1 + (others.length - 1) * 0.6);
+      : GAME_CONFIG.searchBaseEnemyWeight * (1 + (encounterCount - 1) * 0.35);
 
   // 锐目（侦察员）：更容易先发现同区域的敌人（Phase 2A-1）
   if (actor.passiveId === 'keen_eye' && enemy > 0) {
@@ -219,8 +223,14 @@ export function performSearch(
     const others = charactersInZone(state, actor.currentZoneId).filter(
       (c) => c.id !== actor.id,
     );
-    const enemy = rng.pick(others);
-    if (enemy) {
+    const wild = livingWildEnemiesInZone(state, actor.currentZoneId);
+    const target = rng.pick([
+      ...others.map((enemy) => ({ targetKind: 'contestant' as const, id: enemy.id })),
+      ...wild.map((enemy) => ({ targetKind: 'wild' as const, id: enemy.uid })),
+    ]);
+    if (target?.targetKind === 'contestant') {
+      const enemy = state.characters[target.id];
+      if (!enemy) return emptyHanded(state, actor, zone.id);
       // Phase 3A-1：侦察员警觉状态下由 SEARCH 建立新遭遇 → 该次遭遇获得先手
       const reconInitiative = actor.isPlayer && hasScoutAwareness(actor);
       if (!actor.knownEnemies.includes(enemy.id)) actor.knownEnemies.push(enemy.id);
@@ -233,7 +243,14 @@ export function performSearch(
         message: `${actor.name} 在搜索中撞见了 ${enemy.name}。`,
         metadata: { reconInitiative },
       });
-      return { kind: 'enemy', enemyId: enemy.id, reconInitiative };
+      return { kind: 'enemy', targetKind: 'contestant', enemyId: enemy.id, reconInitiative };
+    }
+    if (target?.targetKind === 'wild') {
+      const enemy = state.wildEnemies[target.id];
+      if (!enemy) return emptyHanded(state, actor, zone.id);
+      const reconInitiative = actor.isPlayer && hasScoutAwareness(actor);
+      startWildEncounter(state, actor, enemy);
+      return { kind: 'enemy', targetKind: 'wild', enemyId: enemy.uid, reconInitiative };
     }
     // 没有可遭遇对象则退化为空手
     return emptyHanded(state, actor, zone.id);

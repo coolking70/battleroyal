@@ -53,6 +53,7 @@ function colocate(state: GameState, count = 1): Combatant[] {
 /** 把所有 NPC 清出玩家所在区域 */
 function isolate(state: GameState): void {
   colocate(state, 0);
+  for (const wild of Object.values(state.wildEnemies)) wild.status = 'fled';
 }
 
 function types(cmds: { command: Command }[]): string[] {
@@ -93,7 +94,7 @@ describe('[S4] 攻击目标选择（Phase 2A-1 信息隐藏）', () => {
     // 攻击后要么敌人已死（遭遇直接结算），要么进入遭遇状态
     const enc = res.state.encounter;
     expect(enc).not.toBeNull();
-    expect(enc!.enemyId).toBe(enemy!.id);
+    expect(enc!.targetKind === 'wild' ? stateHasWild(res.state, enc!.enemyId) : enc!.enemyId === enemy!.id).toBe(true);
   });
 
   it('遭遇状态下攻击精确指定已识别的对手', () => {
@@ -123,6 +124,10 @@ describe('[S4] 攻击目标选择（Phase 2A-1 信息隐藏）', () => {
     expect(typesSet).not.toContain('ATTACK_NEARBY');
   });
 });
+
+function stateHasWild(state: GameState, uid: string): boolean {
+  return state.wildEnemies[uid]?.status !== undefined;
+}
 
 /* ------------------------------------------------------------------ */
 /* S5：没有正式遭遇也能脱离                                            */

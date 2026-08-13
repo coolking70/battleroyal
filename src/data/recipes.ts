@@ -1,6 +1,8 @@
 import type { Recipe } from '../core/types';
 import { PHASE4M_RECIPES } from './phase4mRecipes';
+import { PHASE4N_RECIPES } from './phase4nRecipes';
 import { ITEMS as ITEMS_FOR_GRAPH } from './items';
+import { validateRawWorldSources } from '../core/worldSources';
 
 /**
  * Phase 4C-1 共 17 条配方：11 条武器、3 条防具、3 条治疗。
@@ -197,7 +199,7 @@ const LEGACY_RECIPES: Recipe[] = [
   },
 ];
 
-export const RECIPES: Recipe[] = [...LEGACY_RECIPES, ...PHASE4M_RECIPES];
+export const RECIPES: Recipe[] = [...LEGACY_RECIPES, ...PHASE4M_RECIPES, ...PHASE4N_RECIPES];
 
 /** 配方图谱的唯一来源：一件输出物只能有一个正式配方。 */
 const RECIPE_MAP: Record<string, Recipe> = Object.fromEntries(
@@ -300,6 +302,8 @@ export function validateRecipeGraph(recipes: readonly Recipe[] = RECIPES): strin
       leafCheck(item.id);
     }
   }
+  const rawLeaves = ITEMS_FOR_GRAPH.filter((item) => item.craftTier === 'raw').map((item) => item.id);
+  errors.push(...validateRawWorldSources(rawLeaves));
   return [...new Set(errors)].sort();
 }
 

@@ -10,7 +10,6 @@ import type { GameState } from './types';
  */
 
 import { validateSaveData } from './saveValidation';
-import { migrateMissingZoneStates } from './saveMigration';
 
 export { validateSaveData, type ValidationReport } from './saveValidation';
 
@@ -135,8 +134,7 @@ export function loadGame(): LoadResult {
     return { ok: false, data: null, error: '存档内容已损坏（无法解析）。' };
   }
 
-  // Phase 4F-1：0.4.0 新增长期成长状态。旧档保留原数据但明确失效，
-  // 在深度校验前先给出版本错误，避免把“缺 level/exp”误报成普通结构损坏。
+  // Phase 4N: old saves cannot reconstruct consumed finite populations.
   if (isRecord(parsed) && typeof parsed.version === 'string' && parsed.version !== GAME_VERSION) {
     return {
       ok: false,
@@ -145,8 +143,6 @@ export function loadGame(): LoadResult {
     };
   }
 
-  // 0.4.0 的旧六区存档在校验前补齐 Phase 4K 区域；其他版本仍按原规则拒绝。
-  parsed = migrateMissingZoneStates(parsed);
   const report = validateSaveData(parsed);
   if (!report.ok) {
     return {

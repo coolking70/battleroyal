@@ -69,7 +69,7 @@ describe('Phase 4A-4.5 derived character visual state', () => {
   it('does not add visual state to the save-backed GameState', () => {
     const state = createGame({ seed: 'PHASE4A45-VISUAL', playerCharacterId: 'fighter', playerName: '测试者' });
     expect('visualState' in getPlayer(state)).toBe(false);
-    expect(state.version).toBe('0.4.0');
+    expect(state.version).toBe('0.5.0');
   });
 
   it('maps all twelve character base slots to official runtime paths', async () => {

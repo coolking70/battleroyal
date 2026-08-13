@@ -4,6 +4,7 @@ import type { EventCounters, GameEvent } from './eventTypes';
 import type { GamePhase, GameStatus } from './sharedTypes';
 import type { ZoneState } from './zoneTypes';
 import type { WorldEventRecord, WorldEventState } from '../commandTypes';
+import type { WildEnemyInstance } from './wildTypes';
 
 /* ------------------------------------------------------------------ */
 /* 游戏状态                                                            */
@@ -19,6 +20,14 @@ export interface GameGlobalStats {
   zonesExhausted: number;
   /** Phase 3A-1：「全域骚动」期间被阻止的噪音衰减次数（区域 × tick） */
   noiseDecayBlockedTicks: number;
+  wildEncounterCount: number;
+  wildKillCount: number;
+  wildFleeCount: number;
+  wildDamageTaken: number;
+  wildPlayerDeaths: number;
+  wildDropsCreated: number;
+  wildMaterialPickups: number;
+  wildCrafts: number;
 }
 
 /**
@@ -46,6 +55,9 @@ export interface GameState {
   /** 行动顺序（固定，保证同种子可复现） */
   turnOrder: string[];
   characters: Record<string, Combatant>;
+  /** Dedicated PvE runtime registry. Wild enemies are never contestants. */
+  wildEnemies: Record<string, WildEnemyInstance>;
+  wildUidSeq: number;
   zones: Record<string, ZoneState>;
   events: GameEvent[];
   /** 事件自增序号，用于生成稳定的事件 id */

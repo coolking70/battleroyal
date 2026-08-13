@@ -166,7 +166,7 @@ export function getLegalPlayerCommands(state: GameState): LegalAction[] {
         { type: 'SEARCH' },
         'search',
         searchCheck.cost,
-        empty ? '该区域物资已被搜空，只可能遇到人' : null,
+        empty ? '该区域物资已被搜空，仍可能遭遇参赛者或野外威胁' : null,
       ),
     );
   }

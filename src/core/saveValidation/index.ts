@@ -15,6 +15,7 @@ import { validateNumbers } from './numbers';
 import { validateReferences } from './references';
 import { buildContext } from './structure';
 import { toReport, type ValidationReport } from './types';
+import { validateWildState } from './wild';
 
 /**
  * 存档深度校验（四层）。
@@ -33,6 +34,7 @@ export function validateSaveData(value: unknown): ValidationReport {
   if (!ctx) return toReport(errors);
 
   validateNumbers(ctx);
+  validateWildState(ctx);
   validateReferences(ctx);
   validateConsistency(ctx);
 

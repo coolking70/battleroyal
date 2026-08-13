@@ -40,6 +40,9 @@ const DEFAULT_IMPORTANCE: Record<GameEventType, EventImportance> = {
   CRAFT_GOAL_SET: 'major',
   FINALE_DECAY: 'major',
   CHARACTER_ESCAPED: 'major',
+  WILD_ENCOUNTER_STARTED: 'major',
+  WILD_DEFEATED: 'major',
+  WILD_FLED: 'major',
 
   ATTACK_MISSED: 'minor',
   CHARACTER_MOVED: 'minor',
@@ -54,6 +57,8 @@ const DEFAULT_IMPORTANCE: Record<GameEventType, EventImportance> = {
   REST: 'minor',
   GUARD: 'minor',
   SKILL_USED: 'minor',
+  WILD_ATTACK: 'minor',
+  WILD_DROP_CREATED: 'minor',
 
   /* Phase 3A */
   // 状态解除属于战斗噪音，长局里量大，归 minor 以免挤占存档额度

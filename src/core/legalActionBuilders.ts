@@ -15,6 +15,7 @@ import { SKILLS, canUseSkill, getCharacterSkills } from './skills';
 import { advancesTime, commandLabel } from './commands';
 import { hasRoomForOutput } from './crafting';
 import { enemiesInZone } from './gameState';
+import { livingWildEnemiesInZone } from './wildPopulation';
 import {
   getEquippedArmor,
   getEquippedWeapon,
@@ -119,17 +120,20 @@ export function inventoryActions(player: Combatant): LegalAction[] {
 export function combatActions(state: GameState, player: Combatant): LegalAction[] {
   const out: LegalAction[] = [];
   const enemies = enemiesInZone(state, player);
-  if (enemies.length === 0) return out;
+  const wild = livingWildEnemiesInZone(state, player.currentZoneId);
+  if (enemies.length + wild.length === 0) return out;
 
   const encounter = state.encounter && !state.encounter.resolved ? state.encounter : null;
   const atk = canAttack(player);
   if (atk.ok) {
     if (encounter) {
-      const enemy = enemies.find((e) => e.id === encounter.enemyId);
-      if (enemy) {
+      const targetExists = encounter.targetKind === 'wild'
+        ? wild.some((enemy) => enemy.uid === encounter.enemyId)
+        : enemies.some((enemy) => enemy.id === encounter.enemyId);
+      if (targetExists) {
         out.push(
           action(
-            { type: 'ATTACK', targetId: enemy.id, style: 'normal' },
+            { type: 'ATTACK', targetId: encounter.enemyId, style: 'normal' },
             'combat',
             atk.cost,
             '正在交战的对手（可在界面选择攻击风格）',

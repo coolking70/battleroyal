@@ -108,8 +108,8 @@ describe('本地存档', () => {
 
   it('Phase 4F-1：0.3.2 旧档被明确拒绝、保留且不自动迁移', () => {
     // 0.3.2 没有 level / exp，也没有足够历史重建进行中角色的成长。
-    // 因此 0.4.0 明确失效旧档，但不静默删除原始数据。
-    expect(GAME_VERSION).toBe('0.4.0');
+    // Phase 4N 0.5.0 continues to reject older schemas without deleting them.
+    expect(GAME_VERSION).toBe('0.5.0');
 
     const state = newGame();
     saveGame(state);

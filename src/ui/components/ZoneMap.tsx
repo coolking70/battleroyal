@@ -4,6 +4,7 @@ import { noiseLevelOf, NOISE_LABEL } from '../../core/info';
 import { canAccessGroundItem } from '../../core/legalActions';
 import { zoneDamagePerTick } from '../../core/restrictedZones';
 import { ZONES, areAdjacent } from '../../data/zones';
+import { WILD_ECOLOGY, getWildEnemy } from '../../data/wildEnemies';
 import { cx } from '../../utils/format';
 import { getZoneVisual } from '../visualAssets';
 import { warningRemaining, zoneStatusMeta, zoneUrgencyMeta } from '../zonePresentation';
@@ -108,6 +109,9 @@ export function ZoneMap({
                 {showGroundDropCue && (
                   <span>有地面物资</span>
                 )}
+                <span className="faint">
+                  常见威胁：{(WILD_ECOLOGY[def.id] ?? []).slice(0, 2).map((entry) => getWildEnemy(entry.enemyId).name).join('、')}
+                </span>
               </span>
             </button>
           );

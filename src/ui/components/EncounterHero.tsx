@@ -6,7 +6,8 @@ import { getItem } from '../../data/items';
 import { cx, hpDescriptor } from '../../utils/format';
 import { Bar } from './Bar';
 import { VisualImage } from './VisualImage';
-import { getCharacterVisual } from '../visualAssets';
+import { getCharacterVisual, getWildEnemyVisual } from '../visualAssets';
+import { getWildEnemy } from '../../data/wildEnemies';
 import { resolveCharacterVisualState } from '../characterVisualState';
 import {
   COMBAT_STATUS_META,
@@ -15,12 +16,13 @@ import {
 } from '../combatPresentation';
 import { useDrawerFocus } from './useDrawerFocus';
 import type { CombatActionBarView } from '../combatActionsPresentation';
-import type { Combatant, EncounterState } from '../../core/types';
+import type { Combatant, EncounterState, WildEnemyInstance } from '../../core/types';
 
 interface EncounterHeroProps {
   encounter: EncounterState;
   player: Combatant;
   enemy: Combatant;
+  wildEnemy?: WildEnemyInstance | null;
   /** 行动栏视图模型（含脱离率 / 普通命中率），敌方合法可见字段与行动栏共享同一组数值 */
   combat: CombatActionBarView | null;
   /** 已由公开 CHARACTER_DIED 与当前可见地面遗物共同证明存在战利品。 */
@@ -49,16 +51,18 @@ export function EncounterHero({
   encounter,
   player,
   enemy,
+  wildEnemy = null,
   combat,
   lootAvailable = false,
 }: EncounterHeroProps): JSX.Element {
-  const resolved = encounter.resolved || !enemy.alive;
+  const wildDef = wildEnemy ? getWildEnemy(wildEnemy.defId) : null;
+  const resolved = encounter.resolved || !enemy.alive || Boolean(wildEnemy && wildEnemy.status !== 'alive');
   const enemyVisualState = resolveCharacterVisualState(enemy, { activeEncounter: !resolved });
   const enemyVisualMeta = combatVisualStateMeta(enemyVisualState);
   const enemyExposed = hasExposed(enemy);
   const weapon = getEquippedWeapon(enemy);
   const modeMeta = combatModeMeta(resolved);
-  const enemyClassName = getCharacterDef(enemy.characterId).name;
+  const enemyClassName = wildDef ? '野外威胁' : getCharacterDef(enemy.characterId).name;
   // NPC 成功离开遭遇区域时，核心只需把 encounter 标成 resolved；这里把
   // 玩家已合法知道的“对方已离开本次交手区域”补到即时反馈，不读取 NPC 意图。
   // 用 encounter.zoneId 判断，避免把玩家自己的转移脱离误报成对方逃走。
@@ -90,7 +94,7 @@ export function EncounterHero({
       {/* 敌方立绘：主视觉焦点，居中 */}
       <div className="encounter-hero-portrait" data-visual-state={enemyVisualState}>
         <VisualImage
-          visual={getCharacterVisual(enemy.characterId, enemyVisualState)}
+          visual={wildDef ? getWildEnemyVisual(wildDef.id) : getCharacterVisual(enemy.characterId, enemyVisualState)}
           alt={`${enemy.name}${enemyVisualMeta.label}角色图`}
           className="encounter-enemy-visual"
         />
@@ -100,10 +104,10 @@ export function EncounterHero({
       <div className="encounter-hero-enemyinfo" data-side="enemy">
         <div className="eh-kicker">
           <span className="combat-cue-icon" aria-hidden="true">{modeMeta.icon}</span>
-          {resolved ? '已结束 · 上一个对手' : 'ENEMY · 当前可见目标'}
+          {resolved ? '已结束 · 上一个对手' : wildDef ? 'WILD · 当前野外目标' : 'ENEMY · 当前可见目标'}
         </div>
         <div className="eh-name-line">
-          <span className="badge badge-enemy">敌</span>
+          <span className="badge badge-enemy">{wildDef ? '野' : '敌'}</span>
           <strong>{enemy.name}</strong>
           <span className="eh-class">{enemyClassName}</span>
         </div>
@@ -115,11 +119,16 @@ export function EncounterHero({
         <div className="eh-hp">
           <span>敌方生命状态</span>
           <Bar value={enemy.hp} max={enemy.maxHp} kind="hp" />
-          <b>{hpDescriptor(enemy)}</b>
+          <b>{wildDef ? `${enemy.hp} / ${enemy.maxHp} · ${hpDescriptor(enemy)}` : hpDescriptor(enemy)}</b>
         </div>
-        <div className="eh-line eh-weapon">武器：{weapon ? getItem(weapon.itemId).name : '徒手'}</div>
+        {wildDef ? (
+          <>
+            <div className="eh-line eh-weapon">威胁：{wildDef.threat} · 行为：{wildDef.behavior}</div>
+            <div className="eh-line">掉落类别：{wildDef.dropCategory}（具体结果需击败后确认）</div>
+          </>
+        ) : <div className="eh-line eh-weapon">武器：{weapon ? getItem(weapon.itemId).name : '徒手'}</div>}
         <div className="eh-status-row">
-          {enemyExposed ? (
+          {!wildDef && enemyExposed ? (
             <span className="tag tag-exposed">
               <span className="combat-cue-icon" aria-hidden="true">{COMBAT_STATUS_META.exposed.icon}</span>
               {COMBAT_STATUS_META.exposed.label}

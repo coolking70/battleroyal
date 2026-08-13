@@ -4,23 +4,23 @@
 /**
  * 存档版本。
  *
- * Phase 4F-1 新增持久化的 level / exp，并让成长永久改变基础战斗属性。
- * 0.3.x 旧档没有足够信息还原进行中角色本应获得的成长，仍然明确拒绝；
- * 同版本的旧六区存档由 Phase 4K 在读取时补齐新区，不改变主随机序列。
+ * Phase 4N adds finite wild populations and discriminated encounters.
+ * Older saves cannot reconstruct already-consumed ecology and are rejected.
+ * Compatibility is DEFERRED UNTIL PRE-RELEASE.
  */
-export const GAME_VERSION = '0.4.0';
+export const GAME_VERSION = '0.5.0';
 
 /** 默认测试种子 */
 export const DEFAULT_SEED = 'BR-DEMO-001';
 
 /** 存档 localStorage key（第二阶段起为 v2） */
-export const SAVE_KEY = 'zone-br.save.v2';
+export const SAVE_KEY = 'zone-br.save.v3';
 
 /**
  * 历史版本的存档 key。
  * 第二阶段**不做静默迁移**：检测到旧档只在主菜单提示，并允许玩家删除。
  */
-export const LEGACY_SAVE_KEYS: string[] = ['zone-br.save.v1'];
+export const LEGACY_SAVE_KEYS: string[] = ['zone-br.save.v1', 'zone-br.save.v2'];
 
 export const GAME_CONFIG = {
   /** 参赛者总数：1 玩家 + 5 NPC */

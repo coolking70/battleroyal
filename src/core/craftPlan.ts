@@ -1,9 +1,10 @@
 import { getItem } from '../data/items';
 import { RECIPES, getRecipeDepth, recipeForOutput, tryGetRecipe } from '../data/recipes';
-import { ZONES, getZoneDef } from '../data/zones';
+import { getZoneDef } from '../data/zones';
 import { canPayActionCost } from './actionCosts';
 import { hasRoomForOutput } from './crafting';
 import type { Combatant, GameState, RecipeIngredient } from './types';
+import { worldSourcesForItem, type WorldSource } from './worldSources';
 
 export type CraftPlanStepStatus = 'complete' | 'craftable' | 'blocked';
 
@@ -30,6 +31,8 @@ export interface CraftPlanRawGap {
   held: number;
   missing: number;
   sourceZoneIds: string[];
+  sourceEnemyIds: string[];
+  worldSources: WorldSource[];
 }
 
 export interface CraftPlan {
@@ -51,15 +54,6 @@ export interface CraftPlan {
 }
 
 const RECIPE_BY_OUTPUT = new Map(RECIPES.map((recipe) => [recipe.outputItemId, recipe]));
-
-function sourceZonesFor(itemId: string, state: GameState): string[] {
-  return ZONES
-    .filter((zone) => {
-      if (!zone.basePool.includes(itemId) && !zone.rarePool.includes(itemId)) return false;
-      return state.zones[zone.id]?.status !== 'restricted';
-    })
-    .map((zone) => zone.id);
-}
 
 function zoneDistance(from: string, to: string): number {
   if (from === to) return 0;
@@ -152,12 +146,15 @@ export function buildCraftPlan(
   const addRawGap = (itemId: string, requested: number, held: number): void => {
     const missing = requested - held;
     if (missing <= 0) return;
+    const worldSources = worldSourcesForItem(itemId, state);
     const existing = raw.get(itemId) ?? {
       itemId,
       required: 0,
       held: 0,
       missing: 0,
-      sourceZoneIds: sourceZonesFor(itemId, state),
+      sourceZoneIds: worldSources.flatMap((source) => source.zoneIds).filter((id, index, all) => all.indexOf(id) === index),
+      sourceEnemyIds: worldSources.flatMap((source) => source.kind === 'wild_drop' ? source.enemyIds : []).filter((id, index, all) => all.indexOf(id) === index),
+      worldSources,
     };
     existing.required += requested;
     existing.held += held;

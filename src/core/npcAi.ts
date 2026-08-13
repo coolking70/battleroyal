@@ -27,6 +27,10 @@ import {
 import { decideNpcAction, planNpcGoal, type NpcDecision } from './npcDecide';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, ItemStack } from './types';
+import { attackWildActor, fleeWildEncounter, resolveWildTurn } from './wildCombat';
+import { PHASE4N_WILD_MATERIAL_IDS } from '../data/phase4nItems';
+
+const WILD_MATERIALS = new Set<string>(PHASE4N_WILD_MATERIAL_IDS);
 
 /* 决策相关 API 由 npcDecide.ts 提供，这里统一再导出，保持对外契约不变 */
 export { decideNpcAction } from './npcDecide';
@@ -96,6 +100,7 @@ function autoLoot(state: GameState, npc: Combatant): void {
     if (canAccept(npc, stack)) {
       zone.groundItems.splice(i, 1);
       addItem(npc, clearGroundOwnership(stack));
+      if (WILD_MATERIALS.has(stack.itemId)) state.stats.wildMaterialPickups += 1;
       picks -= 1;
       pushEvent(state, {
         type: 'ITEM_PICKED',
@@ -120,6 +125,7 @@ function autoLoot(state: GameState, npc: Combatant): void {
       }
       zone.groundItems.splice(i, 1);
       addItem(npc, clearGroundOwnership(stack));
+      if (WILD_MATERIALS.has(stack.itemId)) state.stats.wildMaterialPickups += 1;
       picks -= 1;
       pushEvent(state, {
         type: 'ITEM_PICKED',
@@ -233,6 +239,11 @@ export function runNpcTurn(
     }
 
     case 'attack': {
+      if (decision.targetKind === 'wild' && decision.targetId) {
+        const res = attackWildActor(state, npc, decision.targetId, rng, decision.attackStyle ?? 'normal', true);
+        if (!res.ok) fallbackToRest(res.message);
+        break;
+      }
       const target = decision.targetId ? state.characters[decision.targetId] : null;
       // Phase 3A-1：警觉先手 —— 敌方在「遭遇建立瞬间」的首次立即攻击被抑制
       // （只抑制这一次；玩家的正常攻击 / 反击完全不受影响）。
@@ -267,6 +278,10 @@ export function runNpcTurn(
 
     case 'guard': {
       guardActor(state, npc);
+      if (decision.targetKind === 'wild' && decision.targetId) {
+        const wild = state.wildEnemies[decision.targetId];
+        if (wild?.status === 'alive') resolveWildTurn(state, npc, wild, rng);
+      }
       break;
     }
 
@@ -276,6 +291,11 @@ export function runNpcTurn(
     }
 
     case 'flee_combat': {
+      if (decision.targetKind === 'wild' && decision.targetId) {
+        const wild = state.wildEnemies[decision.targetId];
+        if (wild) fleeWildEncounter(state, npc, wild, rng);
+        break;
+      }
       const enemy = decision.targetId ? state.characters[decision.targetId] : null;
       if (enemy) {
         // 脱离是免费行动，NPC 同样永远付得起。
@@ -355,6 +375,7 @@ function resolveNpcEngagement(
     // 让玩家界面进入遭遇状态，玩家下一步自行决定
     if (!state.encounter || state.encounter.enemyId !== npc.id) {
       state.encounter = {
+        targetKind: 'contestant',
         enemyId: npc.id,
         zoneId: target.currentZoneId,
         startedAtTime: state.time,

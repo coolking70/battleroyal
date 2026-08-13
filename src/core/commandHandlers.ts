@@ -1,5 +1,6 @@
 import { tryGetItem } from '../data/items';
 import { getZoneDef } from '../data/zones';
+import { getWildEnemy } from '../data/wildEnemies';
 import {
   attackActor,
   fleeActor,
@@ -13,16 +14,14 @@ import { canAttack, resolveAttack } from './combat';
 import { performRest, useConsumable } from './consumables';
 import { pushEvent } from './events';
 import { charactersInZone, enemiesInZone } from './gameState';
-import { canAccessGroundItem, clearGroundOwnership } from './legalActions';
 import {
-  addItem,
-  canAccept,
   equipItem,
   findStack,
-  removeStack,
 } from './inventory';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState } from './types';
+import { attackWildActor, fleeWildEncounter, startWildEncounter } from './wildCombat';
+import { livingWildEnemiesInZone } from './wildPopulation';
 
 /* ------------------------------------------------------------------ */
 /* 玩家命令处理                                                        */
@@ -34,6 +33,9 @@ export interface HandlerOutcome {
   /** 本次命令是否应推进时间（默认跟随 advancesTime） */
   skipTime?: boolean;
 }
+
+// Compatibility export; implementation lives in the focused pickup module.
+export { handlePickupGround, handleResolvePickup } from './pickupHandlers';
 
 /** 安全取物品名：未知 id 不抛异常，退化成占位文案 */
 function itemName(itemId: string): string {
@@ -101,17 +103,23 @@ export function handleSearch(
   if (!outcome) return { ok: false, message: res.message };
 
   if (outcome.kind === 'enemy') {
-    const enemy = state.characters[outcome.enemyId];
+    const enemy = outcome.targetKind === 'wild'
+      ? state.wildEnemies[outcome.enemyId]
+      : state.characters[outcome.enemyId];
+    const enemyName = outcome.targetKind === 'wild' && enemy && 'defId' in enemy
+      ? getWildEnemy(enemy.defId).name
+      : enemy && 'name' in enemy ? enemy.name : '陌生目标';
     state.encounter = {
+      targetKind: outcome.targetKind,
       enemyId: outcome.enemyId,
       zoneId: player.currentZoneId,
       startedAtTime: state.time,
-      log: [`你在搜索中遭遇了 ${enemy?.name ?? '陌生人'}。`],
+      log: [`你在搜索中遭遇了 ${enemyName}。`],
       resolved: false,
       // Phase 3A-1：警觉侦察 → 本次遭遇建立阶段获得先手（抑制敌方首次立即反击）
       ...(outcome.reconInitiative ? { reconInitiative: true } : {}),
     };
-    return { ok: true, message: `遭遇 ${enemy?.name ?? '敌人'}！` };
+    return { ok: true, message: `遭遇 ${enemyName}！` };
   }
   if (outcome.kind === 'item') {
     if (outcome.pending) {
@@ -150,6 +158,7 @@ export function handleRest(
       }
       const res = resolveAttack(state, attacker, player, rng);
       state.encounter = {
+        targetKind: 'contestant',
         enemyId: attacker.id,
         zoneId: player.currentZoneId,
         startedAtTime: state.time,
@@ -175,6 +184,19 @@ export function handleAttack(
   rng: SeededRandom,
   style: AttackStyle = 'normal',
 ): HandlerOutcome {
+  const wild = state.wildEnemies[targetId];
+  if (wild || (state.encounter?.targetKind === 'wild' && state.encounter.enemyId === targetId)) {
+    if (!wild) return { ok: false, message: '野外目标已经不在了。' };
+    if (!state.encounter || state.encounter.enemyId !== targetId || state.encounter.targetKind !== 'wild') {
+      startWildEncounter(state, player, wild);
+      state.encounter = { targetKind: 'wild', enemyId: targetId, zoneId: player.currentZoneId, startedAtTime: state.time, log: [], resolved: false };
+    }
+    const res = attackWildActor(state, player, targetId, rng, style);
+    if (!res.ok) return { ok: false, message: res.message };
+    state.encounter.log.push(res.message);
+    state.encounter.resolved = wild.status !== 'alive';
+    return { ok: true, message: res.message };
+  }
   const target = state.characters[targetId];
   const res = attackActor(state, player, target, rng, { allowCounter: true, style });
   if (!res.ok) return { ok: false, message: res.message };
@@ -187,6 +209,7 @@ export function handleAttack(
 
   if (!state.encounter || state.encounter.enemyId !== target.id) {
     state.encounter = {
+      targetKind: 'contestant',
       enemyId: target.id,
       zoneId: player.currentZoneId,
       startedAtTime: state.time,
@@ -215,24 +238,32 @@ export function handleAttackNearby(
   style: AttackStyle = 'normal',
 ): HandlerOutcome {
   const enemies = enemiesInZone(state, player);
-  if (enemies.length === 0) {
+  const wild = livingWildEnemiesInZone(state, player.currentZoneId);
+  if (enemies.length + wild.length === 0) {
     return { ok: false, message: '附近没有可袭击的目标。' };
   }
-  const target = rng.pick(enemies);
+  const target = rng.pick([
+    ...enemies.map((enemy) => ({ kind: 'contestant' as const, id: enemy.id })),
+    ...wild.map((enemy) => ({ kind: 'wild' as const, id: enemy.uid })),
+  ]);
   if (!target) {
     return { ok: false, message: '附近没有可袭击的目标。' };
   }
 
-  const res = attackActor(state, player, target, rng, { allowCounter: true, style });
+  if (target.kind === 'wild') return handleAttack(state, player, target.id, rng, style);
+  const contestant = state.characters[target.id];
+  const res = attackActor(state, player, contestant, rng, { allowCounter: true, style });
   if (!res.ok) return { ok: false, message: res.message };
+  if (!contestant) return { ok: false, message: '附近没有可袭击的目标。' };
 
-  const line = attackBattleReport(`你对 ${target.name} 出手：${res.message}`, target, res.targetDied, res.attackerDied);
-  if (!state.engagedWithPlayer.includes(target.id)) {
-    state.engagedWithPlayer.push(target.id);
+  const line = attackBattleReport(`你对 ${contestant.name} 出手：${res.message}`, contestant, res.targetDied, res.attackerDied);
+  if (!state.engagedWithPlayer.includes(contestant.id)) {
+    state.engagedWithPlayer.push(contestant.id);
   }
-  if (!state.encounter || state.encounter.enemyId !== target.id) {
+  if (!state.encounter || state.encounter.enemyId !== contestant.id) {
     state.encounter = {
-      enemyId: target.id,
+      targetKind: 'contestant',
+      enemyId: contestant.id,
       zoneId: player.currentZoneId,
       startedAtTime: state.time,
       log: [],
@@ -240,7 +271,7 @@ export function handleAttackNearby(
     };
   }
   state.encounter.log.push(line);
-  state.encounter.resolved = !target.alive;
+  state.encounter.resolved = !contestant.alive;
 
   return { ok: true, message: line };
 }
@@ -357,6 +388,24 @@ export function handleFlee(
   player: Combatant,
   rng: SeededRandom,
 ): HandlerOutcome {
+  const localWild = livingWildEnemiesInZone(state, player.currentZoneId);
+  const noActiveEncounter = !state.encounter || state.encounter.resolved;
+  const activeWildEncounter = state.encounter?.targetKind === 'wild' && !state.encounter.resolved;
+  const activeWildUid = activeWildEncounter ? state.encounter?.enemyId : null;
+  if (activeWildEncounter || (noActiveEncounter && enemiesInZone(state, player).length === 0 && localWild.length > 0)) {
+    const wild = activeWildEncounter
+      ? state.wildEnemies[activeWildUid!]
+      : localWild[0];
+    if (!wild) return { ok: false, message: '当前没有需要脱离的野外敌人。' };
+    if (noActiveEncounter) {
+      startWildEncounter(state, player, wild);
+      state.encounter = { targetKind: 'wild', enemyId: wild.uid, zoneId: wild.zoneId, startedAtTime: state.time, log: [], resolved: false };
+    }
+    const result = fleeWildEncounter(state, player, wild, rng);
+    if (!result.ok) return { ok: false, message: result.message };
+    state.encounter?.log.push(result.message);
+    return { ok: true, message: result.message };
+  }
   // 脱离对象：优先当前遭遇的对手；没有正式遭遇时退回到同区域的第一个敌人。
   //
   // ⚠️ Phase 2A 修正的规则不对称：旧实现要求**必须先存在 `state.encounter`**，
@@ -391,6 +440,7 @@ export function handleFlee(
       // 否则「主动撤离」这条路径依然是静默的。
       // zoneId 记交手发生地：转移脱离时玩家已经走了，用目的地会指错地方。
       state.encounter = {
+        targetKind: 'contestant',
         enemyId: enemy.id,
         zoneId: res.toZoneId ? enemy.currentZoneId : player.currentZoneId,
         startedAtTime: state.time,
@@ -417,83 +467,4 @@ export function handleFlee(
   );
   if (state.encounter) state.encounter.log.push(finalLine);
   return { ok: true, message: finalLine };
-}
-
-export function handlePickupGround(
-  state: GameState,
-  player: Combatant,
-  uid: string,
-): HandlerOutcome {
-  const zone = state.zones[player.currentZoneId];
-  if (!zone) return { ok: false, message: '区域数据异常。' };
-  const idx = zone.groundItems.findIndex((s) => s.uid === uid);
-  if (idx < 0) return { ok: false, message: '地上没有这件物品。' };
-  const stack = zone.groundItems[idx]!;
-
-  if (!canAccessGroundItem(player, stack)) return { ok: false, message: '你还没有搜索过这里，暂时看不到这件遗物。' };
-  // 数据自愈：地面上出现了未知物品（存档被改坏 / 版本残留）时，
-  // 直接把它清掉并返回失败，而不是让 getItem 抛异常炸穿命令层。
-  const def = tryGetItem(stack.itemId);
-  if (!def) {
-    zone.groundItems.splice(idx, 1);
-    return { ok: false, message: '这件物品的数据已失效，已从地面移除。' };
-  }
-
-  if (!canAccept(player, stack)) {
-    state.pendingPickup = { stack, source: 'ground', zoneId: zone.id };
-    zone.groundItems.splice(idx, 1);
-    return { ok: true, message: '背包已满，请选择是否替换。' };
-  }
-
-  zone.groundItems.splice(idx, 1);
-  addItem(player, clearGroundOwnership(stack));
-  pushEvent(state, {
-    type: 'ITEM_PICKED',
-    actorId: player.id,
-    zoneId: zone.id,
-    message: `你捡起了 ${def.name}。`,
-    metadata: { itemId: stack.itemId },
-  });
-  return { ok: true, message: `拾取 ${def.name}。` };
-}
-
-export function handleResolvePickup(
-  state: GameState,
-  player: Combatant,
-  accept: boolean,
-  dropUid?: string,
-): HandlerOutcome {
-  const pending = state.pendingPickup;
-  if (!pending) return { ok: false, message: '没有待处理的拾取。' };
-  const zone = state.zones[pending.zoneId];
-
-  if (!accept) {
-    state.pendingPickup = null;
-    if (zone) zone.groundItems.push(pending.stack);
-    pushEvent(state, {
-      type: 'ITEM_DROPPED',
-      actorId: player.id,
-      zoneId: pending.zoneId,
-      message: `你放弃了 ${itemName(pending.stack.itemId)}。`,
-      metadata: { itemId: pending.stack.itemId },
-    });
-    return { ok: true, message: '已放弃该物品。' };
-  }
-
-  if (!dropUid) return { ok: false, message: '请选择要丢弃的物品。' };
-  const dropped = removeStack(player, dropUid);
-  if (!dropped) return { ok: false, message: '要丢弃的物品不存在。' };
-
-  if (zone) zone.groundItems.push(dropped);
-  addItem(player, clearGroundOwnership(pending.stack));
-  state.pendingPickup = null;
-
-  pushEvent(state, {
-    type: 'ITEM_DROPPED',
-    actorId: player.id,
-    zoneId: pending.zoneId,
-    message: `你丢下 ${itemName(dropped.itemId)}，换取了 ${itemName(pending.stack.itemId)}。`,
-    metadata: { droppedItemId: dropped.itemId, itemId: pending.stack.itemId },
-  });
-  return { ok: true, message: '已完成替换。' };
 }
