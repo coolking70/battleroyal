@@ -49,3 +49,37 @@
 47. Known issues: human visual/balance review is still required; the normal regression matrix does not intentionally force the representative Phase 4Q landmark route, which is covered by focused formal-command tests instead.
 
 Phase 4Q implementation complete and ready for independent acceptance review.
+
+## Phase 4Q-AF — Facility Unlock, Landmark Risk & Information-Boundary Closure
+
+1. Audited input head: `8c9f25c781ca4ade629efbfbcf23ff232d452939`.
+2. Root cause A: locked facilities were rejected before their own `requiresUnlock` interaction could satisfy the unlock route.
+3. Fix A: only an interaction whose definition has `requiresUnlock=true` may execute while its facility is locked; all other locked interactions remain rejected.
+4. Canonical unlock evidence: `warehouse_secure_storage` starts locked; `open_secure_storage` with one `field_kit` succeeds, consumes one positive-cost action and one charge, sets `locked=false` and `activated=true`, emits facility events, advances time, and makes subsequent `SEARCH_LANDMARK` legal. Missing-tool rejection is mutation-free, including for Engineer.
+5. Save/load evidence: the unlocked runtime, reduced charge, consumed prerequisite, activation, and legal follow-up state survive current-schema serialize/load unchanged.
+6. Root cause B: the global current-source resolver exposed remote landmark runtime such as exhaustion, hidden loot length, lock, disabled state, and last use to NPC planning.
+7. Source contract: static provenance is defined by `worldSourcesForItem()`; public/current sources preserve remote landmarks as potential sources and only apply public zone restrictions; `currentWorldSourcesForActor()` applies coarse runtime filtering only to landmarks in the actor's current zone.
+8. NPC information boundary: remote `exhausted`, `remainingSearches`, `loot.length`, `locked`, `disabled`, and `lastUsedAt` no longer alter an NPC's recommendation. Arrival in the landmark zone permits local observation and bounded refresh/replan.
+9. Craft Guide boundary: remote views retain landmark provenance/name as a potential source and do not expose exact loot or hidden remote runtime; current-zone panels may show coarse local state.
+10. Root cause C: lethal landmark risk could resolve death and still continue the search reward/event path.
+11. Fatal-risk semantics: risk resolves before removing the candidate stack; if it kills the actor, the search records `fatal_risk`, emits no item-found/pickup/reward event, leaves the candidate hidden in landmark loot, clears pending pickup, and finishes the search with actor attribution where applicable.
+12. Item conservation evidence: the lethal test proves one death, no recovered item, no resurrected dead inventory, unchanged `pendingPickup`, exactly-once hidden candidate UID, and `auditItemIntegrity(state).ok === true`.
+13. Event ordering evidence: the fatal search records the search outcome after canonical death resolution and before any possible recovery path; `LANDMARK_EXHAUSTED` is actor-scoped and is not a default global broadcast.
+14. Autonomous NPC route 1: production `runNpcTurn()` performs cross-zone MOVE, local SEARCH_LANDMARK, acquisition, and canonical craft/use without manual move/search calls or debug grants.
+15. Autonomous NPC route 2: a secretly exhausted remote primary remains a potential source until arrival; the NPC then observes local exhaustion, refreshes its stale recommendation, selects a local alternate, completes SEARCH → acquire → craft, and avoids a repeated rejected-action loop.
+16. Focused AF tests: 13 tests in `tests/phase4qAfAcceptanceFix.test.ts` passed.
+17. Total Phase 4Q focused suite: 8 files / 36 tests passed, including landmark registry, facilities, sources, NPC route, AutoPlayer, save validation, and UI information boundaries.
+18. Full regression: 113 test files / 1,656 tests passed; zero-stamina, item-integrity, terminal-freeze, Phase 4P-AF3, determinism, and legal-action suites remain included.
+19. Save audit: `npm run audit:save` passed with 109/109 malformed cases rejected, 109/109 passed, and 0 construction failures.
+20. Dependency audit: `npm run audit:deps` passed with R1=0, R2=0, R3=0, R4=0; maximum core/data file remains `src/core/commandHandlers.ts` at 500 lines.
+21. PHASE4Q-AF 500 regression: requested=500, actual=500, trustworthy=500/500 (100%), regression gate PASS, engine health PASS, and all timeout/illegal/deadlock/livelock/stall/empty-legal-set/hard-limit/terminal-without-winner/invalid-victory/duplicate-Apex/invalid-Apex-zone counters are 0. Artifact: `reports/phase4q-af-regression.json` and `.md`.
+22. Typecheck/build: `npm run typecheck` and `npm run build` passed; the build emitted only the existing bundle-size advisory.
+23. Art/security: offline art doctor, art validation, Phase 4A provenance audit, art generation dry-run, browser secret scan, and tracked repository secret scan passed.
+24. Production dependency audit: `npm audit --omit=dev` passed with 0 vulnerabilities.
+25. Balance: `BALANCE OBSERVATION ONLY — BALANCE DEFERRED`.
+26. Save migration: `DEFERRED UNTIL PRE-RELEASE SAVE FORMAT STABILIZATION`.
+27. Human status: `NEEDS-HUMAN-PLAYTEST`.
+28. Implementation commits: `64072ef` (`fix: close Phase 4Q acceptance gaps`) and `bf40516` (`fix: preserve legacy npc planning cadence`); the documentation closeout commit is the final branch head reported in the handoff after its exact-head CI completes.
+29. No Phase 4R content, new landmarks/facilities, balance tuning, old-save migration, PNG changes, or merge was performed.
+
+Phase 4Q-AF implementation complete and ready for independent acceptance review.

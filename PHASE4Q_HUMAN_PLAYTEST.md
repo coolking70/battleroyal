@@ -22,3 +22,13 @@ Status: `NEEDS-HUMAN-PLAYTEST`
 - Any visual, copy, accessibility, balance, or information-boundary issue.
 
 This status intentionally remains `NEEDS-HUMAN-PLAYTEST` until an independent human review is completed.
+
+## Phase 4Q-AF acceptance additions
+
+- [ ] Locked facility clearly explains the required tool and unlock interaction.
+- [ ] After unlocking secure storage, a subsequent search is available.
+- [ ] Remote landmark depletion is not magically revealed to an actor outside the zone.
+- [ ] Arriving at an exhausted landmark gives clear feedback and allows the player/NPC to choose another source.
+- [ ] A lethal landmark hazard never shows a dead character successfully receiving loot or a pickup.
+
+Status remains exactly `NEEDS-HUMAN-PLAYTEST` pending independent review.

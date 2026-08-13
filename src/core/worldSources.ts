@@ -111,7 +111,7 @@ export function currentWorldSourcesForActor(state: GameState, actor: Combatant, 
       const def = tryGetLandmarkDef(landmarkId);
       if (!def || def.zoneId !== actor.currentZoneId) return true;
       const runtime = state.landmarks[landmarkId];
-      return Boolean(runtime && !runtime.exhausted && !runtime.locked && !runtime.disabled && runtime.loot.length > 0);
+      return Boolean(runtime && !runtime.exhausted && runtime.remainingSearches > 0 && !runtime.locked && !runtime.disabled && runtime.loot.length > 0);
     });
     if (landmarkIds.length === 0) return [];
     return [{
