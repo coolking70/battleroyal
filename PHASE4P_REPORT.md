@@ -194,9 +194,9 @@ Additional gates:
   ceilings and selecting a deterministic Phase 4J-1 random route fixture, the
   full suite passes: 1,593/1,593 tests across 102 files. No Phase 4P test or
   legacy acceptance test fails.
-- Draft PR #23 final head is `9fc8c4a499f20cfeb090d833bdf0475d086b3abf`;
-  GitHub Actions CI run #120 completed successfully. The PR remains open,
-  Draft, and unmerged.
+- The implementation head `9fc8c4a499f20cfeb090d833bdf0475d086b3abf` passed
+  GitHub Actions CI run #120; the subsequent report-only head is tracked by
+  CI run #121. The PR remains open, Draft, and unmerged.
 
 ## 7. Human gate
 
