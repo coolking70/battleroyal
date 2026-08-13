@@ -21,6 +21,7 @@
 import { GAME_CONFIG, GAME_VERSION } from '../src/data/gameConfig';
 import { SeededRandom } from '../src/core/random';
 import { aliveCharacters, createGame, getPlayer, refreshZoneOccupants } from '../src/core/gameState';
+import { buildFinalRanking } from '../src/core/resultRanking';
 import { executeCommand } from '../src/core/gameEngine';
 import { chooseNpcGoal, decideNpcAction } from '../src/core/npcDecide';
 import {
@@ -31,6 +32,7 @@ import {
   type LegalActionCategory,
 } from '../src/core/legalActions';
 import { addItem, countItem, createStack, getEquippedArmor, getEquippedUtility, getEquippedWeapon } from '../src/core/inventory';
+import { initZoneLoot, syncSupplyRatio } from '../src/core/zoneLoot';
 import { getCraftGoalRecommendations, getZoneDistance } from '../src/core/craftGuide';
 import { buildCraftPlan } from '../src/core/craftPlan';
 import { tryGetItem } from '../src/data/items';
@@ -127,6 +129,9 @@ export interface AutoGameResult {
   endReason: GameState['endReason'];
   winnerId: string | null;
   victoryType: VictoryType | null;
+  /** Acceptance metrics for the authoritative terminal tuple. */
+  terminalWithoutWinner: boolean;
+  invalidVictoryTuple: boolean;
   /** 对局结束时的时间单位 */
   timeUsed: number;
   endedAtTime: number | null;
@@ -529,7 +534,8 @@ interface RepresentativeRouteContext {
   lastSearch: { zoneId: string; time: number } | null;
 }
 
-function seedObjectiveRouteFixture(state: GameState, player: Combatant, goal: VictoryType): void {
+/** Seed only deterministic world conditions; objective ingredients never enter inventory here. */
+export function seedObjectiveRouteWorldFixture(state: GameState, player: Combatant, goal: VictoryType): void {
   if (goal === 'last_survivor') return;
   player.inventory = [];
   player.equipment = [];
@@ -539,10 +545,58 @@ function seedObjectiveRouteFixture(state: GameState, player: Combatant, goal: Vi
   player.stamina = player.maxStamina;
   player.hp = player.maxHp;
   player.currentZoneId = 'school';
-  const raw: Record<string, number> = goal === 'extraction'
-    ? { battery: 3, scrap: 4, glass: 1, iron: 3 }
-    : { bio_resin: 1, research_notes: 2, chemical_mix: 1, circuit: 1 };
-  for (const [itemId, count] of Object.entries(raw)) addItem(player, createStack(state, itemId, count));
+  addItem(player, createStack(state, 'water', 1));
+  addItem(player, createStack(state, 'stick', 1));
+
+  if (goal === 'extraction') {
+    const factory = state.zones.factory!;
+    initZoneLoot(factory, [
+      { itemId: 'battery', count: 2, rarity: 'normal' },
+      { itemId: 'circuit', count: 1, rarity: 'normal' },
+      { itemId: 'metal_plate', count: 1, rarity: 'normal' },
+      { itemId: 'metal_parts', count: 1, rarity: 'normal' },
+    ]);
+  } else {
+    const lab = state.zones.lab!;
+    initZoneLoot(lab, [
+      { itemId: 'herb', count: 1, rarity: 'normal' },
+      { itemId: 'alcohol', count: 1, rarity: 'normal' },
+      { itemId: 'scrap', count: 1, rarity: 'normal' },
+      { itemId: 'glass', count: 2, rarity: 'normal' },
+      { itemId: 'battery', count: 1, rarity: 'normal' },
+    ]);
+    lab.objectiveLoot = [{ itemId: 'research_notes', count: 2, rarity: 'rare' }];
+    const resin = Object.values(state.wildEnemies).find((enemy) => enemy.defId === 'resin_stalker')
+      ?? Object.values(state.wildEnemies)[0];
+    if (!resin) throw new Error('Research fixture requires a wild population source');
+    resin.defId = 'resin_stalker';
+    for (const zone of Object.values(state.zones)) {
+      zone.wildEnemyIds = zone.wildEnemyIds.filter((uid) => uid !== resin.uid);
+    }
+    for (const uid of [...lab.wildEnemyIds]) {
+      const enemy = state.wildEnemies[uid];
+      if (!enemy || enemy.uid === resin.uid) continue;
+      enemy.status = 'defeated';
+      enemy.hp = 0;
+      enemy.dropResolved = true;
+      enemy.statusEffects = [];
+      enemy.guarding = false;
+      enemy.defeatedAtTime = state.time;
+    }
+    resin.zoneId = 'lab';
+    resin.status = 'alive';
+    resin.hp = 1;
+    resin.guarding = false;
+    resin.abilityCharges = 0;
+    resin.statusEffects = [];
+    resin.dropResolved = false;
+    resin.defeatedAtTime = null;
+    lab.wildEnemyIds.push(resin.uid);
+    syncSupplyRatio(lab);
+  }
+  for (const npc of Object.values(state.characters)) {
+    if (!npc.isPlayer) npc.currentZoneId = 'warehouse';
+  }
   refreshZoneOccupants(state);
 }
 
@@ -591,6 +645,36 @@ function chooseRepresentativeBuildAction(
 ): LegalAction | null {
   const groundPickup = legal.find((action) => action.command.type === 'PICKUP_GROUND');
   if (groundPickup) return groundPickup;
+
+  if (victoryGoal === 'research') {
+    if (state.encounter && !state.encounter.resolved) return null;
+    if (!state.craftGoalRecipeId && preferredRecipeId) {
+      return legal.find(
+        (action) => action.command.type === 'SET_CRAFT_GOAL' && action.command.recipeId === preferredRecipeId,
+      ) ?? null;
+    }
+    if (countItem(player, 'research_package') > 0 && player.currentZoneId === 'lab') {
+      return legal.find((action) => action.command.type === 'SUBMIT_RESEARCH') ?? null;
+    }
+    if (player.currentZoneId !== 'lab' && countItem(player, 'research_package') === 0) {
+      const currentDistance = getZoneDistance(player.currentZoneId, 'lab');
+      const towardLab = legal
+        .filter((action): action is LegalAction & { command: Extract<Command, { type: 'MOVE' }> } => action.command.type === 'MOVE')
+        .map((action) => ({ action, distance: getZoneDistance(action.command.zoneId, 'lab') }))
+        .sort((a, b) => a.distance - b.distance);
+      return towardLab.find((entry) => entry.distance < currentDistance)?.action ?? towardLab[0]?.action ?? null;
+    }
+    const path = state.craftGoalRecipeId ? craftPathSummary(state.craftGoalRecipeId, state, player) : null;
+    if (path?.nextStep) {
+      const craft = legal.find(
+        (action) => action.command.type === 'CRAFT' && action.command.recipeId === path.nextStep!.recipeId,
+      );
+      if (craft) return craft;
+    }
+    return legal.find((action) => action.command.type === 'SEARCH')
+      ?? legal.find((action) => action.command.type === 'REST')
+      ?? null;
+  }
 
   if (victoryGoal && victoryGoal !== 'auto' && victoryGoal !== 'last_survivor') {
     const completion = victoryGoal === 'extraction' ? 'EXTRACT' : 'SUBMIT_RESEARCH';
@@ -714,7 +798,7 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
     playerName: options.playerName ?? `Auto-${policy}`,
   });
   const victoryGoal = options.victoryGoal ?? 'auto';
-  if (victoryGoal !== 'auto') seedObjectiveRouteFixture(s, getPlayer(s), victoryGoal);
+  if (victoryGoal !== 'auto') seedObjectiveRouteWorldFixture(s, getPlayer(s), victoryGoal);
 
   // 策略专用 RNG：与引擎 RNG 完全隔离，避免自动玩家的选择消耗掉对局随机数，
   // 从而保证「同种子 + 同角色 + 同策略」严格可复现。
@@ -963,7 +1047,6 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
   const player = getPlayer(s);
   const alive = aliveCharacters(s);
   const total = Object.keys(s.characters).length;
-  const deathIndex = s.deathOrder.indexOf(s.playerId);
 
   const hardLimitReached =
     s.endReason === 'time_limit' || s.time >= GAME_CONFIG.hardTimeLimit;
@@ -1014,7 +1097,19 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
     playerStamina: player.stamina,
     playerKills: player.kills,
     // 死者名次 = 总人数 - 死亡序号；存活者并列第一（平局时的诚实表述）
-    playerRank: player.alive ? 1 : deathIndex >= 0 ? total - deathIndex : total,
+    playerRank: Math.max(1, buildFinalRanking(s).findIndex((character) => character.id === player.id) + 1),
+    terminalWithoutWinner: (s.status === 'won' || s.status === 'lost') && s.victory.winnerId === null,
+    invalidVictoryTuple: (() => {
+      const empty = s.victory.winnerId === null
+        && s.victory.type === null
+        && s.victory.declaredAtTime === null;
+      const complete = typeof s.victory.winnerId === 'string'
+        && typeof s.victory.type === 'string'
+        && typeof s.victory.declaredAtTime === 'number';
+      return (!empty && !complete)
+        || ((s.status === 'won' || s.status === 'lost') && !complete)
+        || (s.status === 'draw' && !empty);
+    })(),
     playerDiedAtTime: player.diedAtTime,
     playerKilledBy: player.killedBy,
     playerZoneId: player.currentZoneId,

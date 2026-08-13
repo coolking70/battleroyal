@@ -117,6 +117,24 @@ export function declareVictory(
   return true;
 }
 
+/** The only terminal path that intentionally has no winner. */
+export function declareDraw(state: GameState, reason: 'draw' | 'time_limit' = 'draw'): boolean {
+  if (state.status !== 'playing') return false;
+  if (state.victory.winnerId !== null || state.victory.type !== null || state.victory.declaredAtTime !== null) return false;
+  state.status = 'draw';
+  state.endedAtTime = state.time;
+  state.endReason = reason;
+  state.encounter = null;
+  state.activeExtraction = null;
+  pushEvent(state, {
+    type: 'GAME_ENDED',
+    importance: 'critical',
+    message: reason === 'time_limit' ? '时间耗尽，对局以平局结束。' : '所有参赛者均已出局，对局以平局结束。',
+    metadata: { result: 'draw', reason, time: state.time, hardLimitReached: reason === 'time_limit' },
+  });
+  return true;
+}
+
 function typeLabel(type: VictoryType): string {
   switch (type) {
     case 'last_survivor': return '最后生还者';
@@ -161,8 +179,15 @@ export function performObjectiveAction(
   if (type === 'EXTRACT') {
     const check = canExtract(state, actor);
     if (!check.ok) return { ok: false, message: check.reason ?? '无法完成撤离。' };
+    const inventoryBefore = actor.inventory.map((stack) => ({ ...stack }));
+    const staminaBefore = actor.stamina;
+    const eventsBefore = state.events.slice();
+    const eventSeqBefore = state.eventSeq;
+    const countersBefore = structuredClone(state.eventCounters);
     payActionCost(actor, 'EXTRACT');
     if (!consumeOneByItemId(actor, EXTRACTION_BEACON_ID)) {
+      actor.inventory = inventoryBefore;
+      actor.stamina = staminaBefore;
       return { ok: false, message: '撤离信标已经不在身上。' };
     }
     pushEvent(state, {
@@ -173,14 +198,28 @@ export function performObjectiveAction(
       message: `${actor.name} 已完成撤离。`,
       metadata: { zoneId: EXTRACTION_ZONE_ID },
     });
-    declareVictory(state, actor.id, 'extraction');
+    if (!declareVictory(state, actor.id, 'extraction')) {
+      actor.inventory = inventoryBefore;
+      actor.stamina = staminaBefore;
+      state.events = eventsBefore;
+      state.eventSeq = eventSeqBefore;
+      state.eventCounters = countersBefore;
+      return { ok: false, message: '胜利状态未能提交，撤离已回滚。' };
+    }
     return { ok: true, message: '撤离完成，你赢得了这场对局。' };
   }
 
   const check = canSubmitResearch(state, actor);
   if (!check.ok) return { ok: false, message: check.reason ?? '无法提交研究。' };
+  const inventoryBefore = actor.inventory.map((stack) => ({ ...stack }));
+  const staminaBefore = actor.stamina;
+  const eventsBefore = state.events.slice();
+  const eventSeqBefore = state.eventSeq;
+  const countersBefore = structuredClone(state.eventCounters);
   payActionCost(actor, 'SUBMIT_RESEARCH');
   if (!consumeOneByItemId(actor, RESEARCH_PACKAGE_ID)) {
+    actor.inventory = inventoryBefore;
+    actor.stamina = staminaBefore;
     return { ok: false, message: '研究成果包已经不在身上。' };
   }
   pushEvent(state, {
@@ -191,7 +230,14 @@ export function performObjectiveAction(
     message: `${actor.name} 已提交研究成果。`,
     metadata: { zoneId: actor.currentZoneId },
   });
-  declareVictory(state, actor.id, 'research');
+  if (!declareVictory(state, actor.id, 'research')) {
+    actor.inventory = inventoryBefore;
+    actor.stamina = staminaBefore;
+    state.events = eventsBefore;
+    state.eventSeq = eventSeqBefore;
+    state.eventCounters = countersBefore;
+    return { ok: false, message: '胜利状态未能提交，研究提交已回滚。' };
+  }
   return { ok: true, message: '研究成果提交完成，你赢得了这场对局。' };
 }
 

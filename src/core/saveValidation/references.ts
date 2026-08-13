@@ -137,6 +137,23 @@ export function validateReferences(ctx: ValidationContext): void {
       }
     }
 
+    if (!Object.prototype.hasOwnProperty.call(c, 'victoryGoal')) {
+      fail(`角色 ${id} 缺少当前版本 victoryGoal 字段`);
+    }
+    if (c.victoryGoal !== null && c.victoryGoal !== undefined
+      && c.victoryGoal !== 'last_survivor'
+      && c.victoryGoal !== 'extraction'
+      && c.victoryGoal !== 'research') {
+      fail(`角色 ${id} 的 victoryGoal 非法（${String(c.victoryGoal)}）`);
+    }
+    if (c.victoryGoalMode !== null && c.victoryGoalMode !== undefined
+      && c.victoryGoalMode !== 'derived' && c.victoryGoalMode !== 'explicit') {
+      fail(`角色 ${id} 的 victoryGoalMode 非法（${String(c.victoryGoalMode)}）`);
+    }
+    if (c.isPlayer === true && c.victoryGoal !== null && c.victoryGoal !== undefined) {
+      fail(`玩家角色 ${id} 不应带 NPC victoryGoal`);
+    }
+
     /* NPC 计划三字段一致性（含对玩家不适用字段的宽容处理） */
     const planId = c.plannedRecipeId;
     const planCreated = c.planCreatedAt;

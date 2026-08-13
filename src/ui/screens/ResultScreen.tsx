@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { allCharacters } from '../../core/gameState';
+import { buildFinalRanking } from '../../core/resultRanking';
 import { PHASE_LABEL } from '../../core/phase';
 import { getEquippedArmor, getEquippedWeapon } from '../../core/inventory';
 import type { Combatant, GameState } from '../../core/types';
@@ -121,18 +121,10 @@ function keyEvents(state: GameState, playerId: string): TimelineEntry[] {
 
 /**
  * 排名规则：
- * 存活者排在最前（按击杀数降序），其余按死亡顺序倒序（越晚死排名越高）。
+ * 已声明胜者固定第一；其余存活者按击杀数，死亡者按死亡顺序倒序。
  */
-function buildRanking(state: GameState): RankRow[] {
-  const all = allCharacters(state);
-  const survivors = all
-    .filter((c) => c.alive)
-    .sort((a, b) => b.kills - a.kills || a.id.localeCompare(b.id));
-  const dead = all
-    .filter((c) => !c.alive)
-    .sort((a, b) => state.deathOrder.indexOf(b.id) - state.deathOrder.indexOf(a.id));
-
-  const ordered = [...survivors, ...dead];
+export function buildResultRanking(state: GameState): RankRow[] {
+  const ordered = buildFinalRanking(state);
   return ordered.map((c, i) => {
     let fate: string;
     if (c.alive) {
@@ -166,7 +158,7 @@ export function ResultScreen({
   // last-survivor ending.
   const routeType = state.victory.type ?? (won || state.endReason === 'player_won' ? 'last_survivor' : null);
   const route = victoryTypeLabel(routeType);
-  const ranking = buildRanking(state);
+  const ranking = buildResultRanking(state);
   const myRank = ranking.find((r) => r.c.id === player.id)?.rank ?? '—';
   const killer =
     player.killedBy && state.characters[player.killedBy]
@@ -175,10 +167,9 @@ export function ResultScreen({
 
   // 死亡顺序位置（存活者不在 deathOrder 中）
   const deathPos = state.deathOrder.indexOf(player.id);
-  const deathOrderText =
-    player.alive || deathPos < 0
-      ? '存活'
-      : `第 ${deathPos + 1} / ${state.turnOrder.length}`;
+  const deathOrderText = player.alive || deathPos < 0
+    ? '存活'
+    : `第 ${deathPos + 1} / ${state.turnOrder.length}`;
   const resultVisualState = resolveCharacterVisualState(player);
   const resultZone = getZoneDef(player.currentZoneId);
 
@@ -199,7 +190,7 @@ export function ResultScreen({
           <div className="result-hero-copy">
             <span className="result-hero-kicker">FINAL ZONE · {player.currentZoneId.toUpperCase()}</span>
             <strong>{resultZone.name}</strong>
-            <span>{won ? `你在这里完成了${route}路线。` : draw ? '时间耗尽，所有人都停在这片城市里。' : objectiveLoss ? `${winner?.name ?? '另一名参赛者'}完成了${route}路线。` : '这片区域记录了你的最后一段行动。'}</span>
+            <span>{won ? `你在这里完成了${route}路线。` : draw ? '时间耗尽，所有人都停在这片城市里。' : objectiveLoss ? `${winner?.name ?? '另一名参赛者'}完成了${route}路线。${player.alive ? '' : ` 你在第 ${player.diedAtTime ?? state.time} 个时间单位被淘汰。`}` : '这片区域记录了你的最后一段行动。'}</span>
           </div>
           <VisualImage
             visual={getCharacterVisual(player.characterId, resultVisualState)}
@@ -224,7 +215,9 @@ export function ResultScreen({
               : draw
                 ? `对局在第 ${state.endedAtTime ?? state.time} 个时间单位达到硬时限，无人胜出，判为平局。`
                 : objectiveLoss
-                  ? `你仍存活，但 ${winner?.name ?? '另一名参赛者'} 在第 ${state.endedAtTime ?? state.time} 个时间单位完成${route}路线，胜负已结算。`
+                  ? player.alive
+                    ? `你仍存活，但 ${winner?.name ?? '另一名参赛者'} 在第 ${state.endedAtTime ?? state.time} 个时间单位完成${route}路线，胜负已结算。`
+                    : `你在第 ${player.diedAtTime ?? state.time} 个时间单位被淘汰；${winner?.name ?? '另一名参赛者'} 随后在第 ${state.endedAtTime ?? state.time} 个时间单位完成${route}路线。`
                 : killer
                   ? `你在第 ${player.diedAtTime ?? state.time} 个时间单位倒在 ${getZoneDef(player.currentZoneId).name}，终结者是 ${killer}。`
                   : `你在第 ${player.diedAtTime ?? state.time} 个时间单位倒在 ${getZoneDef(player.currentZoneId).name}。`}

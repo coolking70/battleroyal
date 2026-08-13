@@ -36,7 +36,7 @@ export function validateConsistency(ctx: ValidationContext): void {
   } else if (status === 'won') {
     if (endReason !== 'player_won' && endReason !== 'extraction' && endReason !== 'research') fail(`won 对局的结束原因非法（实际 ${String(endReason)}）`);
   } else if (status === 'lost') {
-    if (endReason !== 'player_died' && endReason !== 'last_survivor' && endReason !== 'extraction' && endReason !== 'research') fail(`lost 对局的结束原因非法（实际 ${String(endReason)}）`);
+    if (endReason !== 'last_survivor' && endReason !== 'extraction' && endReason !== 'research') fail(`lost 对局的结束原因非法（实际 ${String(endReason)}）`);
   } else if (status === 'draw') {
     if (endReason !== 'draw' && endReason !== 'time_limit') {
       fail(`draw 对局必须 endReason=draw/time_limit（实际 ${String(endReason)}）`);
@@ -48,17 +48,23 @@ export function validateConsistency(ctx: ValidationContext): void {
   if (!isRecord(victory)) {
     fail('state.victory 必须是对象');
   } else {
-    const hasWinner = typeof victory.winnerId === 'string';
-    const hasType = typeof victory.type === 'string';
-    const hasTime = typeof victory.declaredAtTime === 'number';
-    if (hasWinner !== hasType || hasWinner !== hasTime) fail('state.victory 三字段必须同步存在');
-    if (status === 'playing' && (hasWinner || hasType || hasTime)) fail('进行中的对局不得带 victory result');
-    if (status === 'draw' && (hasWinner || hasType || hasTime)) fail('平局不得带 victory result');
-    if (hasWinner && typeof victory.winnerId === 'string') {
+    const empty = victory.winnerId === null && victory.type === null && victory.declaredAtTime === null;
+    const complete = typeof victory.winnerId === 'string'
+      && typeof victory.type === 'string'
+      && typeof victory.declaredAtTime === 'number';
+    if (!empty && !complete) fail('state.victory 三字段必须完整存在，或全部为 null');
+    if (status === 'playing' && !empty) fail('进行中的对局不得带 victory result');
+    if (status === 'draw' && !empty) fail('平局不得带 victory result');
+    if ((status === 'won' || status === 'lost') && !complete) fail('非平局终局必须带完整 victory result');
+    if (complete && typeof victory.winnerId === 'string') {
       const winner = characters[victory.winnerId];
       if (!isRecord(winner) || winner.alive !== true) fail('victory.winnerId 必须指向存活角色');
       if ((victory.winnerId === state.playerId) !== (status === 'won')) fail('status 必须与 victory.winnerId 的玩家归属一致');
     }
+  }
+  const aliveContestants = Object.values(characters).filter((raw) => isRecord(raw) && raw.alive === true).length;
+  if (status === 'playing' && aliveContestants <= 1) {
+    fail('进行中的对局必须仍有至少两名存活参赛者，单人或零人应先完成终局判定');
   }
   const activeExtraction = state.activeExtraction;
   if (activeExtraction !== null && activeExtraction !== undefined) {

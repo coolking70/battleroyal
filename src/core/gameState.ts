@@ -70,6 +70,7 @@ function createCombatant(params: {
   isPlayer: boolean;
   characterId: string;
   personality: Personality;
+  victoryGoal: Combatant['victoryGoal'];
   zoneId: string;
 }): Combatant {
   const def = getCharacterDef(params.characterId);
@@ -79,6 +80,7 @@ function createCombatant(params: {
     isPlayer: params.isPlayer,
     characterId: def.id,
     personality: params.personality,
+    victoryGoal: params.victoryGoal,
     level: 1,
     exp: 0,
     hp: def.maxHp,
@@ -238,6 +240,7 @@ export function createGame(options: CreateGameOptions): GameState {
     isPlayer: true,
     characterId: options.playerCharacterId,
     personality: 'random',
+    victoryGoal: null,
     zoneId: playerZone,
   });
   state.characters[player.id] = player;
@@ -254,6 +257,9 @@ export function createGame(options: CreateGameOptions): GameState {
       isPlayer: false,
       characterId: template ? template.id : 'scout',
       personality: personalities[i] ?? 'random',
+      // NPC 的胜利意图在首次正式行动前激活。这样当前 schema 已经有
+      // victoryGoal 字段，但纯规划 API 在 time=0 仍保持原有的人格评分语义。
+      victoryGoal: null,
       zoneId: pickSpawnZone(rng),
     });
     state.characters[npc.id] = npc;

@@ -41,13 +41,15 @@ wins, capture points, old-save migration, balance tuning, or new PNG assets.
 
 ## 3. Victory Architecture Audit — 20 answers
 
-1. **Where is victory decided?** Existing `checkGameEnd()` is the end-of-turn
-   boundary. It delegates contestant wins to one authoritative
-   `declareVictory()` API and retains a separate no-winner defeat path.
+1. **Where is victory decided?** `checkGameEnd()` is the end-of-turn boundary.
+   It delegates contestant wins to one authoritative `declareVictory()` API;
+   a player death with multiple contestants alive leaves the match `playing`,
+   while only a true no-winner hard-limit path uses `declareDraw()`.
 2. **What is the persisted winner model?** `GameState` contains explicit
    `victory.winnerId`, `victory.type`, and `victory.declaredAtTime`.
 3. **What is the player-facing status?** `status='won'` means the player is the
-   winner; `status='lost'` means another contestant won or the player died.
+   winner; `status='lost'` means another contestant won. Player elimination is
+   recorded on the character and does not itself create a terminal result.
 4. **Can a wild enemy win?** No. Wild enemies are never contestants and are
    rejected by the victory API before mutation.
 5. **How is first-victory-wins enforced?** `declareVictory()` refuses every
@@ -79,8 +81,10 @@ wins, capture points, old-save migration, balance tuning, or new PNG assets.
     positive stamina costs; zero-cost `FLEE`/`GUARD` remain unchanged.
 17. **How are legal actions authoritative?** `legalActions` calls the same core
     eligibility APIs as execution, and every listed command is executable.
-18. **How do NPCs and AutoPlayer use routes?** They use the same eligibility and
-    production functions with deterministic planning and no `DEBUG_GIVE`.
+18. **How do NPCs and AutoPlayer use routes?** NPCs activate a deterministic
+    seed/personality goal on formal turns, while explicit objective fixtures
+    immediately adopt the matching craft plan; both sides use the same
+    eligibility and production functions with no `DEBUG_GIVE`.
 19. **What is saved and validated?** Victory and active extraction are persisted
     and validated; old-save migration remains `DEFERRED UNTIL PRE-RELEASE`.
 20. **What is the UI contract?** Victory Paths cards derive from core/craft
@@ -99,8 +103,9 @@ endReason, emits `VICTORY_DECLARED` plus `GAME_ENDED`, and refuses later calls.
 
 `checkGameEnd()` preserves the classic rule: exactly one live contestant
 produces `type='last_survivor'`. Wild enemies are isolated from
-`turnOrder`/`characters` winner selection. The existing player death path stays
-a no-winner `player_died` loss.
+`turnOrder`/`characters` winner selection. Player death is an individual
+outcome only; with two or more contestants still alive, the resolver continues
+formal NPC/world turns until a real winner or legal draw exists.
 
 ## 6. Extraction
 
@@ -153,32 +158,38 @@ public. Result views use the same public event projection.
 ## 12. NPC
 
 NPCs use deterministic shortest-path movement and the same objective eligibility
-and production functions. They can carry a beacon through station call/wait/
-extract and can submit a research package in the lab. Hidden player/NPC
-inventory and remote wild state are not consulted.
+and production functions. Their `victoryGoal` is stable per seed/personality;
+explicit objective goals immediately choose the matching recipe, while derived
+goals enter objective competition during finale resolution. They can carry a
+beacon through station call/wait/extract and can submit a research package in
+the lab. Hidden player/NPC inventory and remote wild state are not consulted.
 
 ## 13. AutoPlayer
 
 `runAutoGame({ victoryGoal: 'extraction' | 'research', representativeBuildLoop: true })`
 uses formal `SET_CRAFT_GOAL`, `CRAFT`, `MOVE`, `REST`, `CALL_EXTRACTION`,
-`EXTRACT`, and `SUBMIT_RESEARCH` commands. Dedicated deterministic fixtures use
-normal inventory construction, never `DEBUG_GIVE`; both representative routes
-completed with zero illegal commands.
+`EXTRACT`, and `SUBMIT_RESEARCH` commands. The research fixture seeds world
+loot and a legal wild source, not objective ingredients in the player inventory;
+the stable `PHASE4O-AF-R-14` run records PvE defeat/drop, ground pickup, seven
+formal crafts, and one `SUBMIT_RESEARCH`, with `DEBUG_GIVE_MATERIAL=0`. The
+extraction closure is stable at `PHASE4O-AF-EX-62` and records two-plus CRAFT
+commands, `CALL_EXTRACTION`, `REST`, and `EXTRACT`.
 
 ## 14. Result / Ranking Semantics
 
 ResultScreen distinguishes last-survivor, extraction, and research. If an NPC
 wins an alternative route, the player is shown as lost while still alive and
-the winner is named. Alternative winners rank first without pretending other
-living contestants died; remaining living contestants use deterministic
-secondary ordering.
+the winner is named. UI and simulator both call the pure `buildFinalRanking()`;
+the latched winner is always rank #1, followed by living contestants and then
+dead contestants under deterministic secondary ordering.
 
 ## 15. Save Current Schema
 
-Current saves persist victory, active extraction, objective inventory/loot, and
-route events. Structure, number, reference, and consistency validators reject
-unknown routes, invalid winners, bad callers/times, ended active calls, and
-invalid objective loot. Backward compatibility: `DEFERRED UNTIL PRE-RELEASE`.
+Current saves persist victory, active extraction, objective inventory/loot, NPC
+victory goals, and route events. Structure, number, reference, and consistency
+validators reject unknown routes, invalid winners, bad callers/times, ended
+active calls, missing current-schema goal fields, and invalid objective loot.
+Backward compatibility: `DEFERRED UNTIL PRE-RELEASE`.
 
 ## 16. Conservation
 
@@ -191,17 +202,19 @@ flows, and the item-invariant test suite remains green.
 
 Focused coverage includes route registry/recipe depth, extraction chain and
 countdown/cancellation/atomicity, research submission, NPC-alternative loss,
-legal positive-cost gates, save corruption, Victory Paths UI/public countdown,
-and route-specific ResultScreen copy for player and NPC outcomes. Full suite
-is 100 files / 1571 tests.
+player-elimination continuation, winner-first ranking, NPC goal adoption and
+full world-PvE research closure, legal positive-cost gates, save corruption,
+Victory Paths UI/public countdown, and route-specific ResultScreen copy for
+player and NPC outcomes. Full suite is 101 files / 1583 tests.
 
 ## 18. 500-Game Regression
 
 `reports/phase4o-regression.json` and `.md` contain the required 500-game run:
-requested = actual = 500, trustworthy = 100%, and zero timeout, illegal,
-deadlock, livelock, stalled, empty-legal-set, hard-limit, or crash cases.
-Victory counts are observation only (`none=471`, `last_survivor=29` in the
-standard matrix); alternative-route frequency is not a gate.
+requested = actual = 500, trustworthy = 100%, `terminalWithoutWinner=0`, and
+`invalidVictoryTuple=0`. Timeout, illegal, deadlock, livelock, stalled,
+empty-legal-set, hard-limit, and crash cases are all zero. The standard matrix
+observed 448 `last_survivor` results and 52 legal draws (`victoryType=none`);
+route frequency and role balance remain observations only.
 
 ## 19. Human
 
@@ -226,7 +239,7 @@ the phase prompt explicitly requires a gate.
 
 ## Verification evidence
 
-- `npm test`: 100 files / 1571 tests passed.
+- `npm test`: 101 files / 1583 tests passed.
 - `npm run typecheck`: PASS.
 - `npm run build`: PASS.
 - `npm run audit:save`: 102/102 corruption cases rejected; PASS.
@@ -237,12 +250,79 @@ the phase prompt explicitly requires a gate.
 - `npm run art:security:browser`, `npm run art:security:repo`, and
   `npm audit --omit=dev`: PASS; production dependencies have 0 vulnerabilities.
 - Required regression: `reports/phase4o-regression.json` and `.md`; 500/500
-  trustworthy, 0 timeout/illegal/deadlock/livelock/stall/empty-legal-set/
-  hard-limit cases, requested = actual = 500, regression gate PASS.
+  trustworthy, `terminalWithoutWinner=0`, `invalidVictoryTuple=0`, and 0
+  timeout/illegal/deadlock/livelock/stall/empty-legal-set/hard-limit cases;
+  requested = actual = 500, regression gate PASS.
 - Deterministic AutoPlayer representative loops: extraction and research both
   ended `won` with the matching route, no illegal commands, and formal route
-  commands (`CALL_EXTRACTION` + `EXTRACT`, or `SUBMIT_RESEARCH`).
+  commands (`CALL_EXTRACTION` + `EXTRACT`, or `SUBMIT_RESEARCH`). The research
+  run used world PvE acquisition and recorded `DEBUG_GIVE_MATERIAL=0`.
+- Deterministic NPC research loop: world objective loot + raw zone loot + a
+  `resin_stalker` source produced SEARCH, ATTACK, WILD_DEFEATED, ground pickup,
+  three-plus crafts, and `RESEARCH_COMPLETED`; no final objective was injected.
 - Browser smoke: `output/web-game/shot-0.png` visibly shows all three Victory
   Paths cards; `output/web-game/state-0.json` includes the persisted victory and
   active-extraction fields; no console-error artifact was produced.
 - Human visual gate remains `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4O-AF — Victory Semantics & Alternative Route Closure
+
+### A. Player outcome vs match outcome
+
+Player death no longer writes `status='lost'`, `endReason='player_died'`, or
+`GAME_ENDED` while multiple contestants remain. The formal resolver continues
+the same `advanceTime()` NPC/world loop after elimination and ends only on a
+real contestant victory or legal draw.
+
+### B. Terminal invariant
+
+Every `won`/`lost` terminal state has a complete `{ winnerId, type,
+declaredAtTime }` tuple pointing to a living contestant. `draw` and
+`time_limit` keep all three victory fields null. The first successful
+`declareVictory()` latch is immutable; objective consumption and emitted
+events roll back if that latch rejects the submission.
+
+### C. Winner-first ranking
+
+`buildFinalRanking()` is the shared pure ranking source for ResultScreen and
+the simulator. A latched alternative winner is rank #1 even with zero kills;
+other living contestants remain alive in the result and are ordered by kills,
+ID, then dead contestants by death order.
+
+### D. NPC alternative-route intent
+
+NPCs have a deterministic `victoryGoal` field. Explicit objective fixtures
+immediately plan `r_research_package` or `r_extraction_beacon`; normal derived
+intent is activated on formal NPC turns and enters objective competition during
+finale resolution, preserving existing personality-planning behavior before
+the route is active. NPC objective actions still use the canonical crafting,
+movement, extraction, research, and PvE systems.
+
+### E. Real route evidence
+
+The dedicated NPC research test uses fixed lab objective loot, raw zone loot,
+and a `resin_stalker`; it does not inject final objective or wild materials.
+The NPC records SEARCH, ATTACK, WILD_DEFEATED, WILD_DROP_CREATED, ITEM_PICKED,
+three or more ITEM_CRAFTED events, and RESEARCH_COMPLETED. The dedicated
+AutoPlayer research seed `PHASE4O-AF-R-14` likewise starts without route
+ingredients and records formal PvE acquisition, pickup, seven CRAFT commands,
+SUBMIT_RESEARCH, and zero DEBUG_GIVE_MATERIAL commands.
+
+### F. Save and regression closure
+
+Current-schema validation now accepts a dead player with multiple live NPCs,
+rejects missing/invalid NPC victory-goal fields, rejects player victory goals,
+and rejects `playing` saves with one or zero live contestants. The 500-game
+AF report is 500/500 trustworthy with 0 terminal-without-winner and 0 invalid
+victory tuples; 52 draws are legal no-winner outcomes.
+
+### G. Balance and migration boundary
+
+No balance tuning, new route, asset, or migration was introduced. The observed
+role-balance ratio remains `BALANCE OBSERVATION ONLY — BALANCE DEFERRED`, and
+old-save migration remains `DEFERRED UNTIL PRE-RELEASE`.
+
+### H. Human gate
+
+The acceptance status remains exactly `NEEDS-HUMAN-PLAYTEST`; the added manual
+checks are in `PHASE4O_HUMAN_PLAYTEST.md`.

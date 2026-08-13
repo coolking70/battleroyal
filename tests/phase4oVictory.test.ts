@@ -144,6 +144,7 @@ describe('Phase 4O unified victory framework', () => {
     const state = newGame('PHASE4O-NPC-EXTRACTION');
     const npc = npcs(state)[0]!;
     npc.currentZoneId = 'station';
+    npc.victoryGoal = 'extraction';
     npc.stamina = npc.maxStamina;
     addItem(npc, createStack(state, 'extraction_beacon', 1));
     refreshZoneOccupants(state);

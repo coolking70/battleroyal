@@ -328,6 +328,8 @@ interface CellStats {
 
   hardLimitCount: number;
   hardLimitRate: number;
+  terminalWithoutWinnerCount?: number;
+  invalidVictoryTupleCount?: number;
 
   illegalCount: number;
   illegalRate: number;
@@ -417,6 +419,8 @@ function aggregateCell(
   const timeouts = results.filter((r) => r.outcome === 'timeout').length;
   const survivalCount = results.filter((r) => r.survived).length;
   const hardLimitCount = results.filter((r) => r.hardLimitReached).length;
+  const terminalWithoutWinnerCount = results.filter((r) => r.terminalWithoutWinner).length;
+  const invalidVictoryTupleCount = results.filter((r) => r.invalidVictoryTuple).length;
   const illegalList = results.filter(isIllegal);
   const deadlockCount = results.filter((r) => r.deadlock !== null).length;
   const stalledCount = results.filter((r) => r.stalled).length;
@@ -450,6 +454,8 @@ function aggregateCell(
 
     hardLimitCount,
     hardLimitRate: pct(hardLimitCount),
+    terminalWithoutWinnerCount,
+    invalidVictoryTupleCount,
 
     illegalCount: illegalList.length,
     illegalRate: pct(illegalList.length),
@@ -682,6 +688,8 @@ export interface GlobalSummary {
   survivalRate: number;
   timeoutRate: number;
   victoryByType: Record<string, number>;
+  terminalWithoutWinnerCount: number;
+  invalidVictoryTupleCount: number;
   avgTimeUsed: number;
   avgPlayerRank: number;
   avgKills: number;
@@ -723,6 +731,8 @@ interface BalanceReport {
       timeout: { count: number; flagged: boolean };
       illegalState: { count: number; flagged: boolean };
       hardLimitReached: { count: number; flagged: boolean };
+      terminalWithoutWinner: { count: number; flagged: boolean };
+      invalidVictoryTuple: { count: number; flagged: boolean };
       engineHealthy: boolean;
     };
     /** 角色平衡验收（Phase 2A-1：最高/最低非零胜率比 < 2.5，不允许 0 胜率） */
@@ -814,6 +824,8 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
     const timeouts = sum((c) => c.timeouts);
     const survival = sum((c) => c.survivalCount);
     const hard = sum((c) => c.hardLimitCount);
+    const terminalWithoutWinner = sum((c) => c.terminalWithoutWinnerCount ?? 0);
+    const invalidVictoryTuple = sum((c) => c.invalidVictoryTupleCount ?? 0);
     const illegal = sum((c) => c.illegalCount);
     const dead = sum((c) => c.deadlockCount);
     const st = sum((c) => c.stalledCount);
@@ -845,6 +857,8 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
 
       hardLimitCount: hard,
       hardLimitRate: totalGames ? hard / totalGames : 0,
+      terminalWithoutWinnerCount: terminalWithoutWinner,
+      invalidVictoryTupleCount: invalidVictoryTuple,
 
       illegalCount: illegal,
       illegalRate: totalGames ? illegal / totalGames : 0,
@@ -1042,6 +1056,8 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
   const timeoutCount = sumGlobal(cells, (c) => c.timeouts);
   const illegalCount = sumGlobal(cells, (c) => c.illegalCount);
   const hardLimitCount = sumGlobal(cells, (c) => c.hardLimitCount);
+  const terminalWithoutWinnerCount = sumGlobal(cells, (c) => c.terminalWithoutWinnerCount ?? 0);
+  const invalidVictoryTupleCount = sumGlobal(cells, (c) => c.invalidVictoryTupleCount ?? 0);
 
   const global = aggregateGlobalFromCells(cells);
 
@@ -1114,7 +1130,8 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
     deltaPPPassed &&
     skillPlayerUsesAll;
 
-  const engineHealthy = timeoutCount === 0 && illegalCount === 0 && hardLimitCount === 0;
+  const engineHealthy = timeoutCount === 0 && illegalCount === 0 && hardLimitCount === 0
+    && terminalWithoutWinnerCount === 0 && invalidVictoryTupleCount === 0;
   // Phase 3A-1：CI 模式（100 局）只守规模无关门槛（胜率比/事件覆盖需 3000 局规模）
   const ciGate =
     engineHealthy && quickPassed && heavyPassed && guardPassed && deltaPPPassed && skillPlayerUsesAll;
@@ -1148,6 +1165,8 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
         timeout: { count: timeoutCount, flagged: timeoutCount > 0 },
         illegalState: { count: illegalCount, flagged: illegalCount > 0 },
         hardLimitReached: { count: hardLimitCount, flagged: hardLimitCount > 0 },
+        terminalWithoutWinner: { count: terminalWithoutWinnerCount, flagged: terminalWithoutWinnerCount > 0 },
+        invalidVictoryTuple: { count: invalidVictoryTupleCount, flagged: invalidVictoryTupleCount > 0 },
         engineHealthy,
       },
       characterBalance: {
@@ -1292,6 +1311,8 @@ function aggregateGlobalFromCells(
     survivalRate: pct(sum((c) => c.survivalCount)),
     timeoutRate: pct(outcomeCounts.timeout),
     victoryByType: mergeCellCounts(cells, (c) => c.victoryByType ?? {}),
+    terminalWithoutWinnerCount: sum((c) => c.terminalWithoutWinnerCount ?? 0),
+    invalidVictoryTupleCount: sum((c) => c.invalidVictoryTupleCount ?? 0),
     avgTimeUsed: w((c) => c.avgTimeUsed),
     avgPlayerRank: w((c) => c.avgPlayerRank),
     avgKills: w((c) => c.avgKills),
@@ -1362,6 +1383,8 @@ function renderMarkdown(report: BalanceReport): string {
   L.push(`- timeout（跑到步数上限仍未结束）：${h.timeout.count}  →  ${h.timeout.flagged ? '**FAIL**' : 'OK'}`);
   L.push(`- illegalState（合法集合被拒 / 死锁 / livelock / 空集合）：${h.illegalState.count}  →  ${h.illegalState.flagged ? '**FAIL**' : 'OK'}`);
   L.push(`- hardLimitReached（触及 180 硬上限）：${h.hardLimitReached.count}  →  ${h.hardLimitReached.flagged ? '**FAIL**' : 'OK'}`);
+  L.push(`- terminalWithoutWinner：${h.terminalWithoutWinner.count}  →  ${h.terminalWithoutWinner.flagged ? '**FAIL**' : 'OK'}`);
+  L.push(`- invalidVictoryTuple：${h.invalidVictoryTuple.count}  →  ${h.invalidVictoryTuple.flagged ? '**FAIL**' : 'OK'}`);
   L.push('');
   L.push(`**引擎整体判定：${h.engineHealthy ? 'PASS' : 'FAIL'}**`);
   L.push('');
@@ -1564,6 +1587,8 @@ function renderMarkdown(report: BalanceReport): string {
   L.push(`| 超时率 | ${fmtPct(s.timeoutRate)} |`);
   L.push(`| 存活率 | ${fmtPct(s.survivalRate)} |`);
   L.push(`| 胜利路线 | ${JSON.stringify(s.victoryByType)} |`);
+  L.push(`| terminalWithoutWinner | ${s.terminalWithoutWinnerCount} |`);
+  L.push(`| invalidVictoryTuple | ${s.invalidVictoryTupleCount} |`);
   L.push(`| 平均时长 | ${fmtNum(s.avgTimeUsed)} 时间单位 |`);
   L.push(`| 平均名次 | ${fmtNum(s.avgPlayerRank)}（理论 ${((s.totalGames ? meta.config.totalContestants : 6) - 1) / 2 + 1} 为全灭）|`);
   L.push(`| 平均击杀 | ${fmtNum(s.avgKills)} |`);

@@ -30,6 +30,7 @@ import type { AttackStyle, Combatant, GameState, ItemStack } from './types';
 import { attackWildActor, fleeWildEncounter, resolveWildTurn } from './wildCombat';
 import { PHASE4N_WILD_MATERIAL_IDS } from '../data/phase4nItems';
 import { performObjectiveAction } from './victory';
+import { deriveNpcVictoryGoal } from './npcVictoryGoal';
 
 const WILD_MATERIALS = new Set<string>(PHASE4N_WILD_MATERIAL_IDS);
 
@@ -151,6 +152,16 @@ export function runNpcTurn(
 ): NpcDecision {
   if (!npc.alive || state.status !== 'playing') {
     return { kind: 'idle', reason: '无法行动' };
+  }
+
+  // 胜利意图属于正式 NPC 行为的一部分：首次行动时按 seed / 人格稳定激活，
+  // 不让它改变旧的纯 chooseNpcGoal / planNpcGoal 调用者的默认评分。
+  if (npc.victoryGoal === null) {
+    npc.victoryGoal = deriveNpcVictoryGoal(state, npc);
+    npc.victoryGoalMode = 'derived';
+  }
+  if (npc.victoryGoalMode === 'derived' && state.phase === 'finale') {
+    npc.victoryGoalMode = 'explicit';
   }
 
   // 出手前先解除上一回合的防御姿态（防御只挡一次攻击）

@@ -1,4 +1,5 @@
 import { MATERIAL_IDS, getItem, tryGetItem } from '../data/items';
+import { GAME_CONFIG } from '../data/gameConfig';
 import { tryGetRecipe } from '../data/recipes';
 import {
   advancesTime,
@@ -34,6 +35,7 @@ import { applyWorldEventTickDamage } from './worldEventTick';
 import { advanceActiveWildEncounter } from './wildCombat';
 import {
   declareVictory,
+  declareDraw,
   performObjectiveAction,
   syncActiveExtraction,
 } from './victory';
@@ -87,27 +89,32 @@ function updateStatusEffects(state: GameState): void {
 export function checkGameEnd(state: GameState): void {
   if (state.status !== 'playing') return;
   syncActiveExtraction(state);
-  const player = getPlayer(state);
   const alive = aliveCharacters(state);
-
-  if (!player.alive) {
-    state.status = 'lost';
-    state.endedAtTime = state.time;
-    state.endReason = 'player_died';
-    // 对局结束：不允许残留未解决的遭遇（Phase 2A-1 存档不变量）
-    state.encounter = null;
-    pushEvent(state, {
-      type: 'GAME_ENDED',
-      actorId: player.id,
-      message: `你在第 ${state.time} 个时间单位倒下了。`,
-      metadata: { result: 'lost', reason: 'player_died', time: state.time },
-    });
-    return;
-  }
 
   if (alive.length === 1 && alive[0]) {
     declareVictory(state, alive[0].id, 'last_survivor');
+  } else if (alive.length === 0) {
+    declareDraw(state, 'draw');
   }
+}
+
+/**
+ * Once the human contestant is eliminated, the world still has to reach a
+ * canonical match result. Each tick is the same formal NPC/world tick used
+ * during normal play, and the hard time limit bounds the resolver.
+ */
+export function resolveMatchAfterPlayerElimination(
+  state: GameState,
+  rng: SeededRandom,
+): void {
+  if (state.status !== 'playing' || getPlayer(state).alive) return;
+  const maxTicks = Math.max(0, GAME_CONFIG.hardTimeLimit - state.time) + 1;
+  let ticks = 0;
+  while (state.status === 'playing' && !getPlayer(state).alive && ticks < maxTicks) {
+    advanceTime(state, rng);
+    ticks += 1;
+  }
+  if (state.status === 'playing') declareDraw(state, 'time_limit');
 }
 
 /** 遭遇状态维护：敌人死亡 / 离开区域时结束遭遇 */
@@ -268,9 +275,16 @@ function executeCommandInner(state: GameState, command: Command): CommandResult 
   const draft = cloneState(state);
   const rng = SeededRandom.fromState(draft.rngState);
 
-  // 入口先同步一次结局判定：任何情况下都不允许出现「玩家已死但对局仍在进行」的状态
+  // 入口先同步一次结局判定；若玩家已死且仍有多个参赛者，下面的正式
+  // resolver 会继续推进 NPC/world，而不是把个人淘汰误记成比赛终局。
   syncEncounter(draft);
   checkGameEnd(draft);
+
+  if (draft.status === 'playing' && !getPlayer(draft).alive) {
+    resolveMatchAfterPlayerElimination(draft, rng);
+    draft.rngState = rng.getState();
+    return { state: draft, ok: false, message: '你已被淘汰，剩余比赛已自动收束。' };
+  }
 
   const finish = (outcome: HandlerOutcome): CommandResult => {
     // Phase 3A：玩家侧「有效行动完成」收口点。
@@ -287,6 +301,9 @@ function executeCommandInner(state: GameState, command: Command): CommandResult 
       syncActiveExtraction(draft);
       syncEncounter(draft);
       checkGameEnd(draft);
+    }
+    if (draft.status === 'playing' && !getPlayer(draft).alive) {
+      resolveMatchAfterPlayerElimination(draft, rng);
     }
     draft.rngState = rng.getState();
     return { state: draft, ok: outcome.ok, message: outcome.message };

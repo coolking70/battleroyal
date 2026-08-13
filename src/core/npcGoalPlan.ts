@@ -61,6 +61,11 @@ function completionOf(npc: Combatant, recipe: Recipe): number {
   return Math.max(0, Math.min(1, 1 - missing / required));
 }
 
+/** 默认派生意图只在终局阶段进入制作竞争；显式场景目标立即生效。 */
+function victoryRouteActivated(npc: Combatant): boolean {
+  return npc.victoryGoalMode !== 'derived';
+}
+
 interface GoalCandidate {
   recipe: Recipe;
   out: ItemDef;
@@ -83,6 +88,11 @@ function buildGoalCandidates(npc: Combatant): GoalCandidate[] {
   const out: GoalCandidate[] = [];
   for (const recipe of RECIPES) {
     const item = getItem(recipe.outputItemId);
+    const isVictoryObjective = item.category === 'objective';
+    const matchesVictoryGoal =
+      (npc.victoryGoal === 'extraction' && item.id === 'extraction_beacon')
+      || (npc.victoryGoal === 'research' && item.id === 'research_package');
+    if (isVictoryObjective && (!matchesVictoryGoal || !victoryRouteActivated(npc))) continue;
     if (item.category === 'weapon' || item.category === 'armor') {
       if (upgradeWorthless(attack, defense, recipe.id)) continue;
     } else if (item.category === 'utility') {
@@ -90,7 +100,7 @@ function buildGoalCandidates(npc: Combatant): GoalCandidate[] {
     } else if (item.category !== 'consumable' || (item.healHp ?? 0) <= 0) {
       // Alternative route intent is handled by npcDecide's explicit actions;
       // generic gear planning remains stable for legacy simulations.
-      continue;
+      if (!isVictoryObjective) continue;
     }
     if (countItem(npc, recipe.outputItemId) > 0) continue; // 已有成品
     const missing = missingIngredients(npc, recipe.ingredients);
@@ -104,7 +114,7 @@ function buildGoalCandidates(npc: Combatant): GoalCandidate[] {
             ? (item.defense ?? 0) - defense
             : item.category === 'utility'
               ? ((item.searchFindMult ?? 1) - 1) * 100
-            : 0,
+              : 0,
       missingCount: missing.reduce((s, i) => s + i.count, 0),
       materialVariety: new Set(missing.map((i) => i.itemId)).size,
       depth: recipe.ingredients.reduce(
@@ -138,6 +148,9 @@ function scoreCandidate(
   // 避免"追着最强的装备跑、手里能做的却一直不做"。收集型除外——它就该追长线价值。
   const craftableBonus =
     missingCount === 0 && personality !== 'collector' ? 10 : 0;
+  if (out.category === 'objective') {
+    return 80 + completion * 20 - missingCount * 2 - depth + craftableBonus;
+  }
   switch (personality) {
     case 'aggressive':
       if (out.category === 'weapon') {
@@ -177,6 +190,10 @@ function goalOf(
   if (cand.out.category === 'consumable') {
     const hint = personality === 'cautious' ? '补充治疗' : '储备医疗';
     return { recipeId: cand.recipe.id, reason: `计划制作${name}（${hint}）` };
+  }
+  if (cand.out.category === 'objective') {
+    const route = cand.out.id === 'research_package' ? '研究' : '撤离';
+    return { recipeId: cand.recipe.id, reason: `选择${route}胜利路线，计划制作${name}` };
   }
   const kind = cand.out.category === 'weapon' ? '武器' : cand.out.category === 'armor' ? '防具' : '工具';
   return {
@@ -261,6 +278,7 @@ function pickRecommendedZone(
     for (const id of missingIds) {
       if (def.basePool.includes(id)) score += 10;
       else if (def.rarePool.includes(id) || def.objectivePool?.includes(id)) score += 12;
+      else if (plan?.rawGaps.some((gap) => gap.itemId === id && gap.sourceZoneIds.includes(zoneId))) score += 11;
     }
     if (score === 0) continue;
     if (zone.status === 'warning') score -= 4;

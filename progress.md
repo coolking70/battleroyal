@@ -1032,3 +1032,25 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Full suite: 100 files / 1571 tests PASS. Build PASS, save audit 102/102 PASS, browser
   smoke PASS with `output/web-game/shot-0.png`, and the required 500-game regression PASS.
   Human visual status remains `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4O-AF — Victory Semantics & Alternative Route Closure (2026-08-13)
+
+- Fixed premature match termination after player elimination: a dead player plus
+  multiple live NPCs remains `playing`, then formal NPC/world resolution reaches
+  a real winner or legal draw. `player_died` is no longer a terminal reason.
+- Enforced the terminal tuple invariant: every `won`/`lost` result has a living
+  winner, route type, and declaration time; `draw` keeps all victory fields null;
+  the first winner latch is immutable and objective actions are atomic.
+- Added shared winner-first `buildFinalRanking()` for ResultScreen and simulator;
+  alternative winners are rank #1 without marking other living contestants dead.
+- Added deterministic NPC victory goals, explicit objective craft-plan adoption,
+  current-schema goal validation, and a dedicated NPC Research world-PvE loop.
+- Reworked AutoPlayer Research fixtures to seed zone/objective loot and a real
+  `resin_stalker` source. Stable run `PHASE4O-AF-R-14` records MOVE/SEARCH/
+  ATTACK/WILD_DEFEATED/WILD_DROP_CREATED/PICKUP_GROUND/CRAFT/SUBMIT_RESEARCH;
+  `DEBUG_GIVE_MATERIAL=0` and no route ingredients start in inventory.
+- Full suite: 101 files / 1583 tests PASS. Required AF regression: 500/500
+  trustworthy, `terminalWithoutWinner=0`, `invalidVictoryTuple=0`, zero engine
+  health failures, requested = actual = 500. Role balance remains observation
+  only; old-save migration remains deferred. Human status remains
+  `NEEDS-HUMAN-PLAYTEST`.

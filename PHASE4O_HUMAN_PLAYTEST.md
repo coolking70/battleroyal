@@ -32,6 +32,31 @@ gate. Before Phase 4O can be accepted, manually verify:
 - ResultScreen names the winning NPC and does not imply that a wild enemy won;
 - the player is not incorrectly shown as killed when the loss was objective-based.
 
+### Player eliminated before match ends
+
+- let the player be eliminated while at least two NPC contestants remain;
+- confirm the match does not immediately show `GAME_ENDED` or a `player_died`
+  terminal reason;
+- wait for the NPC/world resolution to finish and confirm ResultScreen shows
+  the player’s actual death time/cause, the real winner, and the real victory
+  route.
+
+### Alternative ranking
+
+- keep multiple contestants alive while an NPC or the player completes
+  Research or Extraction;
+- confirm the actual winner is rank #1 even with zero kills;
+- confirm other contestants who remain alive are not displayed as dead.
+
+### NPC objective race
+
+- observe an NPC with a Research or Extraction goal before the final objective
+  exists;
+- confirm it searches, fights wild enemies when needed, picks up ground drops,
+  crafts through intermediate steps, and only then submits/calls/extracts;
+- confirm the NPC does not suddenly receive a beacon or research package, and
+  that private research progress is not broadcast before completion.
+
 ### Regression / presentation
 
 - objective items, death loot, pickup, and inventory remain understandable;

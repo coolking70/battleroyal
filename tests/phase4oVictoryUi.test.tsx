@@ -112,4 +112,36 @@ describe('Phase 4O victory route presentation', () => {
     expect(container.textContent).toContain(npc.name);
     expect(container.textContent).not.toContain('你已被淘汰');
   });
+
+  it('renders an alternative winner at rank one even below other survivors in kills', () => {
+    const state = createGame({ seed: 'PHASE4O-UI-RANKING', playerCharacterId: 'scout' });
+    const resultPlayer = getPlayer(state);
+    const npcs = Object.values(state.characters).filter((character) => !character.isPlayer);
+    const winner = npcs[0]!;
+    const highKills = npcs[1]!;
+    const mediumKills = npcs[2]!;
+    winner.kills = 0;
+    highKills.kills = 10;
+    mediumKills.kills = 5;
+    state.status = 'lost';
+    state.endReason = 'research';
+    state.endedAtTime = 8;
+    state.victory = { winnerId: winner.id, type: 'research', declaredAtTime: 8 };
+
+    act(() => root.render(
+      <ResultScreen
+        state={state}
+        player={resultPlayer}
+        onRestart={() => undefined}
+        onBackToMenu={() => undefined}
+      />,
+    ));
+
+    const rows = Array.from(container.querySelectorAll('.rank-table tbody tr'));
+    expect(rows[0]?.textContent).toContain(winner.name);
+    expect(rows[0]?.textContent).toContain('胜者 · 研究');
+    expect(rows[1]?.textContent).toContain(highKills.name);
+    expect(rows[1]?.textContent).toContain('存活，但路线胜负已结算');
+    expect(rows[1]?.textContent).not.toContain('出局');
+  });
 });

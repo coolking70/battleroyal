@@ -1,5 +1,6 @@
 import type { GamePhase } from './sharedTypes';
 import type { ItemStack } from './itemTypes';
+import type { VictoryType } from './victoryTypes';
 
 /* ------------------------------------------------------------------ */
 /* 角色                                                                */
@@ -107,6 +108,10 @@ export interface Combatant {
   isPlayer: boolean;
   characterId: string;
   personality: Personality;
+  /** Deterministic alternative-route intent for NPC planning. */
+  victoryGoal: VictoryType | null;
+  /** Runtime-derived intent is activated after the NPC obtains a route material. */
+  victoryGoalMode?: 'derived' | 'explicit';
   /** Phase 4F-1：持久化成长状态；经验是当前等级内进度，5 级时固定为 0。 */
   level: number;
   exp: number;

@@ -34,10 +34,14 @@ function nextObjectiveStep(state: GameState, npc: Combatant, targetZoneId: strin
 
 /** Alternative route priority for NPCs carrying a completed objective. */
 export function decideNpcVictoryAction(state: GameState, npc: Combatant): NpcVictoryDecision | null {
-  if (canExtract(state, npc).ok) return { kind: 'extract', reason: '撤离窗口已准备，立即完成撤离' };
-  if (canSubmitResearch(state, npc).ok) return { kind: 'submit_research', reason: '研究成果已在研究所就绪，立即提交' };
+  if (npc.victoryGoal === 'extraction' && canExtract(state, npc).ok) {
+    return { kind: 'extract', reason: '撤离窗口已准备，立即完成撤离' };
+  }
+  if (npc.victoryGoal === 'research' && canSubmitResearch(state, npc).ok) {
+    return { kind: 'submit_research', reason: '研究成果已在研究所就绪，立即提交' };
+  }
 
-  if (countItem(npc, 'extraction_beacon') > 0) {
+  if (npc.victoryGoal === 'extraction' && countItem(npc, 'extraction_beacon') > 0) {
     if (npc.currentZoneId !== 'station') {
       const step = nextObjectiveStep(state, npc, 'station');
       if (step) return { kind: 'move', reason: '携带撤离信标前往车站', zoneId: step };
@@ -45,7 +49,7 @@ export function decideNpcVictoryAction(state: GameState, npc: Combatant): NpcVic
       return { kind: 'call_extraction', reason: '携带撤离信标，在车站呼叫撤离' };
     }
   }
-  if (countItem(npc, 'research_package') > 0 && npc.currentZoneId !== 'lab') {
+  if (npc.victoryGoal === 'research' && countItem(npc, 'research_package') > 0 && npc.currentZoneId !== 'lab') {
     const step = nextObjectiveStep(state, npc, 'lab');
     if (step) return { kind: 'move', reason: '携带研究成果包返回研究所', zoneId: step };
   }
