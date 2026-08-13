@@ -1,11 +1,11 @@
 # Phase 4Q Report — Zone Landmarks, Facilities & Exploration Depth
 
-1. PR number / URL: pending final push and Draft PR creation.
-2. PR status: not created yet; this branch must remain open, Draft, and unmerged.
+1. PR number / URL: Draft PR #24 — https://github.com/coolking70/battleroyal/pull/24
+2. PR status: Open, Draft, and unmerged.
 3. Base SHA: `eeb0dce16827dca24fabdcea0f0f50a31001bffd`.
 4. Branch: `agent/phase4q-zone-landmarks-facilities`.
-5. Final head SHA: pending final documentation commit.
-6. Commits: implementation and documentation commits will be listed after commit creation.
+5. Final implementation head SHA: `6e5fdba03fdc8564b4dfaa43971e37533a6de58f`.
+6. Commits: `6e5fdba` — `feat: add Phase 4Q zone landmarks and facilities`; the later report-only closure commit does not change implementation files.
 7. Landmark count: 24 static definitions.
 8. Per-zone count: school 2; hospital 2; residential 2; factory 2; forest 2; lab 2; commercial 2; station 2; park 2; warehouse 2; construction 2; underground 2.
 9. Facility count: 9 landmark definitions expose finite facility interactions.
@@ -45,7 +45,7 @@
 43. Balance statement: the regression’s existing observation-only character balance ratio is 6.5 versus threshold 2.5; this is recorded as a balance observation and not used as a Phase 4Q implementation claim.
 44. Save migration statement: old-save migration remains deferred; current-schema saves are validated strictly and new games initialize all landmark state.
 45. Human status: `NEEDS-HUMAN-PLAYTEST`.
-46. Exact-head CI: pending final push; the final run number/ID and conclusion will be recorded here after GitHub Actions completes on the final head.
+46. Exact-head CI: run `31743004163` / job `94590739100`, head `6e5fdba03fdc8564b4dfaa43971e37533a6de58f`, completed with `success`.
 47. Known issues: human visual/balance review is still required; the normal regression matrix does not intentionally force the representative Phase 4Q landmark route, which is covered by focused formal-command tests instead.
 
 Phase 4Q implementation complete and ready for independent acceptance review.
