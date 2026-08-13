@@ -331,6 +331,7 @@ interface CellStats {
   terminalWithoutWinnerCount?: number;
   invalidVictoryTupleCount?: number;
   duplicateApexSpawnCount?: number;
+  invalidApexSpawnZoneCount?: number;
 
   illegalCount: number;
   illegalRate: number;
@@ -433,6 +434,7 @@ function aggregateCell(
   const terminalWithoutWinnerCount = results.filter((r) => r.terminalWithoutWinner).length;
   const invalidVictoryTupleCount = results.filter((r) => r.invalidVictoryTuple).length;
   const duplicateApexSpawnCount = results.filter((r) => r.duplicateApexSpawn).length;
+  const invalidApexSpawnZoneCount = results.filter((r) => r.invalidApexSpawnZone).length;
   const illegalList = results.filter(isIllegal);
   const deadlockCount = results.filter((r) => r.deadlock !== null).length;
   const stalledCount = results.filter((r) => r.stalled).length;
@@ -469,6 +471,7 @@ function aggregateCell(
     terminalWithoutWinnerCount,
     invalidVictoryTupleCount,
     duplicateApexSpawnCount,
+    invalidApexSpawnZoneCount,
 
     illegalCount: illegalList.length,
     illegalRate: pct(illegalList.length),
@@ -714,6 +717,7 @@ export interface GlobalSummary {
   terminalWithoutWinnerCount: number;
   invalidVictoryTupleCount: number;
   duplicateApexSpawnCount: number;
+  invalidApexSpawnZoneCount: number;
   avgTimeUsed: number;
   avgPlayerRank: number;
   avgKills: number;
@@ -758,6 +762,7 @@ interface BalanceReport {
       terminalWithoutWinner: { count: number; flagged: boolean };
       invalidVictoryTuple: { count: number; flagged: boolean };
       duplicateApexSpawn: { count: number; flagged: boolean };
+      invalidApexSpawnZone: { count: number; flagged: boolean };
       engineHealthy: boolean;
     };
     /** 角色平衡验收（Phase 2A-1：最高/最低非零胜率比 < 2.5，不允许 0 胜率） */
@@ -862,6 +867,7 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
     const terminalWithoutWinner = sum((c) => c.terminalWithoutWinnerCount ?? 0);
     const invalidVictoryTuple = sum((c) => c.invalidVictoryTupleCount ?? 0);
     const duplicateApexSpawn = sum((c) => c.duplicateApexSpawnCount ?? 0);
+    const invalidApexSpawnZone = sum((c) => c.invalidApexSpawnZoneCount ?? 0);
     const illegal = sum((c) => c.illegalCount);
     const dead = sum((c) => c.deadlockCount);
     const st = sum((c) => c.stalledCount);
@@ -896,6 +902,7 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
       terminalWithoutWinnerCount: terminalWithoutWinner,
       invalidVictoryTupleCount: invalidVictoryTuple,
       duplicateApexSpawnCount: duplicateApexSpawn,
+      invalidApexSpawnZoneCount: invalidApexSpawnZone,
 
       illegalCount: illegal,
       illegalRate: totalGames ? illegal / totalGames : 0,
@@ -1179,7 +1186,8 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
 
   const engineHealthy = timeoutCount === 0 && illegalCount === 0 && hardLimitCount === 0
     && terminalWithoutWinnerCount === 0 && invalidVictoryTupleCount === 0
-    && (all.duplicateApexSpawnCount ?? 0) === 0;
+    && (all.duplicateApexSpawnCount ?? 0) === 0
+    && (all.invalidApexSpawnZoneCount ?? 0) === 0;
   // Phase 3A-1：CI 模式（100 局）只守规模无关门槛（胜率比/事件覆盖需 3000 局规模）
   const ciGate =
     engineHealthy && quickPassed && heavyPassed && guardPassed && deltaPPPassed && skillPlayerUsesAll;
@@ -1214,8 +1222,9 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
         illegalState: { count: illegalCount, flagged: illegalCount > 0 },
         hardLimitReached: { count: hardLimitCount, flagged: hardLimitCount > 0 },
         terminalWithoutWinner: { count: terminalWithoutWinnerCount, flagged: terminalWithoutWinnerCount > 0 },
-      invalidVictoryTuple: { count: invalidVictoryTupleCount, flagged: invalidVictoryTupleCount > 0 },
+        invalidVictoryTuple: { count: invalidVictoryTupleCount, flagged: invalidVictoryTupleCount > 0 },
         duplicateApexSpawn: { count: all.duplicateApexSpawnCount ?? 0, flagged: (all.duplicateApexSpawnCount ?? 0) > 0 },
+        invalidApexSpawnZone: { count: all.invalidApexSpawnZoneCount ?? 0, flagged: (all.invalidApexSpawnZoneCount ?? 0) > 0 },
         engineHealthy,
       },
       characterBalance: {
@@ -1373,6 +1382,7 @@ function aggregateGlobalFromCells(
     terminalWithoutWinnerCount: sum((c) => c.terminalWithoutWinnerCount ?? 0),
     invalidVictoryTupleCount: sum((c) => c.invalidVictoryTupleCount ?? 0),
     duplicateApexSpawnCount: sum((c) => c.duplicateApexSpawnCount ?? 0),
+    invalidApexSpawnZoneCount: sum((c) => c.invalidApexSpawnZoneCount ?? 0),
     avgTimeUsed: w((c) => c.avgTimeUsed),
     avgPlayerRank: w((c) => c.avgPlayerRank),
     avgKills: w((c) => c.avgKills),
@@ -1446,6 +1456,7 @@ function renderMarkdown(report: BalanceReport): string {
   L.push(`- terminalWithoutWinner：${h.terminalWithoutWinner.count}  →  ${h.terminalWithoutWinner.flagged ? '**FAIL**' : 'OK'}`);
   L.push(`- invalidVictoryTuple：${h.invalidVictoryTuple.count}  →  ${h.invalidVictoryTuple.flagged ? '**FAIL**' : 'OK'}`);
   L.push(`- duplicateApexSpawn：${h.duplicateApexSpawn.count}  →  ${h.duplicateApexSpawn.flagged ? '**FAIL**' : 'OK'}`);
+  L.push(`- invalidApexSpawnZone：${h.invalidApexSpawnZone.count}  →  ${h.invalidApexSpawnZone.flagged ? '**FAIL**' : 'OK'}`);
   L.push('');
   L.push(`**引擎整体判定：${h.engineHealthy ? 'PASS' : 'FAIL'}**`);
   L.push('');

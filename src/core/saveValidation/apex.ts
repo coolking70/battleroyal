@@ -24,10 +24,12 @@ export function validateApexState(ctx: ValidationContext): void {
       if (raw.spawnedAt !== null || raw.uid !== null || raw.zoneId !== null) fail(`未生成 Apex ${String(defId)} 不得带生成引用`);
       continue;
     }
+    const def = typeof defId === 'string' ? tryGetWildEnemy(defId) : null;
     if (!isFiniteNumber(raw.spawnedAt) || !Number.isInteger(raw.spawnedAt) || (raw.spawnedAt as number) < (raw.scheduledAt as number) || (raw.spawnedAt as number) > (state.time as number)) fail(`Apex ${String(defId)} spawnedAt 非法`);
     if (typeof raw.uid !== 'string' || scheduledUids.has(raw.uid)) fail(`Apex ${String(defId)} UID 非法或重复`);
     if (typeof raw.uid === 'string') scheduledUids.add(raw.uid);
     if (typeof raw.zoneId !== 'string' || !Object.prototype.hasOwnProperty.call(zones, raw.zoneId)) fail(`Apex ${String(defId)} 生成区域非法`);
+    if (def && typeof raw.zoneId === 'string' && !def.eligibleZones?.includes(raw.zoneId)) fail(`Apex ${String(defId)} 生成区域不在 eligibleZones`);
     const instance = typeof raw.uid === 'string' ? (state.wildEnemies as Record<string, unknown>)[raw.uid] : null;
     if (!isRecord(instance)) fail(`Apex ${String(defId)} schedule 未找到实例`);
     else if (instance.defId !== defId || instance.zoneId !== raw.zoneId) fail(`Apex ${String(defId)} schedule 与实例不一致`);

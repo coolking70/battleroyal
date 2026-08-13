@@ -203,3 +203,108 @@ Additional gates:
 Human status is exactly `NEEDS-HUMAN-PLAYTEST`. See
 `PHASE4P_HUMAN_PLAYTEST.md`; no automated or agent-only evidence marks this
 phase accepted.
+
+## 8. Phase 4P-AF Acceptance Fix
+
+This section records the independent acceptance-fix pass without replacing the
+Phase 4P architecture audit above.
+
+1. Audited input head: `54db0cbaa1924fc88fd447c34c9e0d7e4eb92ca0`.
+2. Final AF head: recorded after the final documentation commit and verified
+   against the exact branch-head CI run.
+3. Blocker A root cause: `chooseSpawnZone()` fell back to unrelated open map
+   zones when every eligible zone was restricted.
+4. Strict semantics: due Apex entries choose deterministically from their own
+   open `eligibleZones`; no eligible open zone means no mutation, no instance,
+   no UID, no stat increment, and no `APEX_SPAWNED` event. The due entry is
+   retried on later ticks.
+5. Delayed spawn behavior: reopening an eligible zone releases the unchanged
+   due entry; repeated processing remains one-shot and same-UID.
+6. Save/load determinism: delayed continuation from structured save/load
+   state produces the same schedule, instance, event, and stat state.
+7. Apex save-zone validation: spawned entries require an existing zone in the
+   definition's `eligibleZones`; a later zone restriction remains valid state.
+8. Blocker B root cause: Wild save validation accepted any globally legal
+   `pendingIntent`, even when it could never resolve for that enemy definition.
+9. Per-definition invariant: `specialAbilityId === 'none'` requires null;
+   otherwise only null or that definition's own special id is accepted.
+   Defeated Wild instances always require null.
+10. Corruption evidence: the expanded save audit covers non-eligible Apex
+    zone, wrong-definition telegraphs, common telegraphs, defeated telegraphs,
+    duplicate Apex UID, schedule/instance definition mismatch, and
+    schedule/instance zone mismatch.
+11. Blocker C root cause: NPC planning reconstructed only static zone pools,
+    losing Wild/Apex raw provenance and reading the shared player goal in the
+    shared SEARCH path.
+12. Authoritative source planning: NPC raw gaps now use `buildCraftPlan()`'s
+    `worldSources`, `sourceZoneIds`, and `sourceEnemyIds`; restricted status is
+    evaluated against static public sources instead of erasing provenance.
+13. Actor-scoped SEARCH: player SEARCH uses `state.craftGoalRecipeId`; NPC
+    SEARCH uses only `actor.plannedRecipeId`. NPC high-tier weighting is not
+    inherited from the player's unrelated or Phase 4P goal.
+14. NPC information boundary: NPC route planning uses own inventory/plan,
+    own `WILD_ENCOUNTER_STARTED`, public Apex definition/zone, and static
+    source data. It does not scan remote UID/HP, hidden drops, or player state.
+15. NPC route evidence: deterministic test route performs formal MOVE and
+    SEARCH, discovers `prototype_aegis` as the NPC actor, defeats it through
+    canonical Wild combat, auto-loots the real `aegis_core`, executes
+    intermediate recipes plus `r_aegis_plate`, and equips `aegis_plate`.
+16. Telegraph→GUARD evidence: a deterministic A/B test resolves the same
+    `toxic_burst` pending intent with and without formal `guardActor()`;
+    guarded damage is lower, guard is consumed, metadata records prevention,
+    and pending intent becomes null. Zero-stamina FLEE/GUARD semantics remain.
+17. `bossKillsByType`: simulator aggregation now filters
+    `WILD_DEFEATED.metadata.tier === 'apex'`; `wildKillByType` remains all Wild.
+18. Item/drop conservation: signature material is still created exactly once
+    by canonical defeat, remains ground-owned until ordinary pickup, and is
+    never injected by a debug command.
+19. Tests: new AF focused coverage is in
+    `tests/phase4pAfAcceptance.test.ts`; original Phase 4P tests remain. The
+    final full suite is 103 test files / 1,608 tests, all passing.
+20. Save audit: `npm run audit:save` passed with 109/109 malformed cases
+    rejected, the normal control accepted, and 0 construction failures.
+21. Dependency audit: `npm run audit:deps` scanned 105 files and passed;
+    the maximum core/data file is 500 lines and R1/R2/R3/R4 are zero.
+22. 500-game regression: the exact command passed the engine-health gate with
+    requested=actual=500, trustworthyRate=100%, and all health counters zero,
+    including `invalidApexSpawnZone=0`. The full observations are recorded
+    below.
+23. Balance policy: elite/Apex encounter, kill, flee, signature, victory, and
+    boss-distribution numbers remain observation-only; no tuning was made.
+24. Old-save migration remains deferred until pre-release save-format
+    stabilization. Human status remains exactly `NEEDS-HUMAN-PLAYTEST`.
+
+### Phase 4P-AF validation closeout
+
+- Final local gates: `npm run typecheck` PASS; `npm test` PASS (103 files /
+  1,608 tests); `npm run build` PASS with only the existing Vite large-chunk
+  warning; `npm run audit:save` PASS (109/109 malformed saves rejected,
+  control accepted, 0 construction failures); and `npm run audit:deps` PASS
+  (105 files, max 500 lines, R1/R2/R3/R4 all zero).
+- Art gates: `art:doctor -- --offline`, `art:validate`,
+  `art:audit:phase4a`, `art:security:browser`, and `art:security:repo` all
+  PASS. No `public/assets/**/*.png` file, approved PNG, or art manifest entry
+  changed in this AF pass.
+- Dependency gate: networked `npm audit --omit=dev` was attempted but the
+  environment returned `ENOTFOUND registry.npmjs.org`; the required offline
+  fallback `npm audit --omit=dev --offline` passed with 0 vulnerabilities.
+- Browser smoke: the real Vite app reached menu → new game; the rendered
+  state was `mode=playing`, `time=0`, and the gameplay screenshot was
+  inspected with no new browser console error.
+- Regression command:
+  `npm run simulate -- --games 500 --seed-prefix PHASE4P-AF --regression --output reports/phase4p-regression.json`
+  passed with `requestedTotalGames=500`, `actualTotalGames=500`,
+  `trustworthyRate=100%`, `regressionGate=true`, and
+  `invalidApexSpawnZone=0`. Health counters were all zero:
+  timeout, illegalState, hardLimitReached, terminalWithoutWinner,
+  invalidVictoryTuple, duplicateApexSpawn, and invalidApexSpawnZone.
+- Regression PVE observations: `encounters=7789`, `kills=1725`,
+  `flees=6746`, `playerDeaths=68`, `groundDrops=2805`, `pickups=3154`,
+  `crafts=109`; `eliteEncounters=123`, `eliteKills=0`;
+  `apexSpawned=342`, `apexEncounters=3`, `apexKills=0`, `apexFlees=0`;
+  `signatureDrops=0`, `signaturePickups=0`, `signatureCrafts=0`,
+  `bossKillsByType={}`. These are balance observations only.
+- Final AF branch head and exact branch-head CI evidence are recorded here
+  after the final documentation commit: `FINAL_HEAD_SHA`, GitHub Actions
+  verify run `FINAL_CI_RUN`, `completed/success`. PR #23 remains Draft and
+  unmerged. Human status remains exactly `NEEDS-HUMAN-PLAYTEST`.

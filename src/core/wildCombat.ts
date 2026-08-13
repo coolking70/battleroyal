@@ -176,6 +176,13 @@ export function resolveWildTurn(state: GameState, actor: Combatant, enemy: WildE
     return { ok: true, message };
   }
   const profile = wildCombatProfile(enemy);
+  // Current-schema saves reject this mismatch.  Runtime state can still be
+  // assembled by older callers or a corrupted fixture, so clear the
+  // impossible transient rather than leaving an intent that can never
+  // resolve for this definition.
+  if (enemy.pendingIntent !== null && enemy.pendingIntent !== def.specialAbilityId) {
+    enemy.pendingIntent = null;
+  }
   let charged = false;
   let specialAbility: string | null = null;
   let specialDamageMult = 1;
@@ -224,7 +231,7 @@ export function resolveWildTurn(state: GameState, actor: Combatant, enemy: WildE
   }
   const specialLabel = specialAbility ? `（${WILD_SPECIAL_ABILITIES[def.specialAbilityId].name}）` : '';
   const message = `${def.name} 命中 ${actor.name}，造成 ${adjusted.damage} 点伤害${charged ? '（冲撞）' : ''}${specialLabel}。`;
-  pushEvent(state, { type: 'WILD_ATTACK', targetId: actor.id, zoneId: enemy.zoneId, message, metadata: { wildUid: enemy.uid, wildDefId: def.id, tier: def.tier, hit: true, damage: adjusted.damage, charged, specialAbility, venom: def.abilityId === 'venom' || specialAbility === 'toxic_burst' } });
+  pushEvent(state, { type: 'WILD_ATTACK', targetId: actor.id, zoneId: enemy.zoneId, message, metadata: { wildUid: enemy.uid, wildDefId: def.id, tier: def.tier, hit: true, damage: adjusted.damage, guarded: adjusted.guarded, guardPrevented: adjusted.guardPrevented, charged, specialAbility, venom: def.abilityId === 'venom' || specialAbility === 'toxic_burst' } });
   return { ok: true, message, actorDied: result.died };
 }
 

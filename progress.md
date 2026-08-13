@@ -1099,3 +1099,17 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Playwright smoke reached the menu and a live new-game screen; `render_game_to_text` returned a valid playing state and the gameplay screenshot was visually inspected. No new browser console error was recorded.
 - Updated the stale Phase 4M registry ceilings to accommodate the Phase 4P roster and selected a deterministic Phase 4J-1 random fixture seed that exercises EQUIP. Full suite now passes: 102 files / 1593 tests.
 - Follow-up commit `9fc8c4a499f20cfeb090d833bdf0475d086b3abf` was pushed; Draft PR #23 remains open and unmerged. Final-head GitHub Actions CI run #120 completed successfully.
+
+## Phase 4P-AF — Apex Spawn Integrity, Intent Validation & NPC Boss Route Closure (2026-08-13)
+
+- Independent acceptance initially found three blockers: Apex eligible-zone fallback violation, per-definition `pendingIntent` validation gap, and NPC actor/source scope contamination.
+- Closed them with strict eligible-zone delay/retry semantics, exact Wild-definition telegraph validation plus defensive runtime cleanup, authoritative Wild/Apex source planning, actor-scoped SEARCH weighting, and public-information-only NPC routing.
+- Added deterministic AF evidence for delayed spawn/save-load continuation, Apex zone corruption, wrong/common/defeated telegraphs, formal GUARD special-damage reduction, Apex-only `bossKillsByType`, and NPC `prototype_aegis → aegis_core → multi-stage craft → equip` closure. Existing AutoPlayer route remains formal and unchanged in command vocabulary.
+- `npm run audit:save` now covers 109 malformed cases plus the normal control: 109/109 malformed cases rejected, the control accepted, 0 construction failures. Balance remains observation-only; old-save migration remains deferred.
+- Human status remains `NEEDS-HUMAN-PLAYTEST`. This records implementation closure for independent acceptance review; it does not mark Phase 4P accepted.
+
+### Phase 4P-AF validation closeout (2026-08-13)
+
+- Final local gates passed: typecheck, full test suite (103 files / 1,608 tests), build, 109-case save audit, 105-file dependency audit, offline art doctor, art validation, Phase 4A art audit, browser/repository security scans, and the production dependency audit offline fallback (0 vulnerabilities). Networked `npm audit --omit=dev` was attempted and returned `ENOTFOUND registry.npmjs.org` in the restricted environment.
+- Required `PHASE4P-AF` regression passed with requested=actual=500, trustworthyRate=100%, engine health zero including `invalidApexSpawnZone=0`; PVE observations are recorded in `PHASE4P_REPORT.md` and `reports/phase4p-regression.json`.
+- Final branch-head SHA and exact GitHub Actions verify run are recorded after the final documentation commit. PR #23 remains Draft/unmerged; human status remains `NEEDS-HUMAN-PLAYTEST`.

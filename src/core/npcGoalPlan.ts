@@ -273,10 +273,13 @@ function pickRecommendedZone(
   recipe: Recipe,
 ): string | null {
   const plan = buildCraftPlan(state, npc, recipe.id);
-  const missingIds = new Set(
-    plan?.rawGaps.filter((gap) => gap.missing > 0).map((gap) => gap.itemId) ?? [],
-  );
-  if (missingIds.size === 0) return null;
+  const missing = plan?.rawGaps.filter((gap) => gap.missing > 0) ?? [];
+  if (missing.length === 0) return null;
+
+  const publicApexSourceAt = (gap: (typeof missing)[number], zoneId: string): boolean =>
+    gap.worldSources.some((source) => source.kind === 'wild_drop' && source.enemyIds.some((enemyId) =>
+      state.apexSchedule.some((entry) => entry.spawned && entry.defId === enemyId && entry.zoneId === zoneId),
+    ));
 
   let best: { zoneId: string; score: number } | null = null;
   for (const zoneId of ZONE_IDS) {
@@ -284,10 +287,12 @@ function pickRecommendedZone(
     if (!zone || zone.status === 'restricted') continue; // 正式禁区直接排除
     const def = getZoneDef(zoneId);
     let score = 0;
-    for (const id of missingIds) {
-      if (def.basePool.includes(id)) score += 10;
-      else if (def.rarePool.includes(id) || def.objectivePool?.includes(id)) score += 12;
-      else if (plan?.rawGaps.some((gap) => gap.itemId === id && gap.sourceZoneIds.includes(zoneId))) score += 11;
+    for (const gap of missing) {
+      // `worldSources` / rawGaps are the same authoritative source contract
+      // used by Craft Guide.  A public Apex broadcast may add a strong local
+      // preference, but never exposes its UID or live combat state.
+      if (gap.sourceZoneIds.includes(zoneId)) score += 11;
+      if (publicApexSourceAt(gap, zoneId)) score += 8;
     }
     if (score === 0) continue;
     if (zone.status === 'warning') score -= 4;
@@ -306,19 +311,12 @@ function allMissingZonesRestricted(
 ): boolean {
   const missing = buildCraftPlan(state, npc, recipe.id)?.rawGaps.filter((gap) => gap.missing > 0) ?? [];
   if (missing.length === 0) return false;
-  for (const ing of missing) {
-    const supplyZones = ZONE_IDS.filter((zoneId) => {
-      const def = getZoneDef(zoneId);
-      return def.basePool.includes(ing.itemId)
-        || def.rarePool.includes(ing.itemId)
-        || def.objectivePool?.includes(ing.itemId) === true;
-    });
-    const reachable = supplyZones.some(
-      (zoneId) => state.zones[zoneId]?.status !== 'restricted',
-    );
-    if (reachable) return false;
-  }
-  return true;
+  // Never reconstruct sources from zone pools here.  Wild/Apex raw gaps are
+  // represented by the same public worldSources used by buildCraftPlan; a
+  // gap is unavailable only when every one of those sources is restricted.
+  return missing.every((gap) => !gap.worldSources.some((source) =>
+    source.zoneIds.some((zoneId) => state.zones[zoneId]?.status !== 'restricted'),
+  ));
 }
 
 /**

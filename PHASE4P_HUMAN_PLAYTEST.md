@@ -32,6 +32,12 @@ human acceptance gate is intentionally still open.
 - [ ] GUARD and FLEE communicate their action-cost/redline behavior.
 - [ ] Ground signature loot is discoverable and craft guidance is clear.
 - [ ] Long-route crafting and equipment handoff are understandable.
+- [ ] When all eligible Apex zones are restricted, no out-of-zone Apex appears;
+      reopening a legal zone produces the public broadcast.
+- [ ] The public broadcast names the correct Apex zone without exposing UID/HP.
+- [ ] Telegraph → GUARD feedback is readable and communicates the reduction.
+- [ ] NPC/Apex event-log entries are understandable during the route.
+- [ ] The desktop and mobile layouts remain usable through the route.
 - [ ] Terminal victory freezes the tick with no post-terminal world mutation.
 - [ ] No new approved PNG or art manifest entry is required for this phase.
 

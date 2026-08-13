@@ -336,10 +336,19 @@ export function decideNpcAction(
 
   // 5. 执行既定制作目标 / 能合成明显更强的装备 -> 合成
   //    优先按 planNpcGoal 规划的目标行事，让 NPC 行为有长期方向（搜集型会为差一点的配方去搜材料）
+  //    但一个已经通过自己的 SEARCH 发现的 Apex 来源优先于现场加工；
+  //    否则 NPC 可能先消耗基础材料，把正式 boss→loot 路线永远推迟。
+  const knownApexTarget = state.events.some((event) => {
+    if (event.type !== 'WILD_ENCOUNTER_STARTED' || event.actorId !== npc.id) return false;
+    if (typeof event.metadata.wildUid !== 'string') return false;
+    const wild = state.wildEnemies[event.metadata.wildUid];
+    return Boolean(wild && wild.status === 'alive' && wild.zoneId === npc.currentZoneId && getWildEnemy(wild.defId).tier === 'apex');
+  });
   const plan = npc.plannedRecipeId ? buildCraftPlan(state, npc, npc.plannedRecipeId) : null;
   const planStep = plan?.suggestedNextCraft;
   const planRecipe = planStep ? tryGetRecipe(planStep.recipeId) : null;
   if (
+    !knownApexTarget &&
     planRecipe &&
     hasIngredients(npc, planRecipe.ingredients) &&
     hasRoomForOutput(npc, planRecipe) &&
@@ -351,7 +360,7 @@ export function decideNpcAction(
       recipeId: planRecipe.id,
     };
   }
-  const upgrade = findUpgradeRecipe(npc, weaponAttackOf(npc), armorDefenseOf(npc));
+  const upgrade = knownApexTarget ? null : findUpgradeRecipe(npc, weaponAttackOf(npc), armorDefenseOf(npc));
   if (upgrade) {
     return { kind: 'craft', reason: '可以做出更强的装备', recipeId: upgrade.id };
   }

@@ -60,9 +60,12 @@ export function validateWildState(ctx: ValidationContext): void {
     if (raw.status === 'defeated' && raw.hp !== 0) fail(`已击败野外敌人 ${uid} 的 hp 必须为 0`);
     if (typeof raw.guarding !== 'boolean' || typeof raw.dropResolved !== 'boolean') fail(`野外敌人 ${uid} 的布尔状态损坏`);
     if (raw.pendingIntent !== null && !['shield_cycle', 'overcharge', 'toxic_burst', 'massive_charge', 'suppression_fire'].includes(String(raw.pendingIntent))) fail(`野外敌人 ${uid} pendingIntent 非法`);
+    if (def && def.specialAbilityId === 'none' && raw.pendingIntent !== null) fail(`野外敌人 ${uid} 无特殊技却携带 pendingIntent`);
+    if (def && def.specialAbilityId !== 'none' && raw.pendingIntent !== null && raw.pendingIntent !== def.specialAbilityId) fail(`野外敌人 ${uid} pendingIntent 与自身特殊技不一致`);
     if (!isFiniteNumber(raw.abilityCharges) || !Number.isInteger(raw.abilityCharges) || (raw.abilityCharges as number) < 0) fail(`野外敌人 ${uid} abilityCharges 非法`);
     if (raw.defeatedAtTime !== null && (!isFiniteNumber(raw.defeatedAtTime) || !Number.isInteger(raw.defeatedAtTime) || (raw.defeatedAtTime as number) < 0 || (raw.defeatedAtTime as number) > (state.time as number))) fail(`野外敌人 ${uid} defeatedAtTime 非法`);
     if (raw.status === 'defeated' && raw.defeatedAtTime === null) fail(`已击败野外敌人 ${uid} 缺少 defeatedAtTime`);
+    if (raw.status === 'defeated' && raw.pendingIntent !== null) fail(`已击败野外敌人 ${uid} 不得保留 pendingIntent`);
     if (!Array.isArray(raw.statusEffects)) {
       fail(`野外敌人 ${uid} statusEffects 类型错误`);
     } else {

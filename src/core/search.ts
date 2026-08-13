@@ -24,6 +24,46 @@ import type { Combatant, GameState, ItemStack, LootRarity } from './types';
 
 const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
 
+/**
+ * Craft goals are actor-local for shared search logic.  The player goal lives
+ * on GameState for the UI, while an NPC's goal lives on its own plan field;
+ * leaking the former into NPC SEARCH would let one contestant redirect every
+ * other actor's wild-threat weighting.
+ */
+export function getActorCraftGoalRecipeId(state: GameState, actor: Combatant): string | null {
+  return actor.isPlayer ? state.craftGoalRecipeId : actor.plannedRecipeId;
+}
+
+function eliteSearchWeight(state: GameState, actor: Combatant): number {
+  if (state.time < 48) return 0;
+  const goal = getActorCraftGoalRecipeId(state, actor);
+  // NPCs only receive the Phase 4P hunt bias from their own Phase 4P plan.
+  // A player without an explicit goal retains the historical discoverability
+  // of higher-tier ecology; an unrelated explicit goal opts that player out.
+  if (!actor.isPlayer && !goal) return 0;
+  if (goal && !PHASE4P_RECIPE_IDS.has(goal)) return 0;
+  return 0.25;
+}
+
+/** Public pure target-weight adapter used by both SEARCH execution and tests. */
+export function wildSearchTargetWeight(
+  state: GameState,
+  actor: Combatant,
+  enemy: { uid: string; defId: string },
+): number {
+  const def = getWildEnemy(enemy.defId);
+  if (def.tier === 'common') return 1;
+  if (def.tier === 'elite') return eliteSearchWeight(state, actor);
+  if (!state.apexSchedule.some((entry) => entry.uid === enemy.uid && entry.spawned)) return 0;
+  const goal = getActorCraftGoalRecipeId(state, actor);
+  // Apexes are public, but an NPC only gets the high-tier hunt bias from its
+  // own Phase 4P route. A player without an explicit goal retains the legacy
+  // public-discovery weight.
+  if (!actor.isPlayer && !goal) return 0;
+  if (goal && !PHASE4P_RECIPE_IDS.has(goal)) return 0;
+  return 0.25;
+}
+
 function searchableWildEnemies(state: GameState, zoneId: string) {
   return livingWildEnemiesInZone(state, zoneId).filter((enemy) => {
     const def = getWildEnemy(enemy.defId);
@@ -252,15 +292,7 @@ export function performSearch(
         // discoverable, but a search does not silently turn every route into
         // an Apex encounter just because the finite population was expanded.
         weight: enemy.defId && state.wildEnemies[enemy.uid]
-          ? getWildEnemy(enemy.defId).tier === 'elite'
-            ? state.craftGoalRecipeId && !state.craftGoalRecipeId.startsWith('r_')
-              ? 0
-              : state.craftGoalRecipeId && !PHASE4P_RECIPE_IDS.has(state.craftGoalRecipeId)
-                ? 0
-                : state.time >= 48 ? 0.25 : 0
-            : getWildEnemy(enemy.defId).tier === 'apex'
-              ? state.apexSchedule.some((entry) => entry.uid === enemy.uid && entry.spawned) ? 0.25 : 0
-              : 1
+          ? wildSearchTargetWeight(state, actor, enemy)
           : 1,
       })),
     ];

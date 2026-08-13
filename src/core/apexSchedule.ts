@@ -1,5 +1,5 @@
 import { APEX_WILD_ENEMY_IDS, getWildEnemy } from '../data/wildEnemies';
-import { ZONE_IDS, getZoneDef } from '../data/zones';
+import { getZoneDef } from '../data/zones';
 import { pushEvent } from './events';
 import { SeededRandom } from './random';
 import type { GameState } from './types';
@@ -23,12 +23,11 @@ function chooseSpawnZone(state: GameState, defId: string): string | null {
   const def = getWildEnemy(defId);
   const eligible = [...(def.eligibleZones ?? [])].filter((zoneId) => Boolean(state.zones[zoneId]));
   const openEligible = eligible.filter((zoneId) => state.zones[zoneId]?.status !== 'restricted');
-  const fallback = ZONE_IDS.filter((zoneId) => state.zones[zoneId]?.status !== 'restricted');
-  // The first stream is derived from seed+definition+schedule, so save/load
-  // and repeated processing cannot choose a different fallback zone.
-  const candidates = openEligible.length > 0 ? openEligible : fallback.length > 0 ? fallback : eligible;
-  if (candidates.length === 0) return null;
-  return new SeededRandom(`phase4p:spawn-zone:${state.seed}:${defId}`).pick(candidates) ?? candidates[0]!;
+  // Apexes never fall back to an unrelated open zone.  A due entry remains
+  // unspawned while every legal zone is restricted and is retried on a later
+  // tick, so opening one eligible zone is sufficient to release the spawn.
+  if (openEligible.length === 0) return null;
+  return new SeededRandom(`phase4p:spawn-zone:${state.seed}:${defId}`).pick(openEligible) ?? openEligible[0]!;
 }
 
 /** Idempotent scheduled spawn. It only mutates a due, unspawned entry. */

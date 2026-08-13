@@ -32,6 +32,7 @@ import { PHASE4N_WILD_MATERIAL_IDS } from '../data/phase4nItems';
 import { PHASE4P_SIGNATURE_IDS, PHASE4P_WILD_MATERIAL_IDS } from '../data/phase4pItems';
 import { performObjectiveAction } from './victory';
 import { deriveNpcVictoryGoal } from './npcVictoryGoal';
+import { buildCraftPlan } from './craftPlan';
 
 const WILD_MATERIALS = new Set<string>([...PHASE4N_WILD_MATERIAL_IDS, ...PHASE4P_WILD_MATERIAL_IDS]);
 const SIGNATURE_MATERIALS = new Set<string>(PHASE4P_SIGNATURE_IDS);
@@ -51,6 +52,9 @@ export type { NpcActionKind, NpcDecision } from './npcDecide';
 
 /** NPC 自动换上更强的装备（不消耗时间） */
 function autoEquip(state: GameState, npc: Combatant): void {
+  const plannedRoute = npc.plannedRecipeId
+    ? buildCraftPlan(state, npc, npc.plannedRecipeId)
+    : null;
   for (const slot of ['weapon', 'armor', 'utility'] as const) {
     const current = slot === 'weapon'
       ? getEquippedWeapon(npc)
@@ -69,6 +73,12 @@ function autoEquip(state: GameState, npc: Combatant): void {
     for (const s of npc.inventory) {
       const def = getItem(s.itemId);
       if (def.equipmentSlot !== slot) continue;
+      // Intermediate gear can be a required ingredient for the NPC's current
+      // route (plate_armor is consumed by r_aegis_plate). Keep it in the
+      // inventory until the canonical CRAFT path consumes it; only the final
+      // route output is eligible for automatic equipping.
+      if (plannedRoute && s.itemId !== plannedRoute.targetItemId
+        && plannedRoute.steps.some((step) => step.outputItemId === s.itemId && step.recipeId !== plannedRoute.targetRecipeId)) continue;
       const v = slot === 'weapon'
         ? def.attack ?? 0
         : slot === 'armor'

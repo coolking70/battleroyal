@@ -35,6 +35,8 @@ import { fileURLToPath } from 'node:url';
 import { GAME_CONFIG, GAME_VERSION } from '../src/data/gameConfig';
 import { newGame } from '../tests/helpers';
 import { validateSaveData } from '../src/core/saveLoad';
+import { processApexSpawns } from '../src/core/apexSchedule';
+import { getWildEnemy } from '../src/data/wildEnemies';
 import type { GameState } from '../src/core/types';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -501,6 +503,59 @@ const CASES: AuditCase[] = [
   { case: 'skillCooldowns 负值', expected: false, mutate: (s) => {
     const p = s.state.characters[s.state.playerId]!;
     p.skillCooldowns = { ...p.skillCooldowns, adrenaline: -1 };
+  } },
+
+  /* ---- Phase 4P-AF：Apex schedule / Wild telegraph invariants ---- */
+  { case: 'Apex schedule zone 不在 eligibleZones', expected: false, mutate: (s) => {
+    const entry = s.state.apexSchedule.find((candidate) => candidate.defId === 'prototype_aegis')!;
+    entry.scheduledAt = 0;
+    s.state.time = 0;
+    processApexSpawns(s.state);
+    entry.zoneId = 'forest';
+  } },
+  { case: 'wrong-def pendingIntent', expected: false, mutate: (s) => {
+    const entry = s.state.apexSchedule.find((candidate) => candidate.defId === 'prototype_aegis')!;
+    entry.scheduledAt = 0;
+    s.state.time = 0;
+    processApexSpawns(s.state);
+    s.state.wildEnemies[entry.uid!]!.pendingIntent = 'massive_charge';
+  } },
+  { case: 'common Wild with pendingIntent', expected: false, mutate: (s) => {
+    const enemy = Object.values(s.state.wildEnemies).find((candidate) => getWildEnemy(candidate.defId).specialAbilityId === 'none')!;
+    enemy.pendingIntent = 'overcharge';
+  } },
+  { case: 'defeated Wild with pendingIntent', expected: false, mutate: (s) => {
+    const enemy = Object.values(s.state.wildEnemies).find((candidate) => getWildEnemy(candidate.defId).specialAbilityId !== 'none')!;
+    enemy.status = 'defeated';
+    enemy.hp = 0;
+    enemy.dropResolved = true;
+    enemy.defeatedAtTime = s.state.time;
+    enemy.pendingIntent = getWildEnemy(enemy.defId).specialAbilityId as never;
+  } },
+  { case: '重复 Apex UID', expected: false, mutate: (s) => {
+    const first = s.state.apexSchedule.find((candidate) => candidate.defId === 'prototype_aegis')!;
+    first.scheduledAt = 0;
+    s.state.time = 0;
+    processApexSpawns(s.state);
+    const second = s.state.apexSchedule.find((candidate) => candidate.defId === 'subject_07')!;
+    second.spawned = true;
+    second.spawnedAt = first.spawnedAt;
+    second.uid = first.uid;
+    second.zoneId = first.zoneId;
+  } },
+  { case: 'schedule 与 instance defId 不一致', expected: false, mutate: (s) => {
+    const entry = s.state.apexSchedule.find((candidate) => candidate.defId === 'prototype_aegis')!;
+    entry.scheduledAt = 0;
+    s.state.time = 0;
+    processApexSpawns(s.state);
+    entry.defId = 'subject_07';
+  } },
+  { case: 'schedule 与 instance zoneId 不一致', expected: false, mutate: (s) => {
+    const entry = s.state.apexSchedule.find((candidate) => candidate.defId === 'prototype_aegis')!;
+    entry.scheduledAt = 0;
+    s.state.time = 0;
+    processApexSpawns(s.state);
+    entry.zoneId = getWildEnemy(entry.defId).eligibleZones!.find((zoneId) => zoneId !== entry.zoneId)!;
   } },
 ];
 
