@@ -88,7 +88,8 @@ function buildGoalCandidates(npc: Combatant): GoalCandidate[] {
     } else if (item.category === 'utility') {
       // utility is a valid final route; its gain is evaluated below.
     } else if (item.category !== 'consumable' || (item.healHp ?? 0) <= 0) {
-      // 只考虑武器 / 防具 / 有治疗效果的消耗品
+      // Alternative route intent is handled by npcDecide's explicit actions;
+      // generic gear planning remains stable for legacy simulations.
       continue;
     }
     if (countItem(npc, recipe.outputItemId) > 0) continue; // 已有成品
@@ -259,7 +260,7 @@ function pickRecommendedZone(
     let score = 0;
     for (const id of missingIds) {
       if (def.basePool.includes(id)) score += 10;
-      else if (def.rarePool.includes(id)) score += 12;
+      else if (def.rarePool.includes(id) || def.objectivePool?.includes(id)) score += 12;
     }
     if (score === 0) continue;
     if (zone.status === 'warning') score -= 4;
@@ -281,7 +282,9 @@ function allMissingZonesRestricted(
   for (const ing of missing) {
     const supplyZones = ZONE_IDS.filter((zoneId) => {
       const def = getZoneDef(zoneId);
-      return def.basePool.includes(ing.itemId) || def.rarePool.includes(ing.itemId);
+      return def.basePool.includes(ing.itemId)
+        || def.rarePool.includes(ing.itemId)
+        || def.objectivePool?.includes(ing.itemId) === true;
     });
     const reachable = supplyZones.some(
       (zoneId) => state.zones[zoneId]?.status !== 'restricted',

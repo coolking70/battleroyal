@@ -29,6 +29,7 @@ import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, ItemStack } from './types';
 import { attackWildActor, fleeWildEncounter, resolveWildTurn } from './wildCombat';
 import { PHASE4N_WILD_MATERIAL_IDS } from '../data/phase4nItems';
+import { performObjectiveAction } from './victory';
 
 const WILD_MATERIALS = new Set<string>(PHASE4N_WILD_MATERIAL_IDS);
 
@@ -208,6 +209,18 @@ export function runNpcTurn(
     case 'craft': {
       if (decision.recipeId) craftActor(state, npc, decision.recipeId);
       autoEquip(state, npc);
+      break;
+    }
+
+    case 'call_extraction':
+    case 'extract':
+    case 'submit_research': {
+      const res = performObjectiveAction(state, npc, decision.kind === 'call_extraction'
+        ? 'CALL_EXTRACTION'
+        : decision.kind === 'extract'
+          ? 'EXTRACT'
+          : 'SUBMIT_RESEARCH');
+      if (!res.ok) fallbackToRest(res.message);
       break;
     }
 

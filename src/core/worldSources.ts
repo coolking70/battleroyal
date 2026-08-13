@@ -10,7 +10,7 @@ export type WorldSource =
 export function worldSourcesForItem(itemId: string, state?: GameState): WorldSource[] {
   const available = (zoneId: string): boolean => state?.zones[zoneId]?.status !== 'restricted';
   const zoneIds = ZONES
-    .filter((zone) => zone.basePool.includes(itemId) || zone.rarePool.includes(itemId))
+    .filter((zone) => zone.basePool.includes(itemId) || zone.rarePool.includes(itemId) || zone.objectivePool?.includes(itemId))
     .map((zone) => zone.id)
     .filter(available);
   const tableIds = new Set(WILD_DROP_TABLES.filter((table) => table.entries.some((entry) => entry.itemId === itemId)).map((table) => table.id));

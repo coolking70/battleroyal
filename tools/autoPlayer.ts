@@ -20,7 +20,7 @@
 
 import { GAME_CONFIG, GAME_VERSION } from '../src/data/gameConfig';
 import { SeededRandom } from '../src/core/random';
-import { aliveCharacters, createGame, getPlayer } from '../src/core/gameState';
+import { aliveCharacters, createGame, getPlayer, refreshZoneOccupants } from '../src/core/gameState';
 import { executeCommand } from '../src/core/gameEngine';
 import { chooseNpcGoal, decideNpcAction } from '../src/core/npcDecide';
 import {
@@ -30,11 +30,11 @@ import {
   type LegalAction,
   type LegalActionCategory,
 } from '../src/core/legalActions';
-import { getEquippedArmor, getEquippedUtility, getEquippedWeapon } from '../src/core/inventory';
+import { addItem, countItem, createStack, getEquippedArmor, getEquippedUtility, getEquippedWeapon } from '../src/core/inventory';
 import { getCraftGoalRecommendations, getZoneDistance } from '../src/core/craftGuide';
 import { buildCraftPlan } from '../src/core/craftPlan';
 import { tryGetItem } from '../src/data/items';
-import type { Command, Combatant, GameEvent, GameState, Personality } from '../src/core/types';
+import type { Command, Combatant, GameEvent, GameState, Personality, VictoryType } from '../src/core/types';
 import { craftPathSummary, getCraftGoalSuggestion } from '../src/ui/craftPathPresentation';
 import { PHASE4N_RECIPES } from '../src/data/phase4nRecipes';
 
@@ -95,6 +95,8 @@ export interface AutoGameOptions {
   representativeBuildLoop?: boolean;
   /** Optional public recipe target for a deterministic representative route. */
   representativeRecipeId?: string;
+  /** Deterministic formal-command route fixture for an alternative victory. */
+  victoryGoal?: VictoryType | 'auto';
 }
 
 /** 玩家死亡瞬间的只读诊断快照，不参与任何规则结算。 */
@@ -123,6 +125,8 @@ export interface AutoGameResult {
   outcome: AutoGameOutcome;
   finalStatus: GameState['status'];
   endReason: GameState['endReason'];
+  winnerId: string | null;
+  victoryType: VictoryType | null;
   /** 对局结束时的时间单位 */
   timeUsed: number;
   endedAtTime: number | null;
@@ -330,11 +334,11 @@ export function resolveOutcome(state: GameState): AutoGameOutcome {
 
 /** 各策略对合法动作分类的偏好权重（用于策略首选不可用时的退化挑选） */
 const CATEGORY_WEIGHT: Record<AutoPlayerPolicy, Record<LegalActionCategory, number>> = {
-  aggressive: { combat: 10, search: 4, movement: 3, craft: 2, recovery: 1, item: 1, resolution: 0, meta: 0 },
-  cautious: { combat: 1, search: 4, movement: 4, craft: 3, recovery: 6, item: 1, resolution: 0, meta: 0 },
-  collector: { combat: 1, search: 9, movement: 4, craft: 5, recovery: 2, item: 1, resolution: 0, meta: 0 },
-  opportunist: { combat: 4, search: 6, movement: 4, craft: 3, recovery: 3, item: 1, resolution: 0, meta: 0 },
-  random: { combat: 3, search: 3, movement: 3, craft: 3, recovery: 3, item: 1, resolution: 0, meta: 0 },
+  aggressive: { combat: 10, search: 4, movement: 3, craft: 2, recovery: 1, item: 1, objective: 2, resolution: 0, meta: 0 },
+  cautious: { combat: 1, search: 4, movement: 4, craft: 3, recovery: 6, item: 1, objective: 2, resolution: 0, meta: 0 },
+  collector: { combat: 1, search: 9, movement: 4, craft: 5, recovery: 2, item: 1, objective: 2, resolution: 0, meta: 0 },
+  opportunist: { combat: 4, search: 6, movement: 4, craft: 3, recovery: 3, item: 1, objective: 2, resolution: 0, meta: 0 },
+  random: { combat: 3, search: 3, movement: 3, craft: 3, recovery: 3, item: 1, objective: 2, resolution: 0, meta: 0 },
 };
 
 /** 愿意为了新物品腾格子的策略 */
@@ -435,6 +439,12 @@ export function decideAutoPlayerCommand(
         : { command: null, reason: d.reason };
     case 'flee_combat':
       return { command: { type: 'FLEE' }, reason: d.reason };
+    case 'call_extraction':
+      return { command: { type: 'CALL_EXTRACTION' }, reason: d.reason };
+    case 'extract':
+      return { command: { type: 'EXTRACT' }, reason: d.reason };
+    case 'submit_research':
+      return { command: { type: 'SUBMIT_RESEARCH' }, reason: d.reason };
     case 'search':
       return { command: { type: 'SEARCH' }, reason: d.reason };
     default:
@@ -519,6 +529,23 @@ interface RepresentativeRouteContext {
   lastSearch: { zoneId: string; time: number } | null;
 }
 
+function seedObjectiveRouteFixture(state: GameState, player: Combatant, goal: VictoryType): void {
+  if (goal === 'last_survivor') return;
+  player.inventory = [];
+  player.equipment = [];
+  player.equippedWeaponId = null;
+  player.equippedArmorId = null;
+  player.equippedUtilityId = null;
+  player.stamina = player.maxStamina;
+  player.hp = player.maxHp;
+  player.currentZoneId = 'school';
+  const raw: Record<string, number> = goal === 'extraction'
+    ? { battery: 3, scrap: 4, glass: 1, iron: 3 }
+    : { bio_resin: 1, research_notes: 2, chemical_mix: 1, circuit: 1 };
+  for (const [itemId, count] of Object.entries(raw)) addItem(player, createStack(state, itemId, count));
+  refreshZoneOccupants(state);
+}
+
 export function chooseEquipmentUpgradeAction(
   player: Combatant,
   legal: LegalAction[],
@@ -560,9 +587,32 @@ function chooseRepresentativeBuildAction(
   legal: LegalAction[],
   route: RepresentativeRouteContext,
   preferredRecipeId?: string,
+  victoryGoal?: VictoryType | 'auto',
 ): LegalAction | null {
   const groundPickup = legal.find((action) => action.command.type === 'PICKUP_GROUND');
   if (groundPickup) return groundPickup;
+
+  if (victoryGoal && victoryGoal !== 'auto' && victoryGoal !== 'last_survivor') {
+    const completion = victoryGoal === 'extraction' ? 'EXTRACT' : 'SUBMIT_RESEARCH';
+    const completed = legal.find((action) => action.command.type === completion);
+    if (completed) return completed;
+    if (victoryGoal === 'extraction' && state.activeExtraction) {
+      // The public countdown is time-based; wait using a formal free REST.
+      return legal.find((action) => action.command.type === 'REST') ?? null;
+    }
+    const targetZone = victoryGoal === 'extraction' ? 'station' : 'lab';
+    const targetItem = victoryGoal === 'extraction' ? 'extraction_beacon' : 'research_package';
+    if (countItem(player, targetItem) > 0 && player.currentZoneId !== targetZone) {
+      const currentDistance = getZoneDistance(player.currentZoneId, targetZone);
+      const toward = legal
+        .filter((action): action is LegalAction & { command: Extract<Command, { type: 'MOVE' }> } => action.command.type === 'MOVE')
+        .map((action) => ({ action, distance: getZoneDistance(action.command.zoneId, targetZone) }))
+        .sort((a, b) => a.distance - b.distance);
+      return toward.find((entry) => entry.distance < currentDistance)?.action ?? toward[0]?.action ?? null;
+    }
+    const call = legal.find((action) => action.command.type === 'CALL_EXTRACTION');
+    if (call) return call;
+  }
   if (!state.craftGoalRecipeId) {
     const suggestion = getCraftGoalSuggestion(state, player);
     const adopt = legal.find(
@@ -663,6 +713,8 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
     playerCharacterId: characterId,
     playerName: options.playerName ?? `Auto-${policy}`,
   });
+  const victoryGoal = options.victoryGoal ?? 'auto';
+  if (victoryGoal !== 'auto') seedObjectiveRouteFixture(s, getPlayer(s), victoryGoal);
 
   // 策略专用 RNG：与引擎 RNG 完全隔离，避免自动玩家的选择消耗掉对局随机数，
   // 从而保证「同种子 + 同角色 + 同策略」严格可复现。
@@ -727,7 +779,14 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
         ? null
         : chooseEquipmentUpgradeAction(player, legal);
       const preferred = options.representativeBuildLoop
-        ? chooseRepresentativeBuildAction(s, player, legal, representativeRoute, options.representativeRecipeId)
+        ? chooseRepresentativeBuildAction(
+            s,
+            player,
+            legal,
+            representativeRoute,
+            options.representativeRecipeId ?? (victoryGoal === 'extraction' ? 'r_extraction_beacon' : victoryGoal === 'research' ? 'r_research_package' : undefined),
+            victoryGoal,
+          )
         : equipmentUpgrade;
       const decision = preferred
         ? { command: preferred.command, reason: '代表玩家闭环：目标 / 合成 / 装备' }
@@ -936,6 +995,8 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
     outcome,
     finalStatus: s.status,
     endReason: s.endReason,
+    winnerId: s.victory.winnerId,
+    victoryType: s.victory.type,
     timeUsed: s.endedAtTime ?? s.time,
     endedAtTime: s.endedAtTime,
     phase: s.phase,

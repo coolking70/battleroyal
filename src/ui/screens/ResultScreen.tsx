@@ -20,12 +20,27 @@ function endReasonLabel(reason: GameState['endReason']): string {
       return '胜利';
     case 'player_died':
       return '阵亡';
+    case 'last_survivor':
+      return '最后生还者';
+    case 'extraction':
+      return '撤离完成';
+    case 'research':
+      return '研究完成';
     case 'time_limit':
       return '时间耗尽';
     case 'draw':
       return '平局';
     default:
       return '—';
+  }
+}
+
+function victoryTypeLabel(type: GameState['victory']['type']): string {
+  switch (type) {
+    case 'last_survivor': return '最后生还者';
+    case 'extraction': return '撤离';
+    case 'research': return '研究';
+    default: return '无胜者';
   }
 }
 
@@ -53,6 +68,12 @@ const TIMELINE_TYPES = new Set([
   'FINALE_DECAY',
   'CRAFT_GOAL_SET',
   'GAME_ENDED',
+  'VICTORY_DECLARED',
+  'EXTRACTION_CALLED',
+  'EXTRACTION_CANCELLED',
+  'EXTRACTION_READY',
+  'EXTRACTION_COMPLETED',
+  'RESEARCH_COMPLETED',
 ]);
 
 interface TimelineEntry {
@@ -75,6 +96,12 @@ function keyEvents(state: GameState, playerId: string): TimelineEntry[] {
     FINALE_DECAY: { label: '终局', cls: 'warn' },
     CRAFT_GOAL_SET: { label: '目标', cls: 'neutral' },
     GAME_ENDED: { label: '结束', cls: 'end' },
+    VICTORY_DECLARED: { label: '胜利', cls: 'end' },
+    EXTRACTION_CALLED: { label: '呼叫撤离', cls: 'warn' },
+    EXTRACTION_CANCELLED: { label: '撤离取消', cls: 'neutral' },
+    EXTRACTION_READY: { label: '窗口就绪', cls: 'warn' },
+    EXTRACTION_COMPLETED: { label: '撤离成功', cls: 'end' },
+    RESEARCH_COMPLETED: { label: '研究完成', cls: 'end' },
   };
   return visibleEventsForPlayer(state.events, playerId)
     .filter((e) => TIMELINE_TYPES.has(e.type))
@@ -109,7 +136,11 @@ function buildRanking(state: GameState): RankRow[] {
   return ordered.map((c, i) => {
     let fate: string;
     if (c.alive) {
-      fate = '存活至终局';
+      fate = state.victory.winnerId === c.id
+        ? `胜者 · ${victoryTypeLabel(state.victory.type)}`
+        : state.victory.winnerId
+          ? '存活，但路线胜负已结算'
+          : '存活至终局';
     } else if (c.killedBy && state.characters[c.killedBy]) {
       fate = `第 ${c.diedAtTime} 时间单位被 ${state.characters[c.killedBy]?.name} 击杀`;
     } else {
@@ -128,6 +159,13 @@ export function ResultScreen({
   const resultTitleRef = useRef<HTMLHeadingElement>(null);
   const won = state.status === 'won';
   const draw = state.status === 'draw';
+  const objectiveLoss = state.status === 'lost' && state.victory.winnerId !== null;
+  const winner = state.victory.winnerId ? state.characters[state.victory.winnerId] : null;
+  // Keep hand-authored legacy result fixtures readable while current saves always
+  // carry the explicit victory latch. A player win without a route is the classic
+  // last-survivor ending.
+  const routeType = state.victory.type ?? (won || state.endReason === 'player_won' ? 'last_survivor' : null);
+  const route = victoryTypeLabel(routeType);
   const ranking = buildRanking(state);
   const myRank = ranking.find((r) => r.c.id === player.id)?.rank ?? '—';
   const killer =
@@ -161,7 +199,7 @@ export function ResultScreen({
           <div className="result-hero-copy">
             <span className="result-hero-kicker">FINAL ZONE · {player.currentZoneId.toUpperCase()}</span>
             <strong>{resultZone.name}</strong>
-            <span>{won ? '你在这里结束了这场生存竞赛。' : draw ? '时间耗尽，所有人都停在这片城市里。' : '这片区域记录了你的最后一段行动。'}</span>
+            <span>{won ? `你在这里完成了${route}路线。` : draw ? '时间耗尽，所有人都停在这片城市里。' : objectiveLoss ? `${winner?.name ?? '另一名参赛者'}完成了${route}路线。` : '这片区域记录了你的最后一段行动。'}</span>
           </div>
           <VisualImage
             visual={getCharacterVisual(player.characterId, resultVisualState)}
@@ -176,13 +214,17 @@ export function ResultScreen({
             tabIndex={-1}
             className={`verdict ${won ? 'won' : draw ? 'draw' : 'lost'}`}
           >
-            {won ? '最后生还' : draw ? '平局 · 时间耗尽' : '淘汰出局'}
+            {won ? (routeType === 'last_survivor' ? '最后生还' : `${route}成功`) : draw ? '平局 · 时间耗尽' : objectiveLoss ? `目标胜利 · ${route}` : '淘汰出局'}
           </h1>
           <div className="line" id="result-summary">
             {won
-              ? `你在第 ${state.endedAtTime ?? state.time} 个时间单位成为唯一幸存者。`
+              ? routeType === 'last_survivor'
+                ? `你在第 ${state.endedAtTime ?? state.time} 个时间单位成为唯一幸存者。`
+                : `你在第 ${state.endedAtTime ?? state.time} 个时间单位完成${route}路线。`
               : draw
                 ? `对局在第 ${state.endedAtTime ?? state.time} 个时间单位达到硬时限，无人胜出，判为平局。`
+                : objectiveLoss
+                  ? `你仍存活，但 ${winner?.name ?? '另一名参赛者'} 在第 ${state.endedAtTime ?? state.time} 个时间单位完成${route}路线，胜负已结算。`
                 : killer
                   ? `你在第 ${player.diedAtTime ?? state.time} 个时间单位倒在 ${getZoneDef(player.currentZoneId).name}，终结者是 ${killer}。`
                   : `你在第 ${player.diedAtTime ?? state.time} 个时间单位倒在 ${getZoneDef(player.currentZoneId).name}。`}
@@ -205,6 +247,14 @@ export function ResultScreen({
           <div className="result-cell">
             <div className="k">结束原因</div>
             <div className="v">{endReasonLabel(state.endReason)}</div>
+          </div>
+          <div className="result-cell">
+            <div className="k">胜利路线</div>
+            <div className="v">{route}</div>
+          </div>
+          <div className="result-cell">
+            <div className="k">胜者</div>
+            <div className="v">{winner?.name ?? '无人'}</div>
           </div>
           <div className="result-cell">
             <div className="k">策略</div>

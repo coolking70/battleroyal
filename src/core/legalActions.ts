@@ -58,6 +58,7 @@ import {
   needsEvacuation,
   pickupResolutionActions,
   skillActions,
+  objectiveActions,
 } from './legalActionBuilders';
 import type { Combatant, Command, GameState, ItemStack } from './types';
 
@@ -178,6 +179,9 @@ export function getLegalPlayerCommands(state: GameState): LegalAction[] {
 
   // 7) 合成：材料 / 体力 / 背包空间三项都满足
   out.push(...craftActions(player));
+
+  // 7.5) 三条胜利路线的正式目标行动
+  out.push(...objectiveActions(state, player));
 
   // 8) 拾取地面物品（不推进时间）
   const zone = state.zones[player.currentZoneId];

@@ -49,6 +49,7 @@ function createZoneState(id: string): ZoneState {
     searchCount: 0,
     supply: 1,
     loot: [],
+    objectiveLoot: [],
     initialLootCount: 0,
     remainingLootCount: 0,
     searchedEmptyCount: 0,
@@ -204,6 +205,8 @@ export function createGame(options: CreateGameOptions): GameState {
     eventCounters: { total: 0, archived: 0, byType: {} },
     playerIntel: {},
     endReason: null,
+    victory: { winnerId: null, type: null, declaredAtTime: null },
+    activeExtraction: null,
   };
 
   const legacyZoneIds = new Set<string>(LEGACY_ZONE_IDS);
@@ -216,6 +219,13 @@ export function createGame(options: CreateGameOptions): GameState {
       ? rng
       : new SeededRandom(`phase4k:${options.seed}:${z.id}`);
     initZoneLoot(zone, generateZoneLoot(z.id, lootRng));
+    // Objective sources use a derived stream so adding a route cannot perturb
+    // the established legacy loot RNG sequence.
+    zone.objectiveLoot = (z.objectivePool ?? []).map((itemId) => ({
+      itemId,
+      count: z.id === 'lab' ? 2 : 1,
+      rarity: 'rare' as const,
+    }));
     state.zones[z.id] = zone;
   }
   initializeWildPopulations(state);

@@ -126,7 +126,7 @@ export function getCraftGoalRecommendations(
     for (const gap of gaps) {
       if (!gap.sourceZoneIds.includes(zoneId)) continue;
       here.add(gap.itemId);
-      if (def.rarePool.includes(gap.itemId)) rareCover += 1;
+      if (def.rarePool.includes(gap.itemId) || def.objectivePool?.includes(gap.itemId)) rareCover += 1;
       for (const source of gap.worldSources) {
         if (source.kind !== 'wild_drop' || !source.zoneIds.includes(zoneId)) continue;
         source.enemyIds.forEach((enemyId) => sourceEnemyIds.add(enemyId));

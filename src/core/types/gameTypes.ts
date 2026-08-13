@@ -5,6 +5,7 @@ import type { GamePhase, GameStatus } from './sharedTypes';
 import type { ZoneState } from './zoneTypes';
 import type { WorldEventRecord, WorldEventState } from '../commandTypes';
 import type { WildEnemyInstance } from './wildTypes';
+import type { ActiveExtraction, VictoryState } from './victoryTypes';
 
 /* ------------------------------------------------------------------ */
 /* 游戏状态                                                            */
@@ -102,7 +103,14 @@ export interface GameState {
   endReason:
     | null
     | 'player_won'
+    | 'last_survivor'
+    | 'extraction'
+    | 'research'
     | 'player_died'
     | 'time_limit'
     | 'draw';
+  /** Unified, persisted result. A wild enemy can never be winnerId. */
+  victory: VictoryState;
+  /** Public extraction call shared by the whole match. */
+  activeExtraction: ActiveExtraction | null;
 }

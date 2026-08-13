@@ -357,6 +357,7 @@ interface CellStats {
   avgZonesExhausted: number;
   avgDeaths: number;
   deathCauseCounts: Record<string, number>;
+  victoryByType?: Record<string, number>;
   avgEventCount: number;
 
   wildEncounterCount: number;
@@ -478,6 +479,10 @@ function aggregateCell(
     avgZonesExhausted: n > 0 ? sum((r) => r.zonesExhausted) / n : 0,
     avgDeaths: n > 0 ? sum((r) => r.deaths) / n : 0,
     deathCauseCounts: mergeDeathCauseCounts(results),
+    victoryByType: mergeCounts(
+      (r) => ({ [r.victoryType ?? 'none']: 1 }),
+      results,
+    ),
     avgEventCount: n > 0 ? sum((r) => r.eventCount) / n : 0,
 
     wildEncounterCount: sum((r) => r.wildEncounterCount),
@@ -676,6 +681,7 @@ export interface GlobalSummary {
   drawRate: number;
   survivalRate: number;
   timeoutRate: number;
+  victoryByType: Record<string, number>;
   avgTimeUsed: number;
   avgPlayerRank: number;
   avgKills: number;
@@ -868,6 +874,7 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
       avgZonesExhausted: w((c) => c.avgZonesExhausted),
       avgDeaths: w((c) => c.avgDeaths),
       deathCauseCounts: mergeSummaryCounts(subset, (c) => c.deathCauseCounts),
+      victoryByType: mergeSummaryCounts(subset, (c) => c.victoryByType ?? {}),
       avgEventCount: w((c) => c.avgEventCount),
 
       wildEncounterCount: sum((c) => c.wildEncounterCount),
@@ -1284,6 +1291,7 @@ function aggregateGlobalFromCells(
     drawRate: pct(outcomeCounts.draw),
     survivalRate: pct(sum((c) => c.survivalCount)),
     timeoutRate: pct(outcomeCounts.timeout),
+    victoryByType: mergeCellCounts(cells, (c) => c.victoryByType ?? {}),
     avgTimeUsed: w((c) => c.avgTimeUsed),
     avgPlayerRank: w((c) => c.avgPlayerRank),
     avgKills: w((c) => c.avgKills),
@@ -1555,6 +1563,7 @@ function renderMarkdown(report: BalanceReport): string {
   L.push(`| 平局率 | ${fmtPct(s.drawRate)} |`);
   L.push(`| 超时率 | ${fmtPct(s.timeoutRate)} |`);
   L.push(`| 存活率 | ${fmtPct(s.survivalRate)} |`);
+  L.push(`| 胜利路线 | ${JSON.stringify(s.victoryByType)} |`);
   L.push(`| 平均时长 | ${fmtNum(s.avgTimeUsed)} 时间单位 |`);
   L.push(`| 平均名次 | ${fmtNum(s.avgPlayerRank)}（理论 ${((s.totalGames ? meta.config.totalContestants : 6) - 1) / 2 + 1} 为全灭）|`);
   L.push(`| 平均击杀 | ${fmtNum(s.avgKills)} |`);

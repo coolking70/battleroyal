@@ -14,6 +14,7 @@ import { isRecord, EVENT_TYPE_SET, type ValidationContext } from './types';
 
 export function validateConsistency(ctx: ValidationContext): void {
   const { state, characters, zones, charIds, fail } = ctx;
+  const currentTime = typeof state.time === 'number' ? state.time : 0;
 
   /* --- turnOrder 完整性 --- */
   const orderIds = (Array.isArray(state.turnOrder) ? state.turnOrder : []) as string[];
@@ -33,12 +34,42 @@ export function validateConsistency(ctx: ValidationContext): void {
       fail(`进行中对局不应带有结束原因（${String(endReason)}）`);
     }
   } else if (status === 'won') {
-    if (endReason !== 'player_won') fail(`won 对局必须 endReason=player_won（实际 ${String(endReason)}）`);
+    if (endReason !== 'player_won' && endReason !== 'extraction' && endReason !== 'research') fail(`won 对局的结束原因非法（实际 ${String(endReason)}）`);
   } else if (status === 'lost') {
-    if (endReason !== 'player_died') fail(`lost 对局必须 endReason=player_died（实际 ${String(endReason)}）`);
+    if (endReason !== 'player_died' && endReason !== 'last_survivor' && endReason !== 'extraction' && endReason !== 'research') fail(`lost 对局的结束原因非法（实际 ${String(endReason)}）`);
   } else if (status === 'draw') {
     if (endReason !== 'draw' && endReason !== 'time_limit') {
       fail(`draw 对局必须 endReason=draw/time_limit（实际 ${String(endReason)}）`);
+    }
+  }
+
+  /* --- unified victory and extraction invariants --- */
+  const victory = state.victory;
+  if (!isRecord(victory)) {
+    fail('state.victory 必须是对象');
+  } else {
+    const hasWinner = typeof victory.winnerId === 'string';
+    const hasType = typeof victory.type === 'string';
+    const hasTime = typeof victory.declaredAtTime === 'number';
+    if (hasWinner !== hasType || hasWinner !== hasTime) fail('state.victory 三字段必须同步存在');
+    if (status === 'playing' && (hasWinner || hasType || hasTime)) fail('进行中的对局不得带 victory result');
+    if (status === 'draw' && (hasWinner || hasType || hasTime)) fail('平局不得带 victory result');
+    if (hasWinner && typeof victory.winnerId === 'string') {
+      const winner = characters[victory.winnerId];
+      if (!isRecord(winner) || winner.alive !== true) fail('victory.winnerId 必须指向存活角色');
+      if ((victory.winnerId === state.playerId) !== (status === 'won')) fail('status 必须与 victory.winnerId 的玩家归属一致');
+    }
+  }
+  const activeExtraction = state.activeExtraction;
+  if (activeExtraction !== null && activeExtraction !== undefined) {
+    if (status !== 'playing') fail('已结束对局不得保留 activeExtraction');
+    if (!isRecord(activeExtraction)) {
+      fail('activeExtraction 必须是对象或 null');
+    } else {
+      const caller = typeof activeExtraction.callerId === 'string' ? characters[activeExtraction.callerId] : null;
+      if (!isRecord(caller) || caller.alive !== true || caller.currentZoneId !== 'station') fail('activeExtraction caller 状态不一致');
+      if (isRecord(caller) && rawItemCount(caller, 'extraction_beacon') < 1) fail('activeExtraction caller 缺少撤离信标');
+      if (activeExtraction.phase === 'ready' && typeof activeExtraction.readyAtTime === 'number' && currentTime < activeExtraction.readyAtTime) fail('ready extraction 的当前时间尚未到 readyAtTime');
     }
   }
 
@@ -196,4 +227,12 @@ export function validateConsistency(ctx: ValidationContext): void {
 
 function isFiniteNumberValue(v: unknown): boolean {
   return typeof v === 'number' && Number.isFinite(v);
+}
+
+function rawItemCount(raw: Record<string, unknown>, itemId: string): number {
+  const inventory = Array.isArray(raw.inventory) ? raw.inventory : [];
+  return inventory.reduce((sum, stack) => {
+    if (!isRecord(stack) || stack.itemId !== itemId || typeof stack.count !== 'number') return sum;
+    return sum + stack.count;
+  }, 0);
 }

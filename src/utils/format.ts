@@ -31,6 +31,7 @@ export const CATEGORY_LABEL: Record<ItemCategory, string> = {
   armor: '防具',
   consumable: '消耗品',
   utility: '工具',
+  objective: '目标物',
 };
 
 export const ZONE_STATUS_LABEL: Record<ZoneStatus, string> = {

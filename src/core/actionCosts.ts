@@ -18,7 +18,9 @@ import { adrenalineStaminaDelta, hasFieldCraftCharge } from './statusIds';
 import type { AttackStyle, Combatant, GameState } from './types';
 
 /** 所有会消耗体力的行动 */
-export type CostedAction = 'MOVE' | 'SEARCH' | 'ATTACK' | 'CRAFT' | 'FLEE' | 'GUARD';
+export type CostedAction =
+  | 'MOVE' | 'SEARCH' | 'ATTACK' | 'CRAFT' | 'FLEE' | 'GUARD'
+  | 'CALL_EXTRACTION' | 'EXTRACT' | 'SUBMIT_RESEARCH';
 
 export const ACTION_LABEL: Record<CostedAction, string> = {
   MOVE: '移动',
@@ -27,6 +29,9 @@ export const ACTION_LABEL: Record<CostedAction, string> = {
   CRAFT: '合成',
   FLEE: '脱离',
   GUARD: '防御',
+  CALL_EXTRACTION: '呼叫撤离',
+  EXTRACT: '执行撤离',
+  SUBMIT_RESEARCH: '提交研究',
 };
 
 /**
@@ -60,6 +65,12 @@ export function getActionStaminaCost(actor: Combatant, action: CostedAction): nu
       // 体力仍有 1 点但不足以支付完整防御成本时，防御继续被拒绝，
       // 避免把免费防御扩成可在任意低体力值下刷出的通用动作。
       return actor.stamina === 0 ? 0 : GAME_CONFIG.guardStaminaCost;
+    case 'CALL_EXTRACTION':
+      return GAME_CONFIG.extractionCallStaminaCost;
+    case 'EXTRACT':
+      return GAME_CONFIG.extractionCompleteStaminaCost;
+    case 'SUBMIT_RESEARCH':
+      return GAME_CONFIG.researchSubmitStaminaCost;
     default:
       return 0;
   }

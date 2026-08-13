@@ -18,6 +18,7 @@ import { armorDefenseOf, hasIngredients, weaponAttackOf } from './inventory';
 import { buildCraftPlan } from './craftPlan';
 import { wildCombatProfile } from './wildCombat';
 import { npcCombatSkill, npcSurvivalSkill } from './npcSkillDecide';
+import { decideNpcVictoryAction } from './npcVictoryDecide';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, Personality } from './types';
 
@@ -36,6 +37,9 @@ export type NpcActionKind =
   | 'use_skill'
   | 'search'
   | 'move'
+  | 'call_extraction'
+  | 'extract'
+  | 'submit_research'
   | 'idle';
 
 export interface NpcDecision {
@@ -266,6 +270,12 @@ export function decideNpcAction(
       };
     }
   }
+
+  // Alternative victory routes are real NPC goals, not player-only shortcuts.
+  // Completion is checked before ordinary combat/recovery so an eligible NPC
+  // can win while other contestants are still alive.
+  const victoryDecision = decideNpcVictoryAction(state, npc);
+  if (victoryDecision) return victoryDecision;
 
   // 3. 生命低于阈值且有治疗品 -> 治疗
   const healThreshold =

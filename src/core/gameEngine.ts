@@ -33,6 +33,11 @@ import { runWorldEvents } from './worldEvents';
 import { applyWorldEventTickDamage } from './worldEventTick';
 import { advanceActiveWildEncounter } from './wildCombat';
 import {
+  declareVictory,
+  performObjectiveAction,
+  syncActiveExtraction,
+} from './victory';
+import {
   handleAttack,
   handleAttackNearby,
   handleEquip,
@@ -79,8 +84,9 @@ function updateStatusEffects(state: GameState): void {
 }
 
 /** 胜负判定 */
-function checkGameEnd(state: GameState): void {
+export function checkGameEnd(state: GameState): void {
   if (state.status !== 'playing') return;
+  syncActiveExtraction(state);
   const player = getPlayer(state);
   const alive = aliveCharacters(state);
 
@@ -99,17 +105,8 @@ function checkGameEnd(state: GameState): void {
     return;
   }
 
-  if (alive.length === 1 && alive[0]?.id === player.id) {
-    state.status = 'won';
-    state.endedAtTime = state.time;
-    state.endReason = 'player_won';
-    state.encounter = null;
-    pushEvent(state, {
-      type: 'GAME_ENDED',
-      actorId: player.id,
-      message: `全场只剩下你一人，第 ${state.time} 个时间单位胜出。`,
-      metadata: { result: 'won', reason: 'player_won', time: state.time },
-    });
+  if (alive.length === 1 && alive[0]) {
+    declareVictory(state, alive[0].id, 'last_survivor');
   }
 }
 
@@ -178,6 +175,7 @@ export function advanceTime(state: GameState, rng: SeededRandom): void {
   refreshZoneOccupants(state);
   refreshPlayerSight(state);
   syncEncounter(state);
+  syncActiveExtraction(state);
   checkGameEnd(state);
   if (state.status === 'playing') enforceTimeLimit(state);
 
@@ -286,6 +284,7 @@ function executeCommandInner(state: GameState, command: Command): CommandResult 
     if (outcome.ok && !outcome.skipTime && advancesTime(command)) {
       advanceTime(draft, rng);
     } else {
+      syncActiveExtraction(draft);
       syncEncounter(draft);
       checkGameEnd(draft);
     }
@@ -369,6 +368,14 @@ function executeCommandInner(state: GameState, command: Command): CommandResult 
         metadata: { recipeId: recipe.id, completed: false },
       });
       return finish({ ok: true, message: `制作目标：${recipe.name}` });
+    }
+
+    case 'CALL_EXTRACTION':
+    case 'EXTRACT':
+    case 'SUBMIT_RESEARCH': {
+      const outcome = performObjectiveAction(draft, player, command.type);
+      if (!outcome.ok) return reject(outcome.message);
+      return finish({ ok: true, message: outcome.message });
     }
 
     // USE_ITEM / EQUIP 的结算已在 Phase 4D-1 收进 commandHandlers，

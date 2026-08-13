@@ -30,11 +30,11 @@ import type {
 
 /** 正式校验静态资源池，避免新区出现未知 item id 后被静默跳过。 */
 export function validateZoneLootPools(
-  zoneDefs: readonly { id: string; basePool: string[]; rarePool: string[] }[] = ZONES,
+  zoneDefs: readonly { id: string; basePool: string[]; rarePool: string[]; objectivePool?: string[] }[] = ZONES,
 ): string[] {
   const errors: string[] = [];
   for (const zone of zoneDefs) {
-    for (const [poolName, pool] of [['basePool', zone.basePool], ['rarePool', zone.rarePool]] as const) {
+    for (const [poolName, pool] of [['basePool', zone.basePool], ['rarePool', zone.rarePool], ['objectivePool', zone.objectivePool ?? []]] as const) {
       for (const itemId of pool) {
         if (!tryGetItem(itemId)) errors.push(`${zone.id}.${poolName} 引用了未知物品：${itemId}`);
       }
@@ -179,6 +179,20 @@ export function takeLootItem(
   }
   syncSupplyRatio(zone);
 
+  return { itemId: entry.itemId, rarity: entry.rarity };
+}
+
+/** Objective sources are finite but deliberately excluded from legacy supply ratios. */
+export function takeObjectiveLoot(
+  zone: ZoneState,
+  rng: SeededRandom,
+): { itemId: string; rarity: ZoneLootEntry['rarity'] } | null {
+  const available = zone.objectiveLoot.filter((entry) => entry.count > 0);
+  if (available.length === 0) return null;
+  const entry = rng.pick(available);
+  if (!entry) return null;
+  entry.count -= 1;
+  if (entry.count <= 0) zone.objectiveLoot = zone.objectiveLoot.filter((candidate) => candidate !== entry);
   return { itemId: entry.itemId, rarity: entry.rarity };
 }
 

@@ -98,6 +98,15 @@ export default function App(): JSX.Element {
         encounter: state.encounter
           ? { enemyId: state.encounter.enemyId, resolved: state.encounter.resolved }
           : null,
+        victory: state.victory,
+        activeExtraction: state.activeExtraction
+          ? {
+              callerId: state.activeExtraction.callerId,
+              zoneId: state.activeExtraction.zoneId,
+              phase: state.activeExtraction.phase,
+              readyAtTime: state.activeExtraction.readyAtTime,
+            }
+          : null,
         activeWorldEvents: state.activeWorldEvents.map((event) => ({
           id: event.eventId,
           zoneId: event.zoneId,

@@ -19,6 +19,7 @@ function createMigratedZoneState(id: string): ZoneState {
     searchCount: 0,
     supply: 1,
     loot: [],
+    objectiveLoot: [],
     initialLootCount: 0,
     remainingLootCount: 0,
     searchedEmptyCount: 0,

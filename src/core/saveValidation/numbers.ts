@@ -36,7 +36,6 @@ import {
   SCOUT_AWARENESS_ID,
 } from '../statusIds';
 import { isFiniteNumber, isRecord, type ValidationContext } from './types';
-
 const INVENTORY_SLOTS = GAME_CONFIG.inventorySlots;
 
 /** 校验一个 ItemStack 的数值与结构合法性（背包 / 装备 / 地面 / pendingPickup 共用） */
@@ -169,6 +168,29 @@ export function validateNumbers(ctx: ValidationContext): void {
       fail(`state.${f} 必须为 null 或非负整数（实际 ${String(v)}）`);
     } else if ((v as number) > (state.time as number)) {
       fail(`state.${f}（${v}）晚于 state.time（${state.time}）`);
+    }
+  }
+
+  const victory = isRecord(state.victory) ? state.victory : null;
+  const currentTime = isFiniteNumber(state.time) ? state.time : 0;
+  if (victory) {
+    if (victory.declaredAtTime !== null && victory.declaredAtTime !== undefined) {
+      if (!isFiniteNumber(victory.declaredAtTime) || !Number.isInteger(victory.declaredAtTime) || victory.declaredAtTime < 0) {
+        fail(`state.victory.declaredAtTime 非法（${String(victory.declaredAtTime)}）`);
+      } else if (victory.declaredAtTime > currentTime) {
+        fail('state.victory.declaredAtTime 晚于 state.time');
+      }
+    }
+  }
+  const extraction = state.activeExtraction;
+  if (extraction !== null && extraction !== undefined && isRecord(extraction)) {
+    for (const field of ['startedAtTime', 'readyAtTime'] as const) {
+      const value = extraction[field];
+      if (!isFiniteNumber(value) || !Number.isInteger(value) || value < 0) {
+        fail(`state.activeExtraction.${field} 非法（${String(value)}）`);
+      } else if (value > currentTime + 1000) {
+        fail(`state.activeExtraction.${field} 明显超出当前时间`);
+      }
     }
   }
   // 未结束的对局不得带有结束时间；已结束的对局必须带有结束时间

@@ -1015,3 +1015,20 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   `agent/phase4n-pve-wild-enemies` branch and verified by PR #21 CI run #110
   (`31671477337`) with `completed/success`. PR #21 remains Draft and unmerged;
   human visual gate remains `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4O — Multiple Victory Conditions (2026-08-13)
+
+- Verified Phase 4N PR #21 exact accepted head `02f88b4b6edabb1f49ff3f974b402c83eeec576f`,
+  marked it Ready, and merged it normally into `main` as `82d90d613da55ebabebb415854458e27be22adf8`.
+- Created `agent/phase4o-multiple-victory-conditions` from that merge and completed the
+  three-route architecture: last survivor, public station extraction, and private research
+  submission, with a persisted first-victory winner latch and NPC/player symmetry.
+- Added objective item/recipe/source registries, finite research loot, positive-cost commands,
+  legal-action parity, extraction call/ready/cancel/consume semantics, research completion,
+  route-specific result UI, save validation, simulator route counts, and deterministic
+  AutoPlayer/NPC representative loops without debug grants.
+- Added `tests/phase4oVictory.test.ts` and `tests/phase4oVictoryUi.test.tsx`; the focused
+  11-test route/save/NPC/UI suite passes.
+- Full suite: 100 files / 1570 tests PASS. Build PASS, save audit 102/102 PASS, browser
+  smoke PASS with `output/web-game/shot-0.png`, and the required 500-game regression PASS.
+  Human visual status remains `NEEDS-HUMAN-PLAYTEST`.

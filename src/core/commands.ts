@@ -99,6 +99,9 @@ export function advancesTime(command: Command): boolean {
     case 'GUARD':
     case 'USE_SKILL':
     case 'FLEE':
+    case 'CALL_EXTRACTION':
+    case 'EXTRACT':
+    case 'SUBMIT_RESEARCH':
       return true;
     default:
       return false;
@@ -125,6 +128,9 @@ export function commandLabel(command: Command): string {
     RESOLVE_PICKUP: '处理拾取',
     CLOSE_ENCOUNTER: '结束遭遇',
     SET_CRAFT_GOAL: '设定制作目标',
+    CALL_EXTRACTION: '呼叫撤离',
+    EXTRACT: '执行撤离',
+    SUBMIT_RESEARCH: '提交研究',
     DEBUG_ADVANCE_TIME: '调试：推进时间',
     DEBUG_GIVE_MATERIAL: '调试：给予材料',
     DEBUG_HEAL_PLAYER: '调试：回满生命',

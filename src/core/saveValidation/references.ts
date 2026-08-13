@@ -16,6 +16,7 @@ import { tryGetItem } from '../../data/items';
 import { tryGetCharacterDef } from '../../data/characters';
 import { tryGetRecipe } from '../../data/recipes';
 import { validateStack } from './numbers';
+import { validateVictoryReferences } from './victoryReferences';
 import {
   EVENT_IMPORTANCE_SET,
   EVENT_TYPE_SET,
@@ -37,6 +38,7 @@ function isJsonSerializableMetadata(v: unknown): boolean {
 
 export function validateReferences(ctx: ValidationContext): void {
   const { state, characters, zones, charIds, zoneIds, fail } = ctx;
+  validateVictoryReferences(ctx);
 
   /* --- turnOrder / deathOrder --- */
   if (Array.isArray(state.turnOrder)) {
@@ -365,6 +367,19 @@ export function validateReferences(ctx: ValidationContext): void {
     } else {
       for (const s of z.groundItems) {
         validateStack(ctx, s, `区域 ${zoneId} 的地面`);
+      }
+    }
+    if (!Array.isArray(z.objectiveLoot)) {
+      fail(`区域 ${zoneId} 的 objectiveLoot 类型错误`);
+    } else {
+      for (const entry of z.objectiveLoot) {
+        if (!isRecord(entry)) {
+          fail(`区域 ${zoneId} 的 objectiveLoot 存在损坏条目`);
+          continue;
+        }
+        if (!isItemIdKnown(entry.itemId)) fail(`区域 ${zoneId} 的 objectiveLoot 引用了未知物品（${String(entry.itemId)}）`);
+        if (!isFiniteNumber(entry.count) || !Number.isInteger(entry.count) || entry.count <= 0) fail(`区域 ${zoneId} 的 objectiveLoot 数量非法（${String(entry.count)}）`);
+        if (entry.rarity !== 'normal' && entry.rarity !== 'rare') fail(`区域 ${zoneId} 的 objectiveLoot 稀有度非法（${String(entry.rarity)}）`);
       }
     }
   }

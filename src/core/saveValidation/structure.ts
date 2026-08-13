@@ -88,6 +88,10 @@ export function buildContext(raw: unknown, errors: string[]): ValidationContext 
   if (!isRecord(state.characters)) fail('state.characters 类型错误');
   if (!isRecord(state.wildEnemies)) fail('state.wildEnemies 类型错误');
   if (!isRecord(state.zones)) fail('state.zones 类型错误');
+  if (!isRecord(state.victory)) fail('state.victory 类型错误');
+  if (!Object.prototype.hasOwnProperty.call(state, 'activeExtraction')) {
+    fail('state.activeExtraction 缺少当前版本字段');
+  }
 
   const status = state.status;
   if (status !== 'playing' && status !== 'won' && status !== 'lost' && status !== 'draw') {
