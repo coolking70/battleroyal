@@ -992,3 +992,26 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Reports: `PHASE4N_REPORT.md`, `PHASE4N_HUMAN_PLAYTEST.md`, `reports/phase4n-regression.json`, `reports/phase4n-regression.md`.
 - Build, dependency, Art, security, production npm audit, and browser menu/gameplay smoke all PASS. Screenshot inspected at `output/web-game/shot-0.png`; `state-0.json` reported `mode=playing`, time 0, no browser error artifact. Human visual gate remains `NEEDS-HUMAN-PLAYTEST`.
 - Commit `d3bda6523793271128132f035c83bdb0f47ff4fe` pushed to `agent/phase4n-pve-wild-enemies`; Draft PR #21 opened against `main` with the requested title. GitHub Actions CI run #108 completed successfully. Do not merge; human visual gate remains `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4N-AF progress (2026-08-13)
+
+- Fixed the acceptance blocker where wild self-flee wrote `status=fled` and
+  `livingWildEnemiesInZone()` then permanently removed the finite entity from
+  future SEARCH results. `WildEnemyStatus` is now exactly `alive | defeated`;
+  self-flee resolves only the active encounter, clears guarding/transient stance,
+  and preserves the same UID, zone, HP, ability charges, and drop state.
+- Added deterministic acceptance coverage for same-UID SEARCH re-encounter, HP
+  continuity, no drop on flee, later defeat/exact-once drop, contestant FLEE
+  event direction, current-schema rejection of `fled`, and contestant victory
+  isolation. Existing zero-stamina FLEE/GUARD coverage remains green.
+- Updated `PHASE4N_REPORT.md` and `PHASE4N_HUMAN_PLAYTEST.md`; no Phase 4O
+  content, save migration, balance tuning, or PNG changes were introduced.
+- Full suite: 98 files / 1560 tests PASS. Typecheck, build, save/dependency/Art/
+  security audits, production npm audit, browser smoke, and the required
+  `PHASE4N-AF` regression all PASS. Regression: 500/500 trustworthy, engine
+  health zero across timeout/illegal/deadlock/livelock/stall/empty-legal-set/
+  hard-limit counters; balance remains observation only.
+- Code commit `794088d9fd4edb70b4fbc6f3a555161bc2ac9593` was pushed to the same
+  `agent/phase4n-pve-wild-enemies` branch and verified by PR #21 CI run #110
+  (`31671477337`) with `completed/success`. PR #21 remains Draft and unmerged;
+  human visual gate remains `NEEDS-HUMAN-PLAYTEST`.
