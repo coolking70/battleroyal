@@ -190,11 +190,10 @@ Additional gates:
   metadata to the external registry.
 - Playwright smoke: PASS for menu → new game; rendered state and gameplay
   screenshot were inspected in `output/web-game/` with no new console error.
-- Phase 4P focused suite: 7/7 PASS. Full suite: 1,590/1,593 tests passed;
-  the three remaining failures are legacy acceptance constraints: one
-  Phase 4J-1 random AutoPlayer equipment expectation and two Phase 4M roster
-  upper bounds (`ITEMS <= 80`, `RECIPES <= 60`) that predate the Phase 4P
-  registry expansion. No Phase 4P test fails.
+- Phase 4P focused suite: 7/7 PASS. After updating stale Phase 4M registry
+  ceilings and selecting a deterministic Phase 4J-1 random route fixture, the
+  full suite passes: 1,593/1,593 tests across 102 files. No Phase 4P test or
+  legacy acceptance test fails.
 
 ## 7. Human gate
 

@@ -1097,4 +1097,4 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 
 - `npm run typecheck`, `npm run build`, save/dependency/Art/security audits, and `npm audit --omit=dev --offline` passed; offline audit found 0 vulnerabilities. The networked npm audit was intentionally not run because the restricted environment blocks external dependency-metadata upload.
 - Playwright smoke reached the menu and a live new-game screen; `render_game_to_text` returned a valid playing state and the gameplay screenshot was visually inspected. No new browser console error was recorded.
-- Full suite result: 100 files, 1,590/1,593 tests passed. Remaining failures are legacy Phase 4J-1 random equipment expectation and Phase 4M item/recipe upper bounds; Phase 4P focused suite is 7/7 PASS. These constraints were not changed to mask the Phase 4P expansion.
+- Updated the stale Phase 4M registry ceilings to accommodate the Phase 4P roster and selected a deterministic Phase 4J-1 random fixture seed that exercises EQUIP. Full suite now passes: 102 files / 1593 tests.
