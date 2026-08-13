@@ -51,6 +51,8 @@ const PLAYER_ACTION_TYPES = new Set<GameEventType>([
   'SKILL_USED',
   'ZONE_DAMAGE',
   'WORLD_EVENT_DAMAGE',
+  'LANDMARK_SEARCHED',
+  'LANDMARK_EXHAUSTED',
 ]);
 
 const PLAYER_COMBAT_TYPES = new Set<GameEventType>([

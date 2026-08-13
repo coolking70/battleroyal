@@ -42,7 +42,7 @@ export interface LandmarkDef {
 }
 
 export interface LandmarkSearchResult {
-  kind: 'item' | 'enemy' | 'nothing';
+  kind: 'item' | 'enemy' | 'nothing' | 'hazard';
   landmarkId: string;
   stack?: ItemStack;
   itemName?: string;

@@ -21,7 +21,7 @@ import type { SeededRandom } from './random';
 import type { Combatant, GameState, ItemDef, Personality, Recipe } from './types';
 import { PHASE4P_WILD_MATERIAL_IDS } from '../data/phase4pItems';
 import { PHASE4P_RECIPES } from '../data/phase4pRecipes';
-import { currentWorldSourcesForItem } from './worldSources';
+import { currentWorldSourcesForActor } from './worldSources';
 import { refreshLandmarkRecommendation } from './npcLandmarkPlan';
 
 const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
@@ -279,7 +279,7 @@ function pickRecommendedZone(
   const missing = plan?.rawGaps.filter((gap) => gap.missing > 0) ?? [];
   if (missing.length === 0) return null;
 
-  const currentSourcesFor = (gap: (typeof missing)[number]) => currentWorldSourcesForItem(state, gap.itemId);
+  const currentSourcesFor = (gap: (typeof missing)[number]) => currentWorldSourcesForActor(state, npc, gap.itemId);
 
   let best: { zoneId: string; score: number } | null = null;
   for (const zoneId of ZONE_IDS) {
@@ -318,9 +318,9 @@ function allMissingZonesRestricted(
   const missing = buildCraftPlan(state, npc, recipe.id)?.rawGaps.filter((gap) => gap.missing > 0) ?? [];
   if (missing.length === 0) return false;
   // Never reconstruct sources from zone pools here. Static worldSources stay
-  // intact for provenance; currentWorldSourcesForItem is the shared runtime
-  // contract for restrictions, Apex collapse, and no-respawn defeat state.
-  return missing.every((gap) => !currentWorldSourcesForItem(state, gap.itemId).some((source) => source.kind !== 'landmark_loot' &&
+  // intact for provenance; the actor-scoped resolver is the shared runtime
+  // contract for restrictions, Apex collapse, and local landmark state.
+  return missing.every((gap) => !currentWorldSourcesForActor(state, npc, gap.itemId).some((source) => source.kind !== 'landmark_loot' &&
     source.zoneIds.some((zoneId) => state.zones[zoneId]?.status !== 'restricted'),
   ));
 }
@@ -335,7 +335,7 @@ function hasCurrentApexSourceForPlan(
   recipe: Recipe,
 ): boolean {
   const plan = buildCraftPlan(state, npc, recipe.id);
-  return plan?.rawGaps.some((gap) => gap.missing > 0 && currentWorldSourcesForItem(state, gap.itemId).some((source) =>
+  return plan?.rawGaps.some((gap) => gap.missing > 0 && currentWorldSourcesForActor(state, npc, gap.itemId).some((source) =>
     source.kind === 'wild_drop' &&
     source.zoneIds.includes(npc.currentZoneId) &&
     source.enemyIds.some((enemyId) => getWildEnemy(enemyId).tier === 'apex'),

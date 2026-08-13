@@ -17,7 +17,7 @@ import {
 import { enemiesInZone } from './gameState';
 import { armorDefenseOf, hasIngredients, weaponAttackOf } from './inventory';
 import { buildCraftPlan } from './craftPlan';
-import { currentWorldSourcesForItem } from './worldSources';
+import { currentWorldSourcesForActor } from './worldSources';
 import { canSearchLandmark } from './landmarks';
 import { hasPlannedWildSourceHere, hasRecommendedApexSource, npcSearchWeight, NPC_IDLE_WEIGHTS as IDLE_WEIGHTS } from './npcWildHunt';
 import { wildCombatProfile } from './wildCombat';
@@ -423,7 +423,7 @@ export function decideNpcAction(
   // 6.5 A SEARCH-discovered local wild target can be hunted through the same
   // ATTACK/GUARD/FLEE command vocabulary. Self-owned encounter events are the
   // knowledge boundary; this never scans remote live populations.
-  const plannedWildDefs = new Set(plan?.rawGaps.flatMap((gap) => currentWorldSourcesForItem(state, gap.itemId)
+  const plannedWildDefs = new Set(plan?.rawGaps.flatMap((gap) => currentWorldSourcesForActor(state, npc, gap.itemId)
     .flatMap((source) => source.kind === 'wild_drop' ? source.enemyIds : [])) ?? []);
   const knownWild = state.events
     .filter((event) => event.type === 'WILD_ENCOUNTER_STARTED' && event.actorId === npc.id)

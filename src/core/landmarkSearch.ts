@@ -55,7 +55,7 @@ export function searchLandmark(
         message: `${actor.name} 搜索${def.name}时遭遇了野外威胁。`,
         metadata: { landmarkId, outcome: 'wild' },
       });
-      finishLandmarkSearch(state, landmarkId);
+      finishLandmarkSearch(state, landmarkId, actor.id);
       return { ok: true, message: `搜索${def.name}时遭遇野外威胁。`, staminaSpent: cost.cost, outcome: { kind: 'enemy', landmarkId, enemyId: enemy.uid } };
     }
   }
@@ -64,16 +64,31 @@ export function searchLandmark(
     value: index,
     weight: preferredWeight(stack.itemId, def.searchProfile.preferredItemIds, actor),
   })));
-  const stack = typeof stackIndex === 'number' ? runtime.loot.splice(stackIndex, 1)[0] : undefined;
+  const stack = typeof stackIndex === 'number' ? runtime.loot[stackIndex] : undefined;
   if (!stack) {
-    finishLandmarkSearch(state, landmarkId);
+    finishLandmarkSearch(state, landmarkId, actor.id);
     pushEvent(state, { type: 'LANDMARK_SEARCHED', actorId: actor.id, zoneId: def.zoneId, message: `${actor.name} 搜索${def.name}，一无所获。`, metadata: { landmarkId, outcome: 'nothing' } });
     return { ok: true, message: `搜索${def.name}，一无所获。`, staminaSpent: cost.cost, outcome: { kind: 'nothing', landmarkId } };
   }
 
   if (def.searchProfile.riskDamage > 0 && def.searchProfile.riskStatus === 'damage' && rng.chance(0.35)) {
     applyDamage(state, actor, def.searchProfile.riskDamage, null, `${def.name}环境伤害`);
+    if (!actor.alive) {
+      pushEvent(state, {
+        type: 'LANDMARK_SEARCHED', actorId: actor.id, zoneId: def.zoneId,
+        message: `${actor.name} 搜索${def.name}时遭遇致命环境风险。`,
+        metadata: { landmarkId, outcome: 'fatal_risk', riskDamage: def.searchProfile.riskDamage },
+      });
+      finishLandmarkSearch(state, landmarkId, actor.id);
+      return {
+        ok: true,
+        message: `搜索${def.name}时遭遇致命环境风险。`,
+        staminaSpent: cost.cost,
+        outcome: { kind: 'hazard', landmarkId },
+      };
+    }
   }
+  runtime.loot.splice(stackIndex!, 1);
   const itemName = getItem(stack.itemId).name;
   const pending = !canAccept(actor, stack);
   if (!pending) addItem(actor, stack);
@@ -81,11 +96,11 @@ export function searchLandmark(
   pushEvent(state, { type: 'ITEM_FOUND', actorId: actor.id, zoneId: def.zoneId, importance: 'minor', message: `${actor.name} 在${def.name}找到了 ${itemName}。`, metadata: { itemId: stack.itemId, landmarkId } });
   if (!pending) pushEvent(state, { type: 'ITEM_PICKED', actorId: actor.id, zoneId: def.zoneId, message: `${actor.name} 收起了 ${itemName}。`, metadata: { itemId: stack.itemId, landmarkId } });
   pushEvent(state, { type: 'LANDMARK_SEARCHED', actorId: actor.id, zoneId: def.zoneId, message: `${actor.name} 搜索了${def.name}。`, metadata: { landmarkId, outcome: 'item', itemId: stack.itemId, pending } });
-  finishLandmarkSearch(state, landmarkId);
+  finishLandmarkSearch(state, landmarkId, actor.id);
   return { ok: true, message: pending ? `找到${itemName}，但背包已满。` : `找到${itemName}。`, staminaSpent: cost.cost, outcome: { kind: 'item', landmarkId, stack, itemName, pending } };
 }
 
-function finishLandmarkSearch(state: GameState, landmarkId: string): void {
+function finishLandmarkSearch(state: GameState, landmarkId: string, actorId: string | null): void {
   const runtime = landmarkState(state, landmarkId);
   if (!runtime || runtime.exhausted) return;
   if (runtime.remainingSearches <= 0 || runtime.loot.length === 0) {
@@ -93,6 +108,6 @@ function finishLandmarkSearch(state: GameState, landmarkId: string): void {
     runtime.exhausted = true;
     (state.stats.landmarkExhaustions ??= 0);
     state.stats.landmarkExhaustions += 1;
-    pushEvent(state, { type: 'LANDMARK_EXHAUSTED', actorId: null, zoneId: runtime.zoneId, message: `${getLandmarkDef(landmarkId).name}的有限资源已经耗尽。`, metadata: { landmarkId } });
+    pushEvent(state, { type: 'LANDMARK_EXHAUSTED', actorId, zoneId: runtime.zoneId, message: `${getLandmarkDef(landmarkId).name}的有限资源已经耗尽。`, metadata: { landmarkId } });
   }
 }

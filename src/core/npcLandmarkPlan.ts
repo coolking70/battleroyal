@@ -1,5 +1,6 @@
-import { currentWorldSourcesForItem } from './worldSources';
-import { canSearchLandmark, landmarkState } from './landmarks';
+import { currentWorldSourcesForActor } from './worldSources';
+import { canSearchLandmark } from './landmarks';
+import { tryGetLandmarkDef } from '../data/landmarks';
 import { buildCraftPlan } from './craftPlan';
 import type { Combatant, GameState, Recipe } from './types';
 
@@ -8,12 +9,15 @@ export function recommendedLandmarkForRecipe(state: GameState, npc: Combatant, r
   const plan = buildCraftPlan(state, npc, recipe.id);
   const candidates: Array<{ id: string; score: number }> = [];
   for (const gap of plan?.rawGaps.filter((entry) => entry.missing > 0) ?? []) {
-    for (const source of currentWorldSourcesForItem(state, gap.itemId)) {
+    for (const source of currentWorldSourcesForActor(state, npc, gap.itemId)) {
       if (source.kind !== 'landmark_loot') continue;
       for (const landmarkId of source.landmarkIds) {
-        const runtime = landmarkState(state, landmarkId);
-        if (!runtime || !canSearchLandmark(state, npc.id, landmarkId).ok) continue;
-        candidates.push({ id: landmarkId, score: gap.missing * 10 + (runtime.zoneId === npc.currentZoneId ? 8 : 0) });
+        const def = tryGetLandmarkDef(landmarkId);
+        if (!def) continue;
+        // Only local runtime is actor-visible. Remote candidates are public
+        // potential sources and are not probed with canSearchLandmark.
+        if (def.zoneId === npc.currentZoneId && !canSearchLandmark(state, npc.id, landmarkId).ok) continue;
+        candidates.push({ id: landmarkId, score: gap.missing * 10 + (def.zoneId === npc.currentZoneId ? 8 : 0) });
       }
     }
   }
@@ -23,5 +27,5 @@ export function recommendedLandmarkForRecipe(state: GameState, npc: Combatant, r
 
 export function refreshLandmarkRecommendation(state: GameState, npc: Combatant, recipe: Recipe | null): void {
   npc.planRecommendedLandmarkId = recipe ? recommendedLandmarkForRecipe(state, npc, recipe) : null;
-  if (npc.planRecommendedLandmarkId) npc.planRecommendedZoneId = state.landmarks[npc.planRecommendedLandmarkId]?.zoneId ?? npc.planRecommendedZoneId;
+  if (npc.planRecommendedLandmarkId) npc.planRecommendedZoneId = tryGetLandmarkDef(npc.planRecommendedLandmarkId)?.zoneId ?? npc.planRecommendedZoneId;
 }

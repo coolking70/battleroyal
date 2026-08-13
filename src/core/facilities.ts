@@ -15,7 +15,7 @@ function interactionCost(actor: Combatant, landmarkId: string): number {
 function hasRequirement(state: GameState, actor: Combatant, landmarkId: string): boolean {
   const interaction = getLandmarkDef(landmarkId).interaction;
   if (!interaction) return false;
-  if (interaction.requiredItemId && countItem(actor, interaction.requiredItemId) < 1 && actor.characterId !== 'engineer') return false;
+  if (interaction.requiredItemId && countItem(actor, interaction.requiredItemId) < 1 && (interaction.requiresUnlock || actor.characterId !== 'engineer')) return false;
   if (interaction.requiredLandmarkId) {
     const prerequisite = landmarkState(state, interaction.requiredLandmarkId);
     if (!prerequisite?.activated && !prerequisite?.repaired) return false;
@@ -32,7 +32,10 @@ export function canUseFacility(state: GameState, actor: Combatant, landmarkId: s
   if (!actor.alive) return { ok: false, reason: '已死亡的角色无法使用设施。', cost };
   if (actor.currentZoneId !== def.zoneId) return { ok: false, reason: '该设施不在当前区域。', cost };
   if (!interaction || interaction.id !== interactionId || !runtime) return { ok: false, reason: '设施交互不存在。', cost };
-  if (runtime.locked) return { ok: false, reason: '设施尚未解锁。', cost };
+  // The unlock interaction is the one legal action that can operate while
+  // the facility is locked. Ordinary facility use still requires the normal
+  // unlocked runtime state.
+  if (runtime.locked && !interaction?.requiresUnlock) return { ok: false, reason: '设施尚未解锁。', cost };
   if (runtime.disabled && !interaction?.requiresRepair) return { ok: false, reason: '设施已停用，需要先修复。', cost };
   if (runtime.charges < interaction.chargeCost) return { ok: false, reason: '设施次数已经耗尽。', cost };
   if (!hasRequirement(state, actor, landmarkId)) return { ok: false, reason: '缺少设施所需的工具或前置状态。', cost };
