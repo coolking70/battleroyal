@@ -232,6 +232,12 @@ export function runNpcTurn(
           ? 'EXTRACT'
           : 'SUBMIT_RESEARCH');
       if (!res.ok) fallbackToRest(res.message);
+      if (res.ok && state.status !== 'playing' && decision.kind !== 'call_extraction') {
+        // EXTRACT / SUBMIT_RESEARCH emit the complete terminal event sequence.
+        // Keep GAME_ENDED as the last event and do not append NPC_ACTION,
+        // clear recon state, or mark another post-action mutation afterward.
+        return decision;
+      }
       break;
     }
 

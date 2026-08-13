@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advanceTime, checkGameEnd } from '../src/core/gameEngine';
+import { advanceTime, checkGameEnd, executeCommand } from '../src/core/gameEngine';
 import { killCharacter } from '../src/core/combat';
 import { addItem, countItem, createStack } from '../src/core/inventory';
 import { refreshZoneOccupants } from '../src/core/gameState';
@@ -69,6 +69,132 @@ describe('Phase 4O-AF victory semantics and alternative-route closure', () => {
     expect(state.status).toBe('lost');
     expect(state.victory).toMatchObject({ winnerId: npc.id, type: 'research' });
     expect(player(state).alive).toBe(false);
+  });
+
+  it('freezes the terminal tick after an NPC research victory', () => {
+    const state = newGame('PHASE4O-AF2-NPC-RESEARCH-TICK-FREEZE');
+    const npc = npcs(state)[0]!;
+    npc.currentZoneId = 'lab';
+    npc.victoryGoal = 'research';
+    npc.victoryGoalMode = 'explicit';
+    npc.hp = 1;
+    npc.stamina = npc.maxStamina;
+    npc.statusEffects.push({
+      id: 'wild_poison',
+      remaining: 2,
+      hpPerTick: -2,
+      label: '验收致死持续伤害',
+    });
+    addItem(npc, createStack(state, 'research_package', 1));
+    refreshZoneOccupants(state);
+    const waterBefore = countItem(npc, 'water');
+    const eventsBefore = state.events.length;
+
+    advanceTime(state, new SeededRandom('PHASE4O-AF2-NPC-RESEARCH-TICK-FREEZE-RNG'));
+
+    const terminalEvents = state.events.slice(eventsBefore);
+    expect(state.status).toBe('lost');
+    expect(state.time).toBe(1);
+    expect(state.victory).toMatchObject({ winnerId: npc.id, type: 'research' });
+    expect(npc.alive).toBe(true);
+    expect(npc.hp).toBe(1);
+    expect(npc.statusEffects).toEqual([
+      expect.objectContaining({ id: 'wild_poison', remaining: 2 }),
+    ]);
+    expect(countItem(npc, 'research_package')).toBe(0);
+    expect(countItem(npc, 'water')).toBe(waterBefore);
+    expect(terminalEvents.map((event) => event.type)).toEqual([
+      'RESEARCH_COMPLETED',
+      'VICTORY_DECLARED',
+      'GAME_ENDED',
+    ]);
+    expect(state.events.at(-1)?.type).toBe('GAME_ENDED');
+    expect(validateSaveData(saveOf(state)).ok).toBe(true);
+  });
+
+  it('freezes the terminal tick after an NPC extraction victory', () => {
+    const state = newGame('PHASE4O-AF2-NPC-EXTRACTION-TICK-FREEZE');
+    const npc = npcs(state)[0]!;
+    npc.currentZoneId = 'station';
+    npc.victoryGoal = 'extraction';
+    npc.victoryGoalMode = 'explicit';
+    npc.hp = 1;
+    npc.stamina = npc.maxStamina;
+    npc.statusEffects.push({
+      id: 'wild_poison',
+      remaining: 2,
+      hpPerTick: -2,
+      label: '验收撤离致死持续伤害',
+    });
+    addItem(npc, createStack(state, 'extraction_beacon', 1));
+    state.activeExtraction = {
+      callerId: npc.id,
+      zoneId: 'station',
+      startedAtTime: -1,
+      readyAtTime: 0,
+      phase: 'ready',
+    };
+    refreshZoneOccupants(state);
+    const waterBefore = countItem(npc, 'water');
+    const eventsBefore = state.events.length;
+
+    advanceTime(state, new SeededRandom('PHASE4O-AF2-NPC-EXTRACTION-TICK-FREEZE-RNG'));
+
+    const terminalEvents = state.events.slice(eventsBefore);
+    expect(state.status).toBe('lost');
+    expect(state.victory).toMatchObject({ winnerId: npc.id, type: 'extraction' });
+    expect(npc.alive).toBe(true);
+    expect(npc.hp).toBe(1);
+    expect(npc.statusEffects).toEqual([
+      expect.objectContaining({ id: 'wild_poison', remaining: 2 }),
+    ]);
+    expect(countItem(npc, 'extraction_beacon')).toBe(0);
+    expect(countItem(npc, 'water')).toBe(waterBefore);
+    expect(terminalEvents.map((event) => event.type)).toEqual([
+      'EXTRACTION_COMPLETED',
+      'VICTORY_DECLARED',
+      'GAME_ENDED',
+    ]);
+    expect(state.events.at(-1)?.type).toBe('GAME_ENDED');
+    expect(validateSaveData(saveOf(state)).ok).toBe(true);
+  });
+
+  it('does not append player action cleanup after a terminal research command', () => {
+    const state = newGame('PHASE4O-AF2-PLAYER-RESEARCH-TICK-FREEZE');
+    const p = player(state);
+    p.currentZoneId = 'lab';
+    p.hp = 1;
+    p.statusEffects.push({
+      id: 'wild_poison',
+      remaining: 2,
+      hpPerTick: -2,
+      label: '验收玩家致死持续伤害',
+    });
+    addItem(p, createStack(state, 'research_package', 1));
+    refreshZoneOccupants(state);
+    const eventsBefore = state.events.length;
+
+    const result = executeCommand(
+      state,
+      { type: 'SUBMIT_RESEARCH' },
+    );
+
+    const terminalEvents = result.state.events.slice(eventsBefore);
+    const resultPlayer = player(result.state);
+    expect(result.ok).toBe(true);
+    expect(result.state.status).toBe('won');
+    expect(resultPlayer.alive).toBe(true);
+    expect(resultPlayer.hp).toBe(1);
+    expect(resultPlayer.statusEffects).toEqual([
+      expect.objectContaining({ id: 'wild_poison', remaining: 2 }),
+    ]);
+    expect(terminalEvents.map((event) => event.type)).toEqual([
+      'RESEARCH_COMPLETED',
+      'VICTORY_DECLARED',
+      'GAME_ENDED',
+    ]);
+    expect(result.state.events.at(-1)?.type).toBe('GAME_ENDED');
+    expect(validateSaveData(saveOf(result.state)).ok).toBe(true);
   });
 
   it('declares last survivor only after the final NPC contest is resolved', () => {

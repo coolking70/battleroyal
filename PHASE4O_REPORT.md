@@ -326,3 +326,49 @@ old-save migration remains `DEFERRED UNTIL PRE-RELEASE`.
 
 The acceptance status remains exactly `NEEDS-HUMAN-PLAYTEST`; the added manual
 checks are in `PHASE4O_HUMAN_PLAYTEST.md`.
+
+## Phase 4O-AF2 — Terminal Tick Freeze
+
+### A. Problem and fix
+
+An NPC Research or Extraction victory could declare the terminal result and
+then let the same `advanceTime()` call continue through wild combat, status
+effects, restricted-zone/finale/world ticks, synchronization, and later NPC
+post-action cleanup. That could damage or kill the winner, mutate terminal
+state, or append events after `GAME_ENDED`. The NPC loop now returns
+immediately after a terminal objective action; `advanceTime()` clears the
+one-tick engagement buffer and returns before any remaining world processing.
+The player `finish()` path also skips action-completion cleanup once the
+objective action has already declared a terminal result.
+
+### B. Event and winner integrity
+
+Terminal objective actions preserve the exact event tail
+`RESEARCH_COMPLETED`/`EXTRACTION_COMPLETED` → `VICTORY_DECLARED` →
+`GAME_ENDED`. No `NPC_ACTION`, DoT, world tick, or cleanup event is appended
+after `GAME_ENDED`; the winner remains alive, the objective item is consumed,
+and the terminal state remains valid under current-schema save validation.
+Normal last-survivor resolution still proceeds through the ordinary tick and
+is not frozen merely because a character died.
+
+### C. Focused evidence
+
+Added three deterministic tests in `tests/phase4oAcceptanceFix.test.ts`: NPC
+Research victory with hp=1 and lethal `wild_poison`, NPC Extraction victory
+under the same lethal pending tick, and player Research terminal cleanup. All
+assert the event tail, living winner, unchanged pending status effect, stable
+water/route-item semantics, and save validation. Focused result: 14/14 PASS.
+The required `PHASE4O-AF2` regression completed with 500/500 trustworthy games,
+zero terminal-without-winner, invalid victory tuples, timeout, illegal state,
+deadlock, livelock, stall, empty-legal-set, or hard-limit cases. Full suite
+result: 101 files / 1586 tests PASS.
+
+### D. Scope and human gate
+
+No route semantics, ranking, NPC goal logic, AutoPlayer policy, balance,
+migration, or art assets were changed. Human status remains exactly
+`NEEDS-HUMAN-PLAYTEST`; manual terminal-freeze checks were added to
+`PHASE4O_HUMAN_PLAYTEST.md`. Typecheck, build, save/dependency/Art/security
+audits, browser smoke, and offline production dependency audit all pass; the
+networked `npm audit --omit=dev` retry was unavailable in the restricted
+environment, while `npm audit --omit=dev --offline` reports zero vulnerabilities.

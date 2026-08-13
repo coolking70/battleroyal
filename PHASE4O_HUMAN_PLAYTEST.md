@@ -57,6 +57,17 @@ gate. Before Phase 4O can be accepted, manually verify:
 - confirm the NPC does not suddenly receive a beacon or research package, and
   that private research progress is not broadcast before completion.
 
+### Terminal freeze
+
+- arrange for an NPC with a Research or Extraction objective to have 1 HP and
+  a pending lethal poison tick, then let it complete the route;
+- confirm the winner remains alive, the player receives the correct terminal
+  result, and no extra world/zone/status-effect tick occurs after completion;
+- confirm the visible event/result state ends with `GAME_ENDED` and does not
+  show a later NPC action or post-victory mutation;
+- repeat with the player completing Research and confirm the same terminal
+  event boundary and valid winner state.
+
 ### Regression / presentation
 
 - objective items, death loot, pickup, and inventory remain understandable;

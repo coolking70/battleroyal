@@ -170,6 +170,14 @@ export function advanceTime(state: GameState, rng: SeededRandom): void {
     runNpcTurn(state, c, rng);
   }
 
+  // A terminal NPC objective action owns the rest of this time unit. Do not
+  // let wild combat, DoT, zone/finale/world ticks, or post-terminal sync run
+  // after VICTORY_DECLARED -> GAME_ENDED has already been emitted.
+  if (state.status !== 'playing') {
+    state.engagedWithPlayer = [];
+    return;
+  }
+
   advanceActiveWildEncounter(state, rng);
 
   updateStatusEffects(state);
@@ -292,7 +300,7 @@ function executeCommandInner(state: GameState, command: Command): CommandResult 
     // 与 NPC 侧 `runNpcTurn` 共用同一个函数，规则只有一份实现。
     // 放在 advanceTime **之前**：产生破绽的那次行动只消费掉「跳过一次」标记，
     // 破绽会完整覆盖紧随其后的这一轮 NPC 行动，然后在玩家下一次行动收尾时消失。
-    if (outcome.ok && advancesTime(command)) {
+    if (outcome.ok && draft.status === 'playing' && advancesTime(command)) {
       noteOwnActionCompleted(draft, getPlayer(draft));
     }
     if (outcome.ok && !outcome.skipTime && advancesTime(command)) {

@@ -1054,3 +1054,28 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   health failures, requested = actual = 500. Role balance remains observation
   only; old-save migration remains deferred. Human status remains
   `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4O-AF2 — Terminal Tick Freeze (2026-08-13)
+
+- Added the central `advanceTime()` terminal short-circuit immediately after
+  the NPC loop. Terminal NPC objective victories now clear transient
+  engagement state and skip wild/status/zone/finale/world/event postprocessing.
+- `runNpcTurn()` returns immediately after successful terminal `EXTRACT` or
+  `SUBMIT_RESEARCH`, preventing `NPC_ACTION`, `noteOwnActionCompleted`, and
+  recon cleanup after the canonical `GAME_ENDED` event. Player `finish()` also
+  skips action cleanup once an objective command has already ended the match.
+- Added deterministic NPC Research, NPC Extraction, and player Research
+  terminal-freeze tests with 1 HP plus lethal `wild_poison`; all assert winner
+  survival, unchanged status effect, exact terminal event tail, resource
+  semantics, and valid saves. Focused suite: 14/14 PASS.
+- Updated `PHASE4O_REPORT.md` and `PHASE4O_HUMAN_PLAYTEST.md`; no route,
+  ranking, NPC/AutoPlayer policy, balance, migration, or art changes.
+- Required Phase 4O-AF2 regression completed: 500/500 trustworthy, zero
+  terminal-without-winner/invalid-victory-tuple/timeout/illegal/deadlock/
+  livelock/stall/empty-legal-set/hard-limit cases. Full suite is 101 files /
+  1586 tests PASS; typecheck/build, save/dependency/Art/security audits,
+  browser smoke, and offline production dependency audit pass. The networked
+  `npm audit --omit=dev` retry was blocked by the restricted environment;
+  `npm audit --omit=dev --offline` reports 0 vulnerabilities.
+- TODO: update Draft PR #22, commit, and push the same branch. Human status
+  remains `NEEDS-HUMAN-PLAYTEST`.
