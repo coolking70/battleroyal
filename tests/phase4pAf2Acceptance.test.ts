@@ -11,6 +11,7 @@ import {
 } from '../src/core/search';
 import { currentSourceZonesForItem, currentWorldSourcesForItem } from '../src/core/worldSources';
 import { buildCraftPlan } from '../src/core/craftPlan';
+import { refreshNpcPlanRecommendation } from '../src/core/npcGoalPlan';
 import { hasPlannedWildSourceHere, npcSearchWeight } from '../src/core/npcDecide';
 import { runNpcTurn } from '../src/core/npcAi';
 import { addItem, countItem, createStack, getEquippedArmor } from '../src/core/inventory';
@@ -176,7 +177,7 @@ function autonomousFixture(seed: string): { state: GameState; npc: Combatant; ap
   npc.plannedRecipeId = 'r_aegis_plate';
   npc.planCreatedAt = state.time;
   npc.planReason = 'Phase4P-AF2 autonomous Apex hunt';
-  npc.planRecommendedZoneId = targetZone;
+  refreshNpcPlanRecommendation(state, npc);
   npc.planProgress = 0;
   npc.planNoProgressTurns = 0;
   npc.attack = 1000;
@@ -236,6 +237,7 @@ describe('Phase 4P-AF2 autonomous NPC Apex route', () => {
     const searchIndex = indexOf('SEARCH_STARTED', (event) => event.actorId === npc.id && event.metadata.empty !== true);
     const encounterIndex = indexOf('WILD_ENCOUNTER_STARTED', (event) => event.actorId === npc.id && event.metadata.wildDefId === 'prototype_aegis');
     const defeatIndex = indexOf('WILD_DEFEATED', (event) => event.actorId === npc.id && event.metadata.wildDefId === 'prototype_aegis');
+    const publicDefeatIndex = indexOf('APEX_DEFEATED', (event) => event.metadata.wildDefId === 'prototype_aegis');
     const dropIndex = indexOf('WILD_DROP_CREATED', (event) => event.metadata.itemId === 'aegis_core');
     const pickupIndex = indexOf('ITEM_PICKED', (event) => event.actorId === npc.id && event.metadata.itemId === 'aegis_core');
     const craftIndex = indexOf('ITEM_CRAFTED', (event) => event.actorId === npc.id && event.metadata.recipeId === 'r_aegis_plate');
@@ -245,6 +247,8 @@ describe('Phase 4P-AF2 autonomous NPC Apex route', () => {
     expect(searchIndex).toBeGreaterThan(moveIndex);
     expect(encounterIndex).toBeGreaterThan(searchIndex);
     expect(defeatIndex).toBeGreaterThan(encounterIndex);
+    expect(publicDefeatIndex).toBeGreaterThan(defeatIndex);
+    expect(publicDefeatIndex).toBeLessThan(dropIndex);
     expect(dropIndex).toBeGreaterThan(defeatIndex);
     expect(pickupIndex).toBeGreaterThan(dropIndex);
     expect(craftIndex).toBeGreaterThan(pickupIndex);

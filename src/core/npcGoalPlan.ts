@@ -452,3 +452,9 @@ export function planNpcGoal(
     ? pickRecommendedZone(state, npc, tryGetRecipe(goal.recipeId)!)
     : null;
 }
+
+/** Production planner hook for a caller that has already selected a recipe. */
+export function refreshNpcPlanRecommendation(state: GameState, npc: Combatant): void {
+  const recipe = npc.plannedRecipeId ? tryGetRecipe(npc.plannedRecipeId) : null;
+  npc.planRecommendedZoneId = recipe ? pickRecommendedZone(state, npc, recipe) : null;
+}

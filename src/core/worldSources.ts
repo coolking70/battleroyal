@@ -1,6 +1,7 @@
 import { WILD_DROP_TABLES, ALL_WILD_ENEMIES, commonZonesForEnemy, getWildEnemy } from '../data/wildEnemies';
 import { ZONES } from '../data/zones';
 import type { GameState } from './types';
+import { isApexPubliclyDefeated } from './apexLifecycle';
 
 export type WorldSource =
   | { kind: 'zone_loot'; zoneIds: string[] }
@@ -17,11 +18,7 @@ function apexSourceZones(state: GameState, enemyId: string): string[] {
   if (!entry || !entry.spawned) return openZoneIds(state, eligibleZones);
   if (!entry.uid || !entry.zoneId) return [];
 
-  const instance = state.wildEnemies[entry.uid];
-  const defeated = instance?.status === 'defeated' || state.events.some((event) =>
-    event.type === 'WILD_DEFEATED' && event.metadata.wildUid === entry.uid,
-  );
-  if (defeated) return [];
+  if (isApexPubliclyDefeated(state, enemyId)) return [];
   return openZoneIds(state, [entry.zoneId]);
 }
 

@@ -7,6 +7,7 @@ import { canAttack, computeDamage, fleeChanceIn, fleeDestinations, hitChanceIn }
 import { adjustIncomingCombatDamage, prepareAttack, wearAttackWeapon } from './combatRound';
 import { applyExposed, consumeExposedOnDamage } from './exposed';
 import { pushEvent } from './events';
+import { publishApexDefeat } from './apexLifecycle';
 import { refreshZoneOccupants } from './gameState';
 import { createStack } from './inventory';
 import { applyDamage } from './vitals';
@@ -103,6 +104,7 @@ function defeatWild(state: GameState, enemy: WildEnemyInstance, killer: Combatan
     message: `${killer.name} 击败了 ${def.name}。`,
     metadata: { wildUid: enemy.uid, wildDefId: def.id, tier: def.tier },
   });
+  publishApexDefeat(state, def, enemy.zoneId);
   createWildDrops(state, enemy, killer, rng);
   if (killer.isPlayer && state.encounter?.targetKind === 'wild' && state.encounter.enemyId === enemy.uid) {
     state.encounter.resolved = true;

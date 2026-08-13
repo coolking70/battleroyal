@@ -108,8 +108,33 @@ export function validateWildState(ctx: ValidationContext): void {
   }
 
   if (Array.isArray(state.events)) for (const event of state.events) {
-    if (!isRecord(event) || typeof event.type !== 'string' || !event.type.startsWith('WILD_')) continue;
-    const uid = isRecord(event.metadata) ? event.metadata.wildUid : null;
-    if (typeof uid !== 'string' || !Object.prototype.hasOwnProperty.call(wild, uid)) fail(`野外事件 ${String(event.id)} 引用了未知 UID`);
+    if (!isRecord(event) || typeof event.type !== 'string') continue;
+    if (event.type.startsWith('WILD_')) {
+      const uid = isRecord(event.metadata) ? event.metadata.wildUid : null;
+      if (typeof uid !== 'string' || !Object.prototype.hasOwnProperty.call(wild, uid)) fail(`野外事件 ${String(event.id)} 引用了未知 UID`);
+      continue;
+    }
+    if (event.type !== 'APEX_DEFEATED') continue;
+
+    const metadata = isRecord(event.metadata) ? event.metadata : null;
+    const defId = metadata?.wildDefId;
+    const def = typeof defId === 'string' ? tryGetWildEnemy(defId) : null;
+    if (!def || def.tier !== 'apex') fail(`APEX_DEFEATED 引用了非 Apex 定义（${String(defId)}）`);
+    if (metadata?.tier !== 'apex') fail(`APEX_DEFEATED ${String(event.id)} 的 tier 必须为 apex`);
+    if (metadata?.zoneId !== event.zoneId) fail(`APEX_DEFEATED ${String(event.id)} 的 metadata.zoneId 与 event.zoneId 不一致`);
+
+    const schedule = Array.isArray(state.apexSchedule)
+      ? (state.apexSchedule as unknown[]).find((entry) => isRecord(entry) && entry.defId === defId)
+      : null;
+    if (!isRecord(schedule) || schedule.spawned !== true || typeof schedule.uid !== 'string') {
+      fail(`APEX_DEFEATED ${String(event.id)} 没有对应的已生成 schedule`);
+    } else {
+      if (event.zoneId !== schedule.zoneId) fail(`APEX_DEFEATED ${String(event.id)} 的区域与 schedule 不一致`);
+      const instance = wild[schedule.uid];
+      if (!isRecord(instance) || instance.status !== 'defeated') fail(`APEX_DEFEATED ${String(event.id)} 对应 Apex 实例未击败`);
+    }
+    for (const key of ['wildUid', 'itemId', 'count', 'hp', 'damage', 'pendingIntent', 'abilityCharges', 'killerInventory', 'signatureDropItemId', 'lootOwnership', 'groundItemUid']) {
+      if (metadata && Object.prototype.hasOwnProperty.call(metadata, key)) fail(`APEX_DEFEATED ${String(event.id)} 不得暴露 ${key}`);
+    }
   }
 }
