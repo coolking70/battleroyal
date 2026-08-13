@@ -1029,6 +1029,6 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   AutoPlayer/NPC representative loops without debug grants.
 - Added `tests/phase4oVictory.test.ts` and `tests/phase4oVictoryUi.test.tsx`; the focused
   11-test route/save/NPC/UI suite passes.
-- Full suite: 100 files / 1570 tests PASS. Build PASS, save audit 102/102 PASS, browser
+- Full suite: 100 files / 1571 tests PASS. Build PASS, save audit 102/102 PASS, browser
   smoke PASS with `output/web-game/shot-0.png`, and the required 500-game regression PASS.
   Human visual status remains `NEEDS-HUMAN-PLAYTEST`.

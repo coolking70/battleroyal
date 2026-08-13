@@ -193,7 +193,7 @@ Focused coverage includes route registry/recipe depth, extraction chain and
 countdown/cancellation/atomicity, research submission, NPC-alternative loss,
 legal positive-cost gates, save corruption, Victory Paths UI/public countdown,
 and route-specific ResultScreen copy for player and NPC outcomes. Full suite
-is 100 files / 1570 tests.
+is 100 files / 1571 tests.
 
 ## 18. 500-Game Regression
 
@@ -226,7 +226,7 @@ the phase prompt explicitly requires a gate.
 
 ## Verification evidence
 
-- `npm test`: 100 files / 1570 tests passed.
+- `npm test`: 100 files / 1571 tests passed.
 - `npm run typecheck`: PASS.
 - `npm run build`: PASS.
 - `npm run audit:save`: 102/102 corruption cases rejected; PASS.
