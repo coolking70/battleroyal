@@ -37,6 +37,9 @@ human acceptance gate is intentionally still open.
 - [ ] The public broadcast names the correct Apex zone without exposing UID/HP.
 - [ ] Telegraph → GUARD feedback is readable and communicates the reduction.
 - [ ] NPC/Apex event-log entries are understandable during the route.
+- [ ] With ordinary loot exhausted, confirm a production NPC can visibly pursue
+      its own public Apex source through SEARCH, then pickup/craft/equip; no
+      hidden player goal or remote Apex state is exposed.
 - [ ] The desktop and mobile layouts remain usable through the route.
 - [ ] Terminal victory freezes the tick with no post-terminal world mutation.
 - [ ] No new approved PNG or art manifest entry is required for this phase.

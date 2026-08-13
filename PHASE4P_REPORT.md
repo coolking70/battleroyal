@@ -311,3 +311,87 @@ Phase 4P architecture audit above.
   passed its exact GitHub Actions CI run #124 (`31705310383`) with
   `completed/success`. PR #23 remains Draft and unmerged. Human status
   remains exactly `NEEDS-HUMAN-PLAYTEST`.
+
+## 9. Phase 4P-AF2 — Actor-Scoped Search & NPC Apex Hunt Closure
+
+This section records the AF2 acceptance-fix pass against audited input head
+`321e3d33249b71d32279acf15688f51583888555`. PR #23 remains open, Draft, based
+on `main`, and unmerged; no Phase 4Q work, content expansion, balance tuning,
+or save migration was added.
+
+### Blockers and fixes
+
+1. Shared SEARCH previously let NPC research weighting read the player's
+   `state.craftGoalRecipeId`. `rollItemId()` now resolves the craft goal through
+   `getActorCraftGoalRecipeId()`: player SEARCH reads the player goal, while NPC
+   SEARCH reads only that actor's `plannedRecipeId`. The acceptance suite covers
+   both research-bias directions and high-tier weighting isolation.
+2. Static Wild provenance was still being treated as a live Apex source. The
+   new current-source helpers preserve static `worldSourcesForItem()` for
+   provenance/Craft Guide output while runtime planning uses current state:
+   unspawned Apex entries expose eligible open zones; spawned living Apex
+   entries expose only their public scheduled zone; restricted spawned zones
+   expose no route; defeated Apex entries expose no future source. Common and
+   Elite source semantics remain unchanged. A spawned restricted-zone case is
+   covered explicitly.
+3. NPC planning could abandon an exhausted current zone or replan before
+   completing its own named hunt. `npcWildHunt` now recognizes current Wild/Apex
+   sources, forces SEARCH only for the actor's own current source, moves toward
+   an adjacent public Apex source when needed, and preserves the route after a
+   personally completed Apex defeat so pickup/craft/equip can finish. The
+   integration route uses `runNpcTurn` as its only route driver after fixture
+   setup; it does not inject encounters, drops, signatures, or actions.
+
+### Acceptance evidence
+
+- The autonomous fixture proves production NPC `MOVE → SEARCH → Wild encounter
+  → canonical defeat → ground pickup → multi-stage craft → EQUIP`, with the
+  exact-once `aegis_core` signature path and no remaining plan gaps.
+- `defeatWild()` now emits `WILD_DEFEATED` before `WILD_DROP_CREATED`, preserving
+  the required event order. Signature creation, pickup, craft consumption, and
+  final equipment are each asserted once.
+- NPC planning observes only its own plan/inventory and own encounter evidence,
+  plus public Apex name/zone and static source data. It does not inspect remote
+  UID/HP, hidden drops, or the player's goal/state.
+- `tests/phase4pAf2Acceptance.test.ts` adds 6 tests. The combined focused
+  Phase 4P suites pass 21/21; the full suite passes 104 files / 1,614 tests.
+- Deterministic replay compares the autonomous route's event trace, stats,
+  inventory, equipment, and terminal state exactly.
+
+### Required gates
+
+- `npm run typecheck`, `npm test`, and `npm run build`: PASS. Build retains only
+  the existing Vite large-chunk warning.
+- `npm run audit:save`: PASS — malformed saves 109/109 rejected, control
+  accepted, construction failures 0.
+- `npm run audit:deps`: PASS — 106 files scanned, maximum core/data file
+  `src/core/npcDecide.ts` at 500 lines, R1/R2/R3/R4 violations 0.
+- `npm run art:doctor -- --offline`, `npm run art:validate`,
+  `npm run art:audit:phase4a`, `npm run art:security:browser` (242 files), and
+  `npm run art:security:repo` (969 tracked files): PASS.
+- Networked `npm audit --omit=dev` was attempted and returned
+  `getaddrinfo ENOTFOUND registry.npmjs.org`; offline fallback
+  `npm audit --omit=dev --offline` passed with 0 vulnerabilities.
+- Browser smoke reached menu → new game; the rendered state was
+  `mode=playing`, `time=0`, with no browser error artifacts, and the gameplay
+  screenshot was visually inspected.
+- Exact regression command:
+  `npm run simulate -- --games 500 --seed-prefix PHASE4P-AF2 --regression --output reports/phase4p-regression.json`
+  produced requested=actual=500, trustworthyRate=100%, `regressionGate=true`,
+  and `engineHealthy=true`. Outcome counts were won=21, lost=414, draw=65,
+  timeout=0. Health counters were all 0, including duplicate Apex spawns and
+  invalid Apex spawn zones. PVE observations were encounters=7,692,
+  eliteEncounters=130, apexSpawned=346, apexEncounters=8, kills=1,820,
+  flees=6,327, playerDeaths=55, groundDrops=2,934, pickups=3,289, crafts=143;
+  eliteKills/apexKills/apexFlees/signatureDrops/signaturePickups/signatureCrafts
+  were all 0 in this observation run.
+- Balance remains observation-only; no balance tuning was made. Old-save
+  migration remains deferred until pre-release save-format stabilization.
+- `public/assets/**/*.png` and approved art manifests are unchanged relative to
+  the audited input head. Human status remains exactly
+  `NEEDS-HUMAN-PLAYTEST`.
+
+Implementation commit `7294022f02a6f685e3fbab68d99d0bae45250c5a` passed exact-head
+GitHub Actions CI run #126 (`31710812342`) with `completed/success`. The
+documentation closeout commit and its exact-head CI are recorded in the final
+handoff after this report update is pushed.
