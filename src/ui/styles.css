@@ -2109,14 +2109,14 @@ span.encounter-enemy-visual {
 }
 
 .equip-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   padding: 10px;
   border-bottom: 1px solid var(--line-soft);
 }
 
 .equip-slot {
-  flex: 1;
   min-width: 0;
   background: var(--bg-panel-2);
   border: 1px dashed var(--line);

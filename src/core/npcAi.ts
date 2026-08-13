@@ -20,6 +20,7 @@ import {
   canAccept,
   equipItem,
   getEquippedArmor,
+  getEquippedUtility,
   getEquippedWeapon,
   stackValue,
 } from './inventory';
@@ -37,20 +38,29 @@ export type { NpcActionKind, NpcDecision } from './npcDecide';
 
 /** NPC 自动换上更强的装备（不消耗时间） */
 function autoEquip(state: GameState, npc: Combatant): void {
-  for (const slot of ['weapon', 'armor'] as const) {
-    const current = slot === 'weapon' ? getEquippedWeapon(npc) : getEquippedArmor(npc);
+  for (const slot of ['weapon', 'armor', 'utility'] as const) {
+    const current = slot === 'weapon'
+      ? getEquippedWeapon(npc)
+      : slot === 'armor'
+        ? getEquippedArmor(npc)
+        : getEquippedUtility(npc);
     const currentValue = current
       ? slot === 'weapon'
         ? getItem(current.itemId).attack ?? 0
-        : getItem(current.itemId).defense ?? 0
+        : slot === 'armor'
+          ? getItem(current.itemId).defense ?? 0
+          : (getItem(current.itemId).searchFindMult ?? 1) * 100
       : 0;
 
     let best: { stack: ItemStack; value: number } | null = null;
     for (const s of npc.inventory) {
       const def = getItem(s.itemId);
-      if (slot === 'weapon' && def.category !== 'weapon') continue;
-      if (slot === 'armor' && def.category !== 'armor') continue;
-      const v = slot === 'weapon' ? def.attack ?? 0 : def.defense ?? 0;
+      if (def.equipmentSlot !== slot) continue;
+      const v = slot === 'weapon'
+        ? def.attack ?? 0
+        : slot === 'armor'
+          ? def.defense ?? 0
+          : (def.searchFindMult ?? 1) * 100;
       if (v <= currentValue) continue;
       if (!best || v > best.value) best = { stack: s, value: v };
     }

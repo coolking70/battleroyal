@@ -15,7 +15,7 @@ export const ZONES: ZoneDef[] = [
       '课桌翻倒在走廊上，黑板还留着没擦掉的板书。这里空间开阔，藏不住人。',
     adjacent: ['residential', 'hospital', 'commercial'],
     basePool: ['wood', 'cloth', 'rope', 'water', 'stone'],
-    rarePool: ['stick', 'cloth_armor', 'energy_drink'],
+    rarePool: ['processed_wood', 'cloth_roll', 'energy_drink'],
     color: '#4a6fa5',
   },
   {
@@ -27,7 +27,7 @@ export const ZONES: ZoneDef[] = [
     // 医院保留医疗特色；rarePool 的 stick 只提供低概率直接武器保底，
     // 避免“这里永远出不了武器”的死角，而不抢占普通医疗物资权重。
     basePool: ['herb', 'alcohol', 'cloth', 'bandage', 'water'],
-    rarePool: ['medkit', 'herb_remedy', 'simple_armor', 'stick'],
+    rarePool: ['antiseptic', 'chemical_mix', 'bandage'],
     color: '#3f8f7a',
   },
   {
@@ -37,7 +37,7 @@ export const ZONES: ZoneDef[] = [
       '成排的旧居民楼，多数门锁已被撬开。物资杂而不精，但路口很多。',
     adjacent: ['school', 'factory', 'forest', 'commercial'],
     basePool: ['cloth', 'rope', 'water', 'wood', 'glass'],
-    rarePool: ['energy_drink', 'cloth_armor', 'stone_axe'],
+    rarePool: ['cloth_roll', 'rope_bundle', 'energy_drink'],
     color: '#8a6b4f',
   },
   {
@@ -47,7 +47,7 @@ export const ZONES: ZoneDef[] = [
       '停摆的流水线上还挂着零件，地面油污反着光。金属材料在这里最多。',
     adjacent: ['residential', 'lab', 'station', 'warehouse'],
     basePool: ['scrap', 'iron', 'wood', 'stone', 'rope'],
-    rarePool: ['iron_pipe', 'simple_armor', 'plate_armor'],
+    rarePool: ['metal_parts', 'metal_plate', 'reinforced_frame'],
     color: '#8c5b3f',
   },
   {
@@ -57,7 +57,7 @@ export const ZONES: ZoneDef[] = [
       '林线之外一片漆黑，脚下厚厚一层落叶。视野差，但自然材料充足。',
     adjacent: ['residential', 'lab', 'park'],
     basePool: ['wood', 'stone', 'herb', 'rope', 'water'],
-    rarePool: ['stone_axe', 'herb_remedy', 'simple_bow'],
+    rarePool: ['processed_wood', 'bow_limb', 'herb_remedy'],
     color: '#4f7a44',
   },
   {
@@ -67,7 +67,7 @@ export const ZONES: ZoneDef[] = [
       '门禁失效后所有房间都敞着，实验台上仪器还在低鸣。危险，但回报也高。',
     adjacent: ['hospital', 'factory', 'forest', 'underground'],
     basePool: ['glass', 'battery', 'alcohol', 'scrap', 'iron'],
-    rarePool: ['stun_rod', 'plate_armor', 'medkit'],
+    rarePool: ['wire', 'circuit', 'battery_pack'],
     color: '#6a5b9a',
   },
   {
@@ -77,7 +77,7 @@ export const ZONES: ZoneDef[] = [
       '卷帘门半落的商铺连成一片，破碎橱窗里还留着日用品和少量饮料。',
     adjacent: ['school', 'hospital', 'residential', 'station'],
     basePool: ['cloth', 'water', 'glass', 'alcohol'],
-    rarePool: ['bandage', 'energy_drink', 'cloth_armor', 'simple_bow'],
+    rarePool: ['cloth_roll', 'reinforced_cloth', 'bandage'],
     color: '#a06b4f',
   },
   {
@@ -87,7 +87,7 @@ export const ZONES: ZoneDef[] = [
       '停运的站台通向几条黑暗隧道，售票厅和检修间里散落着综合材料。',
     adjacent: ['commercial', 'factory', 'warehouse', 'underground'],
     basePool: ['scrap', 'battery', 'rope', 'water'],
-    rarePool: ['iron_pipe', 'simple_bow', 'energy_drink'],
+    rarePool: ['metal_parts', 'wire', 'battery_pack'],
     color: '#697b8d',
   },
   {
@@ -97,7 +97,7 @@ export const ZONES: ZoneDef[] = [
       '荒废的步道被灌木重新占据，长椅、石景和旧急救箱藏着自然资源。',
     adjacent: ['forest', 'warehouse', 'construction'],
     basePool: ['wood', 'herb', 'stone', 'water'],
-    rarePool: ['herb_remedy', 'stone_axe', 'bandage'],
+    rarePool: ['processed_wood', 'rope_bundle', 'herb_remedy'],
     color: '#527b61',
   },
   {
@@ -107,7 +107,7 @@ export const ZONES: ZoneDef[] = [
       '高大的货架已经倾倒，捆扎材料和木箱堆在通往后场的通道两侧。',
     adjacent: ['factory', 'station', 'park', 'construction'],
     basePool: ['rope', 'wood', 'scrap', 'cloth'],
-    rarePool: ['simple_armor', 'iron_pipe', 'cloth_armor'],
+    rarePool: ['rope_bundle', 'metal_parts', 'reinforced_cloth'],
     color: '#806a4a',
   },
   {
@@ -117,7 +117,7 @@ export const ZONES: ZoneDef[] = [
       '未完工的楼体像一排空骨架，钢筋、石料和木模板都暴露在风里。',
     adjacent: ['park', 'warehouse', 'underground'],
     basePool: ['stone', 'iron', 'wood', 'scrap'],
-    rarePool: ['plate_armor', 'steel_axe', 'simple_armor'],
+    rarePool: ['metal_plate', 'reinforced_frame', 'sharpened_metal'],
     color: '#9a7445',
   },
   {
@@ -127,7 +127,7 @@ export const ZONES: ZoneDef[] = [
       '废弃的地下连廊没有信号，积水旁的配电箱和玻璃指示牌仍可拆取。',
     adjacent: ['lab', 'station', 'construction'],
     basePool: ['battery', 'scrap', 'glass', 'iron'],
-    rarePool: ['stun_rod', 'composite_bow', 'insulated_pipe'],
+    rarePool: ['circuit', 'wire', 'chemical_mix'],
     color: '#465d73',
   },
 ];

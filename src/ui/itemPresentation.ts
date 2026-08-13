@@ -19,9 +19,11 @@ export const ITEM_CATEGORY_META: Record<
   { label: string; icon: string }
 > = {
   material: { label: CATEGORY_LABEL.material, icon: '◆' },
+  component: { label: CATEGORY_LABEL.component, icon: '◇' },
   weapon: { label: CATEGORY_LABEL.weapon, icon: '⚔' },
   armor: { label: CATEGORY_LABEL.armor, icon: '▣' },
   consumable: { label: CATEGORY_LABEL.consumable, icon: '✚' },
+  utility: { label: CATEGORY_LABEL.utility, icon: '⌁' },
 };
 
 export function presentItem(itemId: string, stack?: ItemStack): ItemPresentation {

@@ -31,9 +31,9 @@ describe('NPC 制作目标规划（Step 5 / Phase 2A-1 五种人格）', () => {
     clearInventory(npc!);
     give(state, npc!, 'wood', 1); // 材料远未齐——但收集型追逐的是价值
     planNpcGoal(state, npc!);
-    // 铁板护甲（value 34）价值最高，收集型优先锁定它而非"差一点"的配方
-    expect(npc!.plannedRecipeId).toBe('r_plate_armor');
-    expect(npc!.planReason).toContain('铁板护甲');
+    // Phase 4M 的重型护甲是扩展 roster 中价值最高的长线防具目标。
+    expect(npc!.plannedRecipeId).toBe('r_heavy_armor');
+    expect(npc!.planReason).toContain('重型护甲');
     expect(npc!.planCreatedAt).toBe(state.time);
     expect(npc!.planRecommendedZoneId).not.toBeNull();
   });

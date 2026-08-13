@@ -4,7 +4,7 @@ import { getZoneDef } from '../data/zones';
 import { canPayActionCost, payActionCost } from './actionCosts';
 import { pushEvent } from './events';
 import { addNoise } from './info';
-import { addItem, canAccept, createStack } from './inventory';
+import { addItem, canAccept, createStack, getEquippedUtility } from './inventory';
 import { charactersInZone } from './gameState';
 import {
   hasScoutAwareness,
@@ -95,6 +95,8 @@ export function computeSearchWeights(
   }
   if (actor.passiveId === 'resourceful') find *= GAME_CONFIG.resourcefulFindMult;
   find *= searchFindMultiplier(actor);
+  const utility = getEquippedUtility(actor);
+  if (utility) find *= getItem(utility.itemId).searchFindMult ?? 1;
 
   const others = charactersInZone(state, actor.currentZoneId).filter(
     (c) => c.id !== actor.id,

@@ -1,10 +1,11 @@
 import { GAME_CONFIG } from '../data/gameConfig';
 import { getItem } from '../data/items';
 import { RECIPES, tryGetRecipe } from '../data/recipes';
-import { canPayActionCost, payActionCost } from './actionCosts';
+import { canPayActionCost, getActionStaminaCost, payActionCost } from './actionCosts';
 import { pushEvent } from './events';
 import {
   addItem,
+  canAccept,
   consumeIngredients,
   countItem,
   createStack,
@@ -39,37 +40,26 @@ export function craftStaminaCost(actor: Combatant): number {
  * 材料会先被消耗，所以只要「消耗后腾出的格子数 + 现有空格」足够即可。
  */
 export function hasRoomForOutput(actor: Combatant, recipe: Recipe): boolean {
-  const outDef = getItem(recipe.outputItemId);
-
-  // 模拟消耗材料后会空出多少格
-  let freedSlots = 0;
-  for (const ing of recipe.ingredients) {
-    let need = ing.count;
-    for (const s of actor.inventory) {
-      if (s.itemId !== ing.itemId || need <= 0) continue;
-      const take = Math.min(s.count, need);
-      need -= take;
-      if (take === s.count) freedSlots += 1;
-    }
-  }
-
-  const freeAfter =
-    GAME_CONFIG.inventorySlots - actor.inventory.length + freedSlots;
-  if (freeAfter > 0) return true;
-
-  // 没有空格时，成品若能堆叠进已有同类堆也可以
-  if (outDef.stackable) {
-    const existing = actor.inventory.filter((s) => s.itemId === recipe.outputItemId);
-    const room = existing.reduce((sum, s) => sum + (outDef.maxStack - s.count), 0);
-    // 注意：作为材料被消耗掉的同类堆已在上面计入 freedSlots
-    if (room >= recipe.outputCount) return true;
-  }
-  return false;
+  if (!hasIngredients(actor, recipe.ingredients)) return false;
+  const simulated = {
+    ...actor,
+    inventory: structuredClone(actor.inventory),
+  } as Combatant;
+  if (!consumeIngredients(simulated, recipe.ingredients)) return false;
+  const output = getItem(recipe.outputItemId);
+  return canAccept(simulated, {
+    uid: 'craft-preview',
+    itemId: recipe.outputItemId,
+    count: recipe.outputCount,
+    ...(output.category === 'weapon' && output.durability !== undefined
+      ? { durability: output.durability }
+      : {}),
+  });
 }
 
 /** 生成给界面用的配方列表（可合成 / 缺什么 / 消耗多少） */
 export function listRecipes(state: GameState, actor: Combatant): RecipeView[] {
-  const cost = craftStaminaCost(actor);
+  const cost = getActionStaminaCost(actor, 'CRAFT');
   return RECIPES.map((recipe) => {
     const missing = missingIngredients(actor, recipe.ingredients);
     let blockedReason: string | null = null;
@@ -133,23 +123,30 @@ export function performCraft(
     return { ok: false, message: '背包没有空间存放成品。', outputItemId: null };
   }
 
-  consumeIngredients(actor, recipe.ingredients);
+  const inventoryBefore = structuredClone(actor.inventory);
+  const staminaBefore = actor.stamina;
+  const uidBefore = state.uidSeq;
+  if (!consumeIngredients(actor, recipe.ingredients)) {
+    return { ok: false, message: '材料状态发生变化，合成已回滚。', outputItemId: null };
+  }
   // Phase 3A-1 统计：本次合成是否免体力（现场加工）；
   // 「省下的体力」= 无充能时应付的基础成本（充能生效时闸门成本为 0）
   const freeCraft = hasFieldCraftCharge(actor);
   const staminaSaved = freeCraft ? craftStaminaCost(actor) : 0;
   payActionCost(actor, 'CRAFT');
-  // Phase 3A-1：现场加工的充能**只在合成真的成功之后**扣。
-  // 前面任何一个 return 都意味着这次合成没做成，白扣充能是纯粹的坑。
-  consumeFieldCraftCharge(state, actor);
-
   const stack = createStack(state, recipe.outputItemId, recipe.outputCount);
   const added = addItem(actor, stack);
   if (!added.ok) {
-    // 理论上被 hasRoomForOutput 拦截；真的发生时把成品丢在地上，避免物品凭空消失
-    const zone = state.zones[actor.currentZoneId];
-    if (zone) zone.groundItems.push(stack);
+    // 事务红线：输出无法完整放入时，材料、体力、uid 序列和背包全部回滚。
+    actor.inventory = inventoryBefore;
+    actor.stamina = staminaBefore;
+    state.uidSeq = uidBefore;
+    return { ok: false, message: '背包没有空间存放成品，合成已回滚。', outputItemId: null };
   }
+
+  // Phase 3A-1：现场加工的充能只在输出完整进入背包后扣除。
+  // 这使材料、体力、uid 序列和免费次数共同遵守同一条原子事务边界。
+  consumeFieldCraftCharge(state, actor);
 
   actor.stats.crafts += 1;
   state.stats.crafts += 1;
@@ -191,10 +188,15 @@ export function findUpgradeRecipe(
     if (!hasRoomForOutput(actor, recipe)) continue;
     const out = getItem(recipe.outputItemId);
     let gain = 0;
-    if (out.category === 'weapon') {
+    if (out.equipmentSlot === 'weapon') {
       gain = (out.attack ?? 0) - currentWeaponAttack;
     } else if (out.category === 'armor') {
       gain = (out.defense ?? 0) - currentArmorDefense;
+    } else if (out.craftTier === 'component' && out.attack !== undefined) {
+      // Legacy 4C keeps one weapon-shaped intermediate for the historical
+      // NPC step test, but it is not equipable and therefore remains a
+      // component rather than a final weapon.
+      gain = out.attack - currentWeaponAttack;
     } else {
       continue;
     }

@@ -28,7 +28,11 @@ export function CraftGoalBar({
     ? '已达成，可装备使用'
     : banner.nextStepName
       ? `先做「${banner.nextStepName}」`
-      : '材料齐备，可直接合成';
+      : banner.finalCraftable
+        ? '材料齐备，可直接合成'
+        : banner.rawReady
+          ? '原料齐全，等待完成前置步骤'
+          : '仍缺原始材料';
 
   return (
     <div

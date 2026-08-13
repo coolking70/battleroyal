@@ -68,6 +68,11 @@ export function getEquippedArmor(c: Combatant): ItemStack | null {
   return c.equipment.find((s) => s.uid === c.equippedArmorId) ?? null;
 }
 
+export function getEquippedUtility(c: Combatant): ItemStack | null {
+  if (!c.equippedUtilityId) return null;
+  return c.equipment.find((s) => s.uid === c.equippedUtilityId) ?? null;
+}
+
 export function weaponAttackOf(c: Combatant): number {
   const w = getEquippedWeapon(c);
   if (!w) return 0;
@@ -247,12 +252,16 @@ export function equipItem(c: Combatant, uid: string): EquipResult {
     return { ok: false, reason: 'not_found', itemDef: null, replaced: null };
   }
   const def = getItem(stack.itemId);
-  if (def.category !== 'weapon' && def.category !== 'armor') {
+  if (!def.equipmentSlot) {
     return { ok: false, reason: 'not_equipable', itemDef: def, replaced: null };
   }
 
-  const slot = def.category === 'weapon' ? 'weapon' : 'armor';
-  const oldStack = slot === 'weapon' ? getEquippedWeapon(c) : getEquippedArmor(c);
+  const slot = def.equipmentSlot;
+  const oldStack = slot === 'weapon'
+    ? getEquippedWeapon(c)
+    : slot === 'armor'
+      ? getEquippedArmor(c)
+      : getEquippedUtility(c);
 
   // 先把新装备从背包取出，这样必定为旧装备腾出一格
   removeStack(c, uid);
@@ -271,21 +280,28 @@ export function equipItem(c: Combatant, uid: string): EquipResult {
   c.equipment.push(stack);
   if (slot === 'weapon') {
     c.equippedWeaponId = stack.uid;
-  } else {
+  } else if (slot === 'armor') {
     c.equippedArmorId = stack.uid;
+  } else {
+    c.equippedUtilityId = stack.uid;
   }
   return { ok: true, reason: 'ok', itemDef: def, replaced: oldStack };
 }
 
 /** 卸下装备放回背包 */
-export function unequip(c: Combatant, slot: 'weapon' | 'armor'): boolean {
-  const stack = slot === 'weapon' ? getEquippedWeapon(c) : getEquippedArmor(c);
+export function unequip(c: Combatant, slot: 'weapon' | 'armor' | 'utility'): boolean {
+  const stack = slot === 'weapon'
+    ? getEquippedWeapon(c)
+    : slot === 'armor'
+      ? getEquippedArmor(c)
+      : getEquippedUtility(c);
   if (!stack) return false;
   if (!hasFreeSlot(c)) return false;
   c.equipment = c.equipment.filter((s) => s.uid !== stack.uid);
   c.inventory.push(stack);
   if (slot === 'weapon') c.equippedWeaponId = null;
-  else c.equippedArmorId = null;
+  else if (slot === 'armor') c.equippedArmorId = null;
+  else c.equippedUtilityId = null;
   return true;
 }
 

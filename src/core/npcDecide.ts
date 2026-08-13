@@ -15,6 +15,7 @@ import {
 } from './crafting';
 import { enemiesInZone } from './gameState';
 import { armorDefenseOf, hasIngredients, weaponAttackOf } from './inventory';
+import { buildCraftPlan } from './craftPlan';
 import { npcCombatSkill, npcSurvivalSkill } from './npcSkillDecide';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, Personality } from './types';
@@ -295,17 +296,19 @@ export function decideNpcAction(
 
   // field_craft 已经成功释放后，下一次行动即使体力为 0 也必须先完成这次
   // 合成；技能只免除 CRAFT 成本，不给 NPC 额外体力。
-  const chargedRecipe = npc.plannedRecipeId ? tryGetRecipe(npc.plannedRecipeId) : null;
+  const chargedPlan = npc.plannedRecipeId ? buildCraftPlan(state, npc, npc.plannedRecipeId) : null;
+  const chargedStep = chargedPlan?.suggestedNextCraft;
   if (
     hasFieldCraftCharge(npc) &&
-    chargedRecipe &&
-    hasIngredients(npc, chargedRecipe.ingredients) &&
-    hasRoomForOutput(npc, chargedRecipe)
+    chargedStep &&
+    tryGetRecipe(chargedStep.recipeId) &&
+    hasIngredients(npc, tryGetRecipe(chargedStep.recipeId)!.ingredients) &&
+    hasRoomForOutput(npc, tryGetRecipe(chargedStep.recipeId)!)
   ) {
     return {
       kind: 'craft',
-      reason: npc.planReason ?? `执行现场加工：${getItem(chargedRecipe.outputItemId).name}`,
-      recipeId: chargedRecipe.id,
+      reason: npc.planReason ?? `执行现场加工：${chargedStep.name}`,
+      recipeId: chargedStep.recipeId,
     };
   }
 
@@ -320,7 +323,9 @@ export function decideNpcAction(
 
   // 5. 执行既定制作目标 / 能合成明显更强的装备 -> 合成
   //    优先按 planNpcGoal 规划的目标行事，让 NPC 行为有长期方向（搜集型会为差一点的配方去搜材料）
-  const planRecipe = npc.plannedRecipeId ? tryGetRecipe(npc.plannedRecipeId) : null;
+  const plan = npc.plannedRecipeId ? buildCraftPlan(state, npc, npc.plannedRecipeId) : null;
+  const planStep = plan?.suggestedNextCraft;
+  const planRecipe = planStep ? tryGetRecipe(planStep.recipeId) : null;
   if (
     planRecipe &&
     hasIngredients(npc, planRecipe.ingredients) &&

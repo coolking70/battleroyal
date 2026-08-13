@@ -127,6 +127,8 @@ export interface Combatant {
   /** 指向 equipment 中某个 ItemStack.uid */
   equippedWeaponId: string | null;
   equippedArmorId: string | null;
+  /** Phase 4M：单一 utility 槽。 */
+  equippedUtilityId: string | null;
   alive: boolean;
   kills: number;
   statusEffects: StatusEffect[];

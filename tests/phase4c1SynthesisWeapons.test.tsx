@@ -32,18 +32,21 @@ afterEach(() => {
 });
 
 describe('Phase 4C-1 合成树与武器获取路径', () => {
-  it('注册 29 件物品、17 条配方，并为每个区域保留武器来源', () => {
-    expect(ITEMS).toHaveLength(29);
-    expect(RECIPES).toHaveLength(17);
+  it('注册扩展物品与配方，并为每个区域保留原料/组件来源', () => {
+    expect(ITEMS.length).toBeGreaterThanOrEqual(50);
+    expect(RECIPES.length).toBeGreaterThanOrEqual(35);
+    expect(ITEMS.filter((item) => item.craftTier === 'component').length).toBeGreaterThanOrEqual(15);
+    expect(RECIPES.filter((recipe) => recipe.ingredients.some((ingredient) => getItem(ingredient.itemId).craftTier === 'component')).length).toBeGreaterThanOrEqual(8);
     for (const zone of ZONES) {
       expect(
-        zone.rarePool.some((itemId) => getItem(itemId).category === 'weapon'),
-        `${zone.id} 稀有池没有武器`,
+        [...zone.basePool, ...zone.rarePool].some((itemId) => getItem(itemId).craftTier === 'raw'),
+        `${zone.id} 没有 raw 来源`,
       ).toBe(true);
+      expect(zone.rarePool.some((itemId) => Boolean(getItem(itemId).equipmentSlot))).toBe(false);
     }
     const hospital = ZONES.find((zone) => zone.id === 'hospital')!;
     expect(hospital.basePool).not.toContain('stick');
-    expect(hospital.rarePool).toContain('stick');
+    expect(hospital.rarePool).toContain('antiseptic');
   });
 
   it('可完成木棍 → 加固握把 → 野外长矛的三级链路', () => {

@@ -45,6 +45,15 @@ export function migrateMissingZoneStates(raw: unknown): unknown {
   if (!isRecord(raw) || !isRecord(raw.state) || !isRecord(raw.state.zones)) return raw;
 
   const zones = raw.state.zones;
+  // Phase 4M adds one optional utility slot without changing GAME_VERSION.
+  // Old same-version saves have no utility id; absence means the slot is empty.
+  if (isRecord(raw.state.characters)) {
+    for (const character of Object.values(raw.state.characters)) {
+      if (isRecord(character) && !Object.prototype.hasOwnProperty.call(character, 'equippedUtilityId')) {
+        character.equippedUtilityId = null;
+      }
+    }
+  }
   const legacyIds = new Set<string>(LEGACY_ZONE_IDS);
   const zoneKeys = Object.keys(zones);
   const isExactLegacyMap =

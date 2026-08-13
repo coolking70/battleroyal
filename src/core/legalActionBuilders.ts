@@ -83,7 +83,7 @@ export function inventoryActions(player: Combatant): LegalAction[] {
         action({ type: 'USE_ITEM', uid: stack.uid }, 'item', 0, `使用 ${def.name}`),
       );
     }
-    if (def.category === 'weapon' || def.category === 'armor') {
+    if (def.equipmentSlot) {
       // 装备槽独立于背包格：新装备先离开背包，必定腾出一格给换下的旧装备，
       // 所以只要物品可装备就一定能装上。
       out.push(action({ type: 'EQUIP', uid: stack.uid }, 'item', 0, `装备 ${def.name}`));
@@ -97,6 +97,9 @@ export function inventoryActions(player: Combatant): LegalAction[] {
     }
     if (getEquippedArmor(player)) {
       out.push(action({ type: 'UNEQUIP', slot: 'armor' }, 'item', 0, null));
+    }
+    if (player.equippedUtilityId) {
+      out.push(action({ type: 'UNEQUIP', slot: 'utility' }, 'item', 0, null));
     }
   }
   return out;

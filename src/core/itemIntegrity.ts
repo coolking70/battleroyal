@@ -45,7 +45,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
  *     装备 / 地面 / pendingPickup）；
  *  2. itemId 必须是真实存在的物品定义；
  *  3. 堆叠数量必须是正整数；
- *  4. 角色的 equippedWeaponId / equippedArmorId（若设置）必须指向其 equipment
+ *  4. 角色的 equippedWeaponId / equippedArmorId / equippedUtilityId（若设置）必须指向其 equipment
  *     里真实存在的实例 uid。
  */
 export function auditItemIntegrity(state: GameState): ItemIntegrityReport {
@@ -133,6 +133,7 @@ export function auditItemIntegrity(state: GameState): ItemIntegrityReport {
       equipment?: unknown;
       equippedWeaponId?: string | null;
       equippedArmorId?: string | null;
+      equippedUtilityId?: string | null;
     };
     const equipUids = new Set(
       Array.isArray(c.equipment)
@@ -141,7 +142,7 @@ export function auditItemIntegrity(state: GameState): ItemIntegrityReport {
             .map((s) => String((s as unknown as ItemStack).uid))
         : [],
     );
-    for (const slot of ['equippedWeaponId', 'equippedArmorId'] as const) {
+    for (const slot of ['equippedWeaponId', 'equippedArmorId', 'equippedUtilityId'] as const) {
       const uid = c[slot];
       if (uid !== null && uid !== undefined && !equipUids.has(uid)) {
         problems.push(`角色 ${id} 的 ${slot} 指向不存在的装备实例（${uid}）`);

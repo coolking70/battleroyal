@@ -94,8 +94,8 @@ describe('[Phase 2A-1] 人格专属评分', () => {
     give(state, npc, 'wood', 1);
     const goal = chooseNpcGoal(npc);
     expect(goal).not.toBeNull();
-    // 铁板护甲价值 34 为全场最高
-    expect(goal!.recipeId).toBe('r_plate_armor');
+    // Phase 4M 的重型护甲是固定 roster 中价值最高的长线防具目标。
+    expect(goal!.recipeId).toBe('r_heavy_armor');
   });
 
   it('投机型优先材料完成度最高的配方', () => {
@@ -104,8 +104,8 @@ describe('[Phase 2A-1] 人格专属评分', () => {
     give(state, npc, 'rope', 1); // simple_bow / cloth_armor 各差一半
     const goal = chooseNpcGoal(npc);
     expect(goal).not.toBeNull();
-    // 完成度同为 0.5 的候选中，simple_bow 战力提升最大
-    expect(goal!.recipeId).toBe('r_simple_bow');
+    // 扩展后的完成度/攻击评分将复合弓升级件排在首位。
+    expect(goal!.recipeId).toBe('r_composite_bow_upgrade');
   });
 
   it('随机型结果由 SeededRandom 决定（同种子同结果）', () => {

@@ -53,6 +53,9 @@ export function CraftPanel({
 }: CraftPanelProps): JSX.Element {
   const goalView = views.find((v) => v.recipe.id === goalRecipeId) ?? null;
   const goalPath = goalView ? craftPathSummary(goalView.recipe.id, state, player) : null;
+  // The runtime route planner is authoritative. The persisted flag is only a
+  // historical UI hint and must not hide a requirement that is currently gone.
+  const currentGoalCompleted = goalPath?.targetComplete ?? goalCompleted;
   const weaponViews = views.filter((view) => getItem(view.recipe.outputItemId).category === 'weapon');
   const craftableWeaponCount = weaponViews.filter((view) => view.craftable).length;
   const craftHandoff = latestCraftFeedback
@@ -130,10 +133,10 @@ export function CraftPanel({
       )}
 
       {goalView && (
-        <div className={`craft-goal${goalCompleted ? ' done' : ''}`}>
+          <div className={`craft-goal${currentGoalCompleted ? ' done' : ''}`}>
           <div className="cg-head">
             <span className="cg-label">制作目标</span>
-            {goalCompleted ? (
+            {currentGoalCompleted ? (
               <span className="cg-badge done">已达成</span>
             ) : (
               <span className="cg-badge">进行中</span>
@@ -159,7 +162,7 @@ export function CraftPanel({
             取消目标
           </button>
 
-          {!goalCompleted && (
+          {!currentGoalCompleted && (
             <div className="cg-materials">
               {goalView.recipe.ingredients.map((ing) => {
                 const required = ing.count;
@@ -182,7 +185,7 @@ export function CraftPanel({
             </div>
           )}
 
-          {!goalCompleted && recommendations.length > 0 && (
+          {!currentGoalCompleted && recommendations.length > 0 && (
             <div className="cg-recs">
               <div className="cg-recs-head">建议搜索区域（静态来源 + 已公开物资分档）</div>
               <ol className="cg-recs-list">
@@ -201,7 +204,7 @@ export function CraftPanel({
             </div>
           )}
 
-          {!goalCompleted && goalPath && goalPath.intermediateSteps.length > 0 && (
+          {!currentGoalCompleted && goalPath && goalPath.intermediateSteps.length > 0 && (
             <div className="cg-path" data-craft-intermediate-path="true">
               <div className="cg-recs-head">先完成中间部件</div>
               <div className="cg-path-steps">
@@ -215,12 +218,12 @@ export function CraftPanel({
             </div>
           )}
 
-          {!goalCompleted && goalPath && goalPath.steps.length > 0 && (
+          {!currentGoalCompleted && goalPath && goalPath.steps.length > 0 && (
             <div className="cg-subgoal-tracker" data-craft-subgoal-tracker="true">
               <div className="cg-recs-head">持续追踪 · 当前子目标</div>
               <div className="cg-subgoal-current">
                 <span aria-hidden="true">{goalPath.nextStep ? '→' : '✓'}</span>
-                <strong>{goalPath.nextStep?.name ?? '全部步骤已具备，可合成目标'}</strong>
+                <strong>{goalPath.nextStep?.name ?? (goalPath.finalCraftable ? '材料齐备，可直接合成目标' : '原料齐全，等待前置步骤')}</strong>
               </div>
               <div className="cg-subgoal-steps">
                 {goalPath.steps.map((step) => (
@@ -237,7 +240,7 @@ export function CraftPanel({
             </div>
           )}
 
-          {!goalCompleted && goalPath && goalPath.rawMaterials.length > 0 && (
+          {!currentGoalCompleted && goalPath && goalPath.rawMaterials.length > 0 && (
             <div className="cg-raw-materials" data-craft-raw-materials="true">
               <div className="cg-recs-head">原始材料缺口与公开来源</div>
               {goalPath.rawMaterials.map((material) => (

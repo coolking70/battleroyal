@@ -94,6 +94,7 @@ function createCombatant(params: {
     equipment: [],
     equippedWeaponId: null,
     equippedArmorId: null,
+    equippedUtilityId: null,
     alive: true,
     kills: 0,
     statusEffects: [],
