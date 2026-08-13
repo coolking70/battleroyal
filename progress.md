@@ -1083,3 +1083,49 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
   or merging another PR. GitHub Actions verify run `31693322254` passed all
   checks. Remaining gate is human playtest; status remains
   `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4P — Elite PvE and Named Apex Threats (2026-08-13)
+
+- Rebased from the Phase 4O normal merge commit `7e0c94c0f0a327bd6c78f5e0b5cb60adfb788b84` onto `agent/phase4p-elite-pve-unique-loot`; pre-existing report edits were preserved in a stash for restoration after implementation.
+- Completed `PHASE4P_REPORT.md` architecture audit and kept Wild actors in the dedicated `wildEnemies` registry. Common combat still routes through `attackWildActor`, `resolveWildTurn`, `defeatWild`, `wildFlees`, and the existing action-cost/vitals systems.
+- Added six finite elite definitions, three named Apex definitions, nine finite Phase 4P raw materials, seven components, six final equipment outputs, thirteen recipes, deterministic persisted `apexSchedule`, idempotent `APEX_SPAWNED` broadcast, deterministic restricted-zone fallback, and public UI projections that omit UID/HP/status/drop details.
+- Added persisted `pendingIntent` telegraphs and data-driven special moves. GUARD, zero-stamina redlines, self-flee persistence, exact-once ground drops, signature metrics, canonical NPC autoLoot, craft planning, save validation, simulator observations, and a formal `SET_CRAFT_GOAL → MOVE → SEARCH → GUARD/ATTACK → defeat → PICKUP_GROUND → CRAFT → EQUIP` AutoPlayer fixture are covered by `tests/phase4pEliteApex.test.ts`.
+- Phase 4P 500-game regression generated `reports/phase4p-regression.json` and `.md`: requested=actual=500, trustworthy=100%, engine health PASS, zero timeout/illegal/deadlock/livelock/stall/empty-legal/hard-limit/terminal-without-winner/invalid-victory/duplicate-Apex-spawn cases. Role balance remains observation-only in regression mode.
+- Human playtest status remains exactly `NEEDS-HUMAN-PLAYTEST`; no approved PNG or art manifest was changed.
+
+### Phase 4P validation closeout (2026-08-13)
+
+- `npm run typecheck`, `npm run build`, save/dependency/Art/security audits, and `npm audit --omit=dev --offline` passed; offline audit found 0 vulnerabilities. The networked npm audit was intentionally not run because the restricted environment blocks external dependency-metadata upload.
+- Playwright smoke reached the menu and a live new-game screen; `render_game_to_text` returned a valid playing state and the gameplay screenshot was visually inspected. No new browser console error was recorded.
+- Updated the stale Phase 4M registry ceilings to accommodate the Phase 4P roster and selected a deterministic Phase 4J-1 random fixture seed that exercises EQUIP. Full suite now passes: 102 files / 1593 tests.
+- Follow-up commit `9fc8c4a499f20cfeb090d833bdf0475d086b3abf` was pushed; Draft PR #23 remains open and unmerged. Final-head GitHub Actions CI run #120 completed successfully.
+
+## Phase 4P-AF — Apex Spawn Integrity, Intent Validation & NPC Boss Route Closure (2026-08-13)
+
+- Independent acceptance initially found three blockers: Apex eligible-zone fallback violation, per-definition `pendingIntent` validation gap, and NPC actor/source scope contamination.
+- Closed them with strict eligible-zone delay/retry semantics, exact Wild-definition telegraph validation plus defensive runtime cleanup, authoritative Wild/Apex source planning, actor-scoped SEARCH weighting, and public-information-only NPC routing.
+- Added deterministic AF evidence for delayed spawn/save-load continuation, Apex zone corruption, wrong/common/defeated telegraphs, formal GUARD special-damage reduction, Apex-only `bossKillsByType`, and NPC `prototype_aegis → aegis_core → multi-stage craft → equip` closure. Existing AutoPlayer route remains formal and unchanged in command vocabulary.
+- `npm run audit:save` now covers 109 malformed cases plus the normal control: 109/109 malformed cases rejected, the control accepted, 0 construction failures. Balance remains observation-only; old-save migration remains deferred.
+- Human status remains `NEEDS-HUMAN-PLAYTEST`. This records implementation closure for independent acceptance review; it does not mark Phase 4P accepted.
+
+### Phase 4P-AF validation closeout (2026-08-13)
+
+- Final local gates passed: typecheck, full test suite (103 files / 1,608 tests), build, 109-case save audit, 105-file dependency audit, offline art doctor, art validation, Phase 4A art audit, browser/repository security scans, and the production dependency audit offline fallback (0 vulnerabilities). Networked `npm audit --omit=dev` was attempted and returned `ENOTFOUND registry.npmjs.org` in the restricted environment.
+- Required `PHASE4P-AF` regression passed with requested=actual=500, trustworthyRate=100%, engine health zero including `invalidApexSpawnZone=0`; PVE observations are recorded in `PHASE4P_REPORT.md` and `reports/phase4p-regression.json`.
+- Implementation head `af90003178a813cf6af280472ff2fc4caa9de0a3` passed GitHub Actions CI run #123 (`31704949792`) with `completed/success`; documentation closeout head `5c1370ac3a63d193a25da4143eb2ea971dcf7a8e` passed CI run #124 (`31705310383`) with `completed/success`. PR #23 remains Draft/unmerged; human status remains `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4P-AF2 — Actor-Scoped Search & NPC Apex Hunt Closure (2026-08-13)
+
+- Audited input head was `321e3d33249b71d32279acf15688f51583888555`. Closed the three acceptance blockers: shared SEARCH now scopes research/high-tier weighting to the acting player/NPC; live Apex sources collapse from eligible open zones to the spawned public zone and then to none after restriction/defeat; NPC exhausted-zone decisions now keep an actor-owned Wild/Apex hunt alive through SEARCH and public movement.
+- Added `src/core/npcWildHunt.ts` for focused NPC hunt decisions and `tests/phase4pAf2Acceptance.test.ts` for six acceptance tests. The autonomous fixture uses only `runNpcTurn` after setup and proves MOVE, SEARCH, canonical encounter/defeat, exact-once signature pickup, multi-stage craft, and EQUIP without hidden-state or direct-route injection.
+- Full suite passes 104 files / 1,614 tests; focused Phase 4P suites pass 21/21. Save audit is 109/109 malformed rejected with 0 construction failures; dependency audit scans 106 files with max 500 lines and zero R1–R4 violations. Typecheck/build, Art/security, browser smoke, and offline dependency audit pass; network npm audit returned `ENOTFOUND registry.npmjs.org` and offline found 0 vulnerabilities.
+- Exact `PHASE4P-AF2` 500-game regression passes requested=actual=500, trustworthyRate=100%, regressionGate/engineHealthy true, outcome 21 won / 414 lost / 65 draw / 0 timeout, and all health counters zero. Balance remains observation-only; old-save migration remains deferred; no PNG or approved art manifest changed.
+- Implementation commit `7294022f02a6f685e3fbab68d99d0bae45250c5a` passed exact-head CI run #126 (`31710812342`) with `completed/success`. PR #23 remains open, Draft, and unmerged; human status remains exactly `NEEDS-HUMAN-PLAYTEST`.
+
+## Phase 4P-AF3 — Public Apex Defeat Lifecycle & Information-Boundary Closure (2026-08-14)
+
+- Audited input head: `c98829e6fca0711ddbf8b22a81c6cf1aa0b139f9`. Closed the remaining information-boundary blocker by adding the minimal public `APEX_DEFEATED` lifecycle event and making runtime Apex source resolution depend only on `APEX_SPAWNED` / `APEX_DEFEATED`, never remote Wild status or hidden `WILD_DEFEATED`.
+- Canonical defeat order is `WILD_DEFEATED → APEX_DEFEATED → WILD_DROP_CREATED`; Common/Elite defeats do not emit the Apex broadcast. Public metadata is limited to `wildDefId`, `tier`, and `zoneId`; default EventLog exposes the public event while retaining remote Wild defeat privacy.
+- Added current-schema validation for public Apex lifecycle records and six AF3 acceptance tests. The AF2 autonomous fixture now calls the production planner recommendation helper rather than assigning `planRecommendedZoneId` directly, then continues through `runNpcTurn()`.
+- Full suite: 105 files / 1,620 tests PASS. AF3 focused: 6/6; all four Phase 4P focused suites: 27/27. Save audit: 109/109 malformed rejected, 0 construction failures. Dependency audit: 107 files, max 500 lines, R1–R4 zero. Art/security/browser smoke and both npm audits pass; PNGs unchanged.
+- Exact `PHASE4P-AF3` regression: 500/500, trustworthy 100%, regressionGate/engineHealthy true, outcome 21/416/63/0, all health counters zero. Implementation commit `24818beab36103f38c02ad100c4e56fac1f3f437` passed CI #128 (`31736842842`) with `completed/success`. Human status remains exactly `NEEDS-HUMAN-PLAYTEST`; PR #23 remains open/Draft/unmerged.

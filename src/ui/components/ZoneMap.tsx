@@ -63,6 +63,10 @@ export function ZoneMap({
             ? (zs?.groundItems ?? []).filter((stack) => canAccessGroundItem(player, stack))
             : [];
           const showGroundDropCue = visibleGroundItems.length > 0;
+          const publicApex = state.apexSchedule.find(
+            (entry) => entry.spawned && entry.zoneId === def.id,
+          );
+          const apexName = publicApex ? getWildEnemy(publicApex.defId).name : null;
 
           return (
             <button
@@ -109,6 +113,7 @@ export function ZoneMap({
                 {showGroundDropCue && (
                   <span>有地面物资</span>
                 )}
+                {apexName && <span className="zone-urgency zone-urgency-imminent">⚠ 命名威胁：{apexName}</span>}
                 <span className="faint">
                   常见威胁：{(WILD_ECOLOGY[def.id] ?? []).slice(0, 2).map((entry) => getWildEnemy(entry.enemyId).name).join('、')}
                 </span>

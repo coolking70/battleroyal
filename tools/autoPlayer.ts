@@ -39,6 +39,10 @@ import { tryGetItem } from '../src/data/items';
 import type { Command, Combatant, GameEvent, GameState, Personality, VictoryType } from '../src/core/types';
 import { craftPathSummary, getCraftGoalSuggestion } from '../src/ui/craftPathPresentation';
 import { PHASE4N_RECIPES } from '../src/data/phase4nRecipes';
+import { PHASE4P_RECIPES } from '../src/data/phase4pRecipes';
+import { getWildEnemy } from '../src/data/wildEnemies';
+
+const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
 
 /* ------------------------------------------------------------------ */
 /* 对外类型                                                            */
@@ -59,6 +63,22 @@ export const AUTO_PLAYER_POLICIES: readonly AutoPlayerPolicy[] = [
   'opportunist',
   'random',
 ];
+
+/** Pure simulator aggregation helper: boss kills are Apex-only by contract. */
+export function countWildEvents(
+  events: readonly GameEvent[],
+  type: string,
+  field: 'wildDefId' | 'zoneId',
+  predicate?: (event: GameEvent) => boolean,
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const event of events) {
+    if (event.type !== type || (predicate && !predicate(event))) continue;
+    const key = field === 'zoneId' ? event.zoneId : event.metadata.wildDefId;
+    if (typeof key === 'string') counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
+}
 
 /**
  * 对局结局。
@@ -132,6 +152,8 @@ export interface AutoGameResult {
   /** Acceptance metrics for the authoritative terminal tuple. */
   terminalWithoutWinner: boolean;
   invalidVictoryTuple: boolean;
+  duplicateApexSpawn: boolean;
+  invalidApexSpawnZone: boolean;
   /** 对局结束时的时间单位 */
   timeUsed: number;
   endedAtTime: number | null;
@@ -179,6 +201,16 @@ export interface AutoGameResult {
   wildDropsCreated: number;
   wildMaterialPickups: number;
   wildCrafts: number;
+  eliteEncounters: number;
+  eliteKills: number;
+  apexSpawned: number;
+  apexEncounters: number;
+  apexKills: number;
+  apexFlees: number;
+  signatureDrops: number;
+  signaturePickups: number;
+  signatureCrafts: number;
+  bossKillsByType: Record<string, number>;
   wildEncounterByType: Record<string, number>;
   wildEncounterByZone: Record<string, number>;
   wildKillByType: Record<string, number>;
@@ -589,6 +621,7 @@ export function seedObjectiveRouteWorldFixture(state: GameState, player: Combata
     resin.guarding = false;
     resin.abilityCharges = 0;
     resin.statusEffects = [];
+    resin.pendingIntent = null;
     resin.dropResolved = false;
     resin.defeatedAtTime = null;
     lab.wildEnemyIds.push(resin.uid);
@@ -698,7 +731,12 @@ function chooseRepresentativeBuildAction(
     if (call) return call;
   }
   if (!state.craftGoalRecipeId) {
-    const suggestion = getCraftGoalSuggestion(state, player);
+    const suggestion = getCraftGoalSuggestion(state, player, {
+      // Phase 4P adds higher-tier content to the shared public suggestion
+      // registry. Keep the historical AutoPlayer representative loop bounded
+      // to its original content unless a route explicitly opts into P.
+      excludeRecipeIds: PHASE4P_RECIPE_IDS,
+    });
     const adopt = legal.find(
       (action) =>
         action.command.type === 'SET_CRAFT_GOAL' &&
@@ -1050,16 +1088,14 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
 
   const hardLimitReached =
     s.endReason === 'time_limit' || s.time >= GAME_CONFIG.hardTimeLimit;
-  const eventCounts = (type: string, field: 'wildDefId' | 'zoneId'): Record<string, number> => {
-    const counts: Record<string, number> = {};
-    for (const event of ctx.fullEvents) {
-      if (event.type !== type) continue;
-      const key = field === 'zoneId' ? event.zoneId : event.metadata.wildDefId;
-      if (typeof key === 'string') counts[key] = (counts[key] ?? 0) + 1;
-    }
-    return counts;
+  const eventCounts = (
+    type: string,
+    field: 'wildDefId' | 'zoneId',
+    predicate?: (event: GameEvent) => boolean,
+  ): Record<string, number> => {
+    return countWildEvents(ctx.fullEvents, type, field, predicate);
   };
-  const wildRecipeIds = new Set(PHASE4N_RECIPES.map((recipe) => recipe.id));
+  const wildRecipeIds = new Set([...PHASE4N_RECIPES, ...PHASE4P_RECIPES].map((recipe) => recipe.id));
   const wildCraftGoalAttempted = Boolean(s.craftGoalRecipeId && wildRecipeIds.has(s.craftGoalRecipeId));
 
   const trustworthy =
@@ -1067,7 +1103,10 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
     ctx.deadlock === null &&
     !ctx.stalled &&
     !ctx.emptyLegalSet &&
-    ctx.illegalCommands.length === 0;
+    ctx.illegalCommands.length === 0 &&
+    !s.apexSchedule.some((entry) =>
+      entry.spawned && (entry.zoneId === null || !getWildEnemy(entry.defId).eligibleZones?.includes(entry.zoneId)),
+    );
 
   const result: AutoGameResult = {
     seed: ctx.seed,
@@ -1110,6 +1149,20 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
         || ((s.status === 'won' || s.status === 'lost') && !complete)
         || (s.status === 'draw' && !empty);
     })(),
+    duplicateApexSpawn: (() => {
+      const seen = new Set<string>();
+      return ctx.fullEvents
+        .filter((event) => event.type === 'APEX_SPAWNED')
+        .some((event) => {
+          const id = typeof event.metadata.wildDefId === 'string' ? event.metadata.wildDefId : event.id;
+          if (seen.has(id)) return true;
+          seen.add(id);
+          return false;
+        });
+    })(),
+    invalidApexSpawnZone: s.apexSchedule.some((entry) =>
+      entry.spawned && (entry.zoneId === null || !getWildEnemy(entry.defId).eligibleZones?.includes(entry.zoneId)),
+    ),
     playerDiedAtTime: player.diedAtTime,
     playerKilledBy: player.killedBy,
     playerZoneId: player.currentZoneId,
@@ -1131,6 +1184,16 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
     wildDropsCreated: s.stats.wildDropsCreated,
     wildMaterialPickups: s.stats.wildMaterialPickups,
     wildCrafts: s.stats.wildCrafts,
+    eliteEncounters: s.stats.eliteEncounterCount ?? 0,
+    eliteKills: s.stats.eliteKillCount ?? 0,
+    apexSpawned: s.stats.apexSpawnedCount ?? 0,
+    apexEncounters: s.stats.apexEncounterCount ?? 0,
+    apexKills: s.stats.apexKillCount ?? 0,
+    apexFlees: s.stats.apexFleeCount ?? 0,
+    signatureDrops: s.stats.signatureDrops ?? 0,
+    signaturePickups: s.stats.signaturePickups ?? 0,
+    signatureCrafts: s.stats.signatureCrafts ?? 0,
+    bossKillsByType: eventCounts('WILD_DEFEATED', 'wildDefId', (event) => event.metadata.tier === 'apex'),
     wildEncounterByType: eventCounts('WILD_ENCOUNTER_STARTED', 'wildDefId'),
     wildEncounterByZone: eventCounts('WILD_ENCOUNTER_STARTED', 'zoneId'),
     wildKillByType: eventCounts('WILD_DEFEATED', 'wildDefId'),
@@ -1289,7 +1352,7 @@ function scanPhase3aCounters(
       if (e.type === 'ATTACK_HIT') {
         if (m.exposedConsumed === true) exposedConsumed += 1;
         if (typeof m.exposedBonus === 'number') exposedBonusDamageTotal += m.exposedBonus;
-        if (m.guarded === true) {
+        if (m.guarded === true && e.targetId === playerId) {
           guardResolves += 1;
           guardTriggered += 1;
           if (typeof m.guardPrevented === 'number') guardDamagePreventedTotal += m.guardPrevented;

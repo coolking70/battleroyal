@@ -2,6 +2,8 @@ import { GAME_CONFIG } from '../data/gameConfig';
 import { getItem } from '../data/items';
 import { RECIPES, tryGetRecipe } from '../data/recipes';
 import { PHASE4N_RECIPES } from '../data/phase4nRecipes';
+import { PHASE4P_RECIPES } from '../data/phase4pRecipes';
+import { PHASE4P_SIGNATURE_IDS } from '../data/phase4pItems';
 import { canPayActionCost, getActionStaminaCost, payActionCost } from './actionCosts';
 import { pushEvent } from './events';
 import {
@@ -17,7 +19,7 @@ import { consumeFieldCraftCharge, hasFieldCraftCharge } from './skills';
 import { craftExperienceFor, gainCostedActionExperience } from './progression';
 import type { Combatant, GameState, Recipe, RecipeIngredient } from './types';
 
-const WILD_RECIPE_IDS = new Set(PHASE4N_RECIPES.map((recipe) => recipe.id));
+const WILD_RECIPE_IDS = new Set([...PHASE4N_RECIPES, ...PHASE4P_RECIPES].map((recipe) => recipe.id));
 
 export interface RecipeView {
   recipe: Recipe;
@@ -154,6 +156,9 @@ export function performCraft(
   actor.stats.crafts += 1;
   state.stats.crafts += 1;
   if (WILD_RECIPE_IDS.has(recipe.id)) state.stats.wildCrafts += 1;
+  if (recipe.ingredients.some((ingredient) => (PHASE4P_SIGNATURE_IDS as readonly string[]).includes(ingredient.itemId))) {
+    state.stats.signatureCrafts = (state.stats.signatureCrafts ?? 0) + 1;
+  }
   gainCostedActionExperience(actor, craftExperienceFor(recipe.outputItemId), cost);
 
   const outName = getItem(recipe.outputItemId).name;

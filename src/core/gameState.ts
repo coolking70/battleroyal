@@ -8,6 +8,7 @@ import { addItem, createStack } from './inventory';
 import { SeededRandom } from './random';
 import { generateZoneLoot, initZoneLoot } from './zoneLoot';
 import { initializeWildPopulations } from './wildPopulation';
+import { initializeApexSchedule } from './apexSchedule';
 import type {
   Combatant,
   GameState,
@@ -170,6 +171,7 @@ export function createGame(options: CreateGameOptions): GameState {
     characters: {},
     wildEnemies: {},
     wildUidSeq: 0,
+    apexSchedule: [],
     zones: {},
     events: [],
     eventSeq: 0,
@@ -198,6 +200,15 @@ export function createGame(options: CreateGameOptions): GameState {
       wildDropsCreated: 0,
       wildMaterialPickups: 0,
       wildCrafts: 0,
+      eliteEncounterCount: 0,
+      eliteKillCount: 0,
+      apexSpawnedCount: 0,
+      apexEncounterCount: 0,
+      apexKillCount: 0,
+      apexFleeCount: 0,
+      signatureDrops: 0,
+      signaturePickups: 0,
+      signatureCrafts: 0,
     },
     endedAtTime: null,
     phase: 'opening',
@@ -231,6 +242,7 @@ export function createGame(options: CreateGameOptions): GameState {
     state.zones[z.id] = zone;
   }
   initializeWildPopulations(state);
+  initializeApexSchedule(state);
 
   // --- 玩家 ---
   const playerZone = pickSpawnZone(rng);

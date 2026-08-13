@@ -146,7 +146,11 @@ export function buildCraftPlan(
   const addRawGap = (itemId: string, requested: number, held: number): void => {
     const missing = requested - held;
     if (missing <= 0) return;
-    const worldSources = worldSourcesForItem(itemId, state);
+    // Keep raw provenance public and static.  Availability is evaluated by
+    // consumers against the current zone status; otherwise an all-restricted
+    // source set disappears and NPC planning cannot distinguish "temporarily
+    // unavailable" from "no legal source exists".
+    const worldSources = worldSourcesForItem(itemId);
     const existing = raw.get(itemId) ?? {
       itemId,
       required: 0,
@@ -257,6 +261,7 @@ export function buildCraftPlan(
     .filter((gap) => gap.missing > 0)
     .flatMap((gap) => gap.sourceZoneIds)
     .filter((id, index, ids) => ids.indexOf(id) === index)
+    .filter((id) => state.zones[id]?.status !== 'restricted')
     .sort((a, b) => zoneDistance(actor.currentZoneId, a) - zoneDistance(actor.currentZoneId, b) || a.localeCompare(b));
 
   return {

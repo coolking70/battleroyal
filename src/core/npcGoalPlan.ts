@@ -7,6 +7,7 @@
  */
 import { GAME_CONFIG } from '../data/gameConfig';
 import { getItem } from '../data/items';
+import { getWildEnemy } from '../data/wildEnemies';
 import { RECIPES, tryGetRecipe } from '../data/recipes';
 import { getZoneDef, ZONE_IDS } from '../data/zones';
 import {
@@ -18,6 +19,11 @@ import {
 import { buildCraftPlan } from './craftPlan';
 import type { SeededRandom } from './random';
 import type { Combatant, GameState, ItemDef, Personality, Recipe } from './types';
+import { PHASE4P_WILD_MATERIAL_IDS } from '../data/phase4pItems';
+import { PHASE4P_RECIPES } from '../data/phase4pRecipes';
+import { currentWorldSourcesForItem } from './worldSources';
+
+const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
 
 /* ------------------------------------------------------------------ */
 /* 制作目标规划（Phase 2A-1：五种人格长期规划）                          */
@@ -86,7 +92,12 @@ function buildGoalCandidates(npc: Combatant): GoalCandidate[] {
   const attack = weaponAttackOf(npc);
   const defense = armorDefenseOf(npc);
   const out: GoalCandidate[] = [];
+  const hasPhase4PMaterial = PHASE4P_WILD_MATERIAL_IDS.some((itemId) => countItem(npc, itemId) > 0);
   for (const recipe of RECIPES) {
+    // Keep the historical default objective planner stable until an NPC has
+    // legally observed or picked up a Phase 4P material. Explicit craft goals
+    // still bypass this selector and use the same public source planner.
+    if (PHASE4P_RECIPE_IDS.has(recipe.id) && !hasPhase4PMaterial) continue;
     const item = getItem(recipe.outputItemId);
     const isVictoryObjective = item.category === 'objective';
     const matchesVictoryGoal =
@@ -264,10 +275,10 @@ function pickRecommendedZone(
   recipe: Recipe,
 ): string | null {
   const plan = buildCraftPlan(state, npc, recipe.id);
-  const missingIds = new Set(
-    plan?.rawGaps.filter((gap) => gap.missing > 0).map((gap) => gap.itemId) ?? [],
-  );
-  if (missingIds.size === 0) return null;
+  const missing = plan?.rawGaps.filter((gap) => gap.missing > 0) ?? [];
+  if (missing.length === 0) return null;
+
+  const currentSourcesFor = (gap: (typeof missing)[number]) => currentWorldSourcesForItem(state, gap.itemId);
 
   let best: { zoneId: string; score: number } | null = null;
   for (const zoneId of ZONE_IDS) {
@@ -275,10 +286,18 @@ function pickRecommendedZone(
     if (!zone || zone.status === 'restricted') continue; // 正式禁区直接排除
     const def = getZoneDef(zoneId);
     let score = 0;
-    for (const id of missingIds) {
-      if (def.basePool.includes(id)) score += 10;
-      else if (def.rarePool.includes(id) || def.objectivePool?.includes(id)) score += 12;
-      else if (plan?.rawGaps.some((gap) => gap.itemId === id && gap.sourceZoneIds.includes(zoneId))) score += 11;
+    for (const gap of missing) {
+      // Static raw provenance remains available to Craft Guide, while NPC
+      // movement consumes the current public source resolver. A spawned Apex
+      // therefore contributes only its announced zone, never old eligible
+      // alternatives, and a defeated Apex contributes no future source.
+      const currentSources = currentSourcesFor(gap);
+      if (currentSources.some((source) => source.zoneIds.includes(zoneId))) score += 11;
+      if (currentSources.some((source) => source.kind === 'wild_drop' && source.enemyIds.some((enemyId) =>
+        getWildEnemy(enemyId).tier === 'apex' && state.apexSchedule.some((entry) =>
+          entry.spawned && entry.defId === enemyId && entry.zoneId === zoneId,
+        ),
+      ))) score += 8;
     }
     if (score === 0) continue;
     if (zone.status === 'warning') score -= 4;
@@ -297,19 +316,53 @@ function allMissingZonesRestricted(
 ): boolean {
   const missing = buildCraftPlan(state, npc, recipe.id)?.rawGaps.filter((gap) => gap.missing > 0) ?? [];
   if (missing.length === 0) return false;
-  for (const ing of missing) {
-    const supplyZones = ZONE_IDS.filter((zoneId) => {
-      const def = getZoneDef(zoneId);
-      return def.basePool.includes(ing.itemId)
-        || def.rarePool.includes(ing.itemId)
-        || def.objectivePool?.includes(ing.itemId) === true;
-    });
-    const reachable = supplyZones.some(
-      (zoneId) => state.zones[zoneId]?.status !== 'restricted',
-    );
-    if (reachable) return false;
-  }
-  return true;
+  // Never reconstruct sources from zone pools here. Static worldSources stay
+  // intact for provenance; currentWorldSourcesForItem is the shared runtime
+  // contract for restrictions, Apex collapse, and no-respawn defeat state.
+  return missing.every((gap) => !currentWorldSourcesForItem(state, gap.itemId).some((source) =>
+    source.zoneIds.some((zoneId) => state.zones[zoneId]?.status !== 'restricted'),
+  ));
+}
+
+/** Keep an explicit public Apex hunt alive while the NPC is in its announced
+ * source zone. SEARCH can legitimately make no progress for several turns
+ * before the weighted encounter roll succeeds; abandoning the actor's own
+ * route at that point would also remove its high-tier SEARCH bias. */
+function hasCurrentApexSourceForPlan(
+  state: GameState,
+  npc: Combatant,
+  recipe: Recipe,
+): boolean {
+  const plan = buildCraftPlan(state, npc, recipe.id);
+  return plan?.rawGaps.some((gap) => gap.missing > 0 && currentWorldSourcesForItem(state, gap.itemId).some((source) =>
+    source.kind === 'wild_drop' &&
+    source.zoneIds.includes(npc.currentZoneId) &&
+    source.enemyIds.some((enemyId) => getWildEnemy(enemyId).tier === 'apex'),
+  )) ?? false;
+}
+
+/** Once an NPC has personally defeated a named Apex for a Phase 4P route, its
+ * no-progress counter must not make it abandon the drop it is about to loot
+ * and process. The encounter/defeat pair is public event evidence and does
+ * not reveal any other actor's inventory. */
+function hasCompletedApexHuntForPlan(
+  state: GameState,
+  npc: Combatant,
+  recipe: Recipe,
+): boolean {
+  if (!PHASE4P_RECIPE_IDS.has(recipe.id)) return false;
+  const defeated = new Set(
+    state.events
+      .filter((event) => event.type === 'WILD_DEFEATED' && event.actorId === npc.id)
+      .filter((event) => typeof event.metadata.wildUid === 'string' && typeof event.metadata.wildDefId === 'string' && getWildEnemy(event.metadata.wildDefId).tier === 'apex')
+      .map((event) => event.metadata.wildUid as string),
+  );
+  return state.events.some((event) =>
+    event.type === 'WILD_ENCOUNTER_STARTED' &&
+    event.actorId === npc.id &&
+    typeof event.metadata.wildUid === 'string' &&
+    defeated.has(event.metadata.wildUid),
+  );
 }
 
 /**
@@ -364,9 +417,16 @@ export function planNpcGoal(
       upgradeWorthless(weaponAttackOf(npc), armorDefenseOf(npc), currentRecipe.id)
     ) {
       replanReason = '已有更优装备';
-    } else if (npc.planNoProgressTurns >= GAME_CONFIG.npcPlanNoProgressLimit) {
+    } else if (
+      npc.planNoProgressTurns >= GAME_CONFIG.npcPlanNoProgressLimit &&
+      !hasCurrentApexSourceForPlan(state, npc, currentRecipe) &&
+      !hasCompletedApexHuntForPlan(state, npc, currentRecipe)
+    ) {
       replanReason = '连续无进展';
-    } else if (allMissingZonesRestricted(state, npc, currentRecipe)) {
+    } else if (
+      allMissingZonesRestricted(state, npc, currentRecipe) &&
+      !hasCompletedApexHuntForPlan(state, npc, currentRecipe)
+    ) {
       replanReason = '目标材料区域全部成为禁区';
     } else if (
       state.phase === 'finale' &&
@@ -391,4 +451,10 @@ export function planNpcGoal(
   npc.planRecommendedZoneId = goal
     ? pickRecommendedZone(state, npc, tryGetRecipe(goal.recipeId)!)
     : null;
+}
+
+/** Production planner hook for a caller that has already selected a recipe. */
+export function refreshNpcPlanRecommendation(state: GameState, npc: Combatant): void {
+  const recipe = npc.plannedRecipeId ? tryGetRecipe(npc.plannedRecipeId) : null;
+  npc.planRecommendedZoneId = recipe ? pickRecommendedZone(state, npc, recipe) : null;
 }

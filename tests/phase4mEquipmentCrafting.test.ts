@@ -46,8 +46,9 @@ function craftReinforcedPipe(state: GameState, actor: Combatant): void {
 describe('Phase 4M Test A/B — fixed registries and graph', () => {
   it('A: item registry reaches the roster target and validates every equipment tier', () => {
     expect(ITEMS.length).toBeGreaterThanOrEqual(50);
-    // Phase 4N extends the accepted Phase 4M registry with wild materials.
-    expect(ITEMS.length).toBeLessThanOrEqual(80);
+    // Phase 4P extends the accepted registry with elite/Apex materials,
+    // components, and final equipment.
+    expect(ITEMS.length).toBeLessThanOrEqual(110);
     expect(new Set(ITEMS.map((item) => item.id)).size).toBe(ITEMS.length);
     expect(validateItemRegistry()).toEqual([]);
     expect(ITEMS.filter((item) => item.craftTier === 'component').length).toBeGreaterThanOrEqual(15);
@@ -57,8 +58,8 @@ describe('Phase 4M Test A/B — fixed registries and graph', () => {
 
   it('B: recipe registry has no invalid graph edges and exposes depth', () => {
     expect(RECIPES.length).toBeGreaterThanOrEqual(35);
-    // Phase 4N adds a separate ten-recipe wild-drop branch.
-    expect(RECIPES.length).toBeLessThanOrEqual(60);
+    // Phase 4P adds a separate thirteen-recipe elite/Apex branch.
+    expect(RECIPES.length).toBeLessThanOrEqual(75);
     expect(new Set(RECIPES.map((recipe) => recipe.id)).size).toBe(RECIPES.length);
     expect(validateRecipeGraph()).toEqual([]);
     expect(getRecipeDepth('r_reinforced_pipe')).toBeGreaterThanOrEqual(3);

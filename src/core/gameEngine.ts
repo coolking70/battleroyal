@@ -33,6 +33,7 @@ import { announceWarning, updateRestrictedZones } from './restrictedZones';
 import { runWorldEvents } from './worldEvents';
 import { applyWorldEventTickDamage } from './worldEventTick';
 import { advanceActiveWildEncounter } from './wildCombat';
+import { processApexSpawns } from './apexSchedule';
 import {
   declareVictory,
   declareDraw,
@@ -162,6 +163,7 @@ export function advanceTime(state: GameState, rng: SeededRandom): void {
 
   state.time += 1;
   advancePhase(state);
+  processApexSpawns(state);
 
   for (const id of state.turnOrder) {
     const c = state.characters[id];

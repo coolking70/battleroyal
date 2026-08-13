@@ -16,6 +16,7 @@ import { validateReferences } from './references';
 import { buildContext } from './structure';
 import { toReport, type ValidationReport } from './types';
 import { validateWildState } from './wild';
+import { validateApexState } from './apex';
 
 /**
  * 存档深度校验（四层）。
@@ -35,6 +36,7 @@ export function validateSaveData(value: unknown): ValidationReport {
 
   validateNumbers(ctx);
   validateWildState(ctx);
+  validateApexState(ctx);
   validateReferences(ctx);
   validateConsistency(ctx);
 

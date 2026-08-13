@@ -2,6 +2,7 @@ import { GAME_CONFIG } from '../data/gameConfig';
 import { getItem } from '../data/items';
 import { tryGetRecipe } from '../data/recipes';
 import { getZoneDef } from '../data/zones';
+import { getWildEnemy } from '../data/wildEnemies';
 import { canPayActionCost } from './actionCosts';
 import { hasFieldCraftCharge, SKILLS } from './skills';
 import { estimatePower } from './combat';
@@ -16,6 +17,8 @@ import {
 import { enemiesInZone } from './gameState';
 import { armorDefenseOf, hasIngredients, weaponAttackOf } from './inventory';
 import { buildCraftPlan } from './craftPlan';
+import { currentWorldSourcesForItem } from './worldSources';
+import { hasPlannedWildSourceHere, hasRecommendedApexSource, npcSearchWeight, NPC_IDLE_WEIGHTS as IDLE_WEIGHTS } from './npcWildHunt';
 import { wildCombatProfile } from './wildCombat';
 import { npcCombatSkill, npcSurvivalSkill } from './npcSkillDecide';
 import { decideNpcVictoryAction } from './npcVictoryDecide';
@@ -114,15 +117,6 @@ const STANCES: Record<Personality, CombatStance> = {
   collector: { powerRatioToFight: 1.3, avoidBelowHpRatio: 0.45, aggressionBonus: -0.1 },
   opportunist: { powerRatioToFight: 1.05, avoidBelowHpRatio: 0.35, aggressionBonus: 0.05 },
   random: { powerRatioToFight: 1.0, avoidBelowHpRatio: 0.25, aggressionBonus: 0 },
-};
-
-/** 常规行动（无敌人时）的人格权重 */
-const IDLE_WEIGHTS: Record<Personality, { search: number; move: number; rest: number }> = {
-  aggressive: { search: 40, move: 55, rest: 5 },
-  cautious: { search: 55, move: 30, rest: 15 },
-  collector: { search: 70, move: 18, rest: 2 },
-  opportunist: { search: 45, move: 50, rest: 5 },
-  random: { search: 35, move: 40, rest: 25 },
 };
 
 /* ------------------------------------------------------------------ */
@@ -235,6 +229,8 @@ function chooseEvacuationTarget(
   return rng.pick(adjacent);
 }
 
+export { hasPlannedWildSourceHere, npcSearchWeight } from './npcWildHunt';
+
 /* ------------------------------------------------------------------ */
 /* 制作目标规划（Phase 3 Step 10 已拆至 npcGoalPlan.ts，此处保留出口）    */
 /* ------------------------------------------------------------------ */
@@ -335,10 +331,19 @@ export function decideNpcAction(
 
   // 5. 执行既定制作目标 / 能合成明显更强的装备 -> 合成
   //    优先按 planNpcGoal 规划的目标行事，让 NPC 行为有长期方向（搜集型会为差一点的配方去搜材料）
+  //    但一个已经通过自己的 SEARCH 发现的 Apex 来源优先于现场加工；
+  //    否则 NPC 可能先消耗基础材料，把正式 boss→loot 路线永远推迟。
+  const knownApexTarget = state.events.some((event) => {
+    if (event.type !== 'WILD_ENCOUNTER_STARTED' || event.actorId !== npc.id) return false;
+    if (typeof event.metadata.wildUid !== 'string') return false;
+    const wild = state.wildEnemies[event.metadata.wildUid];
+    return Boolean(wild && wild.status === 'alive' && wild.zoneId === npc.currentZoneId && getWildEnemy(wild.defId).tier === 'apex');
+  });
   const plan = npc.plannedRecipeId ? buildCraftPlan(state, npc, npc.plannedRecipeId) : null;
   const planStep = plan?.suggestedNextCraft;
   const planRecipe = planStep ? tryGetRecipe(planStep.recipeId) : null;
   if (
+    !knownApexTarget &&
     planRecipe &&
     hasIngredients(npc, planRecipe.ingredients) &&
     hasRoomForOutput(npc, planRecipe) &&
@@ -350,7 +355,10 @@ export function decideNpcAction(
       recipeId: planRecipe.id,
     };
   }
-  const upgrade = findUpgradeRecipe(npc, weaponAttackOf(npc), armorDefenseOf(npc));
+  const upgradeCandidate = knownApexTarget ? null : findUpgradeRecipe(npc, weaponAttackOf(npc), armorDefenseOf(npc));
+  const upgrade = upgradeCandidate && !plan?.steps.some((step) =>
+    step.recipeId === upgradeCandidate.id && step.status === 'complete',
+  ) ? upgradeCandidate : null;
   if (upgrade) {
     return { kind: 'craft', reason: '可以做出更强的装备', recipeId: upgrade.id };
   }
@@ -415,20 +423,23 @@ export function decideNpcAction(
   // 6.5 A SEARCH-discovered local wild target can be hunted through the same
   // ATTACK/GUARD/FLEE command vocabulary. Self-owned encounter events are the
   // knowledge boundary; this never scans remote live populations.
-  const plannedWildDefs = new Set(plan?.rawGaps.flatMap((gap) => gap.sourceEnemyIds) ?? []);
+  const plannedWildDefs = new Set(plan?.rawGaps.flatMap((gap) => currentWorldSourcesForItem(state, gap.itemId)
+    .flatMap((source) => source.kind === 'wild_drop' ? source.enemyIds : [])) ?? []);
   const knownWild = state.events
     .filter((event) => event.type === 'WILD_ENCOUNTER_STARTED' && event.actorId === npc.id)
     .map((event) => typeof event.metadata.wildUid === 'string' ? state.wildEnemies[event.metadata.wildUid] : null)
     .filter((enemy) => enemy?.status === 'alive' && enemy.zoneId === npc.currentZoneId)
     .sort((a, b) => Number(plannedWildDefs.has(b!.defId)) - Number(plannedWildDefs.has(a!.defId)))[0];
   if (knownWild) {
+    const knownDef = getWildEnemy(knownWild.defId);
     const target = wildCombatProfile(knownWild);
     const stance = STANCES[npc.personality];
     const powerOk = estimatePower(npc) >= estimatePower(target) * stance.powerRatioToFight;
-    if (hpRatio < stance.avoidBelowHpRatio && canPayActionCost(npc, 'FLEE').ok) {
+    const apexRisk = knownDef.tier === 'apex' ? 0.18 : knownDef.tier === 'elite' ? 0.08 : 0;
+    if ((hpRatio < stance.avoidBelowHpRatio + apexRisk || (knownDef.tier === 'apex' && !powerOk && hpRatio < 0.7)) && canPayActionCost(npc, 'FLEE').ok) {
       return { kind: 'flee_combat', reason: '生命不足，脱离野外威胁', targetId: knownWild.uid, targetKind: 'wild' };
     }
-    if (!powerOk && canPayActionCost(npc, 'GUARD').ok && rng.chance(0.4)) {
+    if ((!powerOk || knownDef.tier === 'apex') && canPayActionCost(npc, 'GUARD').ok && rng.chance(knownDef.tier === 'apex' ? 0.65 : 0.4)) {
       return { kind: 'guard', reason: '野外目标威胁较高，先行防御', targetId: knownWild.uid, targetKind: 'wild' };
     }
     return {
@@ -440,28 +451,33 @@ export function decideNpcAction(
   // 7. 常规行动
   const weights = IDLE_WEIGHTS[npc.personality];
   const canSearchNow = canPayActionCost(npc, 'SEARCH').ok;
-  const zoneSupply = zone ? zone.supply : 1;
   const zoneEmpty = zone ? isZoneExhausted(zone) : false;
-
-  // 搜空的区域完全不值得再搜：权重直接归零，把 NPC 逼去别处争抢
-  const searchWeight = !canSearchNow || zoneEmpty ? 0 : weights.search * (0.35 + zoneSupply);
+  const searchWeight = npcSearchWeight(state, npc, plan);
+  const goalZone = npc.planRecommendedZoneId;
   // 区域已空时，"留在原地休息"也失去意义，移动权重相应抬高
   const moveWeight = zoneEmpty ? weights.move * 2.2 : weights.move;
 
-  // Phase 2A-1：制作目标影响常规行动——在推荐区域里专注搜索，否则推动转移
-  const goalZone = npc.planRecommendedZoneId;
+  if (
+    zoneEmpty &&
+    hasRecommendedApexSource(state, plan, npc.currentZoneId, goalZone) &&
+    goalZone !== null &&
+    getZoneDef(npc.currentZoneId).adjacent.includes(goalZone) &&
+    state.zones[goalZone]?.status !== 'restricted'
+  ) {
+    return { kind: 'move', zoneId: goalZone, reason: '前往制作目标所需的公开 Apex 来源区域' };
+  }
+  if (zoneEmpty && hasPlannedWildSourceHere(state, npc, plan) && canSearchNow) {
+    return { kind: 'search', reason: '当前区域物资已空，但制作目标需要搜索这里的野外来源' };
+  }
+
   const goalReachable = Boolean(
     goalZone && state.zones[goalZone]?.status !== 'restricted',
   );
-  let finalSearch = searchWeight;
   let finalMove = moveWeight;
-  if (goalReachable) {
-    if (npc.currentZoneId === goalZone) finalSearch *= 1.8;
-    else finalMove *= 1.6;
-  }
+  if (goalReachable && npc.currentZoneId !== goalZone) finalMove *= 1.6;
 
   const kind = rng.pickWeighted<'search' | 'move' | 'rest'>([
-    { value: 'search', weight: finalSearch },
+    { value: 'search', weight: searchWeight },
     { value: 'move', weight: finalMove },
     { value: 'rest', weight: weights.rest },
   ]);
@@ -479,5 +495,5 @@ export function decideNpcAction(
   if (kind === 'rest' || !canSearchNow) {
     return { kind: 'rest', reason: '保存体力' };
   }
-  return { kind: 'search', reason: `搜索当前区域（物资 ${Math.round(zoneSupply * 100)}%）` };
+  return { kind: 'search', reason: `搜索当前区域（物资 ${Math.round((zone?.supply ?? 1) * 100)}%）` };
 }
