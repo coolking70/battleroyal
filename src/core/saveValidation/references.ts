@@ -376,7 +376,8 @@ export function validateReferences(ctx: ValidationContext): void {
       fail('encounter 结构损坏');
     } else {
       const enemyId = encounter.enemyId;
-      if (typeof enemyId !== 'string' || !charIds.has(enemyId)) {
+      const isWildEncounter = encounter.targetKind === 'wild';
+      if (!isWildEncounter && (typeof enemyId !== 'string' || !charIds.has(enemyId))) {
         fail(`遭遇指向不存在的角色（${String(enemyId)}）`);
       }
       const zoneId = encounter.zoneId;
@@ -388,20 +389,23 @@ export function validateReferences(ctx: ValidationContext): void {
       } else if (!encounter.resolved) {
         /* 未解决遭遇的三条硬约束 */
         const player = characters[state.playerId as string];
-        const enemy = isRecord(player) ? characters[enemyId as string] : undefined;
+        const enemy = isWildEncounter ? undefined : isRecord(player) ? characters[enemyId as string] : undefined;
         if (!isRecord(player) || player.alive !== true) {
           fail('存在未解决的遭遇，但玩家已死亡');
         }
-        if (!isRecord(enemy) || enemy.alive !== true) {
+        if (!isWildEncounter && (!isRecord(enemy) || enemy.alive !== true)) {
           fail('存在未解决的遭遇，但敌人已死亡');
         }
-        if (isRecord(player) && isRecord(enemy)) {
+        if (!isWildEncounter && isRecord(player) && isRecord(enemy)) {
           if (enemy.currentZoneId !== player.currentZoneId) {
             fail('存在未解决的遭遇，但敌人已不在玩家所在区域');
           }
           if (zoneId !== player.currentZoneId) {
             fail('encounter.zoneId 与玩家当前区域不一致');
           }
+        }
+        if (isWildEncounter && isRecord(player) && zoneId !== player.currentZoneId) {
+          fail('encounter.zoneId 与玩家当前区域不一致');
         }
         if (state.status !== 'playing') {
           fail('对局已结束，但存在未解决的遭遇');

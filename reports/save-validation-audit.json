@@ -1,8 +1,8 @@
 {
   "meta": {
     "tool": "audit-save-validation",
-    "version": "0.4.0",
-    "generatedAt": "2026-08-12T18:47:43.408Z",
+    "version": "0.5.0",
+    "generatedAt": "2026-08-13T05:08:53.298Z",
     "control": "normal-save-accepted",
     "totalCases": 102,
     "passedCases": 102,
@@ -96,7 +96,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "版本不受支持（9.9.9，当前 0.4.0）",
+      "errorMessage": "版本不受支持（9.9.9，当前 0.5.0）",
       "constructionFailed": false
     },
     {
@@ -544,7 +544,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "存在未解决的遭遇，但敌人已死亡",
+      "errorMessage": "encounter.targetKind 非法或缺失",
       "constructionFailed": false
     },
     {
@@ -552,7 +552,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "存在未解决的遭遇，但敌人已不在玩家所在区域",
+      "errorMessage": "encounter.targetKind 非法或缺失",
       "constructionFailed": false
     },
     {
@@ -560,7 +560,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "存在未解决的遭遇，但敌人已不在玩家所在区域",
+      "errorMessage": "encounter.targetKind 非法或缺失",
       "constructionFailed": false
     },
     {

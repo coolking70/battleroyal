@@ -1,5 +1,7 @@
 import type { CraftTier, ItemDef } from '../core/types';
 import { PHASE4M_ITEMS } from './phase4mItems';
+import { PHASE4N_ITEMS } from './phase4nItems';
+import { PHASE4N_WILD_MATERIAL_IDS } from './phase4nItems';
 
 /**
  * Phase 4C-1 物品表：10 材料 + 11 武器 + 3 防具 + 5 消耗品 = 29 种。
@@ -358,6 +360,7 @@ function enrichLegacyItem(item: LegacyItemDef): ItemDef {
 export const ITEMS: ItemDef[] = [
   ...LEGACY_ITEMS.map(enrichLegacyItem),
   ...PHASE4M_ITEMS,
+  ...PHASE4N_ITEMS,
 ];
 
 export function validateItemRegistry(items: readonly ItemDef[] = ITEMS): string[] {
@@ -420,3 +423,7 @@ export function tryGetItem(itemId: string): ItemDef | null {
 export const MATERIAL_IDS: string[] = ITEMS.filter(
   (i) => i.category === 'material',
 ).map((i) => i.id);
+
+/** Starting grants must not bypass the finite wild-drop ecology. */
+const WILD_MATERIAL_SET = new Set<string>(PHASE4N_WILD_MATERIAL_IDS);
+export const STARTING_MATERIAL_IDS = MATERIAL_IDS.filter((id) => !WILD_MATERIAL_SET.has(id));

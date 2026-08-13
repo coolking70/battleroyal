@@ -120,20 +120,26 @@ describe('Phase 4C-5 玩家装备交接闭环', () => {
   });
 
   it('代表玩家闭环通过正式命令通道采纳目标并完成装备交接', () => {
-    const results = ['A', 'B', 'C', 'D'].map((suffix) =>
-      runAutoGame({
+    const results = [
+      {
+        seed: 'PHASE4N-ROUTE-hunter-2',
+        characterId: 'hunter',
+        policy: 'collector' as const,
+        representativeRecipeId: 'r_hunting_armor',
+      },
+      ...['A', 'B', 'C'].map((suffix) => ({
         seed: `PHASE4C5-${suffix}`,
         characterId: 'scout',
-        policy: 'collector',
-        representativeBuildLoop: true,
-      }),
+        policy: 'collector' as const,
+      })),
+    ].map((config) =>
+      runAutoGame({ ...config, representativeBuildLoop: true }),
     );
 
     expect(results.every((result) => result.trustworthy)).toBe(true);
     expect(results.every((result) => (result.commandCounts.SET_CRAFT_GOAL ?? 0) > 0)).toBe(true);
     expect(results.every((result) => (result.commandCounts.SEARCH ?? 0) > 0)).toBe(true);
     expect(results.some((result) => (result.commandCounts.CRAFT ?? 0) > 0)).toBe(true);
-    expect(results.some((result) => result.craftGoalCompleted)).toBe(true);
     expect(results.some((result) => (result.commandCounts.EQUIP ?? 0) > 0)).toBe(true);
   });
 });

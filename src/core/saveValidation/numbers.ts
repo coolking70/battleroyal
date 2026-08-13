@@ -268,6 +268,7 @@ export function validateNumbers(ctx: ValidationContext): void {
       MEDICAL_FOCUS_ID,
       SCOUT_AWARENESS_ID,
       EXPOSED_ID,
+      'wild_poison',
       ...SECONDARY_STATUS_IDS,
     ]);
     if (!Array.isArray(c.statusEffects)) {
@@ -302,6 +303,11 @@ export function validateNumbers(ctx: ValidationContext): void {
           }
           if ((e.remaining as number) > GAME_CONFIG.exposedMaxDuration) {
             fail(`角色 ${id}（${String(c.characterId)}）的 EXPOSED remaining 超过兜底上限 ${GAME_CONFIG.exposedMaxDuration}`);
+          }
+        }
+        if (eid === 'wild_poison') {
+          if (e.hpPerTick !== -2 || (e.remaining as number) > 2) {
+            fail(`角色 ${id} 的 wild_poison 状态字段非法`);
           }
         }
         if (eid === SCOUT_SMOKE_ID) {
@@ -379,6 +385,7 @@ export function validateNumbers(ctx: ValidationContext): void {
         'attacks',
         'damageDealt',
         'damageTaken',
+        'wildKills',
       ] as const;
       for (const f of statFields) {
         const v = c.stats[f];

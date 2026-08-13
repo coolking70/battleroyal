@@ -51,6 +51,10 @@ const PLAYER_COMBAT_TYPES = new Set<GameEventType>([
   'ATTACK_MISSED',
   'CHARACTER_ESCAPED',
   'STATUS_EXPIRED',
+  'WILD_ENCOUNTER_STARTED',
+  'WILD_ATTACK',
+  'WILD_DEFEATED',
+  'WILD_FLED',
 ]);
 
 /** Pure UI boundary predicate; complete events remain available to DebugPanel. */
@@ -60,6 +64,7 @@ export function isEventVisibleToPlayer(event: GameEvent, playerId: string): bool
   if (PLAYER_COMBAT_TYPES.has(event.type)) {
     return event.actorId === playerId || event.targetId === playerId;
   }
+  if (event.type === 'WILD_DROP_CREATED') return event.actorId === playerId;
   return false;
 }
 
@@ -85,6 +90,9 @@ function kindOf(type: GameEventType): string {
   switch (type) {
     case 'ATTACK_HIT':
     case 'ATTACK_MISSED':
+    case 'WILD_ATTACK':
+    case 'WILD_DEFEATED':
+    case 'WILD_FLED':
       return 'k-attack';
     case 'CHARACTER_DIED':
     case 'GAME_ENDED':
@@ -98,6 +106,7 @@ function kindOf(type: GameEventType): string {
     case 'ITEM_PICKED':
     case 'ITEM_USED':
     case 'ITEM_EQUIPPED':
+    case 'WILD_DROP_CREATED':
       return 'k-item';
     case 'WORLD_EVENT':
     case 'WORLD_EVENT_ENDED':
@@ -117,6 +126,10 @@ function filterOf(type: GameEventType): LogFilter {
     case 'GUARD':
     case 'SKILL_USED':
     case 'STATUS_EXPIRED':
+    case 'WILD_ENCOUNTER_STARTED':
+    case 'WILD_ATTACK':
+    case 'WILD_DEFEATED':
+    case 'WILD_FLED':
       return 'combat';
     case 'ITEM_FOUND':
     case 'ITEM_CRAFTED':
@@ -124,6 +137,7 @@ function filterOf(type: GameEventType): LogFilter {
     case 'ITEM_DROPPED':
     case 'ITEM_USED':
     case 'ITEM_EQUIPPED':
+    case 'WILD_DROP_CREATED':
       return 'item';
     case 'ZONE_WARNING':
     case 'ZONE_RESTRICTED':

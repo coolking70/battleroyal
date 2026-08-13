@@ -1,12 +1,13 @@
 import { CHARACTERS, NPC_NAME_POOL, getCharacterDef } from '../data/characters';
 import { GAME_CONFIG, GAME_VERSION } from '../data/gameConfig';
-import { MATERIAL_IDS } from '../data/items';
+import { STARTING_MATERIAL_IDS } from '../data/items';
 import { LEGACY_ZONE_IDS, ZONES, ZONE_IDS } from '../data/zones';
 import { pushEvent } from './events';
 import { refreshPlayerSight } from './info';
 import { addItem, createStack } from './inventory';
 import { SeededRandom } from './random';
 import { generateZoneLoot, initZoneLoot } from './zoneLoot';
+import { initializeWildPopulations } from './wildPopulation';
 import type {
   Combatant,
   GameState,
@@ -55,6 +56,7 @@ function createZoneState(id: string): ZoneState {
     restrictedAtTime: null,
     groundItems: [],
     aliveCharacterIds: [],
+    wildEnemyIds: [],
     lastCombatTime: -1,
     lastNoiseTime: -1,
     noiseLevel: 0,
@@ -113,6 +115,7 @@ function createCombatant(params: {
       attacks: 0,
       damageDealt: 0,
       damageTaken: 0,
+      wildKills: 0,
     },
     plannedRecipeId: null,
     planCreatedAt: null,
@@ -129,7 +132,7 @@ function createCombatant(params: {
 function grantStartingItems(state: GameState, c: Combatant, rng: SeededRandom): void {
   addItem(c, createStack(state, 'water', 1));
 
-  const materialId = rng.pick(MATERIAL_IDS) ?? 'wood';
+  const materialId = rng.pick(STARTING_MATERIAL_IDS) ?? 'wood';
   addItem(c, createStack(state, materialId, 1));
 
   if (c.characterId === 'medic') {
@@ -162,6 +165,8 @@ export function createGame(options: CreateGameOptions): GameState {
     playerId: 'p0',
     turnOrder: [],
     characters: {},
+    wildEnemies: {},
+    wildUidSeq: 0,
     zones: {},
     events: [],
     eventSeq: 0,
@@ -182,6 +187,14 @@ export function createGame(options: CreateGameOptions): GameState {
       attacks: 0,
       zonesExhausted: 0,
       noiseDecayBlockedTicks: 0,
+      wildEncounterCount: 0,
+      wildKillCount: 0,
+      wildFleeCount: 0,
+      wildDamageTaken: 0,
+      wildPlayerDeaths: 0,
+      wildDropsCreated: 0,
+      wildMaterialPickups: 0,
+      wildCrafts: 0,
     },
     endedAtTime: null,
     phase: 'opening',
@@ -205,6 +218,7 @@ export function createGame(options: CreateGameOptions): GameState {
     initZoneLoot(zone, generateZoneLoot(z.id, lootRng));
     state.zones[z.id] = zone;
   }
+  initializeWildPopulations(state);
 
   // --- 玩家 ---
   const playerZone = pickSpawnZone(rng);

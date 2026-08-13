@@ -1,7 +1,7 @@
 # 存档独立验收报告（Phase 3）
 
-- 版本：0.4.0
-- 生成时间：2026-08-12T18:47:43.409Z
+- 版本：0.5.0
+- 生成时间：2026-08-13T05:08:53.302Z
 - 对照组：1 个正常存档
 - 损坏用例：102 个
 - 通过：102 / 102
@@ -22,7 +22,7 @@
 | 7 | 顶层 seed 与 state 不一致 | 拒绝 | 拒绝 | ✓ | state.seed 与顶层 seed 不一致 |
 | 8 | 顶层 rngState 与 state 不一致 | 拒绝 | 拒绝 | ✓ | state.rngState 与顶层 rngState 不一致 |
 | 9 | 顶层 rngState 为字符串 | 拒绝 | 拒绝 | ✓ | rngState 必须是合法的有限非负整数 |
-| 10 | 版本不受支持 | 拒绝 | 拒绝 | ✓ | 版本不受支持（9.9.9，当前 0.4.0） |
+| 10 | 版本不受支持 | 拒绝 | 拒绝 | ✓ | 版本不受支持（9.9.9，当前 0.5.0） |
 | 11 | 背包 9 格（超上限） | 拒绝 | 拒绝 | ✓ | 角色 p0 的背包超过 8 格（9 格） |
 | 12 | 物品 count=0 | 拒绝 | 拒绝 | ✓ | 角色 p0 的 inventory 的物品数量必须为正整数（0） |
 | 13 | 物品 count 超过 maxStack | 拒绝 | 拒绝 | ✓ | 角色 p0 的 inventory 的物品数量超过 maxStack（99 > 5） |
@@ -78,9 +78,9 @@
 | 63 | NPC 有目标但 planReason 为空 | 拒绝 | 拒绝 | ✓ | 角色 n1 有制作目标但 planReason 必须为非空字符串 |
 | 64 | 非法玩家制作目标 | 拒绝 | 拒绝 | ✓ | 玩家制作目标指向不存在的配方（recipe_does_not_exist） |
 | 65 | craftGoalCompleted=true 但无目标 | 拒绝 | 拒绝 | ✓ | craftGoalCompleted 为 true 但未设定制作目标 |
-| 66 | 未解决遭遇敌人已死亡 | 拒绝 | 拒绝 | ✓ | 存在未解决的遭遇，但敌人已死亡 |
-| 67 | 未解决遭遇 zoneId 与玩家区域不符 | 拒绝 | 拒绝 | ✓ | 存在未解决的遭遇，但敌人已不在玩家所在区域 |
-| 68 | 对局已结束仍有未解决遭遇 | 拒绝 | 拒绝 | ✓ | 存在未解决的遭遇，但敌人已不在玩家所在区域 |
+| 66 | 未解决遭遇敌人已死亡 | 拒绝 | 拒绝 | ✓ | encounter.targetKind 非法或缺失 |
+| 67 | 未解决遭遇 zoneId 与玩家区域不符 | 拒绝 | 拒绝 | ✓ | encounter.targetKind 非法或缺失 |
+| 68 | 对局已结束仍有未解决遭遇 | 拒绝 | 拒绝 | ✓ | encounter.targetKind 非法或缺失 |
 | 69 | pendingPickup zoneId 与玩家区域不符 | 拒绝 | 拒绝 | ✓ | pendingPickup.zoneId 与玩家当前区域不一致 |
 | 70 | pendingPickup source 非法 | 拒绝 | 拒绝 | ✓ | pendingPickup.source 非法（cheat） |
 | 71 | 全局重复 UID（跨角色） | 拒绝 | 拒绝 | ✓ | 物品 UID「i0」全局重复：角色 p0 的 inventory 与 角色 n1 的 inventory |

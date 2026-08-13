@@ -36,6 +36,7 @@ import { buildCraftPlan } from '../src/core/craftPlan';
 import { tryGetItem } from '../src/data/items';
 import type { Command, Combatant, GameEvent, GameState, Personality } from '../src/core/types';
 import { craftPathSummary, getCraftGoalSuggestion } from '../src/ui/craftPathPresentation';
+import { PHASE4N_RECIPES } from '../src/data/phase4nRecipes';
 
 /* ------------------------------------------------------------------ */
 /* 对外类型                                                            */
@@ -92,6 +93,8 @@ export interface AutoGameOptions {
   keepEventTrace?: boolean;
   /** 可选的玩家式闭环：采纳公开建议、优先当前子目标、合成后装备。 */
   representativeBuildLoop?: boolean;
+  /** Optional public recipe target for a deterministic representative route. */
+  representativeRecipeId?: string;
 }
 
 /** 玩家死亡瞬间的只读诊断快照，不参与任何规则结算。 */
@@ -159,6 +162,20 @@ export interface AutoGameResult {
   itemsUsed: number;
   craftGoalRecipeId: string | null;
   craftGoalCompleted: boolean;
+  wildEncounterCount: number;
+  wildKillCount: number;
+  wildFleeCount: number;
+  wildDamageTaken: number;
+  wildPlayerDeaths: number;
+  wildDropsCreated: number;
+  wildMaterialPickups: number;
+  wildCrafts: number;
+  wildEncounterByType: Record<string, number>;
+  wildEncounterByZone: Record<string, number>;
+  wildKillByType: Record<string, number>;
+  wildKillByZone: Record<string, number>;
+  wildCraftGoalAttempted: boolean;
+  wildCraftGoalCompleted: boolean;
 
   /* --- 全局 --- */
   totalParticipants: number;
@@ -358,6 +375,12 @@ export function decideAutoPlayerCommand(
 ): { command: Command | null; reason: string } {
   // 换人格的副本：避免把策略写回真实状态，也避免 decideNpcAction 的中间字段污染存档
   const view: Combatant = { ...player, personality: policy as Personality };
+  if (state.craftGoalRecipeId) {
+    view.plannedRecipeId = state.craftGoalRecipeId;
+    view.planCreatedAt = state.time;
+    view.planReason = '玩家公开制作目标';
+    view.planRecommendedZoneId = buildCraftPlan(state, view, state.craftGoalRecipeId)?.suggestedMoveZoneId ?? null;
+  }
   if (!view.plannedRecipeId) {
     const goal = chooseNpcGoal(view, rng);
     if (goal) {
@@ -390,7 +413,9 @@ export function decideAutoPlayerCommand(
         inEncounter &&
         d.targetId &&
         enc!.enemyId === d.targetId &&
-        state.characters[d.targetId]?.alive
+        (enc!.targetKind === 'wild'
+          ? state.wildEnemies[d.targetId]?.status === 'alive'
+          : state.characters[d.targetId]?.alive)
       ) {
         return {
           command: { type: 'ATTACK', targetId: d.targetId, style },
@@ -534,13 +559,16 @@ function chooseRepresentativeBuildAction(
   player: Combatant,
   legal: LegalAction[],
   route: RepresentativeRouteContext,
+  preferredRecipeId?: string,
 ): LegalAction | null {
+  const groundPickup = legal.find((action) => action.command.type === 'PICKUP_GROUND');
+  if (groundPickup) return groundPickup;
   if (!state.craftGoalRecipeId) {
     const suggestion = getCraftGoalSuggestion(state, player);
     const adopt = legal.find(
       (action) =>
         action.command.type === 'SET_CRAFT_GOAL' &&
-        action.command.recipeId === suggestion?.recipeId,
+        action.command.recipeId === (preferredRecipeId ?? suggestion?.recipeId),
     );
     if (adopt) {
       route.targetZoneId = null;
@@ -699,7 +727,7 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
         ? null
         : chooseEquipmentUpgradeAction(player, legal);
       const preferred = options.representativeBuildLoop
-        ? chooseRepresentativeBuildAction(s, player, legal, representativeRoute)
+        ? chooseRepresentativeBuildAction(s, player, legal, representativeRoute, options.representativeRecipeId)
         : equipmentUpgrade;
       const decision = preferred
         ? { command: preferred.command, reason: '代表玩家闭环：目标 / 合成 / 装备' }
@@ -880,6 +908,17 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
 
   const hardLimitReached =
     s.endReason === 'time_limit' || s.time >= GAME_CONFIG.hardTimeLimit;
+  const eventCounts = (type: string, field: 'wildDefId' | 'zoneId'): Record<string, number> => {
+    const counts: Record<string, number> = {};
+    for (const event of ctx.fullEvents) {
+      if (event.type !== type) continue;
+      const key = field === 'zoneId' ? event.zoneId : event.metadata.wildDefId;
+      if (typeof key === 'string') counts[key] = (counts[key] ?? 0) + 1;
+    }
+    return counts;
+  };
+  const wildRecipeIds = new Set(PHASE4N_RECIPES.map((recipe) => recipe.id));
+  const wildCraftGoalAttempted = Boolean(s.craftGoalRecipeId && wildRecipeIds.has(s.craftGoalRecipeId));
 
   const trustworthy =
     outcome !== 'timeout' &&
@@ -928,6 +967,20 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
     itemsUsed: player.stats.itemsUsed,
     craftGoalRecipeId: s.craftGoalRecipeId,
     craftGoalCompleted: s.craftGoalCompleted,
+    wildEncounterCount: s.stats.wildEncounterCount,
+    wildKillCount: s.stats.wildKillCount,
+    wildFleeCount: s.stats.wildFleeCount,
+    wildDamageTaken: s.stats.wildDamageTaken,
+    wildPlayerDeaths: s.stats.wildPlayerDeaths,
+    wildDropsCreated: s.stats.wildDropsCreated,
+    wildMaterialPickups: s.stats.wildMaterialPickups,
+    wildCrafts: s.stats.wildCrafts,
+    wildEncounterByType: eventCounts('WILD_ENCOUNTER_STARTED', 'wildDefId'),
+    wildEncounterByZone: eventCounts('WILD_ENCOUNTER_STARTED', 'zoneId'),
+    wildKillByType: eventCounts('WILD_DEFEATED', 'wildDefId'),
+    wildKillByZone: eventCounts('WILD_DEFEATED', 'zoneId'),
+    wildCraftGoalAttempted,
+    wildCraftGoalCompleted: wildCraftGoalAttempted && s.craftGoalCompleted,
 
     totalParticipants: total,
     survivorCount: alive.length,

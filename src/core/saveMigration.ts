@@ -1,10 +1,10 @@
 /**
- * 当前版本的区域地图存档迁移。
+ * Historical migration helper retained for pre-release tooling/reference.
  *
- * Phase 4K 保持 GAME_VERSION 不变：旧的 0.4.0 存档已经具备完整的成长、
- * 世界事件和存档字段，只是创建时还没有新增区域。加载时为这些缺失区域
- * 补建安全状态和确定性初始库存，既不消耗主 RNG 流，也不改变旧区域内容。
- * 其他版本仍由 saveLoad 的版本闸门拒绝，不在这里静默迁移。
+ * Phase 4N intentionally does not call this helper from save loading: a legacy
+ * save cannot reconstruct already-consumed finite wild populations. Compatibility
+ * is explicitly DEFERRED UNTIL PRE-RELEASE, so old saves are rejected by the
+ * version gate and preserved for the user to delete manually.
  */
 
 import { generateZoneLoot, initZoneLoot } from './zoneLoot';
@@ -26,6 +26,7 @@ function createMigratedZoneState(id: string): ZoneState {
     restrictedAtTime: null,
     groundItems: [],
     aliveCharacterIds: [],
+    wildEnemyIds: [],
     lastCombatTime: -1,
     lastNoiseTime: -1,
     noiseLevel: 0,

@@ -81,6 +81,7 @@ export function killReportFixture(seed = 'PHASE4E1-KILL'): Record<string, unknow
 
   state.encounter = {
     enemyId: enemy.id,
+    targetKind: 'contestant',
     zoneId: player.currentZoneId,
     startedAtTime: state.time,
     log: [`你与 ${enemy.name} 正面遭遇。`],

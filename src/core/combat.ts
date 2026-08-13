@@ -1,21 +1,17 @@
 import { GAME_CONFIG } from '../data/gameConfig';
 import { getItem } from '../data/items';
-import { attackStaminaCostFor, spendStamina, type CostCheck } from './actionCosts';
+import { type CostCheck } from './actionCosts';
 import { pushEvent } from './events';
 import {
   EXPOSED_LABEL,
   applyExposed,
   consumeExposedOnDamage,
-  exposedDamageMultiplier,
 } from './exposed';
-import { addNoise } from './info';
 import {
   armorDefenseOf,
-  destroyEquippedWeapon,
   getEquippedWeapon,
   weaponAttackOf,
 } from './inventory';
-import { consumeAdrenalineCharge, ADRENALINE_ID } from './skills';
 import { awardAttackExperience } from './progression';
 import {
   counterChanceBonus,
@@ -26,6 +22,7 @@ import { applyDamage } from './vitals';
 import { worldModifiersAt } from './worldEvents';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState } from './types';
+import { adjustIncomingCombatDamage, prepareAttack, wearAttackWeapon } from './combatRound';
 
 // 生命/死亡结算已统一收敛到 vitals.ts；这里重新导出，保持既有调用方不变。
 export { applyDamage, applyHealing, applyHpChange, killCharacter } from './vitals';
@@ -204,27 +201,7 @@ export function resolveAttack(
   rng: SeededRandom,
   style: AttackStyle = 'normal',
 ): AttackResult {
-  attacker.stats.attacks += 1;
-  state.stats.attacks += 1;
-  // Phase 3A：体力成本走 attackStaminaCostFor，肾上腺素的折扣才会真的落地，
-  // 且与 UI / legalActions 读的是同一个函数（不重蹈 BUG-01 的覆辙）。
-  const staminaSpent = spendStamina(attacker, attackStaminaCostFor(attacker, style));
-  // Phase 3A-1 统计：记录本次攻击是否处于肾上腺素状态（供模拟指标）
-  const adrenalineActive = attacker.statusEffects.some(
-    (e) => e.id === ADRENALINE_ID,
-  );
-  const rangedAttack = Boolean(
-    getEquippedWeapon(attacker) &&
-      getItem(getEquippedWeapon(attacker)!.itemId).weaponType === 'ranged',
-  );
-  // 肾上腺素按「攻击次数」计费：无论命中与否，这一拳都算用掉一次
-  consumeAdrenalineCharge(state, attacker);
-  // 出手即解除自身防御姿态（防御只能挡下一次攻击）
-  attacker.guarding = false;
-
-  const zone = state.zones[attacker.currentZoneId];
-  if (zone) zone.lastCombatTime = state.time;
-  addNoise(state, attacker.currentZoneId, 'combat');
+  const { staminaSpent, adrenalineActive, rangedAttack } = prepareAttack(state, attacker, style);
 
   if (!attacker.knownEnemies.includes(defender.id)) {
     attacker.knownEnemies.push(defender.id);
@@ -242,15 +219,7 @@ export function resolveAttack(
   const chancePct = Math.round(chance * 100);
 
   // 武器耐久：无论命中与否都会磨损（Phase 3A-1：研究异常不再增加额外损耗）
-  let weaponBroke = false;
-  const weapon = getEquippedWeapon(attacker);
-  if (weapon && typeof weapon.durability === 'number') {
-    weapon.durability -= 1;
-    if (weapon.durability <= 0) {
-      destroyEquippedWeapon(attacker);
-      weaponBroke = true;
-    }
-  }
+  const weaponBroke = wearAttackWeapon(attacker);
 
   if (!hit) {
     // Phase 3A：重击挥空 = 把破绽卖给对手。这是 heavy 高伤的代价，
@@ -281,52 +250,19 @@ export function resolveAttack(
 
   // 防御姿态、EXPOSED 与肾上腺素自伤代价需要按既有顺序在这里结算；
   // 直接调用 computeDamage 时仍保留对防御方状态的完整伤害快照。
-  let damage = computeDamage(attacker, defender, rng, style, false);
-  const baseDamage = damage;
+  const baseDamage = computeDamage(attacker, defender, rng, style, false);
 
   // Phase 3A-1 统计：肾上腺素带来的伤害加成（damage 已含 ×1.2，反推加成量）
   const adrenalineBonus = adrenalineActive
     ? Math.max(
         0,
-        damage -
-          Math.max(GAME_CONFIG.minDamage, Math.round(damage / GAME_CONFIG.skillAdrenalineDamageMult)),
+        baseDamage -
+          Math.max(GAME_CONFIG.minDamage, Math.round(baseDamage / GAME_CONFIG.skillAdrenalineDamageMult)),
       )
     : 0;
 
-  // 防御姿态：减免本次伤害后解除
-  let guarded = false;
-  let guardPrevented = 0;
-  if (defender.guarding) {
-    guarded = true;
-    const reduced = Math.max(
-      GAME_CONFIG.minDamage,
-      Math.round(damage * (1 - GAME_CONFIG.guardDamageReduction)),
-    );
-    guardPrevented = damage - reduced;
-    damage = reduced;
-    defender.guarding = false;
-  }
-
-  // Phase 3A：EXPOSED 只在这里生效 —— 也就是「攻击类战斗伤害」这一条路径上。
-  // 禁区侵蚀 / 世界事件 / 持续伤害 / 终局衰竭都直接走 applyDamage，不经过此处，
-  // 因此天然吃不到这 20%，符合设计红线。
-  const exposedMult = exposedDamageMultiplier(defender);
-  let exposedBonus = 0;
-  if (exposedMult !== 1) {
-    const boosted = Math.max(GAME_CONFIG.minDamage, Math.round(damage * exposedMult));
-    exposedBonus = boosted - damage;
-    damage = boosted;
-  }
-
-  // Phase 3A：肾上腺素的代价。斗士为了省体力换来的是「这段时间自己更脆」，
-  // 和 EXPOSED 一样只作用在攻击类战斗伤害上（禁区 / 世界事件不吃这一刀）。
-  const frenzyMult = selfDamageTakenMultiplier(defender);
-  let frenzyBonus = 0;
-  if (frenzyMult !== 1) {
-    const boosted = Math.max(GAME_CONFIG.minDamage, Math.round(damage * frenzyMult));
-    frenzyBonus = boosted - damage;
-    damage = boosted;
-  }
+  const { damage, guarded, guardPrevented, exposedBonus, frenzyBonus } =
+    adjustIncomingCombatDamage(defender, baseDamage);
 
   attacker.stats.damageDealt += damage;
   const res = applyDamage(state, defender, damage, attacker.id, '战斗');

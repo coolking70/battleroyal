@@ -359,6 +359,21 @@ interface CellStats {
   deathCauseCounts: Record<string, number>;
   avgEventCount: number;
 
+  wildEncounterCount: number;
+  wildKillCount: number;
+  wildFleeCount: number;
+  wildDamageTaken: number;
+  wildPlayerDeaths: number;
+  wildDropsCreated: number;
+  wildMaterialPickups: number;
+  wildCrafts: number;
+  wildEncounterByType: Record<string, number>;
+  wildEncounterByZone: Record<string, number>;
+  wildKillByType: Record<string, number>;
+  wildKillByZone: Record<string, number>;
+  wildCraftGoalAttempts: number;
+  wildCraftGoalCompletions: number;
+
   avgSteps: number;
   totalSteps: number;
 
@@ -464,6 +479,21 @@ function aggregateCell(
     avgDeaths: n > 0 ? sum((r) => r.deaths) / n : 0,
     deathCauseCounts: mergeDeathCauseCounts(results),
     avgEventCount: n > 0 ? sum((r) => r.eventCount) / n : 0,
+
+    wildEncounterCount: sum((r) => r.wildEncounterCount),
+    wildKillCount: sum((r) => r.wildKillCount),
+    wildFleeCount: sum((r) => r.wildFleeCount),
+    wildDamageTaken: sum((r) => r.wildDamageTaken),
+    wildPlayerDeaths: sum((r) => r.wildPlayerDeaths),
+    wildDropsCreated: sum((r) => r.wildDropsCreated),
+    wildMaterialPickups: sum((r) => r.wildMaterialPickups),
+    wildCrafts: sum((r) => r.wildCrafts),
+    wildEncounterByType: mergeCounts((r) => r.wildEncounterByType, results),
+    wildEncounterByZone: mergeCounts((r) => r.wildEncounterByZone, results),
+    wildKillByType: mergeCounts((r) => r.wildKillByType, results),
+    wildKillByZone: mergeCounts((r) => r.wildKillByZone, results),
+    wildCraftGoalAttempts: results.filter((r) => r.wildCraftGoalAttempted).length,
+    wildCraftGoalCompletions: results.filter((r) => r.wildCraftGoalCompleted).length,
 
     avgSteps: n > 0 ? sum((r) => r.steps) / n : 0,
     totalSteps: sum((r) => r.steps),
@@ -733,6 +763,23 @@ interface BalanceReport {
       skillPlayerUsesAll: boolean;
       worldEventImpact: Record<string, WorldEventImpactAgg>;
     };
+    pve: {
+      encounters: number;
+      kills: number;
+      flees: number;
+      playerDeaths: number;
+      damageTaken: number;
+      groundDrops: number;
+      pickups: number;
+      crafts: number;
+      encounterByType: Record<string, number>;
+      encounterByZone: Record<string, number>;
+      killsByType: Record<string, number>;
+      killsByZone: Record<string, number>;
+      craftGoalAttempts: number;
+      craftGoalCompletions: number;
+      craftGoalCompletionRate: number;
+    };
     /** 整体判定 = 引擎健康 && 角色平衡 && Phase 3A 玩法验收（规格 §六） */
     overallPassed: boolean;
     /** Phase 3A-1：CI 门槛（100 局规模无关项） */
@@ -822,6 +869,21 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
       avgDeaths: w((c) => c.avgDeaths),
       deathCauseCounts: mergeSummaryCounts(subset, (c) => c.deathCauseCounts),
       avgEventCount: w((c) => c.avgEventCount),
+
+      wildEncounterCount: sum((c) => c.wildEncounterCount),
+      wildKillCount: sum((c) => c.wildKillCount),
+      wildFleeCount: sum((c) => c.wildFleeCount),
+      wildDamageTaken: sum((c) => c.wildDamageTaken),
+      wildPlayerDeaths: sum((c) => c.wildPlayerDeaths),
+      wildDropsCreated: sum((c) => c.wildDropsCreated),
+      wildMaterialPickups: sum((c) => c.wildMaterialPickups),
+      wildCrafts: sum((c) => c.wildCrafts),
+      wildEncounterByType: mergeSummaryCounts(subset, (c) => c.wildEncounterByType),
+      wildEncounterByZone: mergeSummaryCounts(subset, (c) => c.wildEncounterByZone),
+      wildKillByType: mergeSummaryCounts(subset, (c) => c.wildKillByType),
+      wildKillByZone: mergeSummaryCounts(subset, (c) => c.wildKillByZone),
+      wildCraftGoalAttempts: sum((c) => c.wildCraftGoalAttempts),
+      wildCraftGoalCompletions: sum((c) => c.wildCraftGoalCompletions),
 
       avgSteps: w((c) => c.avgSteps),
       totalSteps: sum((c) => c.totalSteps),
@@ -1123,6 +1185,23 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
         skillPlayerUsesAll,
         worldEventImpact: all.worldEventImpact,
       },
+      pve: {
+        encounters: all.wildEncounterCount,
+        kills: all.wildKillCount,
+        flees: all.wildFleeCount,
+        playerDeaths: all.wildPlayerDeaths,
+        damageTaken: all.wildDamageTaken,
+        groundDrops: all.wildDropsCreated,
+        pickups: all.wildMaterialPickups,
+        crafts: all.wildCrafts,
+        encounterByType: all.wildEncounterByType,
+        encounterByZone: all.wildEncounterByZone,
+        killsByType: all.wildKillByType,
+        killsByZone: all.wildKillByZone,
+        craftGoalAttempts: all.wildCraftGoalAttempts,
+        craftGoalCompletions: all.wildCraftGoalCompletions,
+        craftGoalCompletionRate: all.wildCraftGoalAttempts > 0 ? all.wildCraftGoalCompletions / all.wildCraftGoalAttempts : 0,
+      },
       overallPassed: engineHealthy && characterBalancePassed && phase3aPassed,
       /** Phase 3A-1：CI 门槛（100 局规模无关项） */
       ciGate,
@@ -1279,7 +1358,23 @@ function renderMarkdown(report: BalanceReport): string {
   L.push(`**引擎整体判定：${h.engineHealthy ? 'PASS' : 'FAIL'}**`);
   L.push('');
   L.push('> 说明：timeout 在 Step 13 的 `enforceTimeLimit` 落地后会由 `playing → draw` 收束而归零；');
-  L.push('> 引擎健康、角色平衡与 Phase 3A 玩法门槛分别验收；总体判定要求三者同时 PASS。');
+  L.push(meta.mode === 'regression'
+    ? '> Regression 门槛只要求请求/实际局数一致且引擎健康；角色平衡与 Phase 3A 结果仅作为观察。'
+    : '> 引擎健康、角色平衡与 Phase 3A 玩法门槛分别验收；总体判定要求三者同时 PASS。');
+  L.push('');
+
+  const pve = meta.pve;
+  L.push('## Phase 4N PvE ecology observations');
+  L.push('');
+  L.push(`- encounters=${pve.encounters}, kills=${pve.kills}, flees=${pve.flees}, playerDeaths=${pve.playerDeaths}`);
+  L.push(`- damageTaken=${pve.damageTaken}, groundDrops=${pve.groundDrops}, pickups=${pve.pickups}, wildCrafts=${pve.crafts}`);
+  L.push(`- craftGoalCompletion=${pve.craftGoalCompletions}/${pve.craftGoalAttempts} (${fmtPct(pve.craftGoalCompletionRate)})`);
+  L.push(`- encounterByType: ${JSON.stringify(pve.encounterByType)}`);
+  L.push(`- encounterByZone: ${JSON.stringify(pve.encounterByZone)}`);
+  L.push(`- killsByType: ${JSON.stringify(pve.killsByType)}`);
+  L.push(`- killsByZone: ${JSON.stringify(pve.killsByZone)}`);
+  L.push('');
+  L.push('> These are BALANCE OBSERVATIONS ONLY; Phase 4N regression gating remains engine-health-only.');
   L.push('');
 
   // ---- 角色平衡验收（Phase 2A-1） ----
@@ -1296,7 +1391,11 @@ function renderMarkdown(report: BalanceReport): string {
   L.push(`| 判定 | ${cb.passed ? '**PASS**' : '**FAIL**'} |`);
   L.push('');
   const p3 = meta.phase3a;
-  L.push(`**整体判定：${meta.overallPassed ? 'PASS' : 'FAIL'}**（= 引擎健康 ${h.engineHealthy ? '✓' : '✗'} && 角色平衡 ${cb.passed ? '✓' : '✗'} && Phase 3A 玩法 ${p3.passed ? '✓' : '✗'}）`);
+  if (meta.mode === 'regression') {
+    L.push(`**Regression 整体判定：${meta.regressionGate ? 'PASS' : 'FAIL'}**（= 请求/实际局数 ${meta.config.requestedTotalGames === meta.config.actualTotalGames ? '✓' : '✗'} && 引擎健康 ${h.engineHealthy ? '✓' : '✗'}；角色平衡仅观察）`);
+  } else {
+    L.push(`**整体判定：${meta.overallPassed ? 'PASS' : 'FAIL'}**（= 引擎健康 ${h.engineHealthy ? '✓' : '✗'} && 角色平衡 ${cb.passed ? '✓' : '✗'} && Phase 3A 玩法 ${p3.passed ? '✓' : '✗'}）`);
+  }
   L.push('');
 
   // ---- Phase 3A 玩法使用率与事件覆盖（Step 9/10/14） ----

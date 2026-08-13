@@ -27,6 +27,7 @@ import {
 } from '../craftPathPresentation';
 import { latestPlayerSearchFeedback } from '../searchPresentation';
 import { getZoneVisual } from '../visualAssets';
+import { wildCombatProfile } from '../../core/wildCombat';
 import { buildCombatActionBar } from '../combatActionsPresentation';
 import { zoneStatusMeta } from '../zonePresentation';
 import { warningRemaining, zoneUrgencyMeta } from '../zonePresentation';
@@ -110,8 +111,9 @@ export function GameScreen({
   );
 
   const encounter = state.encounter;
-  const enemy = encounter ? (state.characters[encounter.enemyId] ?? null) : null;
-  const inActiveEncounter = Boolean(encounter && !encounter.resolved && enemy?.alive);
+  const wildEnemy = encounter?.targetKind === 'wild' ? (state.wildEnemies[encounter.enemyId] ?? null) : null;
+  const enemy = wildEnemy ? wildCombatProfile(wildEnemy) : encounter ? (state.characters[encounter.enemyId] ?? null) : null;
+  const inActiveEncounter = Boolean(encounter && !encounter.resolved && enemy?.alive && (!wildEnemy || wildEnemy.status === 'alive'));
   const resolvedEncounter = Boolean(encounter?.resolved);
   const pending = state.pendingPickup;
   const visibleGroundItems = useMemo(
@@ -223,6 +225,11 @@ export function GameScreen({
   );
   const encounterLootAvailable = useMemo(() => {
     if (!encounter || visibleCorpseGroundItems.length === 0) return false;
+    if (encounter.targetKind === 'wild') {
+      return visibleEventsForPlayer(state.events, state.playerId).some(
+        (event) => event.type === 'WILD_DROP_CREATED' && event.metadata.wildUid === encounter.enemyId && event.zoneId === encounter.zoneId,
+      );
+    }
     const death = visibleEventsForPlayer(state.events, state.playerId)
       .slice()
       .reverse()
@@ -361,6 +368,7 @@ export function GameScreen({
                 encounter={encounter}
                 player={player}
                 enemy={enemy}
+                wildEnemy={wildEnemy}
                 combat={combatBar}
                 lootAvailable={encounterLootAvailable}
               />

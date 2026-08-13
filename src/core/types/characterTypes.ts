@@ -97,6 +97,8 @@ export interface CombatantStats {
   damageDealt: number;
   /** 累计承受伤害（含战斗、禁区、衰竭） */
   damageTaken: number;
+  /** PvE defeats are tracked independently and never increment contestant kills. */
+  wildKills: number;
 }
 
 export interface Combatant {

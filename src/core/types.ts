@@ -11,5 +11,6 @@ export * from './types/zoneTypes';
 export * from './types/recipeTypes';
 export * from './types/eventTypes';
 export * from './types/encounterTypes';
+export * from './types/wildTypes';
 export * from './types/gameTypes';
 export * from './commandTypes';

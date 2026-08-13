@@ -94,8 +94,8 @@ describe('[Phase 2A-1] 人格专属评分', () => {
     give(state, npc, 'wood', 1);
     const goal = chooseNpcGoal(npc);
     expect(goal).not.toBeNull();
-    // Phase 4M 的重型护甲是固定 roster 中价值最高的长线防具目标。
-    expect(goal!.recipeId).toBe('r_heavy_armor');
+    // Phase 4N 的野外材料链在收集型人格评分中成为价值最高的长线目标。
+    expect(goal!.recipeId).toBe('r_predator_bow');
   });
 
   it('投机型优先材料完成度最高的配方', () => {

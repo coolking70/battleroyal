@@ -31,9 +31,9 @@ describe('NPC 制作目标规划（Step 5 / Phase 2A-1 五种人格）', () => {
     clearInventory(npc!);
     give(state, npc!, 'wood', 1); // 材料远未齐——但收集型追逐的是价值
     planNpcGoal(state, npc!);
-    // Phase 4M 的重型护甲是扩展 roster 中价值最高的长线防具目标。
-    expect(npc!.plannedRecipeId).toBe('r_heavy_armor');
-    expect(npc!.planReason).toContain('重型护甲');
+    // Phase 4N 的野外材料链在收集型人格评分中成为价值最高的长线目标。
+    expect(npc!.plannedRecipeId).toBe('r_predator_bow');
+    expect(npc!.planReason).toContain('猎食者弓');
     expect(npc!.planCreatedAt).toBe(state.time);
     expect(npc!.planRecommendedZoneId).not.toBeNull();
   });

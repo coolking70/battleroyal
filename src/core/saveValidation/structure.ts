@@ -86,6 +86,7 @@ export function buildContext(raw: unknown, errors: string[]): ValidationContext 
   if (!Array.isArray(state.events)) fail('state.events 类型错误');
   if (!Array.isArray(state.deathOrder)) fail('state.deathOrder 类型错误');
   if (!isRecord(state.characters)) fail('state.characters 类型错误');
+  if (!isRecord(state.wildEnemies)) fail('state.wildEnemies 类型错误');
   if (!isRecord(state.zones)) fail('state.zones 类型错误');
 
   const status = state.status;

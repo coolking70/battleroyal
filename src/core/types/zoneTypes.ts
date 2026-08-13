@@ -58,6 +58,8 @@ export interface ZoneState {
   groundItems: ItemStack[];
   /** 当前该区域存活角色 id（每个时间单位刷新） */
   aliveCharacterIds: string[];
+  /** Phase 4N finite wild population; ids never overlap contestant ids. */
+  wildEnemyIds: string[];
   /** 最近一次发生战斗的时间单位，-1 表示从未 */
   lastCombatTime: number;
   /** 最近一次产生噪音的时间单位，-1 表示从未 */
