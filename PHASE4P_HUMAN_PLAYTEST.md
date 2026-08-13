@@ -40,6 +40,10 @@ human acceptance gate is intentionally still open.
 - [ ] With ordinary loot exhausted, confirm a production NPC can visibly pursue
       its own public Apex source through SEARCH, then pickup/craft/equip; no
       hidden player goal or remote Apex state is exposed.
+- [ ] When a remote NPC defeats a named Apex, the default log shows only the
+      public named-threat defeat broadcast; it does not show remote combat,
+      loot, UID, HP, or hidden state, and future source planning closes only
+      after that public lifecycle evidence.
 - [ ] The desktop and mobile layouts remain usable through the route.
 - [ ] Terminal victory freezes the tick with no post-terminal world mutation.
 - [ ] No new approved PNG or art manifest entry is required for this phase.

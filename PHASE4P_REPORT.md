@@ -395,3 +395,81 @@ Implementation commit `7294022f02a6f685e3fbab68d99d0bae45250c5a` passed exact-he
 GitHub Actions CI run #126 (`31710812342`) with `completed/success`. The
 documentation closeout commit and its exact-head CI are recorded in the final
 handoff after this report update is pushed.
+
+## 10. Phase 4P-AF3 — Public Apex Defeat Lifecycle & Information-Boundary Closure
+
+This section records AF3 against audited input head
+`c98829e6fca0711ddbf8b22a81c6cf1aa0b139f9`. PR #23 remains open, Draft, based
+on `main`, and unmerged. No Phase 4Q work, new content, balance tuning, or old
+save migration was added.
+
+### Blocker and public lifecycle contract
+
+- Root cause: `currentWorldSourcesForItem()` / `apexSourceZones()` previously
+  used remote `wildEnemies[uid].status` and hidden `WILD_DEFEATED` events to
+  decide that a named Apex was defeated. A remote NPC could therefore lose a
+  future source without receiving public evidence.
+- Added `APEX_DEFEATED` as the minimal public lifecycle event for `tier=apex`.
+  Its metadata is exactly `{ wildDefId, tier: 'apex', zoneId }`; actorId is
+  null, and it contains no UID, HP, damage, pending intent, ability charges,
+  inventory, loot, or ground-item identity.
+- Canonical Apex order is `WILD_DEFEATED → APEX_DEFEATED →
+  WILD_DROP_CREATED`. The existing `WILD_DEFEATED` event remains combat-local;
+  Common and Elite defeats never emit `APEX_DEFEATED`.
+- Runtime source semantics now depend only on public lifecycle evidence:
+  unspawned Apex → eligible open zones; spawned but publicly unresolved Apex →
+  actual public spawn zone; restricted spawn zone → no current route;
+  `APEX_DEFEATED` → no future source. Static `worldSourcesForItem()` remains
+  provenance-only and unchanged in meaning.
+
+### Planner, UI, and validation evidence
+
+- NPC planning paths no longer read remote Apex status, UID state, hidden
+  `WILD_DEFEATED`, ground items, or other actors' inventories. They may use
+  the NPC's own plan/inventory and public `APEX_SPAWNED` / `APEX_DEFEATED`
+  lifecycle facts.
+- The AF2 autonomous fixture no longer assigns `planRecommendedZoneId`
+  directly; it calls the production `refreshNpcPlanRecommendation()` helper
+  during setup, then drives the route with `runNpcTurn()` only.
+- Default EventLog includes `APEX_DEFEATED` but continues to hide remote
+  `WILD_DEFEATED`; the public message names only the threat and public zone.
+- Current-schema save validation accepts `APEX_DEFEATED` and checks Apex
+  definition, spawned schedule, matching public zone, defeated instance
+  consistency, exact public metadata, and absence of hidden fields. Historical
+  save migration remains deferred.
+- `tests/phase4pAf3Acceptance.test.ts` contains 6 tests: hidden runtime status,
+  hidden `WILD_DEFEATED`, public source closure, canonical exact-once lifecycle
+  and drop order, Common/Elite non-broadcasting, and EventLog projection.
+  The four Phase 4P focused suites pass 27/27; the additional EventLog test
+  suite also passes 3/3.
+
+### AF3 gates
+
+- Full suite: 105 files / 1,620 tests PASS. Typecheck, build, save audit,
+  dependency audit, Art validation, browser/repository security scans, browser
+  smoke, and both production dependency audits pass.
+- Save audit: 109/109 malformed cases rejected, control accepted, construction
+  failures 0.
+- Dependency audit: 107 files scanned; maximum core/data file is
+  `src/core/npcDecide.ts` at 500 lines; R1/R2/R3/R4 are all 0.
+- Art/security: offline doctor 36 tasks PASS; published manifest and Phase 4A
+  audit PASS; browser scan 243 files PASS; repository scan 971 tracked files
+  PASS. No production PNG or art manifest bytes changed relative to the audited
+  input head.
+- Networked `npm audit --omit=dev` and offline fallback both report 0
+  vulnerabilities.
+- Exact regression command:
+  `npm run simulate -- --games 500 --seed-prefix PHASE4P-AF3 --regression --output reports/phase4p-regression.json`
+  passed with requested=actual=500, trustworthyRate=100%,
+  `regressionGate=true`, and `engineHealthy=true`. Outcome counts were 21 won,
+  416 lost, 63 draw, 0 timeout. All hard health counters were 0, including
+  duplicate Apex spawn and invalid Apex spawn zone. PVE observations were
+  encounters=7,560, eliteEncounters=160, apexSpawned=340, apexEncounters=12,
+  kills=1,758, flees=5,959, playerDeaths=46, groundDrops=2,856,
+  pickups=3,220, crafts=112; Apex kills and signature crafts were 0 in this
+  observation run. Balance remains observation-only.
+
+Implementation commit `24818beab36103f38c02ad100c4e56fac1f3f437` passed exact-head
+GitHub Actions CI run #128 (`31736842842`) with `completed/success`. The
+documentation closeout head and its exact-head CI are recorded after pushing
+the docs-only commit.
