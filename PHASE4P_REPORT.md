@@ -307,5 +307,7 @@ Phase 4P architecture audit above.
   `bossKillsByType={}`. These are balance observations only.
 - Final implementation head: `af90003178a813cf6af280472ff2fc4caa9de0a3`;
   its GitHub Actions CI run #123 (`31704949792`) completed with `success`.
-  The final documentation-only branch head and its exact CI run are recorded
-  in the next sentence after that closeout commit is pushed.
+  Documentation closeout head `5c1370ac3a63d193a25da4143eb2ea971dcf7a8e`
+  passed its exact GitHub Actions CI run #124 (`31705310383`) with
+  `completed/success`. PR #23 remains Draft and unmerged. Human status
+  remains exactly `NEEDS-HUMAN-PLAYTEST`.
