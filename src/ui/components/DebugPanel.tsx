@@ -216,6 +216,19 @@ export function DebugPanel({
           <span>{saveError ? `失败：${saveError}` : '已写入 localStorage'}</span>
         </div>
 
+        <h5>Actor cognition</h5>
+        <div className="debug-kv" data-debug-cognition-summary>
+          {npcs.map((npc) => (
+            <Fragment key={`cognition-${npc.id}`}>
+              <span>{npc.name}</span>
+              <span>
+                {npc.strategicIntent?.type ?? '—'} · memory {npc.knowledgeMemory.entries.length}/{npc.knowledgeMemory.capacity}
+                {' · '}evicted {npc.knowledgeMemory.evictions}
+              </span>
+            </Fragment>
+          ))}
+        </div>
+
         <h5>资产</h5>
         <div className="debug-kv">
           <span>Manifest</span>
@@ -394,6 +407,22 @@ export function DebugPanel({
               {n.kills}
             </div>
             {n.alive && <NpcPlanDetail state={state} npcId={n.id} />}
+            <div className="faint" data-debug-cognition={n.id}>
+              intent {n.strategicIntent
+                ? `${n.strategicIntent.type}/${n.strategicIntent.reason} · since ${n.strategicIntent.committedAt} · target ${n.strategicIntent.targetId ?? '—'}`
+                : '—'}
+              {' · '}memory {n.knowledgeMemory.entries.length}/{n.knowledgeMemory.capacity}
+              {' · '}evicted {n.knowledgeMemory.evictions}
+            </div>
+            {n.knowledgeMemory.entries.length > 0 && (
+              <div className="faint" data-debug-memory={n.id}>
+                {[...n.knowledgeMemory.entries]
+                  .sort((a, b) => b.observedAt - a.observedAt || a.key.localeCompare(b.key))
+                  .slice(0, 6)
+                  .map((entry) => `${entry.kind}:${entry.key}@${entry.observedAt}`)
+                  .join(' · ')}
+              </div>
+            )}
             <div className="faint">
               {n.lastAction ?? '—'}
               {n.lastActionReason ? ` / ${n.lastActionReason}` : ''}

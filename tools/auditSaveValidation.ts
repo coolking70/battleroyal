@@ -557,6 +557,67 @@ const CASES: AuditCase[] = [
     processApexSpawns(s.state);
     entry.zoneId = getWildEnemy(entry.defId).eligibleZones!.find((zoneId) => zoneId !== entry.zoneId)!;
   } },
+
+  /* ---- Phase 4S：actor memory / strategic intent semantics ---- */
+  { case: 'knowledgeMemory owner 与角色不一致', expected: false, mutate: (s) => {
+    const npc = Object.values(s.state.characters).find((actor) => !actor.isPlayer)!;
+    npc.knowledgeMemory.ownerId = s.state.playerId;
+  } },
+  { case: 'knowledge observation 来自未来', expected: false, mutate: (s) => {
+    const npc = Object.values(s.state.characters).find((actor) => !actor.isPlayer)!;
+    npc.knowledgeMemory.entries[0]!.observedAt = s.state.time + 1;
+  } },
+  { case: 'source memory 指向 known-but-unrelated Landmark', expected: false, mutate: (s) => {
+    const npc = Object.values(s.state.characters).find((actor) => !actor.isPlayer)!;
+    npc.knowledgeMemory.entries.push({
+      key: 'source:water:factory_machine_shop', kind: 'source_status', observedAt: s.state.time,
+      provenance: 'DIRECT_LOCAL', landmarkId: 'factory_machine_shop', itemId: 'water', state: 'unavailable',
+    });
+  } },
+  { case: 'knowledgeMemory 超过固定容量', expected: false, mutate: (s) => {
+    const npc = Object.values(s.state.characters).find((actor) => !actor.isPlayer)!;
+    const sample = npc.knowledgeMemory.entries[0]!;
+    while (npc.knowledgeMemory.entries.length <= npc.knowledgeMemory.capacity) {
+      npc.knowledgeMemory.entries.push({ ...sample, key: `${sample.key}:${npc.knowledgeMemory.entries.length}` });
+    }
+  } },
+  { case: 'knowledge entry 注入 hidden runtime snapshot 字段', expected: false, mutate: (s) => {
+    const npc = Object.values(s.state.characters).find((actor) => !actor.isPlayer)!;
+    (npc.knowledgeMemory.entries[0] as unknown as Mutable).remainingSearches = 3;
+  } },
+  { case: 'known actor memory 引用不存在 subject', expected: false, mutate: (s) => {
+    const npc = Object.values(s.state.characters).find((actor) => !actor.isPlayer)!;
+    npc.knowledgeMemory.entries.push({
+      key: 'actor:ghost', kind: 'actor_sighting', observedAt: s.state.time, provenance: 'DIRECT_LOCAL',
+      subjectActorId: 'ghost', zoneId: npc.currentZoneId, threat: 'high',
+    });
+  } },
+  { case: 'StrategicIntent item target 与 type 不匹配', expected: false, mutate: (s) => {
+    const npc = Object.values(s.state.characters).find((actor) => !actor.isPlayer)!;
+    npc.strategicIntent = {
+      type: 'seek_material', reason: 'MISSING_RAW_MATERIAL', targetId: 'hospital', committedAt: 0, reevaluateAt: 6,
+    };
+  } },
+  { case: 'StrategicIntent Apex target 不是 Apex', expected: false, mutate: (s) => {
+    const npc = Object.values(s.state.characters).find((actor) => !actor.isPlayer)!;
+    npc.strategicIntent = {
+      type: 'contest_apex', reason: 'APEX_PUBLIC_AND_READY', targetId: 'stray_dog', committedAt: 0, reevaluateAt: 6,
+    };
+  } },
+  { case: 'StrategicIntent committedAt 来自未来', expected: false, mutate: (s) => {
+    const npc = Object.values(s.state.characters).find((actor) => !actor.isPlayer)!;
+    npc.strategicIntent = {
+      type: 'gear_up', reason: 'GEAR_GROWTH', targetId: null,
+      committedAt: s.state.time + 1, reevaluateAt: s.state.time + 7,
+    };
+  } },
+  { case: 'observation action 与 target 字段组合非法', expected: false, mutate: (s) => {
+    const npc = Object.values(s.state.characters).find((actor) => !actor.isPlayer)!;
+    npc.knowledgeMemory.entries.push({
+      key: 'action:MOVE:none:-', kind: 'recent_action', observedAt: s.state.time,
+      provenance: 'SELF_ACTION', action: 'MOVE', outcome: 'success', targetKind: 'none', targetId: null,
+    });
+  } },
 ];
 
 /* ------------------------------------------------------------------ */

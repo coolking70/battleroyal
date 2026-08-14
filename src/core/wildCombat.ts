@@ -13,6 +13,7 @@ import { createStack } from './inventory';
 import { applyDamage } from './vitals';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, StatusEffect, WildEnemyDef, WildEnemyInstance } from './types';
+import { createActorKnowledgeMemory, observeWildSighting } from './npcKnowledge';
 
 export interface WildActionResult {
   ok: boolean;
@@ -46,6 +47,7 @@ export function wildCombatProfile(enemy: WildEnemyInstance): Combatant {
     stats: { searches: 0, crafts: 0, moves: 0, itemsUsed: 0, attacks: 0, damageDealt: 0, damageTaken: 0, wildKills: 0 },
     plannedRecipeId: null, planCreatedAt: null, planReason: null, planProgress: 0,
     planNoProgressTurns: 0, planRecommendedZoneId: null, planRecommendedLandmarkId: null, lastReplanReason: null, explorationObjective: null,
+    knowledgeMemory: createActorKnowledgeMemory(enemy.uid), strategicIntent: null,
     furthestPhase: 'opening', guarding: enemy.guarding, skillCooldowns: {},
   };
 }
@@ -56,6 +58,7 @@ export function startWildEncounter(state: GameState, actor: Combatant, enemy: Wi
   const def = getWildEnemy(enemy.defId);
   if (def.tier === 'elite') state.stats.eliteEncounterCount = (state.stats.eliteEncounterCount ?? 0) + 1;
   if (def.tier === 'apex') state.stats.apexEncounterCount = (state.stats.apexEncounterCount ?? 0) + 1;
+  observeWildSighting(state, actor, enemy.defId);
   pushEvent(state, {
     type: 'WILD_ENCOUNTER_STARTED', actorId: actor.id, zoneId: enemy.zoneId,
     message: `${actor.name} 遭遇了 ${def.name}。`,

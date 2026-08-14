@@ -56,6 +56,14 @@ import {
 import type { SkillId } from './skills';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, ItemStack } from './types';
+import {
+  observeActorSighting,
+  observeLocalLandmark,
+  observeOwnAction,
+  observeOwnItem,
+  observeWildSighting,
+  observeZoneVisit,
+} from './npcKnowledge';
 
 /* ------------------------------------------------------------------ */
 /* 公共基座与战斗行动（Phase 3 Step 10 拆分，此处保留统一出口）           */
@@ -118,6 +126,8 @@ export function moveActor(
     message: `${who(actor)}前往${zoneName}。`,
     metadata: { zoneId, extraMoveStaminaPaid, rainActive: extraMoveStaminaPaid > 0 },
   });
+  observeZoneVisit(state, actor);
+  observeOwnAction(state, actor, 'MOVE', 'success', 'zone', zoneId);
   return done(actor.isPlayer ? `已进入${zoneName}。` : `${actor.name} 前往${zoneName}。`, spent);
 }
 
@@ -140,6 +150,15 @@ export function searchLandmarkActor(
   rng: SeededRandom,
 ): LandmarkSearchActorResult {
   const result = searchLandmark(state, actor, landmarkId, rng);
+  observeLocalLandmark(state, actor, landmarkId);
+  observeOwnAction(state, actor, 'SEARCH_LANDMARK', result.ok ? 'success' : 'failure', 'landmark', landmarkId);
+  if (result.outcome?.kind === 'item' && result.outcome.stack && !result.outcome.pending) {
+    observeOwnItem(state, actor, result.outcome.stack.itemId);
+  }
+  if (result.outcome?.kind === 'enemy' && result.outcome.enemyId) {
+    const wild = state.wildEnemies[result.outcome.enemyId];
+    if (wild) observeWildSighting(state, actor, wild.defId);
+  }
   if (!result.ok) return { ...fail('no_stamina', result.message), outcome: null };
   return { ...done(result.message, result.staminaSpent), outcome: result.outcome };
 }
@@ -151,6 +170,8 @@ export function interactFacilityActor(
   interactionId: string,
 ): ActorActionResult {
   const result = interactFacility(state, actor, landmarkId, interactionId);
+  observeLocalLandmark(state, actor, landmarkId);
+  observeOwnAction(state, actor, 'INTERACT_LANDMARK', result.ok ? 'success' : 'failure', 'landmark', landmarkId);
   return result.ok ? done(result.message, result.staminaSpent) : fail('illegal_target', result.message);
 }
 
@@ -169,6 +190,18 @@ export function searchActor(
   // `performSearch` 内部通过 `payActionCost` 扣费，这里先记下应扣数额用于回报
   const spent = canPayActionCost(actor, 'SEARCH').cost;
   const outcome = performSearch(state, actor, rng);
+  observeOwnAction(state, actor, 'SEARCH', 'success');
+  if (outcome.kind === 'item' && outcome.pickedUp) observeOwnItem(state, actor, outcome.stack.itemId);
+  if (outcome.kind === 'enemy' && outcome.targetKind === 'contestant') {
+    const enemy = state.characters[outcome.enemyId];
+    if (enemy) {
+      observeActorSighting(state, actor, enemy, 'SELF_ACTION');
+      observeActorSighting(state, enemy, actor, 'DIRECT_LOCAL');
+    }
+  } else if (outcome.kind === 'enemy' && outcome.targetKind === 'wild') {
+    const wild = state.wildEnemies[outcome.enemyId];
+    if (wild) observeWildSighting(state, actor, wild.defId);
+  }
   gainCostedActionExperience(actor, GAME_CONFIG.expSearch, spent);
   if (outcome.kind === 'enemy') {
     const enemy = state.characters[outcome.enemyId];
@@ -210,6 +243,8 @@ export function resolveNpcOverflow(
   if (idx >= 0) npc.inventory.splice(idx, 1);
   if (zone) zone.groundItems.push(worst);
   addItem(npc, stack);
+  observeOwnItem(state, npc, stack.itemId);
+  observeOwnAction(state, npc, 'PICKUP', 'success', 'item', stack.itemId);
   pushEvent(state, {
     type: 'ITEM_DROPPED',
     actorId: npc.id,
@@ -257,8 +292,11 @@ export function craftActor(
   const spent = canPayActionCost(actor, 'CRAFT').cost;
   const res = performCraft(state, actor, recipeId);
   if (!res.ok) {
+    observeOwnAction(state, actor, 'CRAFT', 'failure', 'recipe', recipeId);
     return { ...fail('not_found', res.message), outputItemId: null };
   }
+  observeOwnAction(state, actor, 'CRAFT', 'success', 'recipe', recipeId);
+  if (res.outputItemId) observeOwnItem(state, actor, res.outputItemId);
   return {
     ...done(res.message, spent),
     outputItemId: res.outputItemId ?? null,

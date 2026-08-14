@@ -6,6 +6,7 @@ import { buildCraftPlan } from './craftPlan';
 import { sourceDrivenLandmarkForRecipe } from './npcLandmarkPlan';
 import { currentWorldSourcesForActor } from './worldSources';
 import { syncNpcExplorationObjective } from './accessChains';
+import { strategicZonePreference } from './npcStrategicIntent';
 import type { Combatant, GameState, Recipe } from './types';
 
 const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
@@ -38,6 +39,7 @@ export function recommendedZoneForRecipe(
     if (zone.status === 'warning') score -= 4;
     if (zoneId === npc.currentZoneId) score += 6;
     else if (def.adjacent.includes(npc.currentZoneId)) score += 3;
+    score *= strategicZonePreference(npc, zoneId);
     if (!best || score > best.score) best = { zoneId, score };
   }
   return best?.zoneId ?? null;

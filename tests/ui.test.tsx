@@ -148,6 +148,13 @@ describe('界面冒烟', () => {
     expect(container.querySelector('.game')).not.toBeNull();
   });
 
+  it('普通玩家界面不挂载 NPC private cognition inspector', () => {
+    render();
+    click('开始新对局');
+    expect(container.querySelector('[data-debug-cognition]')).toBeNull();
+    expect(container.querySelector('[data-debug-memory]')).toBeNull();
+  });
+
   it('debug=1 时面板展示技能冷却 / 战斗风格概率 / 事件 / RNG 状态', () => {
     // 模拟 ?debug=1
     const url = new URL(window.location.href);
@@ -163,6 +170,9 @@ describe('界面冒烟', () => {
     expect(text).toContain('事件');
     expect(text).toContain('RNG 状态');
     expect(text).toContain('同种子可完全重放');
+    expect(container.querySelector('[data-debug-cognition-summary]')).not.toBeNull();
+    expect(container.querySelectorAll('[data-debug-cognition]').length).toBeGreaterThan(0);
+    expect(text).toContain('memory');
   });
 
   it('暴露紧凑的 render_game_to_text 状态供自动化试玩读取', () => {

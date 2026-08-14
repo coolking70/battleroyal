@@ -280,6 +280,16 @@ export interface AutoGameResult {
   /** 自动玩家命令执行前玩家恰好 0 体力时的应急动作次数 */
   zeroStaminaGuardCommands: number;
   zeroStaminaFleeCommands: number;
+  memoryObservations: number;
+  memoryEvictions: number;
+  strategicIntentCommits: number;
+  strategicIntentPreserves: number;
+  strategicIntentReevaluations: number;
+  strategicIntentCompletions: number;
+  strategicIntentInvalidations: number;
+  sourceFailuresRemembered: number;
+  threatAvoidanceIntents: number;
+  apexContestIntents: number;
   /** 玩家死亡前最后一次可观察到的装备/资源快照 */
   playerDeathSnapshot: PlayerDeathSnapshot | null;
 }
@@ -1252,6 +1262,16 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
     commandCounts: ctx.commandCounts,
     zeroStaminaGuardCommands: ctx.zeroStaminaGuardCommands,
     zeroStaminaFleeCommands: ctx.zeroStaminaFleeCommands,
+    memoryObservations: s.stats.memoryObservations ?? 0,
+    memoryEvictions: s.stats.memoryEvictions ?? 0,
+    strategicIntentCommits: s.stats.strategicIntentCommits ?? 0,
+    strategicIntentPreserves: s.stats.strategicIntentPreserves ?? 0,
+    strategicIntentReevaluations: s.stats.strategicIntentReevaluations ?? 0,
+    strategicIntentCompletions: s.stats.strategicIntentCompletions ?? 0,
+    strategicIntentInvalidations: s.stats.strategicIntentInvalidations ?? 0,
+    sourceFailuresRemembered: s.stats.sourceFailuresRemembered ?? 0,
+    threatAvoidanceIntents: s.stats.threatAvoidanceIntents ?? 0,
+    apexContestIntents: s.stats.apexContestIntents ?? 0,
     playerDeathSnapshot: ctx.playerDeathSnapshot,
 
     ...scanPhase3aCounters(

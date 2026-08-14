@@ -6,6 +6,7 @@ import type {
   GameEventType,
   GameState,
 } from './types';
+import { observePublicGameEvent } from './npcKnowledge';
 
 export interface PushEventInput {
   type: GameEventType;
@@ -107,6 +108,8 @@ export function pushEvent(state: GameState, input: PushEventInput): GameEvent {
   state.eventCounters.total += 1;
   state.eventCounters.byType[event.type] =
     (state.eventCounters.byType[event.type] ?? 0) + 1;
+
+  observePublicGameEvent(state, event);
 
   pruneEvents(state);
   return event;

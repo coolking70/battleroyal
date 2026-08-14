@@ -46,6 +46,16 @@ export interface GameGlobalStats {
   npcLandmarkSearches?: number;
   landmarkWildEncounters?: number;
   landmarkItemsRecovered?: number;
+  memoryObservations?: number;
+  memoryEvictions?: number;
+  strategicIntentCommits?: number;
+  strategicIntentPreserves?: number;
+  strategicIntentReevaluations?: number;
+  strategicIntentCompletions?: number;
+  strategicIntentInvalidations?: number;
+  sourceFailuresRemembered?: number;
+  threatAvoidanceIntents?: number;
+  apexContestIntents?: number;
 }
 
 /**

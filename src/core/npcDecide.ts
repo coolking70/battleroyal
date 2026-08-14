@@ -26,6 +26,7 @@ import { npcCombatSkill, npcSurvivalSkill } from './npcSkillDecide';
 import { decideNpcVictoryAction } from './npcVictoryDecide';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, Personality } from './types';
+import { strategicZonePreference } from './npcStrategicIntent';
 /* ------------------------------------------------------------------ */
 /* 决策结构                                                            */
 /* ------------------------------------------------------------------ */
@@ -198,6 +199,7 @@ function chooseMoveTarget(
     if (npc.planRecommendedZoneId === zoneId && status !== 'restricted') {
       weight *= 5;
     }
+    weight *= strategicZonePreference(npc, zoneId);
     if (npc.personality === 'random') weight += 4;
     return { value: zoneId, weight };
   });

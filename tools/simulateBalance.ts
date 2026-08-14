@@ -392,6 +392,18 @@ interface CellStats {
   avgSteps: number;
   totalSteps: number;
 
+  /* --- Phase 4S actor-scoped cognition counters --- */
+  memoryObservations?: number;
+  memoryEvictions?: number;
+  strategicIntentCommits?: number;
+  strategicIntentPreserves?: number;
+  strategicIntentReevaluations?: number;
+  strategicIntentCompletions?: number;
+  strategicIntentInvalidations?: number;
+  sourceFailuresRemembered?: number;
+  threatAvoidanceIntents?: number;
+  apexContestIntents?: number;
+
   /* --- Phase 3A 玩法统计（事件扫描聚合） --- */
   attackStyleCounts: Record<string, number>;
   exposedApplied: number;
@@ -534,6 +546,17 @@ function aggregateCell(
 
     avgSteps: n > 0 ? sum((r) => r.steps) / n : 0,
     totalSteps: sum((r) => r.steps),
+
+    memoryObservations: sum((r) => r.memoryObservations),
+    memoryEvictions: sum((r) => r.memoryEvictions),
+    strategicIntentCommits: sum((r) => r.strategicIntentCommits),
+    strategicIntentPreserves: sum((r) => r.strategicIntentPreserves),
+    strategicIntentReevaluations: sum((r) => r.strategicIntentReevaluations),
+    strategicIntentCompletions: sum((r) => r.strategicIntentCompletions),
+    strategicIntentInvalidations: sum((r) => r.strategicIntentInvalidations),
+    sourceFailuresRemembered: sum((r) => r.sourceFailuresRemembered),
+    threatAvoidanceIntents: sum((r) => r.threatAvoidanceIntents),
+    apexContestIntents: sum((r) => r.apexContestIntents),
 
     /* --- Phase 3A 玩法统计聚合 --- */
     attackStyleCounts: mergeCounts((r) => r.attackStyleCounts, results),
@@ -836,6 +859,20 @@ interface BalanceReport {
       craftGoalCompletions: number;
       craftGoalCompletionRate: number;
     };
+    cognition: {
+      memoryObservations: number;
+      memoryEvictions: number;
+      memoryEvictionRate: number;
+      strategicIntentCommits: number;
+      strategicIntentPreserves: number;
+      strategicIntentReevaluations: number;
+      strategicIntentCompletions: number;
+      strategicIntentInvalidations: number;
+      averageCommitsPerNpcTurn: number;
+      sourceFailuresRemembered: number;
+      threatAvoidanceIntents: number;
+      apexContestIntents: number;
+    };
     /** 整体判定 = 引擎健康 && 角色平衡 && Phase 3A 玩法验收（规格 §六） */
     overallPassed: boolean;
     /** Phase 3A-1：CI 门槛（100 局规模无关项） */
@@ -962,6 +999,17 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
 
       avgSteps: w((c) => c.avgSteps),
       totalSteps: sum((c) => c.totalSteps),
+
+      memoryObservations: sum((c) => c.memoryObservations ?? 0),
+      memoryEvictions: sum((c) => c.memoryEvictions ?? 0),
+      strategicIntentCommits: sum((c) => c.strategicIntentCommits ?? 0),
+      strategicIntentPreserves: sum((c) => c.strategicIntentPreserves ?? 0),
+      strategicIntentReevaluations: sum((c) => c.strategicIntentReevaluations ?? 0),
+      strategicIntentCompletions: sum((c) => c.strategicIntentCompletions ?? 0),
+      strategicIntentInvalidations: sum((c) => c.strategicIntentInvalidations ?? 0),
+      sourceFailuresRemembered: sum((c) => c.sourceFailuresRemembered ?? 0),
+      threatAvoidanceIntents: sum((c) => c.threatAvoidanceIntents ?? 0),
+      apexContestIntents: sum((c) => c.apexContestIntents ?? 0),
 
       /* --- Phase 3A 玩法统计聚合（计数直接求和） --- */
       attackStyleCounts: mergeSummaryCounts(subset, (c) => c.attackStyleCounts),
@@ -1295,6 +1343,25 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
         craftGoalAttempts: all.wildCraftGoalAttempts,
         craftGoalCompletions: all.wildCraftGoalCompletions,
         craftGoalCompletionRate: all.wildCraftGoalAttempts > 0 ? all.wildCraftGoalCompletions / all.wildCraftGoalAttempts : 0,
+      },
+      cognition: {
+        memoryObservations: all.memoryObservations ?? 0,
+        memoryEvictions: all.memoryEvictions ?? 0,
+        memoryEvictionRate: (all.memoryObservations ?? 0) > 0
+          ? (all.memoryEvictions ?? 0) / (all.memoryObservations ?? 1)
+          : 0,
+        strategicIntentCommits: all.strategicIntentCommits ?? 0,
+        strategicIntentPreserves: all.strategicIntentPreserves ?? 0,
+        strategicIntentReevaluations: all.strategicIntentReevaluations ?? 0,
+        strategicIntentCompletions: all.strategicIntentCompletions ?? 0,
+        strategicIntentInvalidations: all.strategicIntentInvalidations ?? 0,
+        averageCommitsPerNpcTurn: (all.strategicIntentCommits ?? 0) + (all.strategicIntentPreserves ?? 0) > 0
+          ? (all.strategicIntentCommits ?? 0)
+            / ((all.strategicIntentCommits ?? 0) + (all.strategicIntentPreserves ?? 0))
+          : 0,
+        sourceFailuresRemembered: all.sourceFailuresRemembered ?? 0,
+        threatAvoidanceIntents: all.threatAvoidanceIntents ?? 0,
+        apexContestIntents: all.apexContestIntents ?? 0,
       },
       overallPassed: engineHealthy && characterBalancePassed && phase3aPassed,
       /** Phase 3A-1：CI 门槛（100 局规模无关项） */
@@ -1645,6 +1712,22 @@ function renderMarkdown(report: BalanceReport): string {
   L.push(
     `| 全域骚动 | ${cu?.triggerCount ?? 0} | 阻止噪音衰减 ${cu?.noiseDecayPrevented ?? 0} · 搜索噪音加成 ${cu?.searchNoiseBonus ?? 0} |`,
   );
+  L.push('');
+
+  // ---- Phase 4S cognition sanity ----
+  const cognition = meta.cognition;
+  L.push('## Phase 4S cognition sanity');
+  L.push('');
+  L.push('| 指标 | 值 |');
+  L.push('| --- | ---: |');
+  L.push(`| memory observations | ${cognition.memoryObservations} |`);
+  L.push(`| memory evictions | ${cognition.memoryEvictions} (${fmtPct(cognition.memoryEvictionRate)}) |`);
+  L.push(`| intent commit / preserve | ${cognition.strategicIntentCommits} / ${cognition.strategicIntentPreserves} |`);
+  L.push(`| intent reevaluate / complete / invalidate | ${cognition.strategicIntentReevaluations} / ${cognition.strategicIntentCompletions} / ${cognition.strategicIntentInvalidations} |`);
+  L.push(`| commit ratio per observed NPC intent turn | ${fmtPct(cognition.averageCommitsPerNpcTurn)} |`);
+  L.push(`| remembered source failures | ${cognition.sourceFailuresRemembered} |`);
+  L.push(`| threat-avoidance intents | ${cognition.threatAvoidanceIntents} |`);
+  L.push(`| Apex-contest intents | ${cognition.apexContestIntents} |`);
   L.push('');
 
   // ---- 全局摘要 ----

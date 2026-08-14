@@ -15,4 +15,5 @@ export * from './types/encounterTypes';
 export * from './types/wildTypes';
 export * from './types/gameTypes';
 export * from './types/victoryTypes';
+export * from './types/knowledgeTypes';
 export * from './commandTypes';

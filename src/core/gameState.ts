@@ -10,6 +10,7 @@ import { generateZoneLoot, initZoneLoot } from './zoneLoot';
 import { initializeWildPopulations } from './wildPopulation';
 import { initializeApexSchedule } from './apexSchedule';
 import { initializeLandmarks } from './landmarks';
+import { createActorKnowledgeMemory, observeOwnItem, observeZoneVisit } from './npcKnowledge';
 import type {
   Combatant,
   GameState,
@@ -131,6 +132,8 @@ function createCombatant(params: {
     planRecommendedLandmarkId: null,
     lastReplanReason: null,
     explorationObjective: null,
+    knowledgeMemory: createActorKnowledgeMemory(params.id),
+    strategicIntent: null,
     furthestPhase: 'opening',
   };
 }
@@ -220,6 +223,16 @@ export function createGame(options: CreateGameOptions): GameState {
       npcLandmarkSearches: 0,
       landmarkWildEncounters: 0,
       landmarkItemsRecovered: 0,
+      memoryObservations: 0,
+      memoryEvictions: 0,
+      strategicIntentCommits: 0,
+      strategicIntentPreserves: 0,
+      strategicIntentReevaluations: 0,
+      strategicIntentCompletions: 0,
+      strategicIntentInvalidations: 0,
+      sourceFailuresRemembered: 0,
+      threatAvoidanceIntents: 0,
+      apexContestIntents: 0,
     },
     endedAtTime: null,
     phase: 'opening',
@@ -293,7 +306,13 @@ export function createGame(options: CreateGameOptions): GameState {
   // --- 初始物品 ---
   for (const id of state.turnOrder) {
     const c = state.characters[id];
-    if (c) grantStartingItems(state, c, rng);
+    if (c) {
+      grantStartingItems(state, c, rng);
+      observeZoneVisit(state, c);
+      for (const itemId of [...new Set(c.inventory.map((stack) => stack.itemId))].sort()) {
+        observeOwnItem(state, c, itemId);
+      }
+    }
   }
 
   refreshZoneOccupants(state);

@@ -3,6 +3,7 @@ import { ZONES } from '../data/zones';
 import { LANDMARKS, tryGetLandmarkDef } from '../data/landmarks';
 import type { Combatant, GameState } from './types';
 import { isApexPubliclyDefeated } from './apexLifecycle';
+import { isRecentlyKnownSourceUnavailable } from './npcKnowledge';
 
 export type WorldSource =
   | { kind: 'zone_loot'; zoneIds: string[] }
@@ -109,7 +110,10 @@ export function currentWorldSourcesForActor(state: GameState, actor: Combatant, 
     if (source.kind !== 'landmark_loot') return [source];
     const landmarkIds = source.landmarkIds.filter((landmarkId) => {
       const def = tryGetLandmarkDef(landmarkId);
-      if (!def || def.zoneId !== actor.currentZoneId) return true;
+      if (!def) return false;
+      if (def.zoneId !== actor.currentZoneId) {
+        return !isRecentlyKnownSourceUnavailable(actor, itemId, landmarkId, state.time);
+      }
       const runtime = state.landmarks[landmarkId];
       return Boolean(runtime && !runtime.exhausted && runtime.remainingSearches > 0 && !runtime.locked && !runtime.disabled && runtime.loot.length > 0);
     });

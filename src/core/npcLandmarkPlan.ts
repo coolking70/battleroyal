@@ -5,6 +5,7 @@ import { tryGetLandmarkDef } from '../data/landmarks';
 import { recipeForOutput } from '../data/recipes';
 import { buildCraftPlan } from './craftPlan';
 import type { Combatant, GameState, Recipe } from './types';
+import { strategicZonePreference } from './npcStrategicIntent';
 
 function rawInputsForItem(itemId: string, seen = new Set<string>()): Set<string> {
   const recipe = recipeForOutput(itemId);
@@ -52,8 +53,9 @@ function selectLandmarkForRecipe(
           // A public access chain is a deterministic, finite route rather
           // than a reason to discard the source; prefer it on ties so NPCs
           // can actually exercise local exploration content.
-          score: gap.missing * 10 + (def.zoneId === npc.currentZoneId ? 8 : 0)
-            + (sourceDriven && preferAccessChain && def.access ? 25 : 0),
+          score: (gap.missing * 10 + (def.zoneId === npc.currentZoneId ? 8 : 0)
+            + (sourceDriven && preferAccessChain && def.access ? 25 : 0))
+            * strategicZonePreference(npc, def.zoneId),
         });
       }
     }
