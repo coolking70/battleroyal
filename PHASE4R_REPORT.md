@@ -6,7 +6,7 @@
 - Human status: **NEEDS-HUMAN-PLAYTEST**
 - Base SHA: `43199fa173db0faa751bb9b8ffe213be6bcfac22` (Phase 4Q merged main)
 - Branch: `agent/phase4r-access-chains-exploration`
-- Draft PR: to be created after the final implementation commit
+- Draft PR: [#25](https://github.com/coolking70/battleroyal/pull/25)
 - Merge status: **OPEN / DRAFT / UNMERGED**
 - Balance policy: **BALANCE OBSERVATION ONLY — BALANCE DEFERRED**
 - Old-save migration: **DEFERRED UNTIL PRE-RELEASE SAVE FORMAT STABILIZATION**
@@ -115,9 +115,18 @@ Evidence: `reports/phase4r-regression.json` and
   `fighter` and `hunter`; this remains observation-only and does not fail the
   regression gate.
 
-## 7. Audit boundary
+## 8. GitHub exact-head evidence
+
+- Implementation commit: `70cb9ce4fc678424b5bb16698df764ec174b874a`
+  (`feat: add local access chains and exploration objectives`).
+- Exact implementation-head CI: run `31802981564` / job `94775105902`
+  (GitHub Actions #140), completed with `success`.
+- A documentation-only closeout commit follows this report update. Its own
+  exact-head CI will be checked before handoff; no merge or ready-for-review
+  transition will be performed.
+
+## 9. Audit boundary
 
 This branch is intentionally not merged and is not declared accepted. The
 remaining human gate is the manual playtest checklist in
 `PHASE4R_HUMAN_PLAYTEST.md`. Independent Auditor review decides acceptance.
-
