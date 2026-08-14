@@ -10,7 +10,7 @@
 - PR state: **OPEN / DRAFT / UNMERGED**
 - Base main: `43199fa173db0faa751bb9b8ffe213be6bcfac22`
 - Previous rejected head: `26f2e46ac38ac4015fb1ea5b7e3c8589c77bc0ac`
-- Final AF1 head: recorded after the AF1 commit is created
+- Final AF1 implementation head: `aa73fb3f4d5dc00df84999950cb8dea5e1829935`
 
 ## Root causes closed
 
@@ -77,9 +77,10 @@ as observations only.
 
 ## Exact-head CI
 
-- Final AF1 head: recorded after the AF1 commit is created.
-- Exact-head CI: recorded after pushing that head; the PR must remain Draft and
-  unmerged.
+- Final AF1 implementation head: `aa73fb3f4d5dc00df84999950cb8dea5e1829935`.
+- Exact-head CI: run `31831421860` / job `94867772925`, `success`.
+- The following documentation-only closeout commit does not change the AF1
+  implementation head; the PR remains Draft and unmerged.
 
 ## Human-only playtest
 

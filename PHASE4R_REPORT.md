@@ -202,8 +202,9 @@ Evidence: `reports/phase4r-af1-regression.json` and
 
 The same PR remains **OPEN / DRAFT / UNMERGED** on
 `agent/phase4r-access-chains-exploration`. The previous rejected head is
-`26f2e46ac38ac4015fb1ea5b7e3c8589c77bc0ac`; the final AF1 head and exact-head
-CI run are recorded in the auditor handoff after the AF1 commit is pushed.
+`26f2e46ac38ac4015fb1ea5b7e3c8589c77bc0ac`. The AF1 implementation head is
+`aa73fb3f4d5dc00df84999950cb8dea5e1829935`; exact-head CI run
+`31831421860` / job `94867772925` completed successfully.
 No merge, rebase, main update, Phase 4S work, balance tuning, old-save
 migration, or PNG change is part of AF1.
 
@@ -213,9 +214,12 @@ migration, or PNG change is part of AF1.
   (`feat: add local access chains and exploration objectives`).
 - Exact implementation-head CI: run `31802981564` / job `94775105902`
   (GitHub Actions #140), completed with `success`.
-- A documentation-only closeout commit follows this report update. Its own
-  exact-head CI will be checked before handoff; no merge or ready-for-review
-  transition will be performed.
+- AF1 implementation commit: `aa73fb3f4d5dc00df84999950cb8dea5e1829935`
+  (`fix: close Phase 4R-AF1 remote boundary`).
+- AF1 exact-head CI: run `31831421860` / job `94867772925`, completed with
+  `success`.
+- A documentation-only closeout commit follows this evidence update; no merge
+  or ready-for-review transition will be performed.
 
 ## 9. Audit boundary
 
