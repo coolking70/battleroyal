@@ -1156,3 +1156,12 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Added `tests/phase4qAf2Acceptance.test.ts` with fresh-plan, autonomous MOVE → SEARCH_LANDMARK → pickup → CRAFT → EQUIP, deterministic replay, TTL replan, null route, Apex protection, remote boundary, and player-goal isolation coverage. Updated AF-12 to use the same fresh production path without a manual planner call.
 - Verification: focused AF2/AF/Phase 4P/NPC planning suite 11 files / 70 tests PASS; full suite 114 files / 1,664 tests PASS; typecheck/build, 109-case save audit, dependency R1–R4, Art/security, production npm audit, browser smoke, and the required PHASE4Q-AF2 500-game engine-health regression all PASS. Regression is 500/500 trustworthy with every health counter zero.
 - Commit `ddfbef53b7d5ea321d9195fe4d3ccc14ba13c3fe` is on the existing `agent/phase4q-zone-landmarks-facilities` branch. Status: ready for independent acceptance review; human status remains exactly `NEEDS-HUMAN-PLAYTEST`; PR #24 remains open, Draft, and unmerged. No Phase 4R, new landmark/facility, balance tuning, old-save migration, PNG change, or merge was performed.
+
+## Phase 4Q-AF3 — Source-Driven Landmark Recommendation Closure
+
+- Audited `c97f177a4b146c361e5a9d876b8a68f1174b1ab6` from base `eeb0dce16827dca24fabdcea0f0f50a31001bffd`.
+- Closed the remaining planner blocker by removing `currentZoneIsExhausted` from Landmark eligibility and moving route-facet commitment into `src/core/npcPlanRecommendation.ts`.
+- Recommendations now follow selected-recipe raw-gap source semantics, preserve Apex/objective/Wild priority, isolate remote hidden Landmark runtime, and prove mixed-source behavior without an any-gap Wild boolean.
+- Added `tests/phase4qAf3Acceptance.test.ts`: fresh non-exhausted planning, exhaustion equivalence, autonomous route, TTL replan, remote hidden depletion, mixed sources, Apex null protection, and stable legitimate null.
+- AF3 focused evidence is `8/8`; legacy AF is `13/13`; AF2 is `8/8`. The required 500-game AF3 engine-health regression is `500/500` trustworthy with all health counters zero. Six legacy AutoPlayer assertions remain to be reconciled with the intentionally changed pre-exhaustion NPC route cadence before independent acceptance.
+- Status: ready for independent acceptance review after the noted regression closure; human status remains exactly `NEEDS-HUMAN-PLAYTEST`. No Phase 4R, new Landmark/Facility, balance tuning, old-save migration, PNG change, or merge.

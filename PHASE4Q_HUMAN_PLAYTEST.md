@@ -31,5 +31,7 @@ This status intentionally remains `NEEDS-HUMAN-PLAYTEST` until an independent hu
 - [ ] Arriving at an exhausted landmark gives clear feedback and allows the player/NPC to choose another source.
 - [ ] A lethal landmark hazard never shows a dead character successfully receiving loot or a pickup.
 - [ ] NPCs visibly make use of landmark-driven resource routes during ordinary matches rather than only in scripted fixtures.
+- [ ] NPCs can choose landmark-driven routes even before their current zone is fully exhausted.
+- [ ] NPC targeted-search behavior does not feel artificially delayed until a zone is empty.
 
 Status remains exactly `NEEDS-HUMAN-PLAYTEST` pending independent review.

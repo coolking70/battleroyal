@@ -121,3 +121,27 @@ Phase 4Q-AF implementation complete and ready for independent acceptance review.
 33. Known issues: the 500-game role balance ratio and zero-win role remain observation-only; independent human playtest is still required; no Phase 4R content, new landmarks/facilities, balance tuning, old-save migration, or merge was performed.
 
 Phase 4Q-AF2 implementation complete and ready for independent acceptance review.
+
+## Phase 4Q-AF3 — Source-Driven Landmark Recommendation Closure
+
+1. Audited input head: `c97f177a4b146c361e5a9d876b8a68f1174b1ab6`; base SHA remains `eeb0dce16827dca24fabdcea0f0f50a31001bffd`.
+2. Blocker root cause: AF2 used current-zone loot exhaustion as a legacy cadence proxy for Landmark promotion, so a non-exhausted NPC plan retained a null targeted source.
+3. Fix: `currentZoneIsExhausted` is removed from Landmark eligibility. `src/core/npcPlanRecommendation.ts` now commits route facets from the selected recipe, while `src/core/npcLandmarkPlan.ts` resolves the next missing raw gap through actor-safe current public sources.
+4. Source-driven policy: selected recipe → actual missing raw gap → public/current source projection; a Landmark is committed only for a missing target raw gap with a valid actor-safe Landmark source, and remote hidden runtime is never probed.
+5. Special-route priority remains Phase 4P Apex/signature, objective-specific, Wild-authoritative target gap, ordinary Landmark targeted source, then generic zone source/fallback. Apex recipes and objective outputs retain dedicated/null Landmark semantics.
+6. Mixed-source proof: an unrelated later Wild gap no longer globally suppresses a Landmark candidate for the current target gap; a Wild source on the selected target gap still owns that route.
+7. Determinism/cadence: recommendation scoring and raw-gap expansion consume no RNG. Recipe selection remains the only planner RNG boundary for random personality.
+8. Fresh non-exhausted evidence: AF3-1 starts with `plannedRecipeId=null`, a non-empty warehouse, `supply=1`, and an active local-landmark boundary; `runNpcTurn()` commits `r_composite_bow_upgrade`, `construction_tool_container`, and `construction` while the origin remains non-exhausted.
+9. Exhausted/non-exhausted equivalence: AF3-2 changes only the origin's ordinary loot depletion and obtains the same recipe/Landmark/zone recommendation.
+10. Autonomous evidence: AF3-3 uses only repeated `runNpcTurn()` calls and observes `CHARACTER_MOVED → ITEM_FOUND/ITEM_PICKED → LANDMARK_SEARCHED → ITEM_CRAFTED → ITEM_EQUIPPED`, with no DEBUG events.
+11. TTL replan: AF3-4 replaces the stale `forest_deep_grove` recommendation from a non-exhausted origin with the newly committed construction Landmark route.
+12. Information boundary: AF3-5 confirms remote hidden Landmark depletion does not alter the pre-arrival recommendation; local runtime remains actor-scoped.
+13. Mixed-source and null evidence: AF3-6 covers Wild-plus-Landmark raw gaps; AF3-7 protects the Phase 4P Apex null route; AF3-8 keeps a legitimate null route stable on the next ordinary turn. Player craft-goal isolation remains covered by AF2-8.
+14. Focused tests: AF3 `8/8`, legacy AF `13/13`, and AF2 `8/8`; the expanded Phase 4Q/P focused set is `12 files / 78 tests` when the existing Phase 4P and Landmark focused files are included.
+15. Full-suite status at this implementation point: `115 files / 1,672 tests` executed; the AF3 route change exposes six legacy balance-sensitive AutoPlayer assertions that still assume the pre-AF3 exhaustion cadence. This is recorded as a known regression to resolve before acceptance; no balance numbers were tuned.
+16. Save audit exact: `npm run audit:save` accepted the control and rejected `109/109` malformed cases with `0` construction failures.
+17. Dependency audit: `115` files scanned; `R1=0`, `R2=0`, `R3=0`, `R4=0`; maximum core/data file remains `src/core/commandHandlers.ts` at `500` lines and `src/core/npcGoalPlan.ts` is `426` lines.
+18. PHASE4Q-AF3 regression: requested `500`, actual `500`, trustworthy rate `100%`, regression gate PASS, engine health PASS; timeout, illegal state, hard limit, terminal-without-winner, invalid-victory-tuple, duplicate-Apex-spawn, and invalid-Apex-zone counters are all `0`. Artifact: `reports/phase4q-af3-regression.json` and `.md`.
+19. Typecheck and build passed. Art doctor offline, art validation, Phase 4A art audit, browser/repository security scans, and dry-run generation passed. `npm audit --omit=dev` reports `0 vulnerabilities`.
+20. No production PNG, approved art manifest, save schema, Landmark, Facility, or Phase 4R content changed. Balance remains `BALANCE OBSERVATION ONLY — BALANCE DEFERRED`; old-save migration remains `DEFERRED UNTIL PRE-RELEASE SAVE FORMAT STABILIZATION`.
+21. Human status remains exactly `NEEDS-HUMAN-PLAYTEST`; this closeout is not an acceptance or merge.
