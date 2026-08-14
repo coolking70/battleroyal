@@ -7,19 +7,20 @@
 - PR number: [#26](https://github.com/coolking70/battleroyal/pull/26)
 - Base SHA: `24c4ca0801bfe56384345e41bdbc0d54fb9c2694`
 - Final implementation head SHA: `7977f05320b2516b15a59f39c2bcd7269be32cbb`
-- Final PR evidence head SHA: `7977f05320b2516b15a59f39c2bcd7269be32cbb`
-- CI run ID: `31837716641` (run #145)
-- CI job ID: `94887631577` (`verify`)
+- Final PR head SHA (code + reports + handoff evidence): `35e449b45d109244abdf37bd1ef06f91e7027167`
+- CI run ID: `31838053482` (run #146)
+- CI job ID: `94888682638` (`verify`)
 - CI conclusion: `completed / success`
 - PR state: **OPEN / DRAFT / UNMERGED**
 - Human status: **NEEDS-HUMAN-PLAYTEST**
 
-The implementation/evidence SHA above is the exact code head verified by CI.
-This handoff and the Phase 4S reports are added by a following
-documentation-only closeout commit; that commit does not alter the verified
-implementation. Git commit hashes cannot self-embed the SHA of the commit that
-contains them, so the authoritative current documentation head is the live head
-of Draft PR #26 and is also reported in the final task response.
+The implementation head separately passed CI run `31837716641` / job
+`94887631577`. The final PR head above contains the unchanged implementation,
+reports, regression artifacts, human checklist, and this handoff, and passed the
+exact-head CI recorded above. This following metadata-only update records those
+already-completed identifiers; Git commits cannot self-embed their own SHA, so
+the authoritative transport head after this note is the live head of Draft PR
+#26 and is also reported in the final task response.
 
 ## Production change surface
 
@@ -105,6 +106,7 @@ determinism, and zero stamina.
 | `npm audit --omit=dev` | PASS after allowed registry access — 0 vulnerabilities |
 | Browser smoke | PASS — live playing state, normal UI isolation, debug inspector visually checked, no console/page error artifact |
 | Exact implementation-head CI | PASS — run `31837716641`, job `94887631577` |
+| Exact final-evidence-head CI | PASS — run `31838053482`, job `94888682638` |
 
 The candidate asset store is intentionally local/ignored and was absent on this
 machine. Therefore exact non-CI local `art:validate` and
