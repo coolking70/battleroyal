@@ -11,12 +11,12 @@
  *   对局已结束时不得存在未解决遭遇；
  * - pendingPickup：stack 合法、zoneId 存在且 === 玩家所在区、source 合法。
  */
-
 import { tryGetItem } from '../../data/items';
 import { tryGetCharacterDef } from '../../data/characters';
 import { tryGetRecipe } from '../../data/recipes';
 import { validateStack } from './numbers';
 import { validateVictoryReferences } from './victoryReferences';
+import { validateExplorationObjective } from './explorationObjective';
 import {
   EVENT_IMPORTANCE_SET,
   EVENT_TYPE_SET,
@@ -24,7 +24,6 @@ import {
   isRecord,
   type ValidationContext,
 } from './types';
-
 function isItemIdKnown(itemId: unknown): boolean {
   return typeof itemId === 'string' && Boolean(tryGetItem(itemId));
 }
@@ -153,6 +152,8 @@ export function validateReferences(ctx: ValidationContext): void {
     if (c.isPlayer === true && c.victoryGoal !== null && c.victoryGoal !== undefined) {
       fail(`玩家角色 ${id} 不应带 NPC victoryGoal`);
     }
+
+    validateExplorationObjective(id, c, state.time, fail);
 
     /* NPC 计划三字段一致性（含对玩家不适用字段的宽容处理） */
     const planId = c.plannedRecipeId;

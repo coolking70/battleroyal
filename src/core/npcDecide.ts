@@ -19,6 +19,7 @@ import { armorDefenseOf, hasIngredients, weaponAttackOf } from './inventory';
 import { buildCraftPlan } from './craftPlan';
 import { currentWorldSourcesForActor } from './worldSources';
 import { canSearchLandmark } from './landmarks';
+import { decideNpcAccessAction } from './npcAccessDecide';
 import { hasPlannedWildSourceHere, hasRecommendedApexSource, npcSearchWeight, NPC_IDLE_WEIGHTS as IDLE_WEIGHTS } from './npcWildHunt';
 import { wildCombatProfile } from './wildCombat';
 import { npcCombatSkill, npcSurvivalSkill } from './npcSkillDecide';
@@ -30,20 +31,9 @@ import type { AttackStyle, Combatant, GameState, Personality } from './types';
 /* ------------------------------------------------------------------ */
 
 export type NpcActionKind =
-  | 'evacuate'
-  | 'heal'
-  | 'rest'
-  | 'craft'
-  | 'attack'
-  | 'flee_combat'
-  | 'guard'
-  | 'use_skill'
-  | 'search' | 'search_landmark'
-  | 'move'
-  | 'call_extraction'
-  | 'extract'
-  | 'submit_research'
-  | 'idle';
+  | 'evacuate' | 'heal' | 'rest' | 'craft' | 'attack' | 'flee_combat' | 'guard'
+  | 'use_skill' | 'search' | 'search_landmark' | 'interact_landmark' | 'move'
+  | 'call_extraction' | 'extract' | 'submit_research' | 'idle';
 
 export interface NpcDecision {
   kind: NpcActionKind;
@@ -52,7 +42,7 @@ export interface NpcDecision {
   targetKind?: 'contestant' | 'wild';
   zoneId?: string;
   recipeId?: string;
-  uid?: string; landmarkId?: string;
+  uid?: string; landmarkId?: string; interactionId?: string;
   /** 进攻时选用的攻击风格（Phase 3 Step 1） */
   attackStyle?: AttackStyle;
   /** 释放的技能 id（Phase 3 Step 3） */
@@ -294,7 +284,7 @@ export function decideNpcAction(
   // 而它的价值正是让「材料已齐但正常合成付不起体力」的下一次 CRAFT 免费。
   // 这不是免费体力：readySkill 仍会检查技能冷却与技能自身成本。
   const survivalSkill = npcSurvivalSkill(state, npc);
-  if (survivalSkill) {
+  if (survivalSkill && !npc.explorationObjective) {
     return {
       kind: 'use_skill',
       reason: `释放生存技能（${SKILLS[survivalSkill].name}）`,
@@ -447,6 +437,12 @@ export function decideNpcAction(
       targetId: knownWild.uid, targetKind: 'wild', attackStyle: chooseAttackStyle(npc, target, rng),
     };
   }
+
+  // Local access objectives are committed by the existing craft planner. They
+  // run after combat/Apex priorities and before generic search weighting.
+  const accessDecision = decideNpcAccessAction(state, npc);
+  if (accessDecision) return accessDecision;
+
   // 7. 常规行动
   const weights = IDLE_WEIGHTS[npc.personality];
   const canSearchNow = canPayActionCost(npc, 'SEARCH').ok;

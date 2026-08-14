@@ -38,6 +38,19 @@ export function validateLandmarkState(ctx: ValidationContext): void {
     if (raw.disabled === true && raw.repaired === true) fail(`地标 ${def.id} 不能同时 disabled 与 repaired`);
     if (raw.activated === true && raw.discovered !== true) fail(`地标 ${def.id} activated 但未 discovered`);
     const interaction = def.interaction;
+    if (def.access && raw.locked === false) {
+      for (const requirement of def.access.prerequisites) {
+        if (requirement.kind !== 'landmark_state') continue;
+        const prerequisite = runtime[requirement.landmarkId];
+        if (!isRecord(prerequisite)) continue;
+        const satisfied = requirement.state === 'discovered'
+          ? prerequisite.discovered === true
+          : requirement.state === 'repaired'
+            ? prerequisite.repaired === true
+            : prerequisite.activated === true;
+        if (!satisfied) fail(`地标 ${def.id} 已解锁但前置 ${requirement.landmarkId}.${requirement.state} 未完成`);
+      }
+    }
     if (interaction) {
       if (raw.maxCharges !== interaction.maxCharges) fail(`设施 ${def.id} maxCharges 与定义不一致`);
       if (interaction.requiresRepair && raw.repaired === true && raw.disabled === true) fail(`设施 ${def.id} 修复状态矛盾`);
@@ -68,5 +81,14 @@ export function validateLandmarkState(ctx: ValidationContext): void {
     const interactionId = event.metadata.interactionId;
     if (interactionId !== undefined && event.type !== 'FACILITY_USED' && event.type !== 'FACILITY_ACTIVATED') fail(`事件 ${String(event.id)} 的 interactionId 用在非设施事件上`);
     if (interactionId !== undefined && (typeof interactionId !== 'string' || def?.interaction?.id !== interactionId)) fail(`事件 ${String(event.id)} 引用了错误设施交互`);
+    if (event.type === 'LANDMARK_UNLOCKED') {
+      if (!def?.access) fail(`事件 ${String(event.id)} 解锁了没有访问定义的地标`);
+      const triggerId = event.metadata.triggerLandmarkId;
+      const triggerDef = typeof triggerId === 'string' ? tryGetLandmarkDef(triggerId) : null;
+      if (!triggerDef) fail(`事件 ${String(event.id)} 缺少合法解锁触发地标`);
+      if (def?.access && typeof triggerId === 'string' && !def.access.prerequisites.some((requirement) => requirement.kind === 'landmark_state' && requirement.landmarkId === triggerId)) {
+        fail(`事件 ${String(event.id)} 的触发地标不是该访问链前置`);
+      }
+    }
   }
 }

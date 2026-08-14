@@ -102,6 +102,19 @@ export interface CombatantStats {
   wildKills: number;
 }
 
+export type ExplorationObjectivePhase = 'obtain_item' | 'complete_prerequisite' | 'reach_target';
+
+/** Small persisted route commitment used by the existing NPC goal planner. */
+export interface ExplorationObjective {
+  targetLandmarkId: string;
+  nextLandmarkId: string;
+  phase: ExplorationObjectivePhase;
+  requiredItemId: string | null;
+  prerequisiteLandmarkId: string | null;
+  reason: string;
+  committedAt: number;
+}
+
 export interface Combatant {
   id: string;
   name: string;
@@ -165,6 +178,8 @@ export interface Combatant {
   planRecommendedLandmarkId: string | null;
   /** 最近一次重规划的原因（调试面板展示，Phase 2A-1） */
   lastReplanReason: string | null;
+  /** Phase 4R: committed local access step for the current gameplay goal. */
+  explorationObjective: ExplorationObjective | null;
   /** 最远抵达的阶段，用于结算展示 */
   furthestPhase: GamePhase;
   /** 是否处于防御姿态（Phase 3 Step 1）：下次受击伤害减免，出手或被新攻击命中后解除 */

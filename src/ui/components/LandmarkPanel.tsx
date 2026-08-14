@@ -3,6 +3,7 @@ import { canSearchLandmark, landmarkStatus, landmarkState } from '../../core/lan
 import { getActionStaminaCost } from '../../core/actionCosts';
 import type { Command, Combatant, GameState } from '../../core/types';
 import { landmarksForZone } from '../../data/landmarks';
+import { publicAccessHint } from '../../core/accessChains';
 
 interface LandmarkPanelProps {
   state: GameState;
@@ -48,6 +49,7 @@ export function LandmarkPanel({ state, player, disabled, onCommand }: LandmarkPa
                 )}
               </div>
               {!search.ok && !runtime.exhausted && def.searchable && <div className="faint">{search.reason}</div>}
+              {(runtime.locked || runtime.disabled) && publicAccessHint(def) && <div className="faint">访问提示：{publicAccessHint(def)}</div>}
               {facility && !facility.ok && <div className="faint">{facility.reason}</div>}
             </article>
           );

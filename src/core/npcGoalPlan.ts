@@ -23,6 +23,7 @@ import { PHASE4P_RECIPES } from '../data/phase4pRecipes';
 import { currentWorldSourcesForActor } from './worldSources';
 import { refreshLandmarkRecommendation } from './npcLandmarkPlan';
 import { applyNpcPlanRecommendations, recommendedZoneForRecipe } from './npcPlanRecommendation';
+import { syncNpcExplorationObjective } from './accessChains';
 
 const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
 
@@ -422,5 +423,8 @@ export function refreshNpcPlanRecommendation(state: GameState, npc: Combatant): 
   // Explicit stale-local recovery keeps the historical refresh semantics: it
   // may move the recommendation to the newly selected landmark's zone.
   if (recipe && !PHASE4P_RECIPE_IDS.has(recipe.id)) refreshLandmarkRecommendation(state, npc, recipe);
-  else npc.planRecommendedLandmarkId = null;
+  else {
+    npc.planRecommendedLandmarkId = null;
+    syncNpcExplorationObjective(state, npc, null);
+  }
 }

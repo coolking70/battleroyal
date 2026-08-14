@@ -2,9 +2,10 @@ import { getLandmarkDef } from '../data/landmarks';
 import { canPayStamina, clampStamina, gainStamina } from './actionCosts';
 import { addNoise } from './info';
 import { landmarkState } from './landmarks';
-import { consumeOne, countItem } from './inventory';
+import { consumeOne } from './inventory';
 import { pushEvent } from './events';
 import { applyHealing } from './vitals';
+import { applyAccessTransitions, accessRequirementReason, missingAccessRequirements } from './accessChains';
 import type { Combatant, GameState } from './types';
 
 function interactionCost(actor: Combatant, landmarkId: string): number {
@@ -13,14 +14,8 @@ function interactionCost(actor: Combatant, landmarkId: string): number {
 }
 
 function hasRequirement(state: GameState, actor: Combatant, landmarkId: string): boolean {
-  const interaction = getLandmarkDef(landmarkId).interaction;
-  if (!interaction) return false;
-  if (interaction.requiredItemId && countItem(actor, interaction.requiredItemId) < 1 && (interaction.requiresUnlock || actor.characterId !== 'engineer')) return false;
-  if (interaction.requiredLandmarkId) {
-    const prerequisite = landmarkState(state, interaction.requiredLandmarkId);
-    if (!prerequisite?.activated && !prerequisite?.repaired) return false;
-  }
-  return true;
+  const def = getLandmarkDef(landmarkId);
+  return missingAccessRequirements(state, actor, def).length === 0;
 }
 
 export function canUseFacility(state: GameState, actor: Combatant, landmarkId: string, interactionId: string): { ok: boolean; reason: string | null; cost: number } {
@@ -38,7 +33,7 @@ export function canUseFacility(state: GameState, actor: Combatant, landmarkId: s
   if (runtime.locked && !interaction?.requiresUnlock) return { ok: false, reason: '设施尚未解锁。', cost };
   if (runtime.disabled && !interaction?.requiresRepair) return { ok: false, reason: '设施已停用，需要先修复。', cost };
   if (runtime.charges < interaction.chargeCost) return { ok: false, reason: '设施次数已经耗尽。', cost };
-  if (!hasRequirement(state, actor, landmarkId)) return { ok: false, reason: '缺少设施所需的工具或前置状态。', cost };
+  if (!hasRequirement(state, actor, landmarkId)) return { ok: false, reason: accessRequirementReason(state, actor, def) ?? '缺少设施所需的工具或前置状态。', cost };
   const check = canPayStamina(actor, cost);
   return check.ok ? { ok: true, reason: null, cost } : { ok: false, reason: check.reason, cost };
 }
@@ -51,9 +46,15 @@ export function interactFacility(state: GameState, actor: Combatant, landmarkId:
   const interaction = def.interaction!;
   const before = actor.stamina;
   actor.stamina = clampStamina(actor, actor.stamina - check.cost);
-  if (interaction.requiredItemId && countItem(actor, interaction.requiredItemId) > 0) {
-    const required = actor.inventory.find((stack) => stack.itemId === interaction.requiredItemId);
-    if (required) consumeOne(actor, required.uid);
+  if (interaction.requiredItemId && interaction.requiredItemConsumes !== false) {
+    let remaining = interaction.requiredItemCount ?? 1;
+    for (const required of actor.inventory.filter((stack) => stack.itemId === interaction.requiredItemId)) {
+      while (remaining > 0 && required.count > 0) {
+        consumeOne(actor, required.uid);
+        remaining -= 1;
+      }
+      if (remaining === 0) break;
+    }
   }
   runtime.charges -= interaction.chargeCost;
   runtime.discovered = true;
@@ -64,10 +65,6 @@ export function interactFacility(state: GameState, actor: Combatant, landmarkId:
     runtime.repaired = true;
   }
   if (interaction.requiresUnlock) runtime.locked = false;
-  if (interaction.effectType === 'service_system') {
-    const passage = state.landmarks['underground_sealed_passage'];
-    if (passage) passage.locked = false;
-  }
   if (interaction.effectType === 'treat_wounds') {
     const heal = actor.characterId === 'medic' ? 32 : 22;
     applyHealing(state, actor, heal);
@@ -89,6 +86,7 @@ export function interactFacility(state: GameState, actor: Combatant, landmarkId:
   if (runtime.activated && runtime.lastUsedAt === state.time) {
     pushEvent(state, { type: 'FACILITY_ACTIVATED', actorId: actor.id, zoneId: def.zoneId, message: `${def.name}状态已更新。`, metadata: { landmarkId, interactionId } });
   }
+  applyAccessTransitions(state, actor.id, landmarkId);
   state.stats.facilityUses = (state.stats.facilityUses ?? 0) + 1;
   state.stats.facilityActivations = (state.stats.facilityActivations ?? 0) + 1;
   return { ok: true, message: `${interaction.label}完成。`, staminaSpent: before - actor.stamina };

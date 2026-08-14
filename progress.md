@@ -1165,3 +1165,14 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Added `tests/phase4qAf3Acceptance.test.ts`: fresh non-exhausted planning, exhaustion equivalence, autonomous route, TTL replan, remote hidden depletion, mixed sources, Apex null protection, and stable legitimate null.
 - AF3 focused evidence is `8/8`; legacy AF is `13/13`; AF2 is `8/8`. The required 500-game AF3 engine-health regression is `500/500` trustworthy with all health counters zero. Existing deterministic AutoPlayer/combat fixtures were updated only with AF3-compatible seeds/committed-route setup, preserving their original assertions.
 - Full suite is `115 files / 1,672 tests passed`. Status: ready for independent acceptance review; human status remains exactly `NEEDS-HUMAN-PLAYTEST`. No Phase 4R, new Landmark/Facility, balance tuning, old-save migration, PNG change, or merge.
+
+## Phase 4R — Local Access Chains & Dynamic Exploration Objectives (2026-08-14)
+
+- Started from the exact Phase 4Q merged main head `43199fa173db0faa751bb9b8ffe213be6bcfac22` on branch `agent/phase4r-access-chains-exploration`.
+- Added a shared data-driven access model for item/tool and landmark-state prerequisites, deterministic local transitions, finite unlock events, exact UID consumption/retention, and persisted actor-scoped `ExplorationObjective` state.
+- Completed four chains through formal actions: Factory Machine Shop → Assembly Line; Residential Basement Storage → Apartment Block; Underground Service Room → Sealed Passage; and field-kit → Laboratory Analysis Terminal.
+- Added autonomous NPC access-step decisions using `runNpcTurn()` with stable MOVE/SEARCH/INTERACT behavior, committed-objective preservation, remote hidden-state isolation, legal fallback, and Apex/Wild priority protection.
+- Added current-schema validation for objective references, access-state consistency, and `LANDMARK_UNLOCKED` event metadata. Added `tests/phase4rAccessChains.test.ts` with 12/12 R-1..R-12 acceptance tests.
+- Local verification: full suite `116 files / 1,684 tests PASS`; typecheck/build, save audit `109/109`, dependency audit R1–R4 zero, art/security gates, `npm ci`, and production `npm audit --omit=dev` all pass. No production PNG or art manifest changed.
+- Required `PHASE4R` regression is `500/500` trustworthy with regression/engine-health PASS and all timeout, illegal-state, hard-limit, terminal-without-winner, invalid-victory, duplicate-Apex, and invalid-Apex-zone counters at zero. Character balance remains observation-only.
+- Status: **READY FOR INDEPENDENT AUDIT**, human status **NEEDS-HUMAN-PLAYTEST**; Draft PR is intentionally unmerged and final exact-head CI evidence is recorded in `PHASE4R_REPORT.md` after publication.
