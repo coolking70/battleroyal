@@ -40,6 +40,20 @@ the visible local-access explanations and the four representative chains.
 - [ ] If the destination becomes unavailable remotely, confirm the NPC waits or
       takes a legal fallback and does not thrash its objective every turn.
 
+## AF1 information boundary and compatibility
+
+- [ ] From outside Laboratory, toggle/observe no exact remote disabled,
+      repaired, charges, last-use, or private facility-event detail in the
+      objective, decision, or event presentation; after entering Laboratory,
+      confirm local facility state can change the legal action.
+- [ ] From outside Factory, confirm Assembly Line's remote objective is the
+      same whether its hidden lock runtime is changed; after entering Factory,
+      confirm the local lock is authoritative.
+- [ ] With an Engineer at Station and no battery, confirm the legacy repair
+      interaction remains available and does not invent/consume a battery.
+- [ ] With an Engineer at Warehouse and no field kit, confirm the secure-storage
+      unlock interaction still remains unavailable.
+
 ## Red-line checks
 
 - [ ] Confirm a zero-stamina actor cannot repair, unlock, activate, or search.
@@ -53,4 +67,3 @@ the visible local-access explanations and the four representative chains.
 - [ ] Record browser/device dimensions and seed used.
 - [ ] Record any confusing hint, stale status, unexpected route, or visual
       overflow here before independent acceptance.
-

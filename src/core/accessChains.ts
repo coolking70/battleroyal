@@ -74,12 +74,25 @@ function interactionRequirements(def: LandmarkDef): AccessRequirement[] {
   return requirements;
 }
 
+function engineerRepairBypass(
+  actor: Combatant,
+  def: LandmarkDef,
+  requirement: AccessRequirement,
+): boolean {
+  return actor.characterId === 'engineer'
+    && requirement.kind === 'item'
+    && def.interaction?.requiredItemId === requirement.itemId
+    && def.interaction.requiresRepair === true
+    && def.interaction.requiresUnlock !== true;
+}
+
 export function missingAccessRequirements(
   state: GameState,
   actor: Combatant,
   def: LandmarkDef,
 ): AccessRequirement[] {
   return interactionRequirements(def).filter((requirement) => {
+    if (engineerRepairBypass(actor, def, requirement)) return false;
     if (requirement.kind === 'landmark_state' && def.interaction?.requiredLandmarkId === requirement.landmarkId) {
       const prerequisiteDef = tryGetLandmarkDef(requirement.landmarkId);
       if (prerequisiteDef && prerequisiteDef.zoneId !== actor.currentZoneId) return true;
@@ -168,10 +181,11 @@ function walkAccessStep(
   const runtime = state.landmarks[landmarkId];
   if (!def || !runtime) return blockedStep(targetLandmarkId, '访问链引用了不存在的地标。');
   if (visited.has(landmarkId)) return blockedStep(targetLandmarkId, '访问链存在循环依赖。');
-  if (runtime.exhausted && landmarkId === targetLandmarkId && def.zoneId === actor.currentZoneId) {
+  const local = def.zoneId === actor.currentZoneId;
+  if (local && runtime.exhausted && landmarkId === targetLandmarkId) {
     return blockedStep(targetLandmarkId, `${def.name}的有限资源已经耗尽。`);
   }
-  if (runtime.exhausted && landmarkId !== targetLandmarkId && def.zoneId === actor.currentZoneId) {
+  if (local && runtime.exhausted && landmarkId !== targetLandmarkId) {
     return blockedStep(targetLandmarkId, `${def.name}的公开前置来源已经耗尽。`);
   }
 
@@ -205,9 +219,9 @@ function walkAccessStep(
   }
 
   const mustCompleteState = context.requiredState !== null
-    && (def.zoneId !== actor.currentZoneId
+    && (!local
       || !stateRequirementSatisfied(state, { kind: 'landmark_state', landmarkId, state: context.requiredState }));
-  if (mustCompleteState && context.requiredState === 'discovered'
+  if (local && mustCompleteState && context.requiredState === 'discovered'
     && !runtime.locked && !runtime.disabled && def.searchable) {
     return {
       ok: true,
@@ -222,11 +236,16 @@ function walkAccessStep(
       reason: `先搜索${def.name}，完成局部访问前置。`,
     };
   }
-  if (runtime.locked || runtime.disabled || mustCompleteState) {
-    const interaction = def.interaction;
+  const interaction = def.interaction;
+  const staticRemoteInteraction = !local && Boolean(interaction && (
+    interaction.requiresRepair || interaction.requiresUnlock
+  ));
+  const runtimeBlocks = local && (runtime.locked || runtime.disabled);
+  if (runtimeBlocks || staticRemoteInteraction || mustCompleteState) {
     const canResolve = Boolean(interaction && (mustCompleteState ||
-      (runtime.locked && interaction.requiresUnlock) ||
-      (runtime.disabled && interaction.requiresRepair)
+      staticRemoteInteraction ||
+      (local && runtime.locked && interaction.requiresUnlock) ||
+      (local && runtime.disabled && interaction.requiresRepair)
     ));
     if (!canResolve) return blockedStep(targetLandmarkId, def.access?.hint ?? `${def.name}仍不可访问。`);
     return {
@@ -239,7 +258,7 @@ function walkAccessStep(
       requiredItemId: context.pendingItemId,
       prerequisiteLandmarkId: context.prerequisiteLandmarkId,
       zoneId: def.zoneId,
-      reason: runtime.disabled ? `修复${def.name}以继续访问链。` : `使用${def.name}以完成局部解锁。`,
+      reason: local && runtime.disabled ? `修复${def.name}以继续访问链。` : `使用${def.name}以完成局部解锁。`,
     };
   }
 

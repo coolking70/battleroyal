@@ -2,12 +2,13 @@
 
 ## 1. Handoff status
 
-- Status: **READY FOR INDEPENDENT AUDIT**
+- Status: **READY FOR INDEPENDENT RE-AUDIT**
 - Human status: **NEEDS-HUMAN-PLAYTEST**
 - Base SHA: `43199fa173db0faa751bb9b8ffe213be6bcfac22` (Phase 4Q merged main)
 - Branch: `agent/phase4r-access-chains-exploration`
 - Draft PR: [#25](https://github.com/coolking70/battleroyal/pull/25)
 - Merge status: **OPEN / DRAFT / UNMERGED**
+- Previous rejected head: `26f2e46ac38ac4015fb1ea5b7e3c8589c77bc0ac`
 - Balance policy: **BALANCE OBSERVATION ONLY — BALANCE DEFERRED**
 - Old-save migration: **DEFERRED UNTIL PRE-RELEASE SAVE FORMAT STABILIZATION**
 
@@ -114,6 +115,97 @@ Evidence: `reports/phase4r-regression.json` and
 - Character balance ratio is 4.33 with zero-win observation roles
   `fighter` and `hunter`; this remains observation-only and does not fail the
   regression gate.
+
+## 7. Phase 4R-AF1 independent re-audit section
+
+### Failure root cause
+
+The rejected head allowed `walkAccessStep()` to inspect remote landmark runtime
+fields while resolving an actor's next action. In particular, remote
+`locked`, `disabled`, `exhausted`, and landmark-state runtime values could alter
+an objective, decision, or fallback before the actor arrived. The old NPC
+objective restore in `npcAi.ts` was also unconditional: a formal recipe/Apex
+replacement could clear the objective and then have the old objective restored
+after planning.
+
+### Public/local resolver fix
+
+`src/core/accessChains.ts` now has an explicit local boundary. A landmark is
+local only when its static `zoneId` equals the actor's current zone. Remote
+resolution uses static definitions, public topology and prerequisites, public
+source provenance, and the actor's own inventory/plan. It does not branch on
+remote `exhausted`, `loot`, `remainingSearches`, `locked`, `disabled`,
+`repaired`, `activated`, `charges`, or `lastUsedAt`. Local resolution remains
+authoritative for those runtime fields after arrival. The boundary is shared by
+objective sync and NPC access decisions; the paired AF1 tests also exercise
+`runNpcTurn()`.
+
+The paired hidden-field coverage is: Lab disabled/repaired, Factory
+locked/unlocked, Lab charges, Lab last-use/private event history, and retained
+remote exhaustion/loot depletion. Each pair is equivalent remotely and is
+allowed to diverge only after the actor is placed in the landmark's zone.
+
+### Objective lifecycle and semantic save closure
+
+The lifecycle is explicit: COMMIT a resolved chain, PRESERVE it during ordinary
+maintenance, ADVANCE it through the next formal access step, COMPLETE it after
+the target action, and INVALIDATE it only when the formal planner replaces the
+goal or local route refresh proves the target no longer belongs to the route.
+`src/core/npcObjectiveLifecycle.ts` narrows the prior restore behavior to the
+same recipe/static source route; a formal Apex route replacement is not
+restored. `src/core/saveValidation/explorationObjective.ts` now validates the
+static target graph, prerequisite graph, required item provenance, and phase
+semantics, so all-ID-valid but unrelated combinations are rejected without
+reading runtime state.
+
+### Engineer compatibility
+
+The Phase 4Q legacy rule is restored centrally in the shared access requirement
+resolver: Engineer bypasses a missing required item for `requiresRepair`
+interactions that are not `requiresUnlock`. The exact interaction still pays
+stamina, charges, and time, and the normal item-consumption path remains
+unchanged. Unlock interactions still require their field kit; the behavior is
+not implemented as a landmark-specific exception.
+
+### AF1 acceptance and gates
+
+- `tests/phase4rAf1Acceptance.test.ts`: **AF1-1..AF1-9 PASS (9/9)**.
+- Full suite: **117 test files / 1,693 tests PASS**.
+- `npm ci`, typecheck, build, save audit, dependency audit, art doctor,
+  manifest validation, Phase 4A art audit, browser/repository secret scans,
+  art generation dry-run, and `npm audit --omit=dev`: **PASS**.
+- Save audit: **109/109** malformed cases rejected, **0** construction failures.
+- Dependency audit: **119 files**, R1/R2/R3/R4 = **0**, max core/data file =
+  **500 lines**.
+- Art dry-run: **36 tasks**, **0 API calls**, **0 bytes**; production PNGs and
+  the approved manifest were not changed.
+
+### AF1 regression
+
+Command:
+
+```text
+npm run simulate -- --games 500 --seed-prefix PHASE4R-AF1 --regression --output reports/phase4r-af1-regression.json
+```
+
+Evidence: `reports/phase4r-af1-regression.json` and
+`reports/phase4r-af1-regression.md`.
+
+- requestedTotalGames = 500; actualTotalGames = 500; trustworthy rate = 100%.
+- Regression/engine-health gate = **PASS**; timeout, illegalState,
+  hardLimitReached, terminalWithoutWinner, invalidVictoryTuple,
+  duplicateApexSpawn, and invalidApexSpawnZone = **0**.
+- Character ratio 2.77 and the zero-win `trapper` observation remain balance
+  observations only and do not fail the regression gate.
+
+### AF1 handoff state
+
+The same PR remains **OPEN / DRAFT / UNMERGED** on
+`agent/phase4r-access-chains-exploration`. The previous rejected head is
+`26f2e46ac38ac4015fb1ea5b7e3c8589c77bc0ac`; the final AF1 head and exact-head
+CI run are recorded in the auditor handoff after the AF1 commit is pushed.
+No merge, rebase, main update, Phase 4S work, balance tuning, old-save
+migration, or PNG change is part of AF1.
 
 ## 8. GitHub exact-head evidence
 

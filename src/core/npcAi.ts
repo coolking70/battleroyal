@@ -40,6 +40,7 @@ import { tryGetRecipe } from '../data/recipes';
 import { applyNpcPlanRecommendations } from './npcPlanRecommendation';
 import { canSearchLandmark } from './landmarks';
 import { syncNpcExplorationObjective } from './accessChains';
+import { preserveExplorationObjectiveAfterPlan } from './npcObjectiveLifecycle';
 
 const WILD_MATERIALS = new Set<string>([...PHASE4N_WILD_MATERIAL_IDS, ...PHASE4P_WILD_MATERIAL_IDS]);
 const SIGNATURE_MATERIALS = new Set<string>(PHASE4P_SIGNATURE_IDS);
@@ -197,12 +198,10 @@ export function runNpcTurn(
 
   // 第二阶段：每回合按 TTL 维护 / 重规划 NPC 的制作目标
   // Phase 2A-1：随机型人格在规划时使用种子随机数（与对局同一 RNG 流隔离在调用方）
+  const committedRecipeId = npc.plannedRecipeId;
   const committedExplorationObjective = npc.explorationObjective;
   planNpcGoal(state, npc, rng);
-  // Preserve a committed local-access objective across recipe refreshes.
-  if (committedExplorationObjective && npc.explorationObjective === null) {
-    npc.explorationObjective = committedExplorationObjective;
-  }
+  preserveExplorationObjectiveAfterPlan(state, npc, committedRecipeId, committedExplorationObjective);
   // Commit an explicit gameplay recipe's access recommendation once.
   if (npc.plannedRecipeId && npc.planCreatedAt === state.time
     && npc.planRecommendedZoneId === null && npc.explorationObjective === null) {
