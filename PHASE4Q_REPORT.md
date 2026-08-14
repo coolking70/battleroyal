@@ -83,3 +83,41 @@ Phase 4Q implementation complete and ready for independent acceptance review.
 29. No Phase 4R content, new landmarks/facilities, balance tuning, old-save migration, PNG changes, or merge was performed.
 
 Phase 4Q-AF implementation complete and ready for independent acceptance review.
+
+## Phase 4Q-AF2 — NPC Landmark Plan Integration & Autonomous Route Closure
+
+1. Audited input head: `2e9b6be188d6e78c7cfedc115cbb96569df22415`.
+2. Blocker: a fresh or formally replanned NPC recipe stored `planRecommendedLandmarkId = null`, so production `runNpcTurn()` did not establish a Landmark route.
+3. Why the old AF-12 was insufficient: its fixture manually called `refreshNpcPlanRecommendation()` before entering the NPC loop, proving a persisted/manual route rather than fresh production plan integration.
+4. Production fix: `planNpcGoal()` now commits recipe, normal zone recommendation, and one deterministic Landmark recommendation together through a focused helper after the recipe is selected.
+5. Legacy cadence guarantee: ordinary turns do not rebuild recommendations merely because `planRecommendedLandmarkId` is null; recommendation generation is tied to plan/replan commit, with the existing local-stale lifecycle retained separately.
+6. Route boundary: a remote ordinary landmark is promoted only when the actor's selected current zone is exhausted and the craft plan has no Wild-drop raw gap; the existing zone route remains authoritative otherwise.
+7. Recipe-selection isolation: the Landmark candidate is computed only after `chooseNpcGoal()` has committed the recipe and cannot alter personality scoring or RNG consumption.
+8. Null semantics: zone-loot-only, Wild-drop, objective, and Phase 4P Apex routes may legitimately persist a null Landmark recommendation without per-turn repair.
+9. Apex protection: Phase 4P recipes continue to use the dedicated public Wild/Apex source planner and retain `planRecommendedLandmarkId = null`.
+10. Fresh lifecycle: the new AF2 fixture starts with `plannedRecipeId = null`, both recommendations null, no target-zone arrival, and no manual planner/action/debug helper; the first `runNpcTurn()` creates the recipe and coherent Landmark/zone recommendation.
+11. Autonomous route: repeated production `runNpcTurn()` calls complete `MOVE → SEARCH_LANDMARK → ITEM_FOUND/ITEM_PICKED → CRAFT → EQUIP` for the fresh ordinary route.
+12. Replan lifecycle: a TTL-expired old recipe is replaced by a new formal plan and its new recommendation; the stale old Landmark is removed.
+13. Determinism: identical fresh fixtures and seeds produce identical recipe, Landmark, zone, event ordering, inventory, and equipment state.
+14. Remote boundary: a hidden exhausted remote Landmark does not change fresh recommendation output before arrival; local runtime is only consulted when the actor is in that zone.
+15. Player-goal isolation: changing `state.craftGoalRecipeId` does not change the NPC's fresh recipe, Landmark recommendation, or zone recommendation.
+16. Existing stale fallback: the local exhausted/invalid recommendation refresh remains in `runNpcTurn()` and AF-13 continues to cover arrival-local alternate-source behavior.
+17. Focused evidence: AF2 focused coverage is `tests/phase4qAf2Acceptance.test.ts` with 8/8 passing; the legacy AF focused file remains 13/13 passing.
+18. Total Phase 4Q focused evidence: 11 files / 70 tests passed, including AF2, AF, Phase 4P Apex, NPC planning, source boundary, and AutoPlayer suites.
+19. Full suite: 114 test files / 1,664 tests passed.
+20. Save audit exact: `npm run audit:save` accepted the normal control and rejected 109/109 malformed cases with 0 construction failures.
+21. Dependency audit: `npm run audit:deps` passed with R1=0, R2=0, R3=0, R4=0; maximum audited core/data file is `src/core/commandHandlers.ts` at 500 lines and `src/core/npcGoalPlan.ts` is 498 lines.
+22. AF2 500-game regression: requestedTotalGames=500, actualTotalGames=500, trustworthyRate=100%, regressionGate=true, engineHealthy=true; timeout, illegalState, hardLimitReached, terminalWithoutWinner, invalidVictoryTuple, duplicateApexSpawn, and invalidApexSpawnZone are all 0. Artifact: `reports/phase4q-af2-regression.json` and `.md`.
+23. Typecheck: `npm run typecheck` passed.
+24. Build: `npm run build` passed with only the existing bundle-size advisory.
+25. Art/security: offline art doctor, art validation, Phase 4A art audit, browser secret scan, tracked repository secret scan, and art generation dry-run passed.
+26. Production dependency audit: `npm audit --omit=dev` found 0 vulnerabilities.
+27. PNG/art scope: no production PNG, approved PNG, art manifest, or published asset was changed.
+28. Balance: `BALANCE OBSERVATION ONLY — BALANCE DEFERRED`.
+29. Save migration: `DEFERRED UNTIL PRE-RELEASE SAVE FORMAT STABILIZATION`.
+30. Human status: `NEEDS-HUMAN-PLAYTEST`; implementation is ready for independent acceptance review and is not marked accepted.
+31. Implementation commit: `ddfbef53b7d5ea321d9195fe4d3ccc14ba13c3fe` (`fix: integrate NPC landmark plans on commit`). Documentation closeout is the final follow-up commit on this same PR branch.
+32. CI handoff: final exact-head GitHub Actions status will be checked after the documentation closeout push; no earlier CI run is reused as AF2 final evidence.
+33. Known issues: the 500-game role balance ratio and zero-win role remain observation-only; independent human playtest is still required; no Phase 4R content, new landmarks/facilities, balance tuning, old-save migration, or merge was performed.
+
+Phase 4Q-AF2 implementation complete and ready for independent acceptance review.

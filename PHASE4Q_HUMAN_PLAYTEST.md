@@ -30,5 +30,6 @@ This status intentionally remains `NEEDS-HUMAN-PLAYTEST` until an independent hu
 - [ ] Remote landmark depletion is not magically revealed to an actor outside the zone.
 - [ ] Arriving at an exhausted landmark gives clear feedback and allows the player/NPC to choose another source.
 - [ ] A lethal landmark hazard never shows a dead character successfully receiving loot or a pickup.
+- [ ] NPCs visibly make use of landmark-driven resource routes during ordinary matches rather than only in scripted fixtures.
 
 Status remains exactly `NEEDS-HUMAN-PLAYTEST` pending independent review.
