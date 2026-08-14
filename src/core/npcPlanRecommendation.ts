@@ -5,6 +5,7 @@ import { getZoneDef, ZONE_IDS } from '../data/zones';
 import { buildCraftPlan } from './craftPlan';
 import { sourceDrivenLandmarkForRecipe } from './npcLandmarkPlan';
 import { currentWorldSourcesForActor } from './worldSources';
+import { syncNpcExplorationObjective } from './accessChains';
 import type { Combatant, GameState, Recipe } from './types';
 
 const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
@@ -47,14 +48,24 @@ export function applyNpcPlanRecommendations(
   state: GameState,
   npc: Combatant,
   recipe: Recipe | null,
+  preferAccessChain = false,
 ): void {
   const recommendedZoneId = recipe ? recommendedZoneForRecipe(state, npc, recipe) : null;
   npc.planRecommendedZoneId = recommendedZoneId;
   npc.planRecommendedLandmarkId = null;
-  if (!recipe || PHASE4P_RECIPE_IDS.has(recipe.id) || getItem(recipe.outputItemId).category === 'objective') return;
+  if (!recipe || PHASE4P_RECIPE_IDS.has(recipe.id) || getItem(recipe.outputItemId).category === 'objective') {
+    syncNpcExplorationObjective(state, npc, null);
+    return;
+  }
 
-  const landmarkId = sourceDrivenLandmarkForRecipe(state, npc, recipe);
-  if (!landmarkId) return;
-  npc.planRecommendedLandmarkId = landmarkId;
-  npc.planRecommendedZoneId = state.landmarks[landmarkId]?.zoneId ?? recommendedZoneId;
+  const landmarkId = sourceDrivenLandmarkForRecipe(state, npc, recipe, preferAccessChain);
+  if (!landmarkId) {
+    syncNpcExplorationObjective(state, npc, null);
+    return;
+  }
+  const objective = syncNpcExplorationObjective(state, npc, landmarkId);
+  npc.planRecommendedLandmarkId = objective?.nextLandmarkId ?? landmarkId;
+  npc.planRecommendedZoneId = state.landmarks[npc.planRecommendedLandmarkId]?.zoneId
+    ?? state.landmarks[landmarkId]?.zoneId
+    ?? recommendedZoneId;
 }

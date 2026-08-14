@@ -8,6 +8,7 @@ import { pushEvent } from './events';
 import { livingWildEnemiesInZone } from './wildPopulation';
 import { startWildEncounter } from './wildCombat';
 import { applyDamage } from './vitals';
+import { applyAccessTransitions } from './accessChains';
 import type { Combatant, GameState, LandmarkSearchResult } from './types';
 import type { SeededRandom } from './random';
 
@@ -102,7 +103,9 @@ export function searchLandmark(
 
 function finishLandmarkSearch(state: GameState, landmarkId: string, actorId: string | null): void {
   const runtime = landmarkState(state, landmarkId);
-  if (!runtime || runtime.exhausted) return;
+  if (!runtime) return;
+  applyAccessTransitions(state, actorId, landmarkId);
+  if (runtime.exhausted) return;
   if (runtime.remainingSearches <= 0 || runtime.loot.length === 0) {
     runtime.remainingSearches = Math.max(0, runtime.remainingSearches);
     runtime.exhausted = true;

@@ -20,10 +20,10 @@ export function initializeLandmarks(state: GameState): void {
       charges: interaction?.maxCharges ?? 0,
       maxCharges: interaction?.maxCharges ?? 0,
       exhausted: loot.length === 0,
-      disabled: Boolean(interaction?.requiresRepair),
-      repaired: !interaction?.requiresRepair,
+      disabled: Boolean(interaction?.requiresRepair || def.access?.initial === 'disabled'),
+      repaired: !(interaction?.requiresRepair || def.access?.initial === 'disabled'),
       activated: false,
-      locked: Boolean(interaction?.requiresUnlock),
+      locked: Boolean(interaction?.requiresUnlock || def.access?.initial === 'locked'),
       lastUsedAt: null,
       loot,
     };
@@ -53,7 +53,7 @@ export function canSearchLandmark(state: GameState, actorId: string, landmarkId:
   if (state.status !== 'playing') return { ok: false, reason: '对局已经结束。' };
   if (actor.currentZoneId !== def.zoneId) return { ok: false, reason: '该地标不在当前区域。' };
   if (!def.searchable) return { ok: false, reason: '该地点不可搜索。' };
-  if (runtime.locked) return { ok: false, reason: '该地标仍处于锁定状态。' };
+  if (runtime.locked) return { ok: false, reason: def.access?.hint ?? '该地标仍处于锁定状态。' };
   if (runtime.disabled) return { ok: false, reason: '该设施已停用，需要先修复。' };
   if (runtime.exhausted || runtime.remainingSearches <= 0 || runtime.loot.length === 0) return { ok: false, reason: '该地标已经耗尽。' };
   return { ok: true, reason: null };

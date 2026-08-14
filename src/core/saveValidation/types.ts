@@ -38,6 +38,7 @@ const EVENT_TYPE_TABLE: Record<GameEventType, true> = {
   LANDMARK_EXHAUSTED: true,
   FACILITY_USED: true,
   FACILITY_ACTIVATED: true,
+  LANDMARK_UNLOCKED: true,
   ITEM_FOUND: true,
   ITEM_PICKED: true,
   ITEM_DROPPED: true,

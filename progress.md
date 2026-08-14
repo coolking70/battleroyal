@@ -1165,3 +1165,23 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Added `tests/phase4qAf3Acceptance.test.ts`: fresh non-exhausted planning, exhaustion equivalence, autonomous route, TTL replan, remote hidden depletion, mixed sources, Apex null protection, and stable legitimate null.
 - AF3 focused evidence is `8/8`; legacy AF is `13/13`; AF2 is `8/8`. The required 500-game AF3 engine-health regression is `500/500` trustworthy with all health counters zero. Existing deterministic AutoPlayer/combat fixtures were updated only with AF3-compatible seeds/committed-route setup, preserving their original assertions.
 - Full suite is `115 files / 1,672 tests passed`. Status: ready for independent acceptance review; human status remains exactly `NEEDS-HUMAN-PLAYTEST`. No Phase 4R, new Landmark/Facility, balance tuning, old-save migration, PNG change, or merge.
+
+## Phase 4R — Local Access Chains & Dynamic Exploration Objectives (2026-08-14)
+
+- Started from the exact Phase 4Q merged main head `43199fa173db0faa751bb9b8ffe213be6bcfac22` on branch `agent/phase4r-access-chains-exploration`.
+- Added a shared data-driven access model for item/tool and landmark-state prerequisites, deterministic local transitions, finite unlock events, exact UID consumption/retention, and persisted actor-scoped `ExplorationObjective` state.
+- Completed four chains through formal actions: Factory Machine Shop → Assembly Line; Residential Basement Storage → Apartment Block; Underground Service Room → Sealed Passage; and field-kit → Laboratory Analysis Terminal.
+- Added autonomous NPC access-step decisions using `runNpcTurn()` with stable MOVE/SEARCH/INTERACT behavior, committed-objective preservation, remote hidden-state isolation, legal fallback, and Apex/Wild priority protection.
+- Added current-schema validation for objective references, access-state consistency, and `LANDMARK_UNLOCKED` event metadata. Added `tests/phase4rAccessChains.test.ts` with 12/12 R-1..R-12 acceptance tests.
+- Local verification: full suite `116 files / 1,684 tests PASS`; typecheck/build, save audit `109/109`, dependency audit R1–R4 zero, art/security gates, `npm ci`, and production `npm audit --omit=dev` all pass. No production PNG or art manifest changed.
+- Required `PHASE4R` regression is `500/500` trustworthy with regression/engine-health PASS and all timeout, illegal-state, hard-limit, terminal-without-winner, invalid-victory, duplicate-Apex, and invalid-Apex-zone counters at zero. Character balance remains observation-only.
+- Status: **READY FOR INDEPENDENT AUDIT**, human status **NEEDS-HUMAN-PLAYTEST**; Draft PR #25 is intentionally unmerged. Implementation head `70cb9ce4fc678424b5bb16698df764ec174b874a` passed exact-head CI run #140 (`31802981564`); documentation closeout exact-head CI is checked before handoff.
+
+## Phase 4R-AF1 — Remote Information Boundary & Objective Lifecycle Closure (2026-08-15)
+
+- Audited rejected head `26f2e46ac38ac4015fb1ea5b7e3c8589c77bc0ac` against the Phase 4Q merged base `43199fa173db0faa751bb9b8ffe213be6bcfac22`. The blocker was remote `accessChains.ts` resolution branching on hidden lock/disabled/exhaustion/runtime state, plus an unconditional NPC objective restore after formal planning.
+- Added the explicit local-vs-remote resolver boundary, preserving static/public topology and actor-owned inventory/plan remotely while making local runtime authoritative on arrival. Added AF1 lifecycle narrowing so ordinary same-route refresh preserves COMMIT/ADVANCE state, while formal Apex replacement INVALIDATEs the old objective.
+- Added static semantic objective-save validation and restored Engineer's centralized legacy repair-item bypass without bypassing `requiresUnlock` tools. No balance tuning, old-save migration, Phase 4S work, or PNG/manifest change was performed.
+- Added `tests/phase4rAf1Acceptance.test.ts`: AF1-1..AF1-9 all PASS. Full suite: 117 files / 1,693 tests; typecheck/build, 109-case save audit, dependency R1–R4, art/security gates, and production npm audit all PASS.
+- Required AF1 regression `reports/phase4r-af1-regression.json/.md`: requested=actual=500, trustworthy=100%, engine-health hard counters all zero; balance ratio 2.77 with zero-win `trapper` remains observation-only.
+- Status: **READY FOR INDEPENDENT RE-AUDIT**; human status **NEEDS-HUMAN-PLAYTEST**. Same PR #25 remains OPEN/DRAFT/UNMERGED on `agent/phase4r-access-chains-exploration`. AF1 implementation head `aa73fb3f4d5dc00df84999950cb8dea5e1829935` passed exact-head CI run `31831421860` / job `94867772925`; the handoff records the documentation-only closeout separately.

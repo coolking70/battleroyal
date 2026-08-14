@@ -130,6 +130,7 @@ function createCombatant(params: {
     planRecommendedZoneId: null,
     planRecommendedLandmarkId: null,
     lastReplanReason: null,
+    explorationObjective: null,
     furthestPhase: 'opening',
   };
 }

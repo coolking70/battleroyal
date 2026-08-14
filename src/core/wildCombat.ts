@@ -45,7 +45,7 @@ export function wildCombatProfile(enemy: WildEnemyInstance): Combatant {
     lastAction: null, lastActionReason: null, knownEnemies: [], killedBy: null, diedAtTime: null,
     stats: { searches: 0, crafts: 0, moves: 0, itemsUsed: 0, attacks: 0, damageDealt: 0, damageTaken: 0, wildKills: 0 },
     plannedRecipeId: null, planCreatedAt: null, planReason: null, planProgress: 0,
-    planNoProgressTurns: 0, planRecommendedZoneId: null, planRecommendedLandmarkId: null, lastReplanReason: null,
+    planNoProgressTurns: 0, planRecommendedZoneId: null, planRecommendedLandmarkId: null, lastReplanReason: null, explorationObjective: null,
     furthestPhase: 'opening', guarding: enemy.guarding, skillCooldowns: {},
   };
 }

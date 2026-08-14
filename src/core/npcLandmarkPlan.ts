@@ -1,5 +1,6 @@
 import { currentWorldSourcesForActor } from './worldSources';
 import { canSearchLandmark } from './landmarks';
+import { resolveAccessStep, syncNpcExplorationObjective } from './accessChains';
 import { tryGetLandmarkDef } from '../data/landmarks';
 import { recipeForOutput } from '../data/recipes';
 import { buildCraftPlan } from './craftPlan';
@@ -22,6 +23,7 @@ function selectLandmarkForRecipe(
   npc: Combatant,
   recipe: Recipe,
   sourceDriven: boolean,
+  preferAccessChain: boolean,
 ): string | null {
   const plan = buildCraftPlan(state, npc, recipe.id);
   const candidates: Array<{ id: string; score: number }> = [];
@@ -43,8 +45,16 @@ function selectLandmarkForRecipe(
         if (!def) continue;
         // Only local runtime is actor-visible. Remote candidates are public
         // potential sources and are not probed with canSearchLandmark.
-        if (def.zoneId === npc.currentZoneId && !canSearchLandmark(state, npc.id, landmarkId).ok) continue;
-        candidates.push({ id: landmarkId, score: gap.missing * 10 + (def.zoneId === npc.currentZoneId ? 8 : 0) });
+        if (def.zoneId === npc.currentZoneId && !canSearchLandmark(state, npc.id, landmarkId).ok
+          && !resolveAccessStep(state, npc, landmarkId).ok) continue;
+        candidates.push({
+          id: landmarkId,
+          // A public access chain is a deterministic, finite route rather
+          // than a reason to discard the source; prefer it on ties so NPCs
+          // can actually exercise local exploration content.
+          score: gap.missing * 10 + (def.zoneId === npc.currentZoneId ? 8 : 0)
+            + (sourceDriven && preferAccessChain && def.access ? 25 : 0),
+        });
       }
     }
   }
@@ -54,15 +64,21 @@ function selectLandmarkForRecipe(
 
 /** Selects only the NPC's own current raw gaps; no player goal or remote loot is read. */
 export function recommendedLandmarkForRecipe(state: GameState, npc: Combatant, recipe: Recipe): string | null {
-  return selectLandmarkForRecipe(state, npc, recipe, false);
+  return selectLandmarkForRecipe(state, npc, recipe, false, false);
 }
 
 /** Source-driven production selection: target the next raw gap and defer to live Wild sources. */
-export function sourceDrivenLandmarkForRecipe(state: GameState, npc: Combatant, recipe: Recipe): string | null {
-  return selectLandmarkForRecipe(state, npc, recipe, true);
+export function sourceDrivenLandmarkForRecipe(
+  state: GameState,
+  npc: Combatant,
+  recipe: Recipe,
+  preferAccessChain = false,
+): string | null {
+  return selectLandmarkForRecipe(state, npc, recipe, true, preferAccessChain);
 }
 
 export function refreshLandmarkRecommendation(state: GameState, npc: Combatant, recipe: Recipe | null): void {
   npc.planRecommendedLandmarkId = recipe ? recommendedLandmarkForRecipe(state, npc, recipe) : null;
+  syncNpcExplorationObjective(state, npc, npc.planRecommendedLandmarkId);
   if (npc.planRecommendedLandmarkId) npc.planRecommendedZoneId = tryGetLandmarkDef(npc.planRecommendedLandmarkId)?.zoneId ?? npc.planRecommendedZoneId;
 }

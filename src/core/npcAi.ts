@@ -9,6 +9,7 @@ import {
   restActor,
   searchActor,
   searchLandmarkActor,
+  interactFacilityActor,
   useItemActor,
   useSkillActor,
 } from './actorActions';
@@ -35,7 +36,11 @@ import { PHASE4P_SIGNATURE_IDS, PHASE4P_WILD_MATERIAL_IDS } from '../data/phase4
 import { performObjectiveAction } from './victory';
 import { deriveNpcVictoryGoal } from './npcVictoryGoal';
 import { buildCraftPlan } from './craftPlan';
+import { tryGetRecipe } from '../data/recipes';
+import { applyNpcPlanRecommendations } from './npcPlanRecommendation';
 import { canSearchLandmark } from './landmarks';
+import { syncNpcExplorationObjective } from './accessChains';
+import { preserveExplorationObjectiveAfterPlan } from './npcObjectiveLifecycle';
 
 const WILD_MATERIALS = new Set<string>([...PHASE4N_WILD_MATERIAL_IDS, ...PHASE4P_WILD_MATERIAL_IDS]);
 const SIGNATURE_MATERIALS = new Set<string>(PHASE4P_SIGNATURE_IDS);
@@ -193,15 +198,27 @@ export function runNpcTurn(
 
   // 第二阶段：每回合按 TTL 维护 / 重规划 NPC 的制作目标
   // Phase 2A-1：随机型人格在规划时使用种子随机数（与对局同一 RNG 流隔离在调用方）
+  const committedRecipeId = npc.plannedRecipeId;
+  const committedExplorationObjective = npc.explorationObjective;
   planNpcGoal(state, npc, rng);
-  // A local landmark can become stale after another actor exhausts, locks, or
-  // disables it. Refresh only when the NPC is actually there; remote runtime
-  // state is intentionally outside this actor's information boundary.
+  preserveExplorationObjectiveAfterPlan(state, npc, committedRecipeId, committedExplorationObjective);
+  // Commit an explicit gameplay recipe's access recommendation once.
+  if (npc.plannedRecipeId && npc.planCreatedAt === state.time
+    && npc.planRecommendedZoneId === null && npc.explorationObjective === null) {
+    applyNpcPlanRecommendations(state, npc, tryGetRecipe(npc.plannedRecipeId), true);
+  }
+  // Refresh stale local landmarks only when the NPC is actually there.
   if (npc.planRecommendedLandmarkId) {
     const landmark = state.landmarks[npc.planRecommendedLandmarkId];
     if (landmark?.zoneId === npc.currentZoneId && !canSearchLandmark(state, npc.id, npc.planRecommendedLandmarkId).ok) {
       refreshNpcPlanRecommendation(state, npc);
     }
+  }
+  if (npc.explorationObjective) {
+    const objective = syncNpcExplorationObjective(state, npc, npc.explorationObjective.targetLandmarkId);
+    npc.planRecommendedLandmarkId = objective?.nextLandmarkId ?? npc.planRecommendedLandmarkId;
+    const nextRuntime = npc.planRecommendedLandmarkId ? state.landmarks[npc.planRecommendedLandmarkId] : null;
+    if (nextRuntime) npc.planRecommendedZoneId = nextRuntime.zoneId;
   }
 
   // Scout 的 SEARCH 先手只覆盖敌方紧接着的这一次 NPC 行动机会。
@@ -310,6 +327,19 @@ export function runNpcTurn(
       if (res.outcome?.kind === 'enemy') {
         (state.stats.landmarkWildEncounters ??= 0);
         state.stats.landmarkWildEncounters += 1;
+      }
+      autoEquip(state, npc);
+      break;
+    }
+
+    case 'interact_landmark': {
+      const res = decision.landmarkId && decision.interactionId
+        ? interactFacilityActor(state, npc, decision.landmarkId, decision.interactionId)
+        : { ok: false, message: '缺少局部设施目标。', staminaSpent: 0, rejection: 'illegal_target' as const };
+      if (!res.ok) {
+        refreshNpcPlanRecommendation(state, npc);
+        fallbackToRest(res.message);
+        break;
       }
       autoEquip(state, npc);
       break;

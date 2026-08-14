@@ -53,6 +53,7 @@ const DEFAULT_IMPORTANCE: Record<GameEventType, EventImportance> = {
   LANDMARK_EXHAUSTED: 'major',
   FACILITY_USED: 'minor',
   FACILITY_ACTIVATED: 'major',
+  LANDMARK_UNLOCKED: 'major',
   ITEM_FOUND: 'minor',
   ITEM_PICKED: 'minor',
   ITEM_DROPPED: 'minor',
