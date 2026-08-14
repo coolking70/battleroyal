@@ -48,6 +48,7 @@ import { MapDrawer } from '../components/MapDrawer';
 import { VisualImage } from '../components/VisualImage';
 import { InstantWorldEventAnnouncement, WorldEventBanner } from '../components/WorldEventFeedback';
 import { VictoryPaths } from '../components/VictoryPaths';
+import { LandmarkPanel } from '../components/LandmarkPanel';
 import { detectCraftableHint } from '../craftableHint';
 import { CraftableHint } from '../components/CraftableHint';
 import { CraftEquipmentHint } from '../components/CraftEquipmentHint';
@@ -502,6 +503,10 @@ export function GameScreen({
                   未交手前无法辨认对手身份与人数；只有正在交手的对手才会暴露精确生命与武器。
                 </div>
               </div>
+            )}
+
+            {!inActiveEncounter && !pending && (
+              <LandmarkPanel state={state} player={player} disabled={lockedGeneral} onCommand={act} />
             )}
 
             {playerSkills.length > 0 && !inActiveEncounter && (

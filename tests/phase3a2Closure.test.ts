@@ -134,6 +134,11 @@ function encounterSetup(characterId: string): { state: ReturnType<typeof newGame
   }
   npc.knownEnemies = [p.id];
   p.knownEnemies = [npc.id];
+  // Keep this combat-lifecycle fixture focused on reconInitiative. AF3 now
+  // legitimately promotes source-driven craft routes during a fresh plan;
+  // an already committed Apex route keeps planning out of this combat test.
+  npc.plannedRecipeId = 'r_aegis_plate';
+  npc.planCreatedAt = state.time;
   npc.hp = npc.maxHp;
   npc.stamina = npc.maxStamina;
   state.engagedWithPlayer = [];

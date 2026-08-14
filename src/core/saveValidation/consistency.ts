@@ -118,6 +118,10 @@ export function validateConsistency(ctx: ValidationContext): void {
   if (isRecord(state.pendingPickup) && isRecord(state.pendingPickup.stack)) {
     markUid(state.pendingPickup.stack.uid, 'pendingPickup');
   }
+  if (isRecord(state.landmarks)) for (const [landmarkId, raw] of Object.entries(state.landmarks)) {
+    if (!isRecord(raw) || !Array.isArray(raw.loot)) continue;
+    for (const stack of raw.loot) if (isRecord(stack)) markUid(stack.uid, `地标 ${landmarkId} 的隐藏物资`);
+  }
 
   /* --- 区域存活名单：双向完全一致 --- */
   const aliveCharIds = new Set<string>();

@@ -8,6 +8,7 @@ export * from './types/sharedTypes';
 export * from './types/itemTypes';
 export * from './types/characterTypes';
 export * from './types/zoneTypes';
+export * from './types/landmarkTypes';
 export * from './types/recipeTypes';
 export * from './types/eventTypes';
 export * from './types/encounterTypes';

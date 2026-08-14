@@ -17,6 +17,7 @@ export interface RawCraftMaterial {
   missing: number;
   sourceZoneIds: string[];
   sourceEnemyIds: string[];
+  sourceLandmarkIds: string[];
   worldSources: WorldSource[];
 }
 
@@ -88,6 +89,13 @@ export function publicSourceZones(itemId: string): string[] {
   return worldSourcesForItem(itemId)
     .flatMap((source) => source.zoneIds)
     .filter((zoneId, index, all) => all.indexOf(zoneId) === index);
+}
+
+export function publicSourceLandmarks(itemId: string): string[] {
+  return worldSourcesForItem(itemId)
+    .filter((source) => source.kind === 'landmark_loot')
+    .flatMap((source) => source.landmarkIds)
+    .filter((id, index, all) => all.indexOf(id) === index);
 }
 
 /** 返回配方依赖的原始材料 id，供图鉴展示完整来源，不携带库存数量。 */

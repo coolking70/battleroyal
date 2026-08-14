@@ -9,7 +9,6 @@ import { GAME_CONFIG } from '../data/gameConfig';
 import { getItem } from '../data/items';
 import { getWildEnemy } from '../data/wildEnemies';
 import { RECIPES, tryGetRecipe } from '../data/recipes';
-import { getZoneDef, ZONE_IDS } from '../data/zones';
 import {
   armorDefenseOf,
   countItem,
@@ -21,7 +20,9 @@ import type { SeededRandom } from './random';
 import type { Combatant, GameState, ItemDef, Personality, Recipe } from './types';
 import { PHASE4P_WILD_MATERIAL_IDS } from '../data/phase4pItems';
 import { PHASE4P_RECIPES } from '../data/phase4pRecipes';
-import { currentWorldSourcesForItem } from './worldSources';
+import { currentWorldSourcesForActor } from './worldSources';
+import { refreshLandmarkRecommendation } from './npcLandmarkPlan';
+import { applyNpcPlanRecommendations, recommendedZoneForRecipe } from './npcPlanRecommendation';
 
 const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
 
@@ -268,46 +269,6 @@ function computePlanProgress(state: GameState, npc: Combatant, recipe: Recipe): 
   return score / plan.steps.length;
 }
 
-/** 推荐搜索区域：静态物资池覆盖缺失材料，禁区排除、预警区扣分、就近加分 */
-function pickRecommendedZone(
-  state: GameState,
-  npc: Combatant,
-  recipe: Recipe,
-): string | null {
-  const plan = buildCraftPlan(state, npc, recipe.id);
-  const missing = plan?.rawGaps.filter((gap) => gap.missing > 0) ?? [];
-  if (missing.length === 0) return null;
-
-  const currentSourcesFor = (gap: (typeof missing)[number]) => currentWorldSourcesForItem(state, gap.itemId);
-
-  let best: { zoneId: string; score: number } | null = null;
-  for (const zoneId of ZONE_IDS) {
-    const zone = state.zones[zoneId];
-    if (!zone || zone.status === 'restricted') continue; // 正式禁区直接排除
-    const def = getZoneDef(zoneId);
-    let score = 0;
-    for (const gap of missing) {
-      // Static raw provenance remains available to Craft Guide, while NPC
-      // movement consumes the current public source resolver. A spawned Apex
-      // therefore contributes only its announced zone, never old eligible
-      // alternatives, and a defeated Apex contributes no future source.
-      const currentSources = currentSourcesFor(gap);
-      if (currentSources.some((source) => source.zoneIds.includes(zoneId))) score += 11;
-      if (currentSources.some((source) => source.kind === 'wild_drop' && source.enemyIds.some((enemyId) =>
-        getWildEnemy(enemyId).tier === 'apex' && state.apexSchedule.some((entry) =>
-          entry.spawned && entry.defId === enemyId && entry.zoneId === zoneId,
-        ),
-      ))) score += 8;
-    }
-    if (score === 0) continue;
-    if (zone.status === 'warning') score -= 4;
-    if (zoneId === npc.currentZoneId) score += 6;
-    else if (def.adjacent.includes(npc.currentZoneId)) score += 3;
-    if (!best || score > best.score) best = { zoneId, score };
-  }
-  return best?.zoneId ?? null;
-}
-
 /** 目标所需的每种缺失材料，其所有供给区域是否都已是禁区 */
 function allMissingZonesRestricted(
   state: GameState,
@@ -317,9 +278,9 @@ function allMissingZonesRestricted(
   const missing = buildCraftPlan(state, npc, recipe.id)?.rawGaps.filter((gap) => gap.missing > 0) ?? [];
   if (missing.length === 0) return false;
   // Never reconstruct sources from zone pools here. Static worldSources stay
-  // intact for provenance; currentWorldSourcesForItem is the shared runtime
-  // contract for restrictions, Apex collapse, and no-respawn defeat state.
-  return missing.every((gap) => !currentWorldSourcesForItem(state, gap.itemId).some((source) =>
+  // intact for provenance; the actor-scoped resolver is the shared runtime
+  // contract for restrictions, Apex collapse, and local landmark state.
+  return missing.every((gap) => !currentWorldSourcesForActor(state, npc, gap.itemId).some((source) => source.kind !== 'landmark_loot' &&
     source.zoneIds.some((zoneId) => state.zones[zoneId]?.status !== 'restricted'),
   ));
 }
@@ -334,7 +295,7 @@ function hasCurrentApexSourceForPlan(
   recipe: Recipe,
 ): boolean {
   const plan = buildCraftPlan(state, npc, recipe.id);
-  return plan?.rawGaps.some((gap) => gap.missing > 0 && currentWorldSourcesForItem(state, gap.itemId).some((source) =>
+  return plan?.rawGaps.some((gap) => gap.missing > 0 && currentWorldSourcesForActor(state, npc, gap.itemId).some((source) =>
     source.kind === 'wild_drop' &&
     source.zoneIds.includes(npc.currentZoneId) &&
     source.enemyIds.some((enemyId) => getWildEnemy(enemyId).tier === 'apex'),
@@ -448,13 +409,18 @@ export function planNpcGoal(
   npc.planProgress = goal
     ? computePlanProgress(state, npc, tryGetRecipe(goal.recipeId)!)
     : 0;
-  npc.planRecommendedZoneId = goal
-    ? pickRecommendedZone(state, npc, tryGetRecipe(goal.recipeId)!)
-    : null;
+  // Recommendation is part of this committed plan/replan transition. It is
+  // deliberately not rebuilt on ordinary turns merely because the field is
+  // null: null is valid for zone-loot, wild-drop, and Apex-only routes.
+  applyNpcPlanRecommendations(state, npc, goal ? tryGetRecipe(goal.recipeId) : null);
 }
 
 /** Production planner hook for a caller that has already selected a recipe. */
 export function refreshNpcPlanRecommendation(state: GameState, npc: Combatant): void {
   const recipe = npc.plannedRecipeId ? tryGetRecipe(npc.plannedRecipeId) : null;
-  npc.planRecommendedZoneId = recipe ? pickRecommendedZone(state, npc, recipe) : null;
+  npc.planRecommendedZoneId = recipe ? recommendedZoneForRecipe(state, npc, recipe) : null;
+  // Explicit stale-local recovery keeps the historical refresh semantics: it
+  // may move the recommendation to the newly selected landmark's zone.
+  if (recipe && !PHASE4P_RECIPE_IDS.has(recipe.id)) refreshLandmarkRecommendation(state, npc, recipe);
+  else npc.planRecommendedLandmarkId = null;
 }

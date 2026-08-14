@@ -49,6 +49,8 @@ import {
   handleMove,
   handleRest,
   handleSearch,
+  handleSearchLandmark,
+  handleInteractLandmark,
   handleUseItem,
   handleUseSkill,
   type HandlerOutcome,
@@ -350,6 +352,12 @@ function executeCommandInner(state: GameState, command: Command): CommandResult 
 
     case 'SEARCH':
       return finish(handleSearch(draft, player, rng));
+
+    case 'SEARCH_LANDMARK':
+      return finish(handleSearchLandmark(draft, player, command.landmarkId, rng));
+
+    case 'INTERACT_LANDMARK':
+      return finish(handleInteractLandmark(draft, player, command.landmarkId, command.interactionId));
 
     case 'REST':
       return finish(handleRest(draft, player, rng));

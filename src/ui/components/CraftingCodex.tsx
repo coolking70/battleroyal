@@ -3,12 +3,14 @@ import type { Combatant, GameState, Recipe } from '../../core/types';
 import { getItem } from '../../data/items';
 import { RECIPES, recipeVisibility, tryGetRecipe } from '../../data/recipes';
 import { getZoneDef } from '../../data/zones';
+import { getLandmarkDef } from '../../data/landmarks';
 import { getWildEnemy } from '../../data/wildEnemies';
 import { worldSourcesForItem } from '../../core/worldSources';
 import { CATEGORY_LABEL, itemSummary } from '../../utils/format';
 import {
   craftPathSummary,
   publicSourceZones,
+  publicSourceLandmarks,
   rawMaterialIdsForRecipe,
 } from '../craftPathPresentation';
 import { ITEM_CATEGORY_META, presentItem } from '../itemPresentation';
@@ -155,6 +157,9 @@ export function CraftingCodex({
                       {getItem(itemId).name}：{sourceIds.length > 0
                         ? sourceIds.map((id) => getZoneDef(id).name).join('、')
                         : '暂无公开来源池'}
+                      {publicSourceLandmarks(itemId).length > 0
+                        ? `；地标来源：${publicSourceLandmarks(itemId).map((id) => getLandmarkDef(id).name).join('、')}`
+                        : ''}
                       {enemyNames.length > 0 ? `；来源敌人：${enemyNames.join('、')}（常见区域，实际个体与掉落未知）` : ''}
                     </span>
                   );

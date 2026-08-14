@@ -8,6 +8,7 @@ import {
   resolveNpcOverflow,
   restActor,
   searchActor,
+  searchLandmarkActor,
   useItemActor,
   useSkillActor,
 } from './actorActions';
@@ -25,6 +26,7 @@ import {
   stackValue,
 } from './inventory';
 import { decideNpcAction, planNpcGoal, type NpcDecision } from './npcDecide';
+import { refreshNpcPlanRecommendation } from './npcGoalPlan';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState, ItemStack } from './types';
 import { attackWildActor, fleeWildEncounter, resolveWildTurn } from './wildCombat';
@@ -33,6 +35,7 @@ import { PHASE4P_SIGNATURE_IDS, PHASE4P_WILD_MATERIAL_IDS } from '../data/phase4
 import { performObjectiveAction } from './victory';
 import { deriveNpcVictoryGoal } from './npcVictoryGoal';
 import { buildCraftPlan } from './craftPlan';
+import { canSearchLandmark } from './landmarks';
 
 const WILD_MATERIALS = new Set<string>([...PHASE4N_WILD_MATERIAL_IDS, ...PHASE4P_WILD_MATERIAL_IDS]);
 const SIGNATURE_MATERIALS = new Set<string>(PHASE4P_SIGNATURE_IDS);
@@ -191,6 +194,15 @@ export function runNpcTurn(
   // 第二阶段：每回合按 TTL 维护 / 重规划 NPC 的制作目标
   // Phase 2A-1：随机型人格在规划时使用种子随机数（与对局同一 RNG 流隔离在调用方）
   planNpcGoal(state, npc, rng);
+  // A local landmark can become stale after another actor exhausts, locks, or
+  // disables it. Refresh only when the NPC is actually there; remote runtime
+  // state is intentionally outside this actor's information boundary.
+  if (npc.planRecommendedLandmarkId) {
+    const landmark = state.landmarks[npc.planRecommendedLandmarkId];
+    if (landmark?.zoneId === npc.currentZoneId && !canSearchLandmark(state, npc.id, npc.planRecommendedLandmarkId).ok) {
+      refreshNpcPlanRecommendation(state, npc);
+    }
+  }
 
   // Scout 的 SEARCH 先手只覆盖敌方紧接着的这一次 NPC 行动机会。
   // 在决策前捕获目标，行动结束后统一消费；这样 attack / guard / heal /
@@ -280,6 +292,24 @@ export function runNpcTurn(
         if (enemy && enemy.alive && !npc.knownEnemies.includes(enemy.id)) {
           npc.knownEnemies.push(enemy.id);
         }
+      }
+      autoEquip(state, npc);
+      break;
+    }
+
+    case 'search_landmark': {
+      const res = decision.landmarkId ? searchLandmarkActor(state, npc, decision.landmarkId, rng) : { ok: false, message: '缺少地标目标。', outcome: null, staminaSpent: 0 };
+      if (!res.ok) {
+        refreshNpcPlanRecommendation(state, npc);
+        fallbackToRest(res.message);
+        break;
+      }
+      (state.stats.npcLandmarkSearches ??= 0);
+      state.stats.npcLandmarkSearches += 1;
+      if (res.outcome?.kind === 'item' && res.outcome.stack && res.outcome.pending) resolveNpcOverflow(state, npc, res.outcome.stack);
+      if (res.outcome?.kind === 'enemy') {
+        (state.stats.landmarkWildEncounters ??= 0);
+        state.stats.landmarkWildEncounters += 1;
       }
       autoEquip(state, npc);
       break;

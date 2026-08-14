@@ -16,6 +16,8 @@ import { advancesTime, commandLabel } from './commands';
 import { hasRoomForOutput } from './crafting';
 import { enemiesInZone } from './gameState';
 import { livingWildEnemiesInZone } from './wildPopulation';
+import { canSearchLandmark, landmarkDefinitionsForZone } from './landmarks';
+import { canUseFacility } from './facilities';
 import { canCallExtraction, canExtract, canSubmitResearch } from './victory';
 import {
   getEquippedArmor,
@@ -29,6 +31,7 @@ import type { Command, Combatant, GameState } from './types';
 export type LegalActionCategory =
   | 'movement'
   | 'search'
+  | 'facility'
   | 'recovery'
   | 'craft'
   | 'combat'
@@ -253,6 +256,22 @@ export function craftActions(player: Combatant): LegalAction[] {
         `合成 ${getItem(recipe.outputItemId).name}`,
       ),
     );
+  }
+  return out;
+}
+
+export function landmarkActions(state: GameState, player: Combatant): LegalAction[] {
+  const out: LegalAction[] = [];
+  const searchCost = canPayActionCost(player, 'SEARCH_LANDMARK');
+  for (const def of landmarkDefinitionsForZone(state, player.currentZoneId)) {
+    const canSearch = canSearchLandmark(state, player.id, def.id);
+    if (def.searchable && canSearch.ok && searchCost.ok) {
+      out.push(action({ type: 'SEARCH_LANDMARK', landmarkId: def.id }, 'search', searchCost.cost, `搜索${def.name}`));
+    }
+    if (def.interaction) {
+      const canUse = canUseFacility(state, player, def.id, def.interaction.id);
+      if (canUse.ok) out.push(action({ type: 'INTERACT_LANDMARK', landmarkId: def.id, interactionId: def.interaction.id }, 'facility', canUse.cost, def.interaction.label));
+    }
   }
   return out;
 }

@@ -4,7 +4,7 @@ import { runAutoGame } from '../tools/autoPlayer';
 describe('Phase 4N · representative AutoPlayer PvE loop', () => {
   it('can complete a deterministic public wild-material build route', () => {
     const result = runAutoGame({
-      seed: 'PHASE4N-ROUTE-hunter-2',
+      seed: 'AF3-N4-3',
       characterId: 'hunter',
       policy: 'collector',
       representativeBuildLoop: true,

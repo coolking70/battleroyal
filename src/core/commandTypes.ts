@@ -75,6 +75,8 @@ export interface WorldEventRecord {
 export type Command =
   | { type: 'MOVE'; zoneId: string }
   | { type: 'SEARCH' }
+  | { type: 'SEARCH_LANDMARK'; landmarkId: string }
+  | { type: 'INTERACT_LANDMARK'; landmarkId: string; interactionId: string }
   | { type: 'REST' }
   | { type: 'CRAFT'; recipeId: string }
   | { type: 'USE_ITEM'; uid: string }

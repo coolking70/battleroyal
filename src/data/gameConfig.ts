@@ -32,6 +32,8 @@ export const GAME_CONFIG = {
 
   /* --- 体力消耗 --- */
   searchStaminaCost: 5,
+  landmarkSearchStaminaCost: 3,
+  facilityInteractionStaminaCost: 2,
   craftStaminaCost: 2,
   craftStaminaCostEngineer: 1,
   moveStaminaCost: 3,

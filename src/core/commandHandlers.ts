@@ -7,6 +7,8 @@ import {
   guardActor,
   moveActor,
   searchActor,
+  searchLandmarkActor,
+  interactFacilityActor,
   useSkillActor,
 } from './actorActions';
 import type { SkillId } from './skills';
@@ -22,7 +24,6 @@ import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState } from './types';
 import { attackWildActor, fleeWildEncounter, startWildEncounter } from './wildCombat';
 import { livingWildEnemiesInZone } from './wildPopulation';
-
 /* ------------------------------------------------------------------ */
 /* 玩家命令处理                                                        */
 /* ------------------------------------------------------------------ */
@@ -137,7 +138,35 @@ export function handleSearch(
   }
   return { ok: true, message: '一无所获。' };
 }
-
+export function handleSearchLandmark(
+  state: GameState,
+  player: Combatant,
+  landmarkId: string,
+  rng: SeededRandom,
+): HandlerOutcome {
+  const res = searchLandmarkActor(state, player, landmarkId, rng);
+  if (!res.ok) return { ok: false, message: res.message };
+  const outcome = res.outcome;
+  if (outcome?.kind === 'enemy' && outcome.enemyId) {
+    const enemy = state.wildEnemies[outcome.enemyId];
+    state.encounter = {
+      targetKind: 'wild', enemyId: outcome.enemyId, zoneId: player.currentZoneId,
+      startedAtTime: state.time, log: [`你在地标搜索中遭遇了 ${enemy ? '野外威胁' : '未知威胁'}。`], resolved: false,
+    };
+  } else if (outcome?.kind === 'item' && outcome.pending && outcome.stack) {
+    state.pendingPickup = { stack: outcome.stack, source: 'search', zoneId: player.currentZoneId };
+  }
+  return { ok: true, message: res.message };
+}
+export function handleInteractLandmark(
+  state: GameState,
+  player: Combatant,
+  landmarkId: string,
+  interactionId: string,
+): HandlerOutcome {
+  const res = interactFacilityActor(state, player, landmarkId, interactionId);
+  return { ok: res.ok, message: res.message };
+}
 export function handleRest(
   state: GameState,
   player: Combatant,

@@ -1689,6 +1689,44 @@ span.encounter-enemy-visual {
   flex: 1;
 }
 
+.landmark-panel {
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: rgba(18, 25, 31, 0.62);
+}
+
+.landmark-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.landmark-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: var(--bg-panel-2);
+}
+
+.landmark-card-head,
+.landmark-card-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.landmark-card-head .tag { margin-left: auto; }
+.landmark-icon { font-size: 18px; }
+.landmark-description { font-size: 11px; line-height: 1.4; }
+.landmark-card-state { color: var(--text-dim); }
+
 .ground-list {
   display: flex;
   flex-wrap: wrap;
