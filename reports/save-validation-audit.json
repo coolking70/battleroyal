@@ -2,10 +2,10 @@
   "meta": {
     "tool": "audit-save-validation",
     "version": "0.5.0",
-    "generatedAt": "2026-08-13T07:27:20.443Z",
+    "generatedAt": "2026-08-14T20:20:15.143Z",
     "control": "normal-save-accepted",
-    "totalCases": 102,
-    "passedCases": 102,
+    "totalCases": 119,
+    "passedCases": 119,
     "failedCases": 0,
     "constructionFailedCases": 0,
     "verdict": "PASS"
@@ -584,7 +584,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "物品 UID「i0」全局重复：角色 p0 的 inventory 与 角色 n1 的 inventory",
+      "errorMessage": "物品 UID「i71」全局重复：角色 p0 的 inventory 与 角色 n1 的 inventory",
       "constructionFailed": false
     },
     {
@@ -833,6 +833,142 @@
       "actual": false,
       "passed": true,
       "errorMessage": "角色 p0 的技能冷却 adrenaline 非法（-1）",
+      "constructionFailed": false
+    },
+    {
+      "case": "Apex schedule zone 不在 eligibleZones",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "Apex prototype_aegis 生成区域不在 eligibleZones",
+      "constructionFailed": false
+    },
+    {
+      "case": "wrong-def pendingIntent",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "野外敌人 w37 pendingIntent 与自身特殊技不一致",
+      "constructionFailed": false
+    },
+    {
+      "case": "common Wild with pendingIntent",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "野外敌人 w0 无特殊技却携带 pendingIntent",
+      "constructionFailed": false
+    },
+    {
+      "case": "defeated Wild with pendingIntent",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "已击败野外敌人 w27 不得保留 pendingIntent",
+      "constructionFailed": false
+    },
+    {
+      "case": "重复 Apex UID",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "Apex subject_07 spawnedAt 非法",
+      "constructionFailed": false
+    },
+    {
+      "case": "schedule 与 instance defId 不一致",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "Apex subject_07 生成区域不在 eligibleZones",
+      "constructionFailed": false
+    },
+    {
+      "case": "schedule 与 instance zoneId 不一致",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "Apex prototype_aegis schedule 与实例不一致",
+      "constructionFailed": false
+    },
+    {
+      "case": "knowledgeMemory owner 与角色不一致",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 的 knowledgeMemory owner 非法",
+      "constructionFailed": false
+    },
+    {
+      "case": "knowledge observation 来自未来",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 的 knowledgeMemory.entries[0].observedAt 非法",
+      "constructionFailed": false
+    },
+    {
+      "case": "source memory 指向 known-but-unrelated Landmark",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 的 knowledgeMemory.entries[3] 的 landmark 并不是该 item 的公开 source",
+      "constructionFailed": false
+    },
+    {
+      "case": "knowledgeMemory 超过固定容量",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 的 knowledgeMemory 超出容量上限",
+      "constructionFailed": false
+    },
+    {
+      "case": "knowledge entry 注入 hidden runtime snapshot 字段",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 的 knowledgeMemory.entries[0] 含有缺失、无关或隐藏 runtime snapshot 字段",
+      "constructionFailed": false
+    },
+    {
+      "case": "known actor memory 引用不存在 subject",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 的 knowledgeMemory.entries[4].subjectActorId 非法",
+      "constructionFailed": false
+    },
+    {
+      "case": "StrategicIntent item target 与 type 不匹配",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 的 seek_material target 非法",
+      "constructionFailed": false
+    },
+    {
+      "case": "StrategicIntent Apex target 不是 Apex",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 的 contest_apex target 非法",
+      "constructionFailed": false
+    },
+    {
+      "case": "StrategicIntent committedAt 来自未来",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 的 strategicIntent.committedAt 非法",
+      "constructionFailed": false
+    },
+    {
+      "case": "observation action 与 target 字段组合非法",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 的 knowledgeMemory.entries[4] 的 action/target 字段不相容",
       "constructionFailed": false
     }
   ]
