@@ -22,7 +22,9 @@ import type { Combatant, GameState, ItemDef, Personality, Recipe } from './types
 import { PHASE4P_WILD_MATERIAL_IDS } from '../data/phase4pItems';
 import { PHASE4P_RECIPES } from '../data/phase4pRecipes';
 import { currentWorldSourcesForActor } from './worldSources';
-import { refreshLandmarkRecommendation } from './npcLandmarkPlan';
+import { recommendedLandmarkForRecipe, refreshLandmarkRecommendation } from './npcLandmarkPlan';
+import { tryGetLandmarkDef } from '../data/landmarks';
+import { isZoneExhausted } from './zoneLoot';
 
 const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
 
@@ -366,6 +368,36 @@ function hasCompletedApexHuntForPlan(
   );
 }
 
+/** Commit the route facets of an already-selected recipe exactly once. */
+function applyNpcPlanRecommendations(
+  state: GameState,
+  npc: Combatant,
+  recipe: Recipe | null,
+): void {
+  const recommendedZoneId = recipe ? pickRecommendedZone(state, npc, recipe) : null;
+  npc.planRecommendedZoneId = recommendedZoneId;
+  // Apex recipes retain dedicated wild-source planning. Promote a remote
+  // landmark only after the current zone is exhausted, preserving legacy
+  // zone choice and making the finite-loot hand-off explicit.
+  const craftPlan = recipe ? buildCraftPlan(state, npc, recipe.id) : null;
+  const hasWildDropGap = Boolean(craftPlan?.rawGaps.some((gap) => gap.worldSources.some((source) => source.kind === 'wild_drop')));
+  const isObjectiveRoute = recipe ? getItem(recipe.outputItemId).category === 'objective' : false;
+  if (recipe && !PHASE4P_RECIPE_IDS.has(recipe.id) && !hasWildDropGap && !isObjectiveRoute) {
+    const landmarkId = recommendedLandmarkForRecipe(state, npc, recipe);
+    const landmarkZoneId = landmarkId ? tryGetLandmarkDef(landmarkId)?.zoneId ?? null : null;
+    const currentZoneIsExhausted = Boolean(state.zones[npc.currentZoneId] && isZoneExhausted(state.zones[npc.currentZoneId]!));
+    if (landmarkId && currentZoneIsExhausted && (
+      recommendedZoneId === null
+      || recommendedZoneId === npc.currentZoneId
+    )) {
+      npc.planRecommendedLandmarkId = landmarkId;
+      npc.planRecommendedZoneId = landmarkZoneId;
+      return;
+    }
+  }
+  npc.planRecommendedLandmarkId = null;
+}
+
 /**
  * NPC 制作目标规划（Phase 2A-1 重写）。
  *
@@ -449,18 +481,18 @@ export function planNpcGoal(
   npc.planProgress = goal
     ? computePlanProgress(state, npc, tryGetRecipe(goal.recipeId)!)
     : 0;
-  npc.planRecommendedZoneId = goal
-    ? pickRecommendedZone(state, npc, tryGetRecipe(goal.recipeId)!)
-    : null;
-  npc.planRecommendedLandmarkId = null;
+  // Recommendation is part of this committed plan/replan transition. It is
+  // deliberately not rebuilt on ordinary turns merely because the field is
+  // null: null is valid for zone-loot, wild-drop, and Apex-only routes.
+  applyNpcPlanRecommendations(state, npc, goal ? tryGetRecipe(goal.recipeId) : null);
 }
 
 /** Production planner hook for a caller that has already selected a recipe. */
 export function refreshNpcPlanRecommendation(state: GameState, npc: Combatant): void {
   const recipe = npc.plannedRecipeId ? tryGetRecipe(npc.plannedRecipeId) : null;
   npc.planRecommendedZoneId = recipe ? pickRecommendedZone(state, npc, recipe) : null;
-  // Apex recipes retain their dedicated wild-source planner; landmark routing
-  // is applied to ordinary material goals and never diverts an Apex route.
+  // Explicit stale-local recovery keeps the historical refresh semantics: it
+  // may move the recommendation to the newly selected landmark's zone.
   if (recipe && !PHASE4P_RECIPE_IDS.has(recipe.id)) refreshLandmarkRecommendation(state, npc, recipe);
   else npc.planRecommendedLandmarkId = null;
 }

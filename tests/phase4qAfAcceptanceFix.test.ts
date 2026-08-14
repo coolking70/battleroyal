@@ -11,7 +11,7 @@ import { canSearchLandmark } from '../src/core/landmarks';
 import { getCharacterSkills } from '../src/core/skills';
 import { createMemoryStorage, loadGame, saveGame, setStorage } from '../src/core/saveLoad';
 import { isEventVisibleToPlayer } from '../src/ui/components/EventLog';
-import { newGame, npcs, player } from './helpers';
+import { clearInventory, newGame, npcs, player } from './helpers';
 
 function noWilds(state: ReturnType<typeof newGame>): void {
   for (const zone of Object.values(state.zones)) zone.wildEnemyIds = [];
@@ -230,47 +230,56 @@ describe('Phase 4Q-AF 设施、信息边界、风险与 NPC 验收修复', () =>
   });
 
   it('AF-12 runNpcTurn autonomously performs MOVE → SEARCH → acquire → craft on a real landmark route', () => {
-    const state = newGame('PHASE4Q-AF-NPC-AUTONOMOUS');
+    const state = newGame('PHASE4Q-AF2-FRESH-ROUTE');
     const npc = npcs(state)[0]!;
-    npc.currentZoneId = 'hospital';
-    npc.plannedRecipeId = 'r_circuit';
-    npc.planCreatedAt = state.time;
-    npc.planReason = 'Phase 4Q-AF deterministic landmark route';
+    npc.currentZoneId = 'warehouse';
+    npc.plannedRecipeId = null;
+    npc.planCreatedAt = null;
+    npc.planReason = null;
     npc.planProgress = 0;
     npc.planNoProgressTurns = 0;
     npc.stamina = npc.maxStamina = 100;
     npc.skillCooldowns = Object.fromEntries(getCharacterSkills(npc.characterId).map((skillId) => [skillId, 99]));
-    npc.inventory = npc.inventory.filter((stack) => stack.itemId !== 'battery');
-    addItem(npc, createStack(state, 'wire'));
+    clearInventory(npc);
+    addItem(npc, createStack(state, 'processed_wood'));
+    addItem(npc, createStack(state, 'rope_bundle'));
+    addItem(npc, createStack(state, 'glass'));
     for (const character of Object.values(state.characters)) {
-      if (character.id !== npc.id) character.currentZoneId = 'warehouse';
+      if (character.id !== npc.id) character.currentZoneId = 'school';
     }
     noWilds(state);
-    state.zones.hospital!.loot = [];
-    state.zones.hospital!.objectiveLoot = [];
-    state.zones.hospital!.initialLootCount = 0;
-    state.zones.hospital!.remainingLootCount = 0;
-    state.zones.hospital!.supply = 0;
-    const target = state.landmarks.commercial_electronics_shop!;
-    target.loot = target.loot.filter((stack) => stack.itemId === 'battery');
-    target.remainingSearches = target.loot.length;
-    target.maxSearches = target.loot.length;
+    state.zones.warehouse!.loot = [];
+    state.zones.warehouse!.objectiveLoot = [];
+    state.zones.warehouse!.initialLootCount = 0;
+    state.zones.warehouse!.remainingLootCount = 0;
+    state.zones.warehouse!.supply = 0;
+    for (const landmark of Object.values(state.landmarks)) {
+      if (landmark.zoneId !== 'warehouse') continue;
+      landmark.loot = [];
+      landmark.remainingSearches = 0;
+      landmark.exhausted = true;
+    }
+    const target = state.landmarks.construction_tool_container!;
+    target.loot = [createStack(state, 'rope')];
+    target.remainingSearches = 1;
+    target.maxSearches = 1;
     target.exhausted = false;
-    refreshNpcPlanRecommendation(state, npc);
     const startZone = npc.currentZoneId;
-    for (let turn = 0; turn < 100 && !state.events.some((event) => event.type === 'ITEM_CRAFTED' && event.actorId === npc.id && event.metadata.recipeId === 'r_circuit'); turn += 1) {
-      runNpcTurn(state, npc, new SeededRandom(`PHASE4Q-AF-NPC-AUTONOMOUS-${turn}`));
+    runNpcTurn(state, npc, new SeededRandom('PHASE4Q-AF2-FRESH-ROUTE:turn:0'));
+    expect(npc.planRecommendedLandmarkId).toBe('construction_tool_container');
+    for (let turn = 1; turn < 140 && !state.events.some((event) => event.type === 'ITEM_CRAFTED' && event.actorId === npc.id && event.metadata.recipeId === 'r_composite_bow_upgrade'); turn += 1) {
+      runNpcTurn(state, npc, new SeededRandom(`PHASE4Q-AF2-FRESH-ROUTE:turn:${turn}`));
     }
     const events = state.events;
     const moveIndex = events.findIndex((event) => event.type === 'CHARACTER_MOVED' && event.actorId === npc.id);
-    const searchIndex = events.findIndex((event) => event.type === 'LANDMARK_SEARCHED' && event.actorId === npc.id && event.metadata.outcome === 'item');
-    const craftIndex = events.findIndex((event) => event.type === 'ITEM_CRAFTED' && event.actorId === npc.id && event.metadata.recipeId === 'r_circuit');
-    expect(startZone).toBe('hospital');
-    expect(npc.currentZoneId).toBe('commercial');
+    const searchIndex = events.findIndex((event) => event.type === 'LANDMARK_SEARCHED' && event.actorId === npc.id && event.metadata.landmarkId === 'construction_tool_container' && event.metadata.outcome === 'item');
+    const craftIndex = events.findIndex((event) => event.type === 'ITEM_CRAFTED' && event.actorId === npc.id && event.metadata.recipeId === 'r_composite_bow_upgrade');
+    expect(startZone).toBe('warehouse');
+    expect(events.some((event) => event.type === 'CHARACTER_MOVED' && event.actorId === npc.id && event.zoneId === 'construction')).toBe(true);
     expect(moveIndex).toBeGreaterThanOrEqual(0);
     expect(searchIndex).toBeGreaterThan(moveIndex);
     expect(craftIndex).toBeGreaterThan(searchIndex);
-    expect(countItem(npc, 'circuit')).toBeGreaterThan(0);
+    expect(npc.equipment.some((stack) => stack.itemId === 'composite_bow_upgrade')).toBe(true);
   });
 
   it('AF-13 remote hidden exhaustion falls back to a local alternate landmark after arrival', () => {
