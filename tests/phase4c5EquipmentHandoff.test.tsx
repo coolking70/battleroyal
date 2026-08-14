@@ -122,13 +122,13 @@ describe('Phase 4C-5 玩家装备交接闭环', () => {
   it('代表玩家闭环通过正式命令通道采纳目标并完成装备交接', () => {
     const results = [
       {
-        seed: 'PHASE4N-ROUTE-hunter-2',
+        seed: 'AF3-N4-3',
         characterId: 'hunter',
         policy: 'collector' as const,
         representativeRecipeId: 'r_hunting_armor',
       },
       ...['A', 'B', 'C'].map((suffix) => ({
-        seed: `PHASE4C5-${suffix}`,
+        seed: `AF3-C5-${suffix}-${suffix === 'A' ? 16 : suffix === 'B' ? 15 : 2}`,
         characterId: 'scout',
         policy: 'collector' as const,
       })),

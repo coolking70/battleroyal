@@ -355,7 +355,7 @@ describe('Phase 4O-AF victory semantics and alternative-route closure', () => {
     );
 
     const result = runAutoGame({
-      seed: 'PHASE4O-AF-EX-62',
+      seed: 'AF3-EX-scout-cautious-14',
       characterId: 'scout',
       policy: 'cautious',
       victoryGoal: 'extraction',

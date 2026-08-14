@@ -36,13 +36,13 @@ describe('Phase 4J-1 标准自动玩家装备修复', () => {
   });
 
   it.each([
-    ['aggressive', 'PHASE4J1-AF-aggressive-0', 'fighter'],
-    ['cautious', 'PHASE4J1-AF-cautious-0', 'scout'],
-    ['collector', 'PHASE4J1-AF-collector-0', 'scout'],
-    ['opportunist', 'PHASE4J1-AF-opportunist-0', 'engineer'],
+    ['aggressive', 'AF3-J-aggressive-0', 'fighter'],
+    ['cautious', 'AF3-J-cautious-0', 'scout'],
+    ['collector', 'AF3-J-collector-1', 'scout'],
+    ['opportunist', 'AF3-J-opportunist-0', 'engineer'],
     // Keep a deterministic random route that reaches the shared EQUIP action
     // after the Phase 4P world-content expansion.
-    ['random', 'PHASE4J1-AF-random-6', 'fighter'],
+    ['random', 'AF3-J-random-0', 'fighter'],
   ] as const)('%s 标准对局实际发出 EQUIP', (policy, seed, characterId) => {
     const result = runAutoGame({ seed, characterId, policy });
 
