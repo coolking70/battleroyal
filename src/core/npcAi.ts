@@ -1,4 +1,3 @@
-import { getItem } from '../data/items';
 import {
   attackActor,
   craftActor,
@@ -15,155 +14,26 @@ import {
 } from './actorActions';
 import { pushEvent } from './events';
 import { noteOwnActionCompleted } from './exposed';
-import { canAccessGroundItem, clearGroundOwnership } from './legalActions';
 import type { SkillId } from './skills';
-import {
-  addItem,
-  canAccept,
-  equipItem,
-  getEquippedArmor,
-  getEquippedUtility,
-  getEquippedWeapon,
-  stackValue,
-} from './inventory';
 import { decideNpcAction, planNpcGoal, type NpcDecision } from './npcDecide';
 import { refreshNpcPlanRecommendation } from './npcGoalPlan';
 import type { SeededRandom } from './random';
-import type { AttackStyle, Combatant, GameState, ItemStack } from './types';
+import type { AttackStyle, Combatant, GameState } from './types';
 import { attackWildActor, fleeWildEncounter, resolveWildTurn } from './wildCombat';
-import { PHASE4N_WILD_MATERIAL_IDS } from '../data/phase4nItems';
-import { PHASE4P_SIGNATURE_IDS, PHASE4P_WILD_MATERIAL_IDS } from '../data/phase4pItems';
 import { performObjectiveAction } from './victory';
 import { deriveNpcVictoryGoal } from './npcVictoryGoal';
-import { buildCraftPlan } from './craftPlan';
 import { tryGetRecipe } from '../data/recipes';
 import { applyNpcPlanRecommendations } from './npcPlanRecommendation';
 import { canSearchLandmark } from './landmarks';
 import { syncNpcExplorationObjective } from './accessChains';
 import { preserveExplorationObjectiveAfterPlan } from './npcObjectiveLifecycle';
-
-const WILD_MATERIALS = new Set<string>([...PHASE4N_WILD_MATERIAL_IDS, ...PHASE4P_WILD_MATERIAL_IDS]);
-const SIGNATURE_MATERIALS = new Set<string>(PHASE4P_SIGNATURE_IDS);
-
-function noteWildPickup(state: GameState, itemId: string): void {
-  if (WILD_MATERIALS.has(itemId)) state.stats.wildMaterialPickups += 1;
-  if (SIGNATURE_MATERIALS.has(itemId)) state.stats.signaturePickups = (state.stats.signaturePickups ?? 0) + 1;
-}
+import { maintainStrategicIntent } from './npcStrategicIntent';
+import { observeActorSighting } from './npcKnowledge';
+import { autoEquipNpc, autoLootNpc } from './npcInventoryMaintenance';
 
 /* 决策相关 API 由 npcDecide.ts 提供，这里统一再导出，保持对外契约不变 */
 export { decideNpcAction } from './npcDecide';
 export type { NpcActionKind, NpcDecision } from './npcDecide';
-
-/* ------------------------------------------------------------------ */
-/* 免费动作：装备与拾荒                                                 */
-/* ------------------------------------------------------------------ */
-
-/** NPC 自动换上更强的装备（不消耗时间） */
-function autoEquip(state: GameState, npc: Combatant): void {
-  const plannedRoute = npc.plannedRecipeId
-    ? buildCraftPlan(state, npc, npc.plannedRecipeId)
-    : null;
-  for (const slot of ['weapon', 'armor', 'utility'] as const) {
-    const current = slot === 'weapon'
-      ? getEquippedWeapon(npc)
-      : slot === 'armor'
-        ? getEquippedArmor(npc)
-        : getEquippedUtility(npc);
-    const currentValue = current
-      ? slot === 'weapon'
-        ? getItem(current.itemId).attack ?? 0
-        : slot === 'armor'
-          ? getItem(current.itemId).defense ?? 0
-          : (getItem(current.itemId).searchFindMult ?? 1) * 100
-      : 0;
-
-    let best: { stack: ItemStack; value: number } | null = null;
-    for (const s of npc.inventory) {
-      const def = getItem(s.itemId);
-      if (def.equipmentSlot !== slot) continue;
-      // Intermediate gear can be a required ingredient for the NPC's current
-      // route (plate_armor is consumed by r_aegis_plate). Keep it in the
-      // inventory until the canonical CRAFT path consumes it; only the final
-      // route output is eligible for automatic equipping.
-      if (plannedRoute && s.itemId !== plannedRoute.targetItemId
-        && plannedRoute.steps.some((step) => step.outputItemId === s.itemId && step.recipeId !== plannedRoute.targetRecipeId)) continue;
-      const v = slot === 'weapon'
-        ? def.attack ?? 0
-        : slot === 'armor'
-          ? def.defense ?? 0
-          : (def.searchFindMult ?? 1) * 100;
-      if (v <= currentValue) continue;
-      if (!best || v > best.value) best = { stack: s, value: v };
-    }
-
-    if (best) {
-      const res = equipItem(npc, best.stack.uid);
-      if (res.ok) {
-        pushEvent(state, {
-          type: 'ITEM_EQUIPPED',
-          actorId: npc.id,
-          zoneId: npc.currentZoneId,
-          message: `${npc.name} 装备了 ${getItem(best.stack.itemId).name}。`,
-          metadata: { itemId: best.stack.itemId, slot },
-        });
-      }
-    }
-  }
-}
-
-/**
- * NPC 拾取当前区域地面上的掉落物（不消耗时间）。
- * 背包已满时按价值评分决定是否替换最差的物品。
- */
-function autoLoot(state: GameState, npc: Combatant): void {
-  const zone = state.zones[npc.currentZoneId];
-  if (!zone || zone.groundItems.length === 0) return;
-
-  // 每个时间单位最多捡 2 件，避免一次性清空地面
-  let picks = 2;
-  for (let i = zone.groundItems.length - 1; i >= 0 && picks > 0; i--) {
-    const stack = zone.groundItems[i]!;
-    if (!canAccessGroundItem(npc, stack)) continue;
-    if (canAccept(npc, stack)) {
-      zone.groundItems.splice(i, 1);
-      addItem(npc, clearGroundOwnership(stack));
-      noteWildPickup(state, stack.itemId);
-      picks -= 1;
-      pushEvent(state, {
-        type: 'ITEM_PICKED',
-        actorId: npc.id,
-        zoneId: zone.id,
-        message: `${npc.name} 捡走了地上的 ${getItem(stack.itemId).name}。`,
-        metadata: { itemId: stack.itemId },
-      });
-      continue;
-    }
-
-    // 背包已满：与背包中价值最低的物品比较
-    const worst = npc.inventory.reduce<ItemStack | null>((min, cur) => {
-      if (!min) return cur;
-      return stackValue(cur) < stackValue(min) ? cur : min;
-    }, null);
-    if (worst && stackValue(stack) > stackValue(worst) * 1.4) {
-      const idx = npc.inventory.findIndex((s) => s.uid === worst.uid);
-      if (idx >= 0) {
-        npc.inventory.splice(idx, 1);
-        zone.groundItems.push(worst);
-      }
-      zone.groundItems.splice(i, 1);
-      addItem(npc, clearGroundOwnership(stack));
-      noteWildPickup(state, stack.itemId);
-      picks -= 1;
-      pushEvent(state, {
-        type: 'ITEM_PICKED',
-        actorId: npc.id,
-        zoneId: zone.id,
-        message: `${npc.name} 丢下 ${getItem(worst.itemId).name}，换走了 ${getItem(stack.itemId).name}。`,
-        metadata: { itemId: stack.itemId, droppedItemId: worst.itemId },
-      });
-    }
-  }
-}
 
 /* ------------------------------------------------------------------ */
 /* 执行                                                                */
@@ -193,8 +63,8 @@ export function runNpcTurn(
   npc.guarding = false;
 
   // 免费动作
-  autoEquip(state, npc);
-  autoLoot(state, npc);
+  autoEquipNpc(state, npc);
+  autoLootNpc(state, npc);
 
   // 第二阶段：每回合按 TTL 维护 / 重规划 NPC 的制作目标
   // Phase 2A-1：随机型人格在规划时使用种子随机数（与对局同一 RNG 流隔离在调用方）
@@ -219,6 +89,26 @@ export function runNpcTurn(
     npc.planRecommendedLandmarkId = objective?.nextLandmarkId ?? npc.planRecommendedLandmarkId;
     const nextRuntime = npc.planRecommendedLandmarkId ? state.landmarks[npc.planRecommendedLandmarkId] : null;
     if (nextRuntime) npc.planRecommendedZoneId = nextRuntime.zoneId;
+  }
+
+  // The existing tactical resolver already sees contestants in the current
+  // zone. Persist only a coarse local sighting before intent maintenance;
+  // actors in every other zone remain untouched and cannot be tracked.
+  for (const localActor of Object.values(state.characters)
+    .filter((candidate) => candidate.id !== npc.id && candidate.alive
+      && candidate.currentZoneId === npc.currentZoneId)
+    .sort((a, b) => a.id.localeCompare(b.id))) {
+    observeActorSighting(state, npc, localActor, 'DIRECT_LOCAL');
+  }
+
+  // Phase 4S intent is only a coarse planner context. Meaningful lifecycle
+  // transitions may ask the existing recipe/source planner to refresh, but
+  // the intent never emits MOVE/SEARCH/ATTACK or mutates world runtime.
+  const wasAvoidingThreat = npc.strategicIntent?.type === 'avoid_threat';
+  const intentMaintenance = maintainStrategicIntent(state, npc);
+  if (npc.plannedRecipeId && (wasAvoidingThreat || intentMaintenance.intent?.type === 'avoid_threat')
+    && ['COMMIT', 'COMPLETE', 'INVALIDATE'].includes(intentMaintenance.lifecycle)) {
+    refreshNpcPlanRecommendation(state, npc);
   }
 
   // Scout 的 SEARCH 先手只覆盖敌方紧接着的这一次 NPC 行动机会。
@@ -265,7 +155,7 @@ export function runNpcTurn(
 
     case 'craft': {
       if (decision.recipeId) craftActor(state, npc, decision.recipeId);
-      autoEquip(state, npc);
+      autoEquipNpc(state, npc);
       break;
     }
 
@@ -310,7 +200,7 @@ export function runNpcTurn(
           npc.knownEnemies.push(enemy.id);
         }
       }
-      autoEquip(state, npc);
+      autoEquipNpc(state, npc);
       break;
     }
 
@@ -328,7 +218,7 @@ export function runNpcTurn(
         (state.stats.landmarkWildEncounters ??= 0);
         state.stats.landmarkWildEncounters += 1;
       }
-      autoEquip(state, npc);
+      autoEquipNpc(state, npc);
       break;
     }
 
@@ -341,7 +231,7 @@ export function runNpcTurn(
         fallbackToRest(res.message);
         break;
       }
-      autoEquip(state, npc);
+      autoEquipNpc(state, npc);
       break;
     }
 

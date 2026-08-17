@@ -1,10 +1,10 @@
 # 存档独立验收报告（Phase 3）
 
 - 版本：0.5.0
-- 生成时间：2026-08-13T07:27:20.444Z
+- 生成时间：2026-08-14T20:20:15.148Z
 - 对照组：1 个正常存档
-- 损坏用例：102 个
-- 通过：102 / 102
+- 损坏用例：119 个
+- 通过：119 / 119
 - 构造失败：0 个（P3-P2：任意一个即整轮 FAIL）
 
 - 正常存档被接受：PASS
@@ -83,7 +83,7 @@
 | 68 | 对局已结束仍有未解决遭遇 | 拒绝 | 拒绝 | ✓ | encounter.targetKind 非法或缺失 |
 | 69 | pendingPickup zoneId 与玩家区域不符 | 拒绝 | 拒绝 | ✓ | pendingPickup.zoneId 与玩家当前区域不一致 |
 | 70 | pendingPickup source 非法 | 拒绝 | 拒绝 | ✓ | pendingPickup.source 非法（cheat） |
-| 71 | 全局重复 UID（跨角色） | 拒绝 | 拒绝 | ✓ | 物品 UID「i0」全局重复：角色 p0 的 inventory 与 角色 n1 的 inventory |
+| 71 | 全局重复 UID（跨角色） | 拒绝 | 拒绝 | ✓ | 物品 UID「i71」全局重复：角色 p0 的 inventory 与 角色 n1 的 inventory |
 | 72 | 区域存活名单重复 ID | 拒绝 | 拒绝 | ✓ | 区域 hospital 的存活名单存在重复 ID |
 | 73 | 存活角色出现在其他区域名单 | 拒绝 | 拒绝 | ✓ | 存活角色 p0 却出现在非所在区域 school 的存活名单中 |
 | 74 | eventSeq 小于事件 id 最大值 | 拒绝 | 拒绝 | ✓ | state.eventSeq（1）必须大于现存事件 id 的最大值（1） |
@@ -115,6 +115,23 @@
 | 100 | 未知 Phase 4L-like status id | 拒绝 | 拒绝 | ✓ | 角色 p0（scout）的 statusEffects 含有未知状态（phase4l_unknown） |
 | 101 | skillCooldowns 含未知技能 | 拒绝 | 拒绝 | ✓ | 角色 p0 的 skillCooldowns 含有未知技能（fake_skill） |
 | 102 | skillCooldowns 负值 | 拒绝 | 拒绝 | ✓ | 角色 p0 的技能冷却 adrenaline 非法（-1） |
+| 103 | Apex schedule zone 不在 eligibleZones | 拒绝 | 拒绝 | ✓ | Apex prototype_aegis 生成区域不在 eligibleZones |
+| 104 | wrong-def pendingIntent | 拒绝 | 拒绝 | ✓ | 野外敌人 w37 pendingIntent 与自身特殊技不一致 |
+| 105 | common Wild with pendingIntent | 拒绝 | 拒绝 | ✓ | 野外敌人 w0 无特殊技却携带 pendingIntent |
+| 106 | defeated Wild with pendingIntent | 拒绝 | 拒绝 | ✓ | 已击败野外敌人 w27 不得保留 pendingIntent |
+| 107 | 重复 Apex UID | 拒绝 | 拒绝 | ✓ | Apex subject_07 spawnedAt 非法 |
+| 108 | schedule 与 instance defId 不一致 | 拒绝 | 拒绝 | ✓ | Apex subject_07 生成区域不在 eligibleZones |
+| 109 | schedule 与 instance zoneId 不一致 | 拒绝 | 拒绝 | ✓ | Apex prototype_aegis schedule 与实例不一致 |
+| 110 | knowledgeMemory owner 与角色不一致 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory owner 非法 |
+| 111 | knowledge observation 来自未来 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory.entries[0].observedAt 非法 |
+| 112 | source memory 指向 known-but-unrelated Landmark | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory.entries[3] 的 landmark 并不是该 item 的公开 source |
+| 113 | knowledgeMemory 超过固定容量 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory 超出容量上限 |
+| 114 | knowledge entry 注入 hidden runtime snapshot 字段 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory.entries[0] 含有缺失、无关或隐藏 runtime snapshot 字段 |
+| 115 | known actor memory 引用不存在 subject | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory.entries[4].subjectActorId 非法 |
+| 116 | StrategicIntent item target 与 type 不匹配 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 seek_material target 非法 |
+| 117 | StrategicIntent Apex target 不是 Apex | 拒绝 | 拒绝 | ✓ | 角色 n1 的 contest_apex target 非法 |
+| 118 | StrategicIntent committedAt 来自未来 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 strategicIntent.committedAt 非法 |
+| 119 | observation action 与 target 字段组合非法 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory.entries[4] 的 action/target 字段不相容 |
 
 **结论：PASS（全部损坏存档均被拒绝，且无用例构造失败）**
 

@@ -1,6 +1,7 @@
 import type { GamePhase } from './sharedTypes';
 import type { ItemStack } from './itemTypes';
 import type { VictoryType } from './victoryTypes';
+import type { ActorKnowledgeMemory, StrategicIntent } from './knowledgeTypes';
 
 /* ------------------------------------------------------------------ */
 /* 角色                                                                */
@@ -180,6 +181,10 @@ export interface Combatant {
   lastReplanReason: string | null;
   /** Phase 4R: committed local access step for the current gameplay goal. */
   explorationObjective: ExplorationObjective | null;
+  /** Phase 4S: bounded actor-private last-known facts, never a runtime snapshot. */
+  knowledgeMemory: ActorKnowledgeMemory;
+  /** Phase 4S: high-level commitment; formal actions still come from the existing planner. */
+  strategicIntent: StrategicIntent | null;
   /** 最远抵达的阶段，用于结算展示 */
   furthestPhase: GamePhase;
   /** 是否处于防御姿态（Phase 3 Step 1）：下次受击伤害减免，出手或被新攻击命中后解除 */

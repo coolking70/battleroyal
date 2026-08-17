@@ -23,6 +23,7 @@ import { worldModifiersAt } from './worldEvents';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState } from './types';
 import { adjustIncomingCombatDamage, prepareAttack, wearAttackWeapon } from './combatRound';
+import { observeActorSighting, observeOwnAction } from './npcKnowledge';
 
 // 生命/死亡结算已统一收敛到 vitals.ts；这里重新导出，保持既有调用方不变。
 export { applyDamage, applyHealing, applyHpChange, killCharacter } from './vitals';
@@ -201,6 +202,9 @@ export function resolveAttack(
   rng: SeededRandom,
   style: AttackStyle = 'normal',
 ): AttackResult {
+  observeActorSighting(state, attacker, defender, 'SELF_ACTION');
+  observeActorSighting(state, defender, attacker, 'DIRECT_LOCAL');
+  observeOwnAction(state, attacker, 'ATTACK', 'success', 'actor', defender.id);
   const { staminaSpent, adrenalineActive, rangedAttack } = prepareAttack(state, attacker, style);
 
   if (!attacker.knownEnemies.includes(defender.id)) {

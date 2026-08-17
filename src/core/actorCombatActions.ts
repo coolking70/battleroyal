@@ -13,6 +13,7 @@ import { pushEvent } from './events';
 import { done, fail, guard, who, type ActorActionResult } from './actorActionBase';
 import type { SeededRandom } from './random';
 import type { AttackStyle, Combatant, GameState } from './types';
+import { observeOwnAction } from './npcKnowledge';
 
 /* ------------------------------------------------------------------ */
 /* 攻击                                                                */
@@ -184,6 +185,7 @@ export function fleeActor(
   const spent = payActionCost(actor, 'FLEE'); // 成本 0 时返回 0
   const res = attemptFlee(state, actor, enemy, rng);
   if (res.ok) {
+    observeOwnAction(state, actor, 'FLEE', 'success', 'actor', enemy.id);
     return {
       ...done(res.message, spent),
       escaped: true,
@@ -194,6 +196,7 @@ export function fleeActor(
 
   // 追击：敌人必须自己付得起攻击体力，规则与玩家完全一致
   const allowPursuit = options.allowPursuit ?? true;
+  observeOwnAction(state, actor, 'FLEE', 'failure', 'actor', enemy.id);
   if (allowPursuit && enemy.alive && canAttack(enemy).ok) {
     const counter = resolveAttack(state, enemy, actor, rng);
     return {
