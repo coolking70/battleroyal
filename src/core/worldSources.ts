@@ -4,11 +4,13 @@ import { LANDMARKS, tryGetLandmarkDef } from '../data/landmarks';
 import type { Combatant, GameState } from './types';
 import { isApexPubliclyDefeated } from './apexLifecycle';
 import { isRecentlyKnownSourceUnavailable } from './npcKnowledge';
+import { incidentSourcesForActor } from './incidentPlan';
 
 export type WorldSource =
   | { kind: 'zone_loot'; zoneIds: string[] }
   | { kind: 'landmark_loot'; zoneIds: string[]; landmarkIds: string[] }
-  | { kind: 'wild_drop'; enemyIds: string[]; zoneIds: string[] };
+  | { kind: 'wild_drop'; enemyIds: string[]; zoneIds: string[] }
+  | { kind: 'incident_loot'; zoneIds: string[]; incidentIds: string[] };
 
 function openZoneIds(state: GameState, zoneIds: readonly string[]): string[] {
   return zoneIds.filter((zoneId) => state.zones[zoneId]?.status !== 'restricted');
@@ -106,7 +108,7 @@ export function currentWorldSourcesForItem(state: GameState, itemId: string): Wo
  * actor's current zone may be filtered by its private runtime state.
  */
 export function currentWorldSourcesForActor(state: GameState, actor: Combatant, itemId: string): WorldSource[] {
-  return currentWorldSourcesForItem(state, itemId).flatMap((source): WorldSource[] => {
+  const base = currentWorldSourcesForItem(state, itemId).flatMap((source): WorldSource[] => {
     if (source.kind !== 'landmark_loot') return [source];
     const landmarkIds = source.landmarkIds.filter((landmarkId) => {
       const def = tryGetLandmarkDef(landmarkId);
@@ -127,6 +129,8 @@ export function currentWorldSourcesForActor(state: GameState, actor: Combatant, 
         .filter((zoneId, index, all) => all.indexOf(zoneId) === index),
     }];
   });
+  // Phase 4T: a known active incident is an additional actor-scoped source.
+  return [...base, ...incidentSourcesForActor(state, actor, itemId)];
 }
 
 export function currentSourceZonesForItem(state: GameState, itemId: string): string[] {

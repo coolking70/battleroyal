@@ -30,7 +30,8 @@ import { experienceToNextLevel } from '../../core/progression';
 import { tryGetRecipe } from '../../data/recipes';
 import { missingIngredients } from '../../core/inventory';
 import { tryGetItem } from '../../data/items';
-import type { AttackStyle, Combatant, Command, GameState } from '../../core/types';
+import { INCIDENT_DEFINITIONS } from '../../data/incidents';
+import type { ActorMemoryEntry, AttackStyle, Combatant, Command, GameState } from '../../core/types';
 import { GAME_CONFIG, GAME_VERSION } from '../../data/gameConfig';
 import { getZoneDef } from '../../data/zones';
 import { ZONE_STATUS_LABEL, personalityLabel } from '../../utils/format';
@@ -227,6 +228,50 @@ export function DebugPanel({
               </span>
             </Fragment>
           ))}
+        </div>
+
+        <h5>Incident runtime</h5>
+        <div className="debug-kv" data-debug-incident-runtime>
+          {INCIDENT_DEFINITIONS.map((def) => {
+            const runtime = state.incidents[def.id];
+            if (!runtime) return null;
+            return (
+              <Fragment key={`incident-${def.id}`}>
+                <span>{def.id}</span>
+                <span>
+                  {runtime.status} @t{runtime.scheduledAt}
+                  {runtime.startedAt !== null ? ` · started ${runtime.startedAt}` : ''}
+                  {runtime.expiresAt !== null ? ` · expires ${runtime.expiresAt}` : ''}
+                  {runtime.resolvedAt !== null ? ` · resolved ${runtime.resolvedAt}` : ''}
+                  {runtime.reward.length > 0 ? ` · reward ${runtime.reward.length}` : ''}
+                  {def.effect.kind === 'facility_overlay' ? ` · overlay ${runtime.overlayCharges}` : ''}
+                  {def.effect.kind === 'access_override' ? ` · access ${runtime.accessActive ? 'on' : 'off'}` : ''}
+                  {` · claims ${runtime.rewardClaimedCount}`}
+                  {` · responses ${runtime.responses}`}
+                  {` · contention ${runtime.contentionFailures}`}
+                </span>
+              </Fragment>
+            );
+          })}
+        </div>
+
+        <h5>Actor incident memory</h5>
+        <div className="debug-kv" data-debug-incident-memory>
+          {npcs.map((npc) => {
+            const memories = npc.knowledgeMemory.entries
+              .filter((entry): entry is Extract<ActorMemoryEntry, { kind: 'incident_observed' }> => entry.kind === 'incident_observed')
+              .sort((a, b) => a.incidentId.localeCompare(b.incidentId));
+            return (
+              <Fragment key={`incident-mem-${npc.id}`}>
+                <span>{npc.name}</span>
+                <span>
+                  {memories.length === 0
+                    ? '-'
+                    : memories.map((entry) => `${entry.incidentId}:${entry.observedState}@t${entry.observedAt}(${entry.provenance})`).join(' · ')}
+                </span>
+              </Fragment>
+            );
+          })}
         </div>
 
         <h5>资产</h5>

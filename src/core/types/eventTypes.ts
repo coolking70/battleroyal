@@ -54,7 +54,12 @@ export type GameEventType =
   | 'EXTRACTION_READY'
   | 'EXTRACTION_COMPLETED'
   | 'RESEARCH_COMPLETED'
-  | 'GAME_ENDED';
+  | 'GAME_ENDED'
+  /** Phase 4T：局部动态事件（INC + 系统） */
+  | 'INCIDENT_ACTIVATED'
+  | 'INCIDENT_RESOLVED'
+  | 'INCIDENT_EXPIRED'
+  | 'INCIDENT_CLAIMED';
 
 /** 事件重要度。 */
 export type EventImportance = 'critical' | 'major' | 'minor';

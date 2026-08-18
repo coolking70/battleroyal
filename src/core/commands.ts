@@ -93,6 +93,7 @@ export function advancesTime(command: Command): boolean {
     case 'SEARCH':
     case 'SEARCH_LANDMARK':
     case 'INTERACT_LANDMARK':
+    case 'RESOLVE_INCIDENT':
     case 'REST':
     case 'CRAFT':
     case 'USE_ITEM':
@@ -117,6 +118,7 @@ export function commandLabel(command: Command): string {
     SEARCH: '搜索',
     SEARCH_LANDMARK: '定向搜索地标',
     INTERACT_LANDMARK: '使用设施',
+    RESOLVE_INCIDENT: '处理事件',
     REST: '休息',
     CRAFT: '合成',
     USE_ITEM: '使用物品',

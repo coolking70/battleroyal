@@ -2,6 +2,8 @@ import { buildCraftPlan } from './craftPlan';
 import { armorDefenseOf, weaponAttackOf } from './inventory';
 import { currentWorldSourcesForActor } from './worldSources';
 import { latestPublicApex, recentHighThreat, THREAT_MEMORY_FRESH_TURNS } from './npcKnowledge';
+import { latestKnownActiveIncident } from './incidentVisibility';
+import { tryGetIncidentDef } from '../data/incidents';
 import type {
   ActorMemoryEntry,
   Combatant,
@@ -14,7 +16,7 @@ import type {
 
 export const STRATEGIC_INTENT_REPLAN_CADENCE = 6;
 
-interface DesiredIntent {
+export interface DesiredIntent {
   type: StrategicIntentType;
   reason: StrategicIntentReason;
   targetId: string | null;
@@ -58,6 +60,18 @@ function recentlyFledFrom(actor: Combatant, sighting: Extract<ActorMemoryEntry, 
     && entry.observedAt >= sighting.observedAt && now - entry.observedAt <= THREAT_MEMORY_FRESH_TURNS);
 }
 
+/** A known active incident is a coarse opportunity preference, filtered by personality. */
+function incidentDesiredIntent(actor: Combatant): DesiredIntent | null {
+  const latest = latestKnownActiveIncident(actor);
+  if (!latest) return null;
+  const def = tryGetIncidentDef(latest.incidentId);
+  if (!def) return null;
+  // Personality preference is a coarse gate only (deterministic; no tuning).
+  const preference = def.personalityPreference?.[actor.personality] ?? 1;
+  if (preference < 0.5) return null;
+  return { type: 'respond_to_incident', reason: 'KNOWN_INCIDENT_OPPORTUNITY', targetId: def.zoneId };
+}
+
 export function deriveStrategicIntent(state: GameState, actor: Combatant): DesiredIntent | null {
   if (state.status !== 'playing' || actor.isPlayer || !actor.alive) return null;
   const hpRatio = actor.hp / actor.maxHp;
@@ -88,6 +102,11 @@ export function deriveStrategicIntent(state: GameState, actor: Combatant): Desir
     return { type: 'hunt_known_target', reason: 'KNOWN_TARGET', targetId: hunt.subjectActorId };
   }
 
+  // Phase 4T: a known incident is a coarse opportunity below formal goals and
+  // threat/hunt priorities, but above the generic gear-up/explore fallback.
+  const incident = incidentDesiredIntent(actor);
+  if (incident) return incident;
+
   const plan = actor.plannedRecipeId ? buildCraftPlan(state, actor, actor.plannedRecipeId) : null;
   const gap = plan?.rawGaps
     .filter((candidate) => candidate.missing > 0)
@@ -115,6 +134,7 @@ function completed(current: StrategicIntent, desired: DesiredIntent): boolean {
   if (current.type === 'seek_material' && (desired.type !== 'seek_material' || desired.targetId !== current.targetId)) return true;
   if (current.type === 'contest_apex' && desired.type !== 'contest_apex') return true;
   if (current.type === 'hunt_known_target' && desired.type !== 'hunt_known_target') return true;
+  if (current.type === 'respond_to_incident' && desired.type !== 'respond_to_incident') return true;
   return false;
 }
 
@@ -132,6 +152,9 @@ function commitIntent(state: GameState, actor: Combatant, desired: DesiredIntent
   if (intent.type === 'contest_apex') {
     state.stats.apexContestIntents = (state.stats.apexContestIntents ?? 0) + 1;
   }
+  if (intent.type === 'respond_to_incident') {
+    state.stats.incidentIntentCommits = (state.stats.incidentIntentCommits ?? 0) + 1;
+  }
   return intent;
 }
 
@@ -146,6 +169,9 @@ export function maintainStrategicIntent(state: GameState, actor: Combatant): Str
 
   if (sameIntent(current, desired)) {
     state.stats.strategicIntentPreserves = (state.stats.strategicIntentPreserves ?? 0) + 1;
+    if (current.type === 'respond_to_incident') {
+      state.stats.incidentIntentPreserves = (state.stats.incidentIntentPreserves ?? 0) + 1;
+    }
     if (state.time >= current.reevaluateAt) {
       current.reason = desired.reason;
       current.reevaluateAt = state.time + STRATEGIC_INTENT_REPLAN_CADENCE;
@@ -168,6 +194,8 @@ export function maintainStrategicIntent(state: GameState, actor: Combatant): Str
 export function strategicZonePreference(actor: Combatant, zoneId: string): number {
   if (actor.personality === 'cautious' && actor.strategicIntent?.type === 'avoid_threat'
     && actor.strategicIntent.targetId === zoneId) return 0.05;
+  if (actor.strategicIntent?.type === 'respond_to_incident'
+    && actor.strategicIntent.targetId === zoneId) return 5;
   return 1;
 }
 

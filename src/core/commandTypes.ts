@@ -77,6 +77,7 @@ export type Command =
   | { type: 'SEARCH' }
   | { type: 'SEARCH_LANDMARK'; landmarkId: string }
   | { type: 'INTERACT_LANDMARK'; landmarkId: string; interactionId: string }
+  | { type: 'RESOLVE_INCIDENT'; incidentId: string }
   | { type: 'REST' }
   | { type: 'CRAFT'; recipeId: string }
   | { type: 'USE_ITEM'; uid: string }

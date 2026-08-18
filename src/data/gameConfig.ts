@@ -34,6 +34,8 @@ export const GAME_CONFIG = {
   searchStaminaCost: 5,
   landmarkSearchStaminaCost: 3,
   facilityInteractionStaminaCost: 2,
+  /** Phase 4T：处理局部事件机会的正式行动成本（正成本，禁止零体力白嫖收益）。 */
+  incidentInteractionStaminaCost: 3,
   craftStaminaCost: 2,
   craftStaminaCostEngineer: 1,
   moveStaminaCost: 3,

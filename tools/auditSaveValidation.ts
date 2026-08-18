@@ -108,6 +108,36 @@ interface AuditRun {
 /* 便捷别名：state 内的类型化入口 */
 type Mutable = Record<string, unknown>;
 
+/** Force one reward incident into a legal ACTIVE mid-incident state. */
+function withActiveIncident(s: AuditSave, mutate: (runtime: GameState['incidents'][string]) => void): void {
+  const runtime = s.state.incidents['factory_salvage'];
+  if (!runtime) throw new Error('factory_salvage runtime missing');
+  runtime.status = 'ACTIVE';
+  runtime.startedAt = Math.max(1, s.state.time - 1);
+  runtime.expiresAt = s.state.time + 20;
+  runtime.resolvedAt = null;
+  runtime.resolvedByActorId = null;
+  runtime.rewardClaimedCount = 1;
+  // Create a real finite reward pool so RESOLVED/EXPIRED cases have loot to keep.
+  runtime.reward = [
+    { uid: `i-audit-${s.state.uidSeq + 1}`, itemId: 'iron', count: 1 },
+  ];
+  s.state.uidSeq += 1;
+  mutate(runtime);
+}
+
+/** Give one NPC a legal incident memory entry, then mutate it. */
+function withIncidentMemory(s: AuditSave, mutate: (entry: Record<string, unknown>) => void): void {
+  withActiveIncident(s, () => {});
+  const npc = Object.values(s.state.characters).find((actor) => !actor.isPlayer)!;
+  const entry: Record<string, unknown> = {
+    key: 'incident:factory_salvage', kind: 'incident_observed', incidentId: 'factory_salvage',
+    zoneId: 'factory', observedState: 'active', observedAt: s.state.time, provenance: 'DIRECT_LOCAL',
+  };
+  mutate(entry);
+  npc.knowledgeMemory.entries.push(entry as never);
+}
+
 const CASES: AuditCase[] = [
   /* ---- 顶层结构（P1-1） ---- */
   { case: '缺 savedAt', expected: false, mutate: (s) => { delete (s as unknown as Mutable).savedAt; } },
@@ -617,6 +647,56 @@ const CASES: AuditCase[] = [
       key: 'action:MOVE:none:-', kind: 'recent_action', observedAt: s.state.time,
       provenance: 'SELF_ACTION', action: 'MOVE', outcome: 'success', targetKind: 'none', targetId: null,
     });
+  } },
+
+  /* ---- Phase 4T incident runtime / memory ---- */
+  { case: 'incident runtime 引用未知定义', expected: false, mutate: (s) => {
+    withActiveIncident(s, (runtime) => { runtime.incidentId = 'ghost_incident'; });
+  } },
+  { case: 'incident 未来 startedAt', expected: false, mutate: (s) => {
+    withActiveIncident(s, (runtime) => { runtime.startedAt = s.state.time + 5; runtime.expiresAt = s.state.time + 20; });
+  } },
+  { case: 'incident expiresAt 早于 startedAt', expected: false, mutate: (s) => {
+    withActiveIncident(s, (runtime) => { runtime.startedAt = 5; runtime.expiresAt = 4; });
+  } },
+  { case: 'ACTIVE incident 携带 resolvedAt', expected: false, mutate: (s) => {
+    withActiveIncident(s, (runtime) => { runtime.resolvedAt = 1; });
+  } },
+  { case: 'RESOLVED incident 缺少 resolvedAt', expected: false, mutate: (s) => {
+    withActiveIncident(s, (runtime) => { runtime.status = 'RESOLVED'; runtime.resolvedAt = null; });
+  } },
+  { case: 'SCHEDULED incident 携带 resolvedAt', expected: false, mutate: (s) => {
+    withActiveIncident(s, (runtime) => { runtime.status = 'SCHEDULED'; runtime.resolvedAt = 1; runtime.startedAt = null; runtime.expiresAt = null; });
+  } },
+  { case: 'incident rewardClaimedCount 为负', expected: false, mutate: (s) => {
+    withActiveIncident(s, (runtime) => { runtime.rewardClaimedCount = -1; });
+  } },
+  { case: 'incident resolvedByActorId 指向不存在角色', expected: false, mutate: (s) => {
+    withActiveIncident(s, (runtime) => { runtime.resolvedByActorId = 'ghost'; });
+  } },
+  { case: 'incident RESOLVED 仍保留可领取 reward', expected: false, mutate: (s) => {
+    withActiveIncident(s, (runtime) => { runtime.status = 'RESOLVED'; runtime.resolvedAt = s.state.time; });
+  } },
+  { case: 'incident 隐藏 runtime snapshot 字段', expected: false, mutate: (s) => {
+    withActiveIncident(s, (runtime) => { (runtime as unknown as Mutable).remainingSearches = 2; });
+  } },
+  { case: 'incident memory 指向未知事件', expected: false, mutate: (s) => {
+    withIncidentMemory(s, (entry) => { entry.incidentId = 'ghost_incident'; entry.key = 'incident:ghost_incident'; });
+  } },
+  { case: 'incident memory 的 PUBLIC_EVENT 指向 LOCAL 事件', expected: false, mutate: (s) => {
+    const def = s.state.incidents['factory_salvage'];
+    if (!def) throw new Error('factory_salvage missing');
+    def.status = 'ACTIVE';
+    def.startedAt = 1;
+    def.expiresAt = s.state.time + 20;
+    const npc = Object.values(s.state.characters).find((actor) => !actor.isPlayer)!;
+    npc.knowledgeMemory.entries.push({
+      key: 'incident:factory_salvage', kind: 'incident_observed', incidentId: 'factory_salvage',
+      zoneId: 'factory', observedState: 'active', observedAt: s.state.time, provenance: 'PUBLIC_EVENT',
+    } as unknown as Parameters<typeof Array.prototype.push>[0]);
+  } },
+  { case: 'incident memory 的 zone 与定义不符', expected: false, mutate: (s) => {
+    withIncidentMemory(s, (entry) => { entry.zoneId = 'school'; });
   } },
 ];
 

@@ -29,6 +29,8 @@ import { syncNpcExplorationObjective } from './accessChains';
 import { preserveExplorationObjectiveAfterPlan } from './npcObjectiveLifecycle';
 import { maintainStrategicIntent } from './npcStrategicIntent';
 import { observeActorSighting } from './npcKnowledge';
+import { observeIncidentsInZone } from './incidentVisibility';
+import { resolveIncidentActor } from './incidentEffects';
 import { autoEquipNpc, autoLootNpc } from './npcInventoryMaintenance';
 
 /* 决策相关 API 由 npcDecide.ts 提供，这里统一再导出，保持对外契约不变 */
@@ -101,12 +103,17 @@ export function runNpcTurn(
     observeActorSighting(state, npc, localActor, 'DIRECT_LOCAL');
   }
 
+  // Phase 4T: a legal local revisit refreshes incident memory from the live
+  // authoritative state before planning/deciding.
+  observeIncidentsInZone(state, npc);
+
   // Phase 4S intent is only a coarse planner context. Meaningful lifecycle
   // transitions may ask the existing recipe/source planner to refresh, but
   // the intent never emits MOVE/SEARCH/ATTACK or mutates world runtime.
   const wasAvoidingThreat = npc.strategicIntent?.type === 'avoid_threat';
   const intentMaintenance = maintainStrategicIntent(state, npc);
-  if (npc.plannedRecipeId && (wasAvoidingThreat || intentMaintenance.intent?.type === 'avoid_threat')
+  if (npc.plannedRecipeId && (wasAvoidingThreat || intentMaintenance.intent?.type === 'avoid_threat'
+    || intentMaintenance.intent?.type === 'respond_to_incident')
     && ['COMMIT', 'COMPLETE', 'INVALIDATE'].includes(intentMaintenance.lifecycle)) {
     refreshNpcPlanRecommendation(state, npc);
   }
@@ -228,6 +235,17 @@ export function runNpcTurn(
         : { ok: false, message: '缺少局部设施目标。', staminaSpent: 0, rejection: 'illegal_target' as const };
       if (!res.ok) {
         refreshNpcPlanRecommendation(state, npc);
+        fallbackToRest(res.message);
+        break;
+      }
+      autoEquipNpc(state, npc);
+      break;
+    }
+
+    case 'resolve_incident': {
+      if (!decision.incidentId) break;
+      const res = resolveIncidentActor(state, npc, decision.incidentId, rng);
+      if (!res.ok) {
         fallbackToRest(res.message);
         break;
       }

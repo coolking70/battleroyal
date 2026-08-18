@@ -10,6 +10,7 @@ import { generateZoneLoot, initZoneLoot } from './zoneLoot';
 import { initializeWildPopulations } from './wildPopulation';
 import { initializeApexSchedule } from './apexSchedule';
 import { initializeLandmarks } from './landmarks';
+import { initializeIncidents } from './incidents';
 import { createActorKnowledgeMemory, observeOwnItem, observeZoneVisit } from './npcKnowledge';
 import type {
   Combatant,
@@ -179,6 +180,7 @@ export function createGame(options: CreateGameOptions): GameState {
     wildUidSeq: 0,
     apexSchedule: [],
     landmarks: {},
+    incidents: {},
     zones: {},
     events: [],
     eventSeq: 0,
@@ -233,6 +235,20 @@ export function createGame(options: CreateGameOptions): GameState {
       sourceFailuresRemembered: 0,
       threatAvoidanceIntents: 0,
       apexContestIntents: 0,
+      incidentScheduled: 0,
+      incidentActivated: 0,
+      incidentResolved: 0,
+      incidentExpired: 0,
+      incidentPublicBroadcasts: 0,
+      incidentLocalDiscoveries: 0,
+      incidentResponses: 0,
+      incidentRewardsClaimed: 0,
+      incidentContentionFailures: 0,
+      incidentIntentCommits: 0,
+      incidentIntentPreserves: 0,
+      incidentDuplicateReward: 0,
+      incidentIllegalResolution: 0,
+      incidentPostTerminalMutation: 0,
     },
     endedAtTime: null,
     phase: 'opening',
@@ -268,6 +284,7 @@ export function createGame(options: CreateGameOptions): GameState {
   initializeLandmarks(state);
   initializeWildPopulations(state);
   initializeApexSchedule(state);
+  initializeIncidents(state);
 
   // --- 玩家 ---
   const playerZone = pickSpawnZone(rng);

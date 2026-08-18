@@ -9,6 +9,7 @@ import { livingWildEnemiesInZone } from './wildPopulation';
 import { startWildEncounter } from './wildCombat';
 import { applyDamage } from './vitals';
 import { applyAccessTransitions } from './accessChains';
+import { checkAccessOverrideResolution } from './incidentEffects';
 import type { Combatant, GameState, LandmarkSearchResult } from './types';
 import type { SeededRandom } from './random';
 
@@ -105,6 +106,7 @@ function finishLandmarkSearch(state: GameState, landmarkId: string, actorId: str
   const runtime = landmarkState(state, landmarkId);
   if (!runtime) return;
   applyAccessTransitions(state, actorId, landmarkId);
+  checkAccessOverrideResolution(state, landmarkId);
   if (runtime.exhausted) return;
   if (runtime.remainingSearches <= 0 || runtime.loot.length === 0) {
     runtime.remainingSearches = Math.max(0, runtime.remainingSearches);

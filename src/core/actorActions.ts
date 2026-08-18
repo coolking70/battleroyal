@@ -64,6 +64,8 @@ import {
   observeWildSighting,
   observeZoneVisit,
 } from './npcKnowledge';
+import { observeIncidentsInZone } from './incidentVisibility';
+import { resolveIncidentActor } from './incidentEffects';
 
 /* ------------------------------------------------------------------ */
 /* 公共基座与战斗行动（Phase 3 Step 10 拆分，此处保留统一出口）           */
@@ -127,6 +129,7 @@ export function moveActor(
     metadata: { zoneId, extraMoveStaminaPaid, rainActive: extraMoveStaminaPaid > 0 },
   });
   observeZoneVisit(state, actor);
+  observeIncidentsInZone(state, actor);
   observeOwnAction(state, actor, 'MOVE', 'success', 'zone', zoneId);
   return done(actor.isPlayer ? `已进入${zoneName}。` : `${actor.name} 前往${zoneName}。`, spent);
 }
@@ -324,6 +327,7 @@ export type ActorAction =
   | { type: 'SEARCH' }
   | { type: 'SEARCH_LANDMARK'; landmarkId: string }
   | { type: 'INTERACT_LANDMARK'; landmarkId: string; interactionId: string }
+  | { type: 'RESOLVE_INCIDENT'; incidentId: string }
   | { type: 'REST' }
   | { type: 'CRAFT'; recipeId: string }
   | { type: 'USE_ITEM'; uid: string }
@@ -353,6 +357,8 @@ export function executeActorCommand(
       return searchLandmarkActor(state, actor, action.landmarkId, rng);
     case 'INTERACT_LANDMARK':
       return interactFacilityActor(state, actor, action.landmarkId, action.interactionId);
+    case 'RESOLVE_INCIDENT':
+      return resolveIncidentActor(state, actor, action.incidentId, rng);
     case 'REST':
       return restActor(state, actor);
     case 'CRAFT':

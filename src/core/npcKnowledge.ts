@@ -36,6 +36,7 @@ function observationKey(observation: ActorObservation): string {
     case 'recent_action': return `action:${observation.action}:${observation.targetKind}:${observation.targetId ?? '-'}`;
     case 'own_item': return `item:${observation.itemId}`;
     case 'own_goal': return `goal:${observation.goalType}`;
+    case 'incident_observed': return `incident:${observation.incidentId}`;
   }
 }
 

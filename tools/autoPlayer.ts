@@ -290,6 +290,21 @@ export interface AutoGameResult {
   sourceFailuresRemembered: number;
   threatAvoidanceIntents: number;
   apexContestIntents: number;
+  /* Phase 4T incident metrics (observation-only + correctness sanity) */
+  incidentScheduled: number;
+  incidentActivated: number;
+  incidentResolved: number;
+  incidentExpired: number;
+  incidentPublicBroadcasts: number;
+  incidentLocalDiscoveries: number;
+  incidentResponses: number;
+  incidentRewardsClaimed: number;
+  incidentContentionFailures: number;
+  incidentIntentCommits: number;
+  incidentIntentPreserves: number;
+  incidentDuplicateReward: number;
+  incidentIllegalResolution: number;
+  incidentPostTerminalMutation: number;
   /** 玩家死亡前最后一次可观察到的装备/资源快照 */
   playerDeathSnapshot: PlayerDeathSnapshot | null;
 }
@@ -384,11 +399,11 @@ export function resolveOutcome(state: GameState): AutoGameOutcome {
 
 /** 各策略对合法动作分类的偏好权重（用于策略首选不可用时的退化挑选） */
 const CATEGORY_WEIGHT: Record<AutoPlayerPolicy, Record<LegalActionCategory, number>> = {
-  aggressive: { combat: 10, search: 4, movement: 3, craft: 2, recovery: 1, item: 1, objective: 2, facility: 2, resolution: 0, meta: 0 },
-  cautious: { combat: 1, search: 4, movement: 4, craft: 3, recovery: 6, item: 1, objective: 2, facility: 4, resolution: 0, meta: 0 },
-  collector: { combat: 1, search: 9, movement: 4, craft: 5, recovery: 2, item: 1, objective: 2, facility: 3, resolution: 0, meta: 0 },
-  opportunist: { combat: 4, search: 6, movement: 4, craft: 3, recovery: 3, item: 1, objective: 2, facility: 3, resolution: 0, meta: 0 },
-  random: { combat: 3, search: 3, movement: 3, craft: 3, recovery: 3, item: 1, objective: 2, facility: 2, resolution: 0, meta: 0 },
+  aggressive: { combat: 10, search: 4, movement: 3, craft: 2, recovery: 1, item: 1, objective: 2, facility: 2, incident: 3, resolution: 0, meta: 0 },
+  cautious: { combat: 1, search: 4, movement: 4, craft: 3, recovery: 6, item: 1, objective: 2, facility: 4, incident: 2, resolution: 0, meta: 0 },
+  collector: { combat: 1, search: 9, movement: 4, craft: 5, recovery: 2, item: 1, objective: 2, facility: 3, incident: 4, resolution: 0, meta: 0 },
+  opportunist: { combat: 4, search: 6, movement: 4, craft: 3, recovery: 3, item: 1, objective: 2, facility: 3, incident: 4, resolution: 0, meta: 0 },
+  random: { combat: 3, search: 3, movement: 3, craft: 3, recovery: 3, item: 1, objective: 2, facility: 2, incident: 3, resolution: 0, meta: 0 },
 };
 
 /** 愿意为了新物品腾格子的策略 */
@@ -501,6 +516,14 @@ export function decideAutoPlayerCommand(
       return d.landmarkId && player.planRecommendedLandmarkId === d.landmarkId
         ? { command: { type: 'SEARCH_LANDMARK', landmarkId: d.landmarkId }, reason: d.reason }
         : { command: { type: 'SEARCH' }, reason: d.reason };
+    case 'interact_landmark':
+      return d.landmarkId && d.interactionId
+        ? { command: { type: 'INTERACT_LANDMARK', landmarkId: d.landmarkId, interactionId: d.interactionId }, reason: d.reason }
+        : { command: null, reason: d.reason };
+    case 'resolve_incident':
+      return d.incidentId
+        ? { command: { type: 'RESOLVE_INCIDENT', incidentId: d.incidentId }, reason: d.reason }
+        : { command: null, reason: d.reason };
     default:
       return { command: null, reason: d.reason };
   }
@@ -1272,6 +1295,20 @@ function buildResult(s: GameState, ctx: ResultContext): AutoGameResult {
     sourceFailuresRemembered: s.stats.sourceFailuresRemembered ?? 0,
     threatAvoidanceIntents: s.stats.threatAvoidanceIntents ?? 0,
     apexContestIntents: s.stats.apexContestIntents ?? 0,
+    incidentScheduled: s.stats.incidentScheduled ?? 0,
+    incidentActivated: s.stats.incidentActivated ?? 0,
+    incidentResolved: s.stats.incidentResolved ?? 0,
+    incidentExpired: s.stats.incidentExpired ?? 0,
+    incidentPublicBroadcasts: s.stats.incidentPublicBroadcasts ?? 0,
+    incidentLocalDiscoveries: s.stats.incidentLocalDiscoveries ?? 0,
+    incidentResponses: s.stats.incidentResponses ?? 0,
+    incidentRewardsClaimed: s.stats.incidentRewardsClaimed ?? 0,
+    incidentContentionFailures: s.stats.incidentContentionFailures ?? 0,
+    incidentIntentCommits: s.stats.incidentIntentCommits ?? 0,
+    incidentIntentPreserves: s.stats.incidentIntentPreserves ?? 0,
+    incidentDuplicateReward: s.stats.incidentDuplicateReward ?? 0,
+    incidentIllegalResolution: s.stats.incidentIllegalResolution ?? 0,
+    incidentPostTerminalMutation: s.stats.incidentPostTerminalMutation ?? 0,
     playerDeathSnapshot: ctx.playerDeathSnapshot,
 
     ...scanPhase3aCounters(

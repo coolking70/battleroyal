@@ -56,6 +56,22 @@ export interface GameGlobalStats {
   sourceFailuresRemembered?: number;
   threatAvoidanceIntents?: number;
   apexContestIntents?: number;
+  /* --- Phase 4T incident metrics (observation-only) --- */
+  incidentScheduled?: number;
+  incidentActivated?: number;
+  incidentResolved?: number;
+  incidentExpired?: number;
+  incidentPublicBroadcasts?: number;
+  incidentLocalDiscoveries?: number;
+  incidentResponses?: number;
+  incidentRewardsClaimed?: number;
+  incidentContentionFailures?: number;
+  incidentIntentCommits?: number;
+  incidentIntentPreserves?: number;
+  /* --- Phase 4T correctness counters (must stay 0) --- */
+  incidentDuplicateReward?: number;
+  incidentIllegalResolution?: number;
+  incidentPostTerminalMutation?: number;
 }
 
 /**
@@ -90,6 +106,8 @@ export interface GameState {
   apexSchedule: ApexScheduleEntry[];
   /** Data-driven finite landmark/facility runtime registry. */
   landmarks: Record<string, import('./zoneTypes').LandmarkState>;
+  /** Phase 4T localized incident runtime registry (per-match lifecycle). */
+  incidents: Record<string, import('./incidentTypes').IncidentRuntime>;
   zones: Record<string, ZoneState>;
   events: GameEvent[];
   /** 事件自增序号，用于生成稳定的事件 id */

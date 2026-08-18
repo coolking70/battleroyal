@@ -2,10 +2,10 @@
   "meta": {
     "tool": "audit-save-validation",
     "version": "0.5.0",
-    "generatedAt": "2026-08-14T20:20:15.143Z",
+    "generatedAt": "2026-08-17T23:57:27.902Z",
     "control": "normal-save-accepted",
-    "totalCases": 119,
-    "passedCases": 119,
+    "totalCases": 132,
+    "passedCases": 132,
     "failedCases": 0,
     "constructionFailedCases": 0,
     "verdict": "PASS"
@@ -969,6 +969,110 @@
       "actual": false,
       "passed": true,
       "errorMessage": "角色 n1 的 knowledgeMemory.entries[4] 的 action/target 字段不相容",
+      "constructionFailed": false
+    },
+    {
+      "case": "incident runtime 引用未知定义",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.incidents.factory_salvage.incidentId 与 key 不一致",
+      "constructionFailed": false
+    },
+    {
+      "case": "incident 未来 startedAt",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.incidents.factory_salvage 在 ACTIVE 状态下 startedAt 必须为不晚于当前时间的整数",
+      "constructionFailed": false
+    },
+    {
+      "case": "incident expiresAt 早于 startedAt",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.incidents.factory_salvage 在 ACTIVE 状态下 startedAt 必须为不晚于当前时间的整数",
+      "constructionFailed": false
+    },
+    {
+      "case": "ACTIVE incident 携带 resolvedAt",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.incidents.factory_salvage 在 ACTIVE 状态下 startedAt 必须为不晚于当前时间的整数",
+      "constructionFailed": false
+    },
+    {
+      "case": "RESOLVED incident 缺少 resolvedAt",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.incidents.factory_salvage 在 RESOLVED 状态下必须携带合法 resolvedAt",
+      "constructionFailed": false
+    },
+    {
+      "case": "SCHEDULED incident 携带 resolvedAt",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.incidents.factory_salvage 在 SCHEDULED 状态下不得携带 startedAt/expiresAt/resolvedAt",
+      "constructionFailed": false
+    },
+    {
+      "case": "incident rewardClaimedCount 为负",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.incidents.factory_salvage.rewardClaimedCount 非法",
+      "constructionFailed": false
+    },
+    {
+      "case": "incident resolvedByActorId 指向不存在角色",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.incidents.factory_salvage.resolvedByActorId 引用了不存在的角色",
+      "constructionFailed": false
+    },
+    {
+      "case": "incident RESOLVED 仍保留可领取 reward",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.incidents.factory_salvage 在 RESOLVED 状态下不得保留可领取 reward",
+      "constructionFailed": false
+    },
+    {
+      "case": "incident 隐藏 runtime snapshot 字段",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.incidents.factory_salvage 含有关键字段缺失或隐藏 runtime snapshot 字段",
+      "constructionFailed": false
+    },
+    {
+      "case": "incident memory 指向未知事件",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 的 knowledgeMemory.entries[4].incidentId 非法",
+      "constructionFailed": false
+    },
+    {
+      "case": "incident memory 的 PUBLIC_EVENT 指向 LOCAL 事件",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "角色 n1 的 knowledgeMemory.entries[3] 的 PUBLIC_EVENT 记忆引用了 LOCAL_DISCOVERY 事件",
+      "constructionFailed": false
+    },
+    {
+      "case": "incident memory 的 zone 与定义不符",
+      "expected": false,
+      "actual": false,
+      "passed": true,
+      "errorMessage": "state.incidents.factory_salvage 在 ACTIVE 状态下 startedAt 必须为不晚于当前时间的整数",
       "constructionFailed": false
     }
   ]

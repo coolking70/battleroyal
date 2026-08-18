@@ -34,6 +34,10 @@ const PUBLIC_EVENT_TYPES = new Set<GameEventType>([
   'RESEARCH_COMPLETED',
   'APEX_SPAWNED',
   'APEX_DEFEATED',
+  /* Phase 4T：公开广播的局部事件（LOCAL 事件的发现/领取事件不进默认日志） */
+  'INCIDENT_ACTIVATED',
+  'INCIDENT_RESOLVED',
+  'INCIDENT_EXPIRED',
 ]);
 
 const PLAYER_ACTION_TYPES = new Set<GameEventType>([
@@ -53,6 +57,7 @@ const PLAYER_ACTION_TYPES = new Set<GameEventType>([
   'WORLD_EVENT_DAMAGE',
   'LANDMARK_SEARCHED',
   'LANDMARK_EXHAUSTED',
+  'INCIDENT_CLAIMED',
 ]);
 
 const PLAYER_COMBAT_TYPES = new Set<GameEventType>([

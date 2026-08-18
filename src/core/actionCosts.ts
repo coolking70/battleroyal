@@ -20,7 +20,7 @@ import type { AttackStyle, Combatant, GameState } from './types';
 /** 所有会消耗体力的行动 */
 export type CostedAction =
   | 'MOVE' | 'SEARCH' | 'SEARCH_LANDMARK' | 'INTERACT_LANDMARK' | 'ATTACK' | 'CRAFT' | 'FLEE' | 'GUARD'
-  | 'CALL_EXTRACTION' | 'EXTRACT' | 'SUBMIT_RESEARCH';
+  | 'CALL_EXTRACTION' | 'EXTRACT' | 'SUBMIT_RESEARCH' | 'RESOLVE_INCIDENT';
 
 export const ACTION_LABEL: Record<CostedAction, string> = {
   MOVE: '移动',
@@ -34,6 +34,7 @@ export const ACTION_LABEL: Record<CostedAction, string> = {
   CALL_EXTRACTION: '呼叫撤离',
   EXTRACT: '执行撤离',
   SUBMIT_RESEARCH: '提交研究',
+  RESOLVE_INCIDENT: '处理事件',
 };
 
 /**
@@ -77,6 +78,8 @@ export function getActionStaminaCost(actor: Combatant, action: CostedAction): nu
       return GAME_CONFIG.extractionCompleteStaminaCost;
     case 'SUBMIT_RESEARCH':
       return GAME_CONFIG.researchSubmitStaminaCost;
+    case 'RESOLVE_INCIDENT':
+      return GAME_CONFIG.incidentInteractionStaminaCost;
     default:
       return 0;
   }

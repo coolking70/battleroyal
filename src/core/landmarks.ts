@@ -1,5 +1,6 @@
 import { LANDMARKS, getLandmarkDef, tryGetLandmarkDef } from '../data/landmarks';
 import { createStack } from './inventory';
+import { effectiveLandmarkLocked } from './incidentEffects';
 import type { GameState, LandmarkState, LandmarkStatus } from './types';
 
 export function initializeLandmarks(state: GameState): void {
@@ -53,7 +54,7 @@ export function canSearchLandmark(state: GameState, actorId: string, landmarkId:
   if (state.status !== 'playing') return { ok: false, reason: '对局已经结束。' };
   if (actor.currentZoneId !== def.zoneId) return { ok: false, reason: '该地标不在当前区域。' };
   if (!def.searchable) return { ok: false, reason: '该地点不可搜索。' };
-  if (runtime.locked) return { ok: false, reason: def.access?.hint ?? '该地标仍处于锁定状态。' };
+  if (effectiveLandmarkLocked(state, landmarkId, runtime.locked)) return { ok: false, reason: def.access?.hint ?? '该地标仍处于锁定状态。' };
   if (runtime.disabled) return { ok: false, reason: '该设施已停用，需要先修复。' };
   if (runtime.exhausted || runtime.remainingSearches <= 0 || runtime.loot.length === 0) return { ok: false, reason: '该地标已经耗尽。' };
   return { ok: true, reason: null };
