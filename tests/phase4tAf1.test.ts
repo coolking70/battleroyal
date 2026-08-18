@@ -391,4 +391,32 @@ describe('Phase 4T-AF1 — incident correctness closure', () => {
     expect(getRuntime(state2, def2.id).status).toBe('EXPIRED');
     expect(validateSaveData(structuredClone(saveOf(state2))).ok).toBe(true);
   });
+
+  it('AF3-1 rejects an ACTIVE reward pool that silently lost a stack (exact conservation)', () => {
+    const state = createGame({ seed: 'PHASE4T-AF3-1', playerCharacterId: 'scout' });
+    clearLocalNoise(state);
+    const def = getIncidentDef('factory_salvage'); // iron×1 + wire×1, totalCap 2
+    activateIncident(state, def.id);
+    expect(getRuntime(state, def.id).reward.length).toBe(2);
+    // A stack vanishes without being claimed: 1 + 0 !== 2. The engine has no
+    // legal ACTIVE loss path, so this must not load (it would let one claim
+    // strand the incident in an unsavable half-resolved state).
+    const copy = structuredClone(saveOf(state));
+    const pool = copy.state.incidents[def.id]!.reward;
+    pool.splice(0, 1);
+    expect(pool.length).toBe(1);
+    expect(copy.state.incidents[def.id]!.rewardClaimedCount).toBe(0);
+    expect(validateSaveData(copy).ok).toBe(false);
+  });
+
+  it('AF3-2 rejects a SCHEDULED reward incident with a nonzero claimed count', () => {
+    const state = createGame({ seed: 'PHASE4T-AF3-2', playerCharacterId: 'scout' });
+    clearLocalNoise(state);
+    const def = getIncidentDef('factory_salvage');
+    expect(getRuntime(state, def.id).status).toBe('SCHEDULED');
+    expect(validateSaveData(structuredClone(saveOf(state))).ok).toBe(true);
+    const copy = structuredClone(saveOf(state));
+    copy.state.incidents[def.id]!.rewardClaimedCount = 1;
+    expect(validateSaveData(copy).ok).toBe(false);
+  });
 });

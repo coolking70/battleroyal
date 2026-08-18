@@ -128,10 +128,11 @@ function validateRuntime(ctx: ValidationContext, id: string, runtime: Record<str
   const rewardClaimedCount = runtime.rewardClaimedCount as number;
   const overlayCharges = runtime.overlayCharges as number;
 
-  // Phase 4T-AF2: finite reward conservation against the definition. The
-  // engine instantiates exactly `itemIds × countPerItem` count-1 stacks, so a
-  // save may never hold more per item, a multi-count stack, an over-claimed
-  // counter, or remaining+claimed beyond the finite initial total.
+  // Phase 4T-AF2/AF3: finite reward conservation against the definition. The
+  // engine instantiates exactly `itemIds × countPerItem` count-1 stacks once at
+  // activation, and every claim moves one stack from remaining to claimed.
+  // While ACTIVE there is no legal loss path, so conservation is exact
+  // equality; only EXPIRED may legally drop unclaimed stacks.
   if (def.effect.kind === 'reward_pool' || def.effect.kind === 'reward_with_hazard') {
     const effect = def.effect;
     const perItemCap = effect.countPerItem;
@@ -156,8 +157,12 @@ function validateRuntime(ctx: ValidationContext, id: string, runtime: Record<str
       ctx.fail(`state.incidents.${id}.rewardClaimedCount 超过定义的有限奖励总量`);
     }
     const remainingTotal = Array.isArray(reward) ? reward.length : 0;
-    if (typeof rewardClaimedCount === 'number' && remainingTotal + rewardClaimedCount > totalCap) {
-      ctx.fail(`state.incidents.${id} 的 remaining + claimed 超过定义的有限奖励总量`);
+    if (status === 'ACTIVE' && typeof rewardClaimedCount === 'number'
+      && remainingTotal + rewardClaimedCount !== totalCap) {
+      ctx.fail(`state.incidents.${id} 在 ACTIVE 状态下必须满足 remaining + claimed === 有限奖励总量（无合法丢失路径）`);
+    }
+    if (status === 'SCHEDULED' && rewardClaimedCount !== 0) {
+      ctx.fail(`state.incidents.${id} 在 SCHEDULED 状态下 rewardClaimedCount 必须为 0`);
     }
   }
 
