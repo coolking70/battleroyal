@@ -80,9 +80,18 @@ export function rememberActorObservation(
   state.stats.memoryObservations = (state.stats.memoryObservations ?? 0) + 1;
 
   while (actor.knowledgeMemory.entries.length > actor.knowledgeMemory.capacity) {
-    actor.knowledgeMemory.entries.shift();
+    const evicted = actor.knowledgeMemory.entries.shift();
     actor.knowledgeMemory.evictions += 1;
     state.stats.memoryEvictions = (state.stats.memoryEvictions ?? 0) + 1;
+    // Phase 4T-AF1: a persisted respond_to_incident intent must stay backed by
+    // the actor's own active incident memory. If that memory is evicted, the
+    // actor no longer knows the opportunity and the coarse intent is dropped
+    // (it is re-derived legally from remaining memory on the next turn).
+    if (evicted && evicted.kind === 'incident_observed' && evicted.observedState === 'active'
+      && actor.strategicIntent?.type === 'respond_to_incident'
+      && actor.strategicIntent.targetId === evicted.zoneId) {
+      actor.strategicIntent = null;
+    }
   }
   if (entry.kind === 'source_status' && entry.state !== 'available'
     && (!previous || previous.kind !== 'source_status' || previous.state !== entry.state)) {

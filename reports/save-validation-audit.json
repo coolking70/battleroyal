@@ -2,7 +2,7 @@
   "meta": {
     "tool": "audit-save-validation",
     "version": "0.5.0",
-    "generatedAt": "2026-08-17T23:57:27.902Z",
+    "generatedAt": "2026-08-18T04:26:52.246Z",
     "control": "normal-save-accepted",
     "totalCases": 132,
     "passedCases": 132,
@@ -1072,7 +1072,7 @@
       "expected": false,
       "actual": false,
       "passed": true,
-      "errorMessage": "state.incidents.factory_salvage 在 ACTIVE 状态下 startedAt 必须为不晚于当前时间的整数",
+      "errorMessage": "角色 n1 的 knowledgeMemory.entries[4].zoneId 与 incident 定义的 zone 不一致",
       "constructionFailed": false
     }
   ]

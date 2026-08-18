@@ -167,3 +167,16 @@ Artifacts: `reports/phase4t-regression.json` and
 ## Final status
 
 **READY FOR INDEPENDENT AUDIT**
+
+## AF1 addendum — incident correctness closure
+
+Rejected head `1f9de37` was followed (same PR #27, no merge/rebase) by the
+AF1 closure: PUBLIC-incident DIRECT_LOCAL memory acceptance, semantic
+incident-memory zoneId check, NPC multi-hop deterministic response via
+`nextZoneToward`, immediate self-memory refresh after formal local incident
+completion (RESOLVE/SEARCH/INTERACT), no-reward-on-lethal-hazard (pool/UID
+conserved), actor-own-memory backing for persisted respond_to_incident
+intents (stale-active stays legal; validator never reads remote runtime),
+and tightened IncidentRuntime effect/status save shapes. Regression:
+`tests/phase4tAf1.test.ts` (8 cases); 500-game PHASE4T-AF1 run 500/500
+trustworthy with all incident counters 0. Exact-head CI: see below.

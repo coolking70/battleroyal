@@ -203,3 +203,46 @@ npm run simulate -- --games 500 --seed-prefix PHASE4T --regression --output repo
 - balance = OBSERVATION ONLY
 - old save migration = DEFERRED
 - Phase 4U = NOT STARTED
+
+## 17. AF1 — Incident correctness closure (head 1f9de37→AF1)
+
+独立验收在 head `1f9de37` 拒绝后，同 PR #27 内完成 AF1 修复，保留 Phase 4T
+主体架构不变：
+
+1. **PUBLIC incident 的本地观察**：save validator 不再错误拒绝
+   `PUBLIC_BROADCAST + active + DIRECT_LOCAL` —— PUBLIC 事件的两种获知路径
+   （PUBLIC_EVENT / DIRECT_LOCAL）均合法；LOCAL_DISCOVERY 仍只允许
+   DIRECT_LOCAL。
+2. **incident_observed.zoneId 语义验证**：memory.zoneId 必须等于
+   IncidentDefinition.zoneId（两个 ID 各自合法但不匹配时拒绝）。
+3. **NPC 多跳响应**：`npcDecide` 在 respond_to_incident intent 下、且体力
+   允许时，通过既有 `nextZoneToward`（公开 zone topology 的 BFS 首跳）给出
+   deterministic next hop；不新增 planner、不 teleport，受限区/战斗/Apex/
+   Research/Extraction 等更高优先级不变。
+4. **本人完成 LOCAL incident 后 memory 即时刷新**：RESOLVE_INCIDENT 领取
+   最后奖励、SEARCH_LANDMARK 触发 access_override 完成、INTERACT_LANDMARK
+   消耗完 overlay 后，立即通过既有 `observeIncidentLocal` 合法入口刷新本人
+   memory（不手写 memory 状态）。
+5. **reward_with_hazard 致死不发奖励**：hazard 致死后保留死亡，不发奖、不
+   claim、reward pool/UID 不变、不写成功 claim 事件/观察。auto-player 同步
+   不再把“致死 hazard 尝试”纳入其承诺必定成功的合法出牌集合。
+6. **respond_to_incident save 语义**：intent 必须由该 actor 自己的
+   incident_observed(active, zoneId=target) memory 支撑；validator 只读
+   memory，绝不读 remote live runtime（stale active memory 合法）。引擎侧
+   在 memory 被 eviction 或合法更新为非 active 时同步丢弃该 intent。
+7. **IncidentRuntime save 收紧**：scheduledAt 必须落在 definition 窗口；
+   SCHEDULED 无 accessActive；ACTIVE 奖励型必须持有非空池且无 overlay/
+   access；ACTIVE facility_overlay 必须有剩余次数；ACTIVE access_override
+   必须 accessActive=true；RESOLVED/EXPIRED 的 accessActive=false，EXPIRED
+   保留 startedAt。
+8. 顺带修复：save validator 的 `actionTargetCompatible` 缺少
+   RESOLVE_INCIDENT case（成功的 RESOLVE_INCIDENT recent_action 一旦保存即
+   被误拒）。
+
+验证（AF1 head）：typecheck PASS；tests 121 files / 1761 全过（新增
+`tests/phase4tAf1.test.ts` 8 例，覆盖上述 1-7 与致死不发奖）；build PASS；
+audit:save PASS（132/132 拒绝对照）；audit:deps R1-R4=0；`npm audit
+--omit=dev` 0 漏洞；500 局 PHASE4T-AF1 回归 500/500 trustworthy，引擎
+illegal/timeout/hardLimit=0，duplicateIncidentReward /
+illegalIncidentResolution / postTerminalIncidentMutation = 0；balance 仅
+观察未调参。

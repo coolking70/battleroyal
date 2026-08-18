@@ -10,7 +10,7 @@ import {
   noteIncidentResponse,
   resolveIncident,
 } from './incidents';
-import { actorKnowsIncidentActive } from './incidentVisibility';
+import { actorKnowsIncidentActive, observeIncidentLocal } from './incidentVisibility';
 import { addItem, canAccept } from './inventory';
 import { landmarkState } from './landmarks';
 import { observeOwnAction, observeZoneVisit } from './npcKnowledge';
@@ -42,8 +42,13 @@ export function effectiveFacilityCharges(state: GameState, landmarkId: string): 
   return total;
 }
 
-/** Consume one facility charge: overlay first, permanent base runtime only when no overlay remains. */
-export function consumeFacilityCharge(state: GameState, landmarkId: string): void {
+/**
+ * Consume one facility charge: overlay first, permanent base runtime only when no overlay remains.
+ * The optional observer is the acting actor: if consuming the last overlay
+ * charge resolves the incident, the observer's own memory is refreshed through
+ * the legal local observation entry.
+ */
+export function consumeFacilityCharge(state: GameState, landmarkId: string, observer: Combatant | null = null): void {
   const base = landmarkState(state, landmarkId);
   if (!base) return;
   for (const runtime of Object.values(state.incidents)) {
@@ -55,6 +60,7 @@ export function consumeFacilityCharge(state: GameState, landmarkId: string): voi
       if (runtime.overlayCharges === 0) {
         // The emergency window has been fully consumed → public resolution.
         resolveIncident(state, runtime.incidentId, null);
+        if (observer && observer.alive) observeIncidentLocal(state, observer, runtime.incidentId);
       }
       noteIncidentResponse(state, runtime.incidentId);
       return;
@@ -76,8 +82,11 @@ export function effectiveLandmarkLocked(state: GameState, landmarkId: string, ba
   return true;
 }
 
-/** After an actor searches a landmark during an access window, the incident may resolve when loot is gone. */
-export function checkAccessOverrideResolution(state: GameState, landmarkId: string): void {
+/**
+ * After an actor searches a landmark during an access window, the incident may resolve when loot is gone.
+ * The observer's own memory is refreshed immediately when this resolves.
+ */
+export function checkAccessOverrideResolution(state: GameState, landmarkId: string, observer: Combatant | null = null): void {
   for (const runtime of Object.values(state.incidents)) {
     if (runtime.status !== 'ACTIVE') continue;
     const def = tryGetIncidentDef(runtime.incidentId);
@@ -85,6 +94,7 @@ export function checkAccessOverrideResolution(state: GameState, landmarkId: stri
     const landmark = landmarkState(state, landmarkId);
     if (landmark && (landmark.exhausted || landmark.remainingSearches <= 0 || landmark.loot.length === 0)) {
       resolveIncident(state, runtime.incidentId, null);
+      if (observer && observer.alive) observeIncidentLocal(state, observer, runtime.incidentId);
     }
   }
 }
@@ -170,6 +180,11 @@ export function resolveIncidentActor(
   // Risk/reward incidents apply a deterministic hazard before the reward.
   if (def.effect.kind === 'reward_with_hazard' && def.effect.hazardDamage > 0) {
     applyDamage(state, actor, def.effect.hazardDamage, null, `${def.title}环境风险`);
+    if (!actor.alive) {
+      // A lethal hazard keeps the death but grants nothing: no reward, no
+      // claim, the pool/UID stays intact and no success fact is recorded.
+      return { ok: false, message: `${def.title}的环境风险致命。`, staminaSpent: spent, claimedItemId: null, rejection: 'illegal_target' };
+    }
   }
 
   if (!canAccept(actor, stack)) {
@@ -182,6 +197,10 @@ export function resolveIncidentActor(
   noteIncidentResponse(state, incidentId);
   observeOwnAction(state, actor, 'RESOLVE_INCIDENT', 'success', 'item', stack.itemId);
   observeZoneVisit(state, actor);
+  // The claim itself may have resolved the incident (last reward taken).
+  // Refresh the actor's own memory through the legal local observation entry
+  // so it does not carry a stale 'active' fact until its next move.
+  observeIncidentLocal(state, actor, incidentId);
   pushEvent(state, {
     type: 'INCIDENT_CLAIMED',
     actorId: actor.id,

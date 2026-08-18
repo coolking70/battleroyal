@@ -68,6 +68,8 @@ function validateRuntime(ctx: ValidationContext, id: string, runtime: Record<str
   }
   if (typeof runtime.scheduledAt !== 'number' || !Number.isInteger(runtime.scheduledAt) || runtime.scheduledAt < 1) {
     ctx.fail(`state.incidents.${id}.scheduledAt 非法`);
+  } else if (runtime.scheduledAt < def.scheduleMin || runtime.scheduledAt > def.scheduleMax) {
+    ctx.fail(`state.incidents.${id}.scheduledAt 超出定义的调度窗口`);
   }
   if (!validIntegerOrNull(runtime.startedAt)) {
     ctx.fail(`state.incidents.${id}.startedAt 非法`);
@@ -136,6 +138,9 @@ function validateRuntime(ctx: ValidationContext, id: string, runtime: Record<str
     if (Number(overlayCharges) !== 0) {
       ctx.fail(`state.incidents.${id} 在 SCHEDULED 状态下 overlayCharges 必须为 0`);
     }
+    if (runtime.accessActive !== false) {
+      ctx.fail(`state.incidents.${id} 在 SCHEDULED 状态下 accessActive 必须为 false`);
+    }
   }
   if (status === 'ACTIVE') {
     if (typeof startedAt !== 'number' || startedAt > Number(ctx.state.time)) {
@@ -165,6 +170,33 @@ function validateRuntime(ctx: ValidationContext, id: string, runtime: Record<str
     if (def.effect.kind === 'facility_overlay' && Number(overlayCharges) > def.effect.overlayCharges) {
       ctx.fail(`state.incidents.${id} overlayCharges 超过定义上限`);
     }
+    // Effect-specific ACTIVE shape: each archetype carries exactly its own
+    // payload and nothing else.
+    if (def.effect.kind === 'reward_pool' || def.effect.kind === 'reward_with_hazard') {
+      if (Array.isArray(reward) && reward.length === 0) {
+        ctx.fail(`state.incidents.${id} 在 ACTIVE 奖励型状态下必须持有非空 reward 池`);
+      }
+      if (Number(overlayCharges) !== 0) {
+        ctx.fail(`state.incidents.${id} 在奖励型状态下不得持有 overlayCharges`);
+      }
+      if (runtime.accessActive !== false) {
+        ctx.fail(`state.incidents.${id} 在奖励型状态下 accessActive 必须为 false`);
+      }
+    } else if (def.effect.kind === 'facility_overlay') {
+      if (Number(overlayCharges) < 1) {
+        ctx.fail(`state.incidents.${id} 在 ACTIVE facility_overlay 状态下必须持有剩余 overlay 次数`);
+      }
+      if (runtime.accessActive !== false) {
+        ctx.fail(`state.incidents.${id} 在 facility_overlay 状态下 accessActive 必须为 false`);
+      }
+    } else if (def.effect.kind === 'access_override') {
+      if (runtime.accessActive !== true) {
+        ctx.fail(`state.incidents.${id} 在 ACTIVE access_override 状态下 accessActive 必须为 true`);
+      }
+      if (Number(overlayCharges) !== 0) {
+        ctx.fail(`state.incidents.${id} 在 access_override 状态下 overlayCharges 必须为 0`);
+      }
+    }
   }
   if (status === 'RESOLVED') {
     if (typeof resolvedAt !== 'number' || resolvedAt > Number(ctx.state.time)) {
@@ -179,6 +211,9 @@ function validateRuntime(ctx: ValidationContext, id: string, runtime: Record<str
     if (Number(overlayCharges) !== 0) {
       ctx.fail(`state.incidents.${id} 在 RESOLVED 状态下 overlayCharges 必须为 0`);
     }
+    if (runtime.accessActive !== false) {
+      ctx.fail(`state.incidents.${id} 在 RESOLVED 状态下 accessActive 必须为 false`);
+    }
     if (rewardClaimedCount <= 0 && (def.effect.kind === 'reward_pool' || def.effect.kind === 'reward_with_hazard')) {
       ctx.fail(`state.incidents.${id} RESOLVED 奖励型事件必须至少领过一次`);
     }
@@ -192,6 +227,12 @@ function validateRuntime(ctx: ValidationContext, id: string, runtime: Record<str
     }
     if (Number(overlayCharges) !== 0) {
       ctx.fail(`state.incidents.${id} 在 EXPIRED 状态下 overlayCharges 必须为 0`);
+    }
+    if (runtime.accessActive !== false) {
+      ctx.fail(`state.incidents.${id} 在 EXPIRED 状态下 accessActive 必须为 false`);
+    }
+    if (typeof runtime.startedAt !== 'number') {
+      ctx.fail(`state.incidents.${id} 在 EXPIRED 状态下必须保留 startedAt`);
     }
     if (resolvedAt !== null) {
       ctx.fail(`state.incidents.${id} 在 EXPIRED 状态下不应携带 resolvedAt`);

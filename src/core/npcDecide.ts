@@ -18,6 +18,7 @@ import { buildCraftPlan } from './craftPlan';
 import { currentWorldSourcesForActor } from './worldSources';
 import { canSearchLandmark } from './landmarks';
 import { decideNpcAccessAction } from './npcAccessDecide';
+import { nextZoneToward } from './accessChains';
 import { hasPlannedWildSourceHere, hasRecommendedApexSource, npcSearchWeight, NPC_IDLE_WEIGHTS as IDLE_WEIGHTS } from './npcWildHunt';
 import { wildCombatProfile } from './wildCombat';
 import { npcCombatSkill, npcSurvivalSkill } from './npcSkillDecide';
@@ -313,6 +314,18 @@ export function decideNpcAction(
     state.zones[goalZone]?.status !== 'restricted'
   ) {
     return { kind: 'move', zoneId: goalZone, reason: '前往制作目标所需的公开 Apex 来源区域' };
+  }
+  // Phase 4T-AF1: 远程已知事件的多跳响应。只依赖公开 zone topology 的确定性
+  // 下一跳（nextZoneToward），每一步仍是正常 MOVE；受限区域、体力闸门与
+  // 上面所有更高优先级（战斗/Apex/访问链/本地事件）保持不变。
+  const incidentIntentZone = npc.strategicIntent?.type === 'respond_to_incident'
+    ? npc.strategicIntent.targetId
+    : null;
+  if (incidentIntentZone && incidentIntentZone !== npc.currentZoneId && canPayActionCost(npc, 'MOVE').ok) {
+    const hop = nextZoneToward(npc.currentZoneId, incidentIntentZone);
+    if (hop && state.zones[hop]?.status !== 'restricted') {
+      return { kind: 'move', zoneId: hop, reason: '前往已知事件区域的下一跳' };
+    }
   }
   if (zoneEmpty && hasPlannedWildSourceHere(state, npc, plan) && canSearchNow) {
     return { kind: 'search', reason: '当前区域物资已空，但制作目标需要搜索这里的野外来源' };

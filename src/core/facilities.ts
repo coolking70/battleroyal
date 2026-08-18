@@ -58,7 +58,7 @@ export function interactFacility(state: GameState, actor: Combatant, landmarkId:
       if (remaining === 0) break;
     }
   }
-  consumeFacilityCharge(state, landmarkId);
+  consumeFacilityCharge(state, landmarkId, actor);
   runtime.discovered = true;
   runtime.activated = true;
   runtime.lastUsedAt = state.time;

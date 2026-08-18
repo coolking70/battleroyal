@@ -31,6 +31,20 @@ function incidentStateFromRuntime(state: GameState, incidentId: string): Inciden
   return null;
 }
 
+/**
+ * When an actor legally learns that a zone's incident is no longer active,
+ * a persisted respond_to_incident intent toward that zone has lost its own
+ * knowledge backing and is dropped immediately (so any save stays consistent
+ * with the actor's own memory). The intent is re-derived on the next turn.
+ */
+function dropIntentBackedByZone(actor: Combatant, zoneId: string, observedState: IncidentMemoryState): void {
+  if (observedState === 'active') return;
+  const intent = actor.strategicIntent;
+  if (intent && intent.type === 'respond_to_incident' && intent.targetId === zoneId) {
+    actor.strategicIntent = null;
+  }
+}
+
 /** Public broadcast only: every alive actor learns a coarse incident fact. */
 export function observeIncidentPublic(state: GameState, incidentId: string, observedState: IncidentMemoryState): void {
   if (state.status !== 'playing') return;
@@ -38,6 +52,7 @@ export function observeIncidentPublic(state: GameState, incidentId: string, obse
   if (!def || def.visibility !== 'PUBLIC_BROADCAST') return;
   for (const actor of Object.values(state.characters)) {
     if (!actor.alive) continue;
+    dropIntentBackedByZone(actor, def.zoneId, observedState);
     rememberActorObservation(state, actor, {
       kind: 'incident_observed',
       incidentId,
@@ -63,7 +78,7 @@ export function observeIncidentLocal(state: GameState, actor: Combatant, inciden
   state.stats.incidentLocalDiscoveries = (state.stats.incidentLocalDiscoveries ?? 0) + 1;
   const runtime = state.incidents[incidentId];
   if (runtime) runtime.localDiscoveries = (runtime.localDiscoveries ?? 0) + 1;
-  return rememberActorObservation(state, actor, {
+  const entry = rememberActorObservation(state, actor, {
     kind: 'incident_observed',
     incidentId,
     zoneId: def.zoneId,
@@ -71,6 +86,8 @@ export function observeIncidentLocal(state: GameState, actor: Combatant, inciden
     observedAt: state.time,
     provenance: 'DIRECT_LOCAL',
   });
+  if (entry) dropIntentBackedByZone(actor, def.zoneId, observedState);
+  return entry;
 }
 
 export function incidentMemory(

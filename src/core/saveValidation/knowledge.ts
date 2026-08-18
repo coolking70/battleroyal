@@ -82,6 +82,7 @@ function actionTargetCompatible(entry: Record<string, unknown>): boolean {
   if (action === 'SEARCH' || action === 'EXTRACT' || action === 'SUBMIT_RESEARCH'
     || action === 'GUARD' || action === 'REST') return kind === 'none';
   if (action === 'SEARCH_LANDMARK' || action === 'INTERACT_LANDMARK') return kind === 'landmark';
+  if (action === 'RESOLVE_INCIDENT') return kind === 'item';
   if (action === 'ATTACK' || action === 'FLEE') return kind === 'actor' || kind === 'wild';
   if (action === 'CRAFT') return kind === 'recipe';
   if (action === 'PICKUP' || action === 'EQUIP') return kind === 'item';
@@ -196,10 +197,12 @@ function validateEntry(ctx: ValidationContext, ownerId: string, entry: Record<st
       if (incidentDef && entry.provenance === 'PUBLIC_EVENT' && incidentDef.visibility !== 'PUBLIC_BROADCAST') {
         fail(`${label} 的 PUBLIC_EVENT 记忆引用了 LOCAL_DISCOVERY 事件`);
       }
-      if (incidentDef && entry.provenance !== 'PUBLIC_EVENT' && incidentDef.visibility === 'PUBLIC_BROADCAST' && entry.observedState === 'active') {
-        // PUBLIC_BROADCAST events write through PUBLIC_EVENT; a non-public
-        // provenance on an active public event is not a valid knowledge path.
-        fail(`${label} 的 active 记忆缺少 PUBLIC_EVENT provenance`);
+      // A PUBLIC_BROADCAST incident is legally learnable both through the
+      // broadcast (PUBLIC_EVENT) and through physical presence (DIRECT_LOCAL),
+      // so both provenances are valid for it. LOCAL_DISCOVERY incidents only
+      // ever enter memory through DIRECT_LOCAL (checked above).
+      if (incidentDef && entry.zoneId !== incidentDef.zoneId) {
+        fail(`${label}.zoneId 与 incident 定义的 zone 不一致`);
       }
       break;
     }
@@ -257,7 +260,19 @@ function validateStrategicIntent(ctx: ValidationContext, ownerId: string, charac
   } else if (intent.type === 'explore_unknown') {
     if (target !== null && (typeof target !== 'string' || !zoneIds.has(target))) fail(`角色 ${ownerId} 的 explore target 非法`);
   } else if (intent.type === 'respond_to_incident') {
-    if (typeof target !== 'string' || !zoneIds.has(target)) fail(`角色 ${ownerId} 的 respond_to_incident target 非法`);
+    if (typeof target !== 'string' || !zoneIds.has(target)) {
+      fail(`角色 ${ownerId} 的 respond_to_incident target 非法`);
+    } else {
+      // The intent must be backed by the actor's OWN last-known memory of an
+      // active incident in that zone. A stale active memory stays legal even
+      // if the remote live runtime has already ended, so this check reads
+      // only the actor's memory — never state.incidents.
+      const memory = character.knowledgeMemory;
+      const backed = isRecord(memory) && Array.isArray(memory.entries)
+        && memory.entries.some((entry) => isRecord(entry)
+          && entry.kind === 'incident_observed' && entry.observedState === 'active' && entry.zoneId === target);
+      if (!backed) fail(`角色 ${ownerId} 的 respond_to_incident intent 缺少自身 active incident memory 支撑`);
+    }
   } else if (target !== null) {
     fail(`角色 ${ownerId} 的 ${intent.type} 不得携带无关 target`);
   }

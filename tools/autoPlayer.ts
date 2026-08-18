@@ -42,6 +42,7 @@ import { PHASE4N_RECIPES } from '../src/data/phase4nRecipes';
 import { PHASE4P_RECIPES } from '../src/data/phase4pRecipes';
 import { getWildEnemy } from '../src/data/wildEnemies';
 import { tryGetLandmarkDef } from '../src/data/landmarks';
+import { tryGetIncidentDef } from '../src/data/incidents';
 
 const PHASE4P_RECIPE_IDS = new Set(PHASE4P_RECIPES.map((recipe) => recipe.id));
 
@@ -64,6 +65,16 @@ export const AUTO_PLAYER_POLICIES: readonly AutoPlayerPolicy[] = [
   'opportunist',
   'random',
 ];
+
+/** Phase 4T-AF1: would this incident's deterministic hazard kill the actor right now? */
+function isLethalHazardIncident(
+  player: Combatant,
+  incidentId: string,
+): boolean {
+  const def = tryGetIncidentDef(incidentId);
+  if (!def || def.effect.kind !== 'reward_with_hazard') return false;
+  return def.effect.hazardDamage >= player.hp;
+}
 
 /** Pure simulator aggregation helper: boss kills are Apex-only by contract. */
 export function countWildEvents(
@@ -950,13 +961,19 @@ export function runAutoGame(options: AutoGameOptions): AutoGameResult {
     deadlock = findDeadlock(s);
     if (deadlock) break;
 
-    const legal = getLegalPlayerCommands(s);
+    const player = getPlayer(s);
+    const legal = getLegalPlayerCommands(s).filter(
+      // Phase 4T-AF1: RESOLVE_INCIDENT on a lethal reward_with_hazard is a
+      // legal but suicidal command (the engine keeps the death and grants no
+      // reward). The harness's "legal set always succeeds" promise only holds
+      // for commands it is willing to pick, so the policy never chooses it.
+      (a) => !(a.command.type === 'RESOLVE_INCIDENT' && isLethalHazardIncident(player, a.command.incidentId)),
+    );
     if (legal.length === 0) {
       emptyLegalSet = true;
       break;
     }
 
-    const player = getPlayer(s);
     let chosen: LegalAction;
     let source: 'policy' | 'fallback' = 'policy';
 

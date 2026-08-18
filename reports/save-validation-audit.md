@@ -1,7 +1,7 @@
 # 存档独立验收报告（Phase 3）
 
 - 版本：0.5.0
-- 生成时间：2026-08-17T23:57:27.903Z
+- 生成时间：2026-08-18T04:26:52.247Z
 - 对照组：1 个正常存档
 - 损坏用例：132 个
 - 通过：132 / 132
@@ -144,7 +144,7 @@
 | 129 | incident 隐藏 runtime snapshot 字段 | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 含有关键字段缺失或隐藏 runtime snapshot 字段 |
 | 130 | incident memory 指向未知事件 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory.entries[4].incidentId 非法 |
 | 131 | incident memory 的 PUBLIC_EVENT 指向 LOCAL 事件 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory.entries[3] 的 PUBLIC_EVENT 记忆引用了 LOCAL_DISCOVERY 事件 |
-| 132 | incident memory 的 zone 与定义不符 | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 在 ACTIVE 状态下 startedAt 必须为不晚于当前时间的整数 |
+| 132 | incident memory 的 zone 与定义不符 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory.entries[4].zoneId 与 incident 定义的 zone 不一致 |
 
 **结论：PASS（全部损坏存档均被拒绝，且无用例构造失败）**
 
