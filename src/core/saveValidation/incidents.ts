@@ -128,6 +128,39 @@ function validateRuntime(ctx: ValidationContext, id: string, runtime: Record<str
   const rewardClaimedCount = runtime.rewardClaimedCount as number;
   const overlayCharges = runtime.overlayCharges as number;
 
+  // Phase 4T-AF2: finite reward conservation against the definition. The
+  // engine instantiates exactly `itemIds × countPerItem` count-1 stacks, so a
+  // save may never hold more per item, a multi-count stack, an over-claimed
+  // counter, or remaining+claimed beyond the finite initial total.
+  if (def.effect.kind === 'reward_pool' || def.effect.kind === 'reward_with_hazard') {
+    const effect = def.effect;
+    const perItemCap = effect.countPerItem;
+    const totalCap = effect.itemIds.length * perItemCap;
+    const remainingByItem = new Map<string, number>();
+    if (Array.isArray(reward)) {
+      reward.forEach((stack, index) => {
+        if (!isRecord(stack)) return;
+        const itemId = String(stack.itemId);
+        remainingByItem.set(itemId, (remainingByItem.get(itemId) ?? 0) + 1);
+        if (typeof stack.count === 'number' && stack.count !== 1) {
+          ctx.fail(`state.incidents.${id}.reward[${index}] 的单 stack 数量超过该事件的合法生成数量`);
+        }
+      });
+    }
+    for (const [itemId, remaining] of remainingByItem) {
+      if (remaining > perItemCap) {
+        ctx.fail(`state.incidents.${id} 的 ${itemId} remaining reward 超过定义上限 ${perItemCap}`);
+      }
+    }
+    if (typeof rewardClaimedCount === 'number' && rewardClaimedCount > totalCap) {
+      ctx.fail(`state.incidents.${id}.rewardClaimedCount 超过定义的有限奖励总量`);
+    }
+    const remainingTotal = Array.isArray(reward) ? reward.length : 0;
+    if (typeof rewardClaimedCount === 'number' && remainingTotal + rewardClaimedCount > totalCap) {
+      ctx.fail(`state.incidents.${id} 的 remaining + claimed 超过定义的有限奖励总量`);
+    }
+  }
+
   if (status === 'SCHEDULED') {
     if (startedAt !== null || expiresAt !== null || resolvedAt !== null) {
       ctx.fail(`state.incidents.${id} 在 SCHEDULED 状态下不得携带 startedAt/expiresAt/resolvedAt`);
@@ -216,6 +249,14 @@ function validateRuntime(ctx: ValidationContext, id: string, runtime: Record<str
     }
     if (rewardClaimedCount <= 0 && (def.effect.kind === 'reward_pool' || def.effect.kind === 'reward_with_hazard')) {
       ctx.fail(`state.incidents.${id} RESOLVED 奖励型事件必须至少领过一次`);
+    }
+    // A reward incident reaches RESOLVED only by fully emptying its pool, so
+    // the claimed count must equal the finite initial total exactly.
+    if (def.effect.kind === 'reward_pool' || def.effect.kind === 'reward_with_hazard') {
+      const totalCap = def.effect.itemIds.length * def.effect.countPerItem;
+      if (rewardClaimedCount !== totalCap) {
+        ctx.fail(`state.incidents.${id} RESOLVED 奖励型事件的 claimed 数必须等于定义的有限奖励总量`);
+      }
     }
   }
   if (status === 'EXPIRED') {

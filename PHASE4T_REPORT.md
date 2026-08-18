@@ -246,3 +246,23 @@ audit:save PASS（132/132 拒绝对照）；audit:deps R1-R4=0；`npm audit
 illegal/timeout/hardLimit=0，duplicateIncidentReward /
 illegalIncidentResolution / postTerminalIncidentMutation = 0；balance 仅
 观察未调参。
+
+## 18. AF2 — Incident reward pool 进入全局 UID / finite reward save invariants
+
+同 PR #27，仅改 save validation 与测试（production runtime 未动）：
+
+- `state.incidents[*].reward` 的 stack UID 纳入既有全局 UID 唯一扫描
+  （`saveValidation/consistency.ts`）：pool 内互斥、不与角色
+  inventory/equipment、zone groundItems、pendingPickup、landmark loot 重复。
+- 有限奖励守恒（`saveValidation/incidents.ts`）：reward_pool /
+  reward_with_hazard 的 remaining 每 item ≤ countPerItem、单 stack count 必须
+  为 1（合法生成路径只产 count-1 stack）、rewardClaimedCount ≤ 总量、
+  remaining + claimed ≤ itemIds × countPerItem；RESOLVED 奖励型的 claimed
+  必须恰好等于总量（唯一可达路径是领空池）；EXPIRED 允许未领取部分因过期
+  丢弃，只受总量上限约束。
+
+验证：typecheck PASS；tests 1764 全过（新增 AF2 3 例：pool 内重复 UID
+reject、与 inventory/landmark loot UID 冲突 reject、factory_salvage 人为
+加合法 iron / 多 count stack / 超 claimed 全部 reject；ACTIVE partial claim、
+RESOLVED、EXPIRED 正常 save 仍 PASS）；audit:save PASS；audit:deps R1-R4=0。
+未改 production runtime，按约定未重跑 500 局与 art pipeline。

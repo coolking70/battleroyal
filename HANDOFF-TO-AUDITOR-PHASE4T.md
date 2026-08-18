@@ -180,3 +180,12 @@ intents (stale-active stays legal; validator never reads remote runtime),
 and tightened IncidentRuntime effect/status save shapes. Regression:
 `tests/phase4tAf1.test.ts` (8 cases); 500-game PHASE4T-AF1 run 500/500
 trustworthy with all incident counters 0. Exact-head CI: see below.
+
+## AF2 addendum — reward pool UID / finite-reward invariants
+
+Incident reward stacks now join the existing global item-UID uniqueness
+scanner, and reward pools are validated against the IncidentDefinition's
+finite generation (per-item cap, count-1 stacks, claimed/remaining
+conservation, RESOLVED claimed == total, EXPIRED capped only). Validator +
+tests only; no production runtime change, so the 500-game rerun was not
+required. Regressions: `tests/phase4tAf1.test.ts` AF2-1..AF2-3.

@@ -311,4 +311,84 @@ describe('Phase 4T-AF1 — incident correctness closure', () => {
       expect(result.ok, JSON.stringify(corrupt)).toBe(false);
     }
   });
+
+  it('AF2-1 rejects a duplicate UID inside an incident reward pool', () => {
+    const state = createGame({ seed: 'PHASE4T-AF2-1', playerCharacterId: 'scout' });
+    clearLocalNoise(state);
+    const def = getIncidentDef('factory_salvage');
+    activateIncident(state, def.id);
+    expect(validateSaveData(structuredClone(saveOf(state))).ok).toBe(true);
+    const copy = structuredClone(saveOf(state));
+    const pool = copy.state.incidents[def.id]!.reward;
+    pool.push({ ...pool[0]! }); // same uid twice inside the pool
+    expect(validateSaveData(copy).ok).toBe(false);
+  });
+
+  it('AF2-2 rejects an incident reward UID colliding with inventory or landmark loot', () => {
+    const state = createGame({ seed: 'PHASE4T-AF2-2', playerCharacterId: 'scout' });
+    clearLocalNoise(state);
+    const def = getIncidentDef('factory_salvage');
+    activateIncident(state, def.id);
+    const actor = npcOf(state, 0);
+    actor.currentZoneId = def.zoneId;
+    isolateOthers(state, actor);
+    expect(actor.inventory.length).toBeGreaterThan(0);
+    const landmarkStack = Object.values(state.landmarks).flatMap((rt) => rt?.loot ?? [])[0];
+    expect(landmarkStack).toBeDefined();
+    const inventoryCopy = structuredClone(saveOf(state));
+    const poolInv = inventoryCopy.state.incidents[def.id]!.reward;
+    poolInv[0]!.uid = inventoryCopy.state.characters[actor.id]!.inventory[0]!.uid;
+    expect(validateSaveData(inventoryCopy).ok).toBe(false);
+    const landmarkCopy = structuredClone(saveOf(state));
+    const poolLm = landmarkCopy.state.incidents[def.id]!.reward;
+    poolLm[0]!.uid = landmarkStack!.uid;
+    expect(validateSaveData(landmarkCopy).ok).toBe(false);
+  });
+
+  it('AF2-3 rejects extra legal reward stacks and keeps honest lifecycle saves valid', () => {
+    const state = createGame({ seed: 'PHASE4T-AF2-3', playerCharacterId: 'scout' });
+    clearLocalNoise(state);
+    const def = getIncidentDef('factory_salvage'); // iron×1 + wire×1
+    activateIncident(state, def.id);
+    // Honest ACTIVE save: valid.
+    expect(validateSaveData(structuredClone(saveOf(state))).ok).toBe(true);
+    // An extra legal iron stack exceeds the finite per-item definition.
+    const extra = structuredClone(saveOf(state));
+    extra.state.incidents[def.id]!.reward.push({ uid: 'af2-extra-iron', itemId: 'iron', count: 1 });
+    expect(validateSaveData(extra).ok).toBe(false);
+    // A multi-count stack exceeds the legal per-stack generation (count 1).
+    const multiCount = structuredClone(saveOf(state));
+    multiCount.state.incidents[def.id]!.reward[0]!.count = 2;
+    expect(validateSaveData(multiCount).ok).toBe(false);
+    // claimed beyond the finite total.
+    const overClaim = structuredClone(saveOf(state));
+    overClaim.state.incidents[def.id]!.rewardClaimedCount = 5;
+    expect(validateSaveData(overClaim).ok).toBe(false);
+
+    // Honest lifecycle transitions stay valid: partial claim (ACTIVE),
+    // fully claimed (RESOLVED), and unclaimed expiry (EXPIRED).
+    const actor = npcOf(state, 0);
+    actor.currentZoneId = def.zoneId;
+    isolateOthers(state, actor);
+    actor.maxStamina = 999;
+    actor.stamina = 999;
+    observeIncidentsInZone(state, actor);
+    const rng = new SeededRandom('PHASE4T-AF2-3');
+    expect(resolveIncidentActor(state, actor, def.id, rng).ok).toBe(true);
+    expect(getRuntime(state, def.id).status).toBe('ACTIVE');
+    expect(validateSaveData(structuredClone(saveOf(state))).ok).toBe(true);
+    expect(resolveIncidentActor(state, actor, def.id, rng).ok).toBe(true);
+    expect(getRuntime(state, def.id).status).toBe('RESOLVED');
+    expect(validateSaveData(structuredClone(saveOf(state))).ok).toBe(true);
+    // A second, untouched reward incident expiring with zero claims.
+    const state2 = createGame({ seed: 'PHASE4T-AF2-3b', playerCharacterId: 'scout' });
+    clearLocalNoise(state2);
+    const def2 = getIncidentDef('lab_containment');
+    activateIncident(state2, def2.id);
+    const rt2 = getRuntime(state2, def2.id);
+    state2.time = (rt2.expiresAt ?? state2.time) + 1;
+    tickIncidents(state2);
+    expect(getRuntime(state2, def2.id).status).toBe('EXPIRED');
+    expect(validateSaveData(structuredClone(saveOf(state2))).ok).toBe(true);
+  });
 });
