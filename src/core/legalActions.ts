@@ -60,6 +60,7 @@ import {
   skillActions,
   objectiveActions,
   landmarkActions,
+  incidentActions,
 } from './legalActionBuilders';
 import type { Combatant, Command, GameState, ItemStack } from './types';
 
@@ -174,6 +175,8 @@ export function getLegalPlayerCommands(state: GameState): LegalAction[] {
   }
 
   out.push(...landmarkActions(state, player));
+
+  out.push(...incidentActions(state, player));
 
   // 6) 休息：不消耗体力，非遭遇状态下**永远合法**，是反死锁的第一道保险
   out.push(

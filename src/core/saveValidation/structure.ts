@@ -93,6 +93,11 @@ export function buildContext(raw: unknown, errors: string[]): ValidationContext 
   if (!Object.prototype.hasOwnProperty.call(state, 'activeExtraction')) {
     fail('state.activeExtraction 缺少当前版本字段');
   }
+  if (!Object.prototype.hasOwnProperty.call(state, 'incidents')) {
+    fail('state.incidents 缺少当前版本字段');
+  } else if (!isRecord(state.incidents)) {
+    fail('state.incidents 类型错误');
+  }
 
   const status = state.status;
   if (status !== 'playing' && status !== 'won' && status !== 'lost' && status !== 'draw') {

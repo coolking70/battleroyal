@@ -34,6 +34,8 @@ import { runWorldEvents } from './worldEvents';
 import { applyWorldEventTickDamage } from './worldEventTick';
 import { advanceActiveWildEncounter } from './wildCombat';
 import { processApexSpawns } from './apexSchedule';
+import { tickIncidents } from './incidents';
+import { resolveIncidentActor } from './incidentEffects';
 import {
   declareVictory,
   declareDraw,
@@ -166,6 +168,9 @@ export function advanceTime(state: GameState, rng: SeededRandom): void {
   state.time += 1;
   advancePhase(state);
   processApexSpawns(state);
+  // Phase 4T: incident lifecycle transitions at this time unit, before NPC
+  // turns, so an incident activated now is observable by actors acting now.
+  tickIncidents(state);
 
   for (const id of state.turnOrder) {
     const c = state.characters[id];
@@ -358,6 +363,11 @@ function executeCommandInner(state: GameState, command: Command): CommandResult 
 
     case 'INTERACT_LANDMARK':
       return finish(handleInteractLandmark(draft, player, command.landmarkId, command.interactionId));
+
+    case 'RESOLVE_INCIDENT': {
+      const res = resolveIncidentActor(draft, player, command.incidentId, rng);
+      return finish({ ok: res.ok, message: res.message });
+    }
 
     case 'REST':
       return finish(handleRest(draft, player, rng));

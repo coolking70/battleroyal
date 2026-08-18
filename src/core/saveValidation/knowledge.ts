@@ -1,4 +1,5 @@
 import { tryGetItem } from '../../data/items';
+import { tryGetIncidentDef } from '../../data/incidents';
 import { tryGetLandmarkDef } from '../../data/landmarks';
 import { tryGetRecipe } from '../../data/recipes';
 import { tryGetWildEnemy } from '../../data/wildEnemies';
@@ -10,7 +11,7 @@ const LANDMARK_STATE = new Set(['available', 'blocked', 'exhausted']);
 const SOURCE_STATE = new Set(['available', 'unavailable', 'exhausted']);
 const THREAT = new Set(['unknown', 'low', 'medium', 'high']);
 const ACTIONS = new Set([
-  'MOVE', 'SEARCH', 'SEARCH_LANDMARK', 'INTERACT_LANDMARK', 'ATTACK', 'FLEE',
+  'MOVE', 'SEARCH', 'SEARCH_LANDMARK', 'INTERACT_LANDMARK', 'RESOLVE_INCIDENT', 'ATTACK', 'FLEE',
   'CRAFT', 'PICKUP', 'EQUIP', 'EXTRACT', 'SUBMIT_RESEARCH', 'GUARD', 'REST',
 ]);
 const TARGET_KINDS = new Set(['none', 'zone', 'landmark', 'actor', 'wild', 'recipe', 'item']);
@@ -25,6 +26,7 @@ const INTENT_REASONS: Record<string, Set<string>> = {
   pursue_extraction: new Set(['FORMAL_EXTRACTION_GOAL']),
   pursue_research: new Set(['FORMAL_RESEARCH_GOAL']),
   recover: new Set(['LOW_HP', 'LOW_STAMINA']),
+  respond_to_incident: new Set(['KNOWN_INCIDENT_OPPORTUNITY']),
 };
 
 function exactKeys(value: Record<string, unknown>, allowed: readonly string[]): boolean {
@@ -49,6 +51,7 @@ function expectedMemoryKey(entry: Record<string, unknown>): string | null {
     case 'recent_action': return `action:${String(entry.action)}:${String(entry.targetKind)}:${entry.targetId ?? '-'}`;
     case 'own_item': return `item:${String(entry.itemId)}`;
     case 'own_goal': return `goal:${String(entry.goalType)}`;
+    case 'incident_observed': return `incident:${String(entry.incidentId)}`;
     default: return null;
   }
 }
@@ -79,6 +82,7 @@ function actionTargetCompatible(entry: Record<string, unknown>): boolean {
   if (action === 'SEARCH' || action === 'EXTRACT' || action === 'SUBMIT_RESEARCH'
     || action === 'GUARD' || action === 'REST') return kind === 'none';
   if (action === 'SEARCH_LANDMARK' || action === 'INTERACT_LANDMARK') return kind === 'landmark';
+  if (action === 'RESOLVE_INCIDENT') return kind === 'item';
   if (action === 'ATTACK' || action === 'FLEE') return kind === 'actor' || kind === 'wild';
   if (action === 'CRAFT') return kind === 'recipe';
   if (action === 'PICKUP' || action === 'EQUIP') return kind === 'item';
@@ -98,7 +102,12 @@ function validateEntry(ctx: ValidationContext, ownerId: string, entry: Record<st
     fail(`${label}.provenance 非法`);
   }
   const publicKind = entry.kind === 'apex_public' || entry.kind === 'public_match';
-  if (publicKind !== (entry.provenance === 'PUBLIC_EVENT')) fail(`${label} 的 kind 与 provenance 不相容`);
+  // Public-only kinds (`apex_public`, `public_match`) must have a
+  // PUBLIC_EVENT provenance. `incident_observed` accepts either PUBLIC_EVENT
+  // (broadcast) or DIRECT_LOCAL (local discovery), so it is intentionally
+  // excluded from this one-directional check; its provenance is validated
+  // against the incident's visibility further down.
+  if (publicKind && entry.provenance !== 'PUBLIC_EVENT') fail(`${label} 的 kind 与 provenance 不相容`);
 
   const badShape = (fields: string[]): void => {
     if (!exactKeys(entry, [...base, ...fields])) fail(`${label} 含有缺失、无关或隐藏 runtime snapshot 字段`);
@@ -177,6 +186,26 @@ function validateEntry(ctx: ValidationContext, ownerId: string, entry: Record<st
       if (!['craft', 'research', 'extraction', 'apex'].includes(String(entry.goalType))) fail(`${label}.goalType 非法`);
       if (!['started', 'progressed', 'completed'].includes(String(entry.progress))) fail(`${label}.progress 非法`);
       break;
+    case 'incident_observed': {
+      badShape(['incidentId', 'zoneId', 'observedState']);
+      if (typeof entry.incidentId !== 'string' || !tryGetIncidentDef(entry.incidentId)) fail(`${label}.incidentId 非法`);
+      if (typeof entry.zoneId !== 'string' || !zoneIds.has(entry.zoneId)) fail(`${label}.zoneId 非法`);
+      if (entry.observedState !== 'active' && entry.observedState !== 'resolved' && entry.observedState !== 'expired') {
+        fail(`${label}.observedState 非法`);
+      }
+      const incidentDef = tryGetIncidentDef(String(entry.incidentId));
+      if (incidentDef && entry.provenance === 'PUBLIC_EVENT' && incidentDef.visibility !== 'PUBLIC_BROADCAST') {
+        fail(`${label} 的 PUBLIC_EVENT 记忆引用了 LOCAL_DISCOVERY 事件`);
+      }
+      // A PUBLIC_BROADCAST incident is legally learnable both through the
+      // broadcast (PUBLIC_EVENT) and through physical presence (DIRECT_LOCAL),
+      // so both provenances are valid for it. LOCAL_DISCOVERY incidents only
+      // ever enter memory through DIRECT_LOCAL (checked above).
+      if (incidentDef && entry.zoneId !== incidentDef.zoneId) {
+        fail(`${label}.zoneId 与 incident 定义的 zone 不一致`);
+      }
+      break;
+    }
     default:
       fail(`${label}.kind 非法`);
   }
@@ -230,6 +259,20 @@ function validateStrategicIntent(ctx: ValidationContext, ownerId: string, charac
     }
   } else if (intent.type === 'explore_unknown') {
     if (target !== null && (typeof target !== 'string' || !zoneIds.has(target))) fail(`角色 ${ownerId} 的 explore target 非法`);
+  } else if (intent.type === 'respond_to_incident') {
+    if (typeof target !== 'string' || !zoneIds.has(target)) {
+      fail(`角色 ${ownerId} 的 respond_to_incident target 非法`);
+    } else {
+      // The intent must be backed by the actor's OWN last-known memory of an
+      // active incident in that zone. A stale active memory stays legal even
+      // if the remote live runtime has already ended, so this check reads
+      // only the actor's memory — never state.incidents.
+      const memory = character.knowledgeMemory;
+      const backed = isRecord(memory) && Array.isArray(memory.entries)
+        && memory.entries.some((entry) => isRecord(entry)
+          && entry.kind === 'incident_observed' && entry.observedState === 'active' && entry.zoneId === target);
+      if (!backed) fail(`角色 ${ownerId} 的 respond_to_incident intent 缺少自身 active incident memory 支撑`);
+    }
   } else if (target !== null) {
     fail(`角色 ${ownerId} 的 ${intent.type} 不得携带无关 target`);
   }

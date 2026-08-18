@@ -18,6 +18,8 @@ import { enemiesInZone } from './gameState';
 import { livingWildEnemiesInZone } from './wildPopulation';
 import { canSearchLandmark, landmarkDefinitionsForZone } from './landmarks';
 import { canUseFacility } from './facilities';
+import { canResolveIncident } from './incidentEffects';
+import { INCIDENT_DEFINITIONS } from '../data/incidents';
 import { canCallExtraction, canExtract, canSubmitResearch } from './victory';
 import {
   getEquippedArmor,
@@ -37,6 +39,7 @@ export type LegalActionCategory =
   | 'combat'
   | 'item'
   | 'objective'
+  | 'incident'
   /** 不推进时间、但能解开阻塞状态的命令 */
   | 'resolution'
   /** 不推进时间的纯设置类命令 */
@@ -272,6 +275,27 @@ export function landmarkActions(state: GameState, player: Combatant): LegalActio
       const canUse = canUseFacility(state, player, def.id, def.interaction.id);
       if (canUse.ok) out.push(action({ type: 'INTERACT_LANDMARK', landmarkId: def.id, interactionId: def.interaction.id }, 'facility', canUse.cost, def.interaction.label));
     }
+  }
+  return out;
+}
+
+/** Phase 4T: reward-based incidents the player can legally resolve right here. */
+export function incidentActions(state: GameState, player: Combatant): LegalAction[] {
+  const out: LegalAction[] = [];
+  for (const def of INCIDENT_DEFINITIONS) {
+    if (def.zoneId !== player.currentZoneId) continue;
+    const effect = def.effect;
+    if (effect.kind !== 'reward_pool' && effect.kind !== 'reward_with_hazard') continue;
+    const check = canResolveIncident(state, player, def.id);
+    if (!check.ok) continue;
+    out.push(
+      action(
+        { type: 'RESOLVE_INCIDENT', incidentId: def.id },
+        'incident',
+        check.cost,
+        `${def.actionLabel}（${effect.kind === 'reward_with_hazard' ? '高风险' : '有限机会'}）`,
+      ),
+    );
   }
   return out;
 }

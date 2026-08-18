@@ -122,6 +122,14 @@ export function validateConsistency(ctx: ValidationContext): void {
     if (!isRecord(raw) || !Array.isArray(raw.loot)) continue;
     for (const stack of raw.loot) if (isRecord(stack)) markUid(stack.uid, `地标 ${landmarkId} 的隐藏物资`);
   }
+  // Phase 4T-AF2: incident reward pool stacks are real item stacks with real
+  // UIDs; they join the same global uniqueness invariant.
+  if (isRecord(state.incidents)) for (const [incidentId, raw] of Object.entries(state.incidents)) {
+    if (!isRecord(raw) || !Array.isArray(raw.reward)) continue;
+    for (const stack of raw.reward) {
+      if (isRecord(stack)) markUid(stack.uid, `事件 ${incidentId} 的 reward 池`);
+    }
+  }
 
   /* --- 区域存活名单：双向完全一致 --- */
   const aliveCharIds = new Set<string>();

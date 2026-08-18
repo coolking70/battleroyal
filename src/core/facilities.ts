@@ -6,6 +6,7 @@ import { consumeOne } from './inventory';
 import { pushEvent } from './events';
 import { applyHealing } from './vitals';
 import { applyAccessTransitions, accessRequirementReason, missingAccessRequirements } from './accessChains';
+import { consumeFacilityCharge, effectiveFacilityCharges } from './incidentEffects';
 import type { Combatant, GameState } from './types';
 
 function interactionCost(actor: Combatant, landmarkId: string): number {
@@ -32,7 +33,8 @@ export function canUseFacility(state: GameState, actor: Combatant, landmarkId: s
   // unlocked runtime state.
   if (runtime.locked && !interaction?.requiresUnlock) return { ok: false, reason: '设施尚未解锁。', cost };
   if (runtime.disabled && !interaction?.requiresRepair) return { ok: false, reason: '设施已停用，需要先修复。', cost };
-  if (runtime.charges < interaction.chargeCost) return { ok: false, reason: '设施次数已经耗尽。', cost };
+  const effectiveCharges = effectiveFacilityCharges(state, landmarkId);
+  if (effectiveCharges === null || effectiveCharges < interaction.chargeCost) return { ok: false, reason: '设施次数已经耗尽。', cost };
   if (!hasRequirement(state, actor, landmarkId)) return { ok: false, reason: accessRequirementReason(state, actor, def) ?? '缺少设施所需的工具或前置状态。', cost };
   const check = canPayStamina(actor, cost);
   return check.ok ? { ok: true, reason: null, cost } : { ok: false, reason: check.reason, cost };
@@ -56,7 +58,7 @@ export function interactFacility(state: GameState, actor: Combatant, landmarkId:
       if (remaining === 0) break;
     }
   }
-  runtime.charges -= interaction.chargeCost;
+  consumeFacilityCharge(state, landmarkId, actor);
   runtime.discovered = true;
   runtime.activated = true;
   runtime.lastUsedAt = state.time;
@@ -81,7 +83,7 @@ export function interactFacility(state: GameState, actor: Combatant, landmarkId:
   pushEvent(state, {
     type: 'FACILITY_USED', actorId: actor.id, zoneId: def.zoneId,
     message: `${actor.name} 使用了${def.name}：${interaction.label}。`,
-    metadata: { landmarkId, interactionId, remainingCharges: runtime.charges },
+    metadata: { landmarkId, interactionId, remainingCharges: effectiveFacilityCharges(state, landmarkId) ?? 0 },
   });
   if (runtime.activated && runtime.lastUsedAt === state.time) {
     pushEvent(state, { type: 'FACILITY_ACTIVATED', actorId: actor.id, zoneId: def.zoneId, message: `${def.name}状态已更新。`, metadata: { landmarkId, interactionId } });

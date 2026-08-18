@@ -19,6 +19,7 @@ import { validateWildState } from './wild';
 import { validateApexState } from './apex';
 import { validateLandmarkState } from './landmark';
 import { validateKnowledgeState } from './knowledge';
+import { validateIncidentState } from './incidents';
 
 /**
  * 存档深度校验（四层）。
@@ -41,6 +42,7 @@ export function validateSaveData(value: unknown): ValidationReport {
   validateApexState(ctx);
   validateLandmarkState(ctx);
   validateKnowledgeState(ctx);
+  validateIncidentState(ctx);
   validateReferences(ctx);
   validateConsistency(ctx);
 

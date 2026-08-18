@@ -49,6 +49,7 @@ import { VisualImage } from '../components/VisualImage';
 import { InstantWorldEventAnnouncement, WorldEventBanner } from '../components/WorldEventFeedback';
 import { VictoryPaths } from '../components/VictoryPaths';
 import { LandmarkPanel } from '../components/LandmarkPanel';
+import { IncidentPanel } from '../components/IncidentPanel';
 import { detectCraftableHint } from '../craftableHint';
 import { CraftableHint } from '../components/CraftableHint';
 import { CraftEquipmentHint } from '../components/CraftEquipmentHint';
@@ -507,6 +508,10 @@ export function GameScreen({
 
             {!inActiveEncounter && !pending && (
               <LandmarkPanel state={state} player={player} disabled={lockedGeneral} onCommand={act} />
+            )}
+
+            {!inActiveEncounter && !pending && (
+              <IncidentPanel state={state} player={player} disabled={lockedGeneral} onCommand={act} />
             )}
 
             {playerSkills.length > 0 && !inActiveEncounter && (

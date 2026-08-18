@@ -82,6 +82,11 @@ const DEFAULT_IMPORTANCE: Record<GameEventType, EventImportance> = {
   EXTRACTION_READY: 'major',
   EXTRACTION_COMPLETED: 'critical',
   RESEARCH_COMPLETED: 'critical',
+  /* Phase 4T：局部动态事件 */
+  INCIDENT_ACTIVATED: 'major',
+  INCIDENT_RESOLVED: 'major',
+  INCIDENT_EXPIRED: 'minor',
+  INCIDENT_CLAIMED: 'minor',
 };
 
 /**

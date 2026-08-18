@@ -403,6 +403,21 @@ interface CellStats {
   sourceFailuresRemembered?: number;
   threatAvoidanceIntents?: number;
   apexContestIntents?: number;
+  /* --- Phase 4T incident counters (observation-only + correctness sanity) --- */
+  incidentScheduled?: number;
+  incidentActivated?: number;
+  incidentResolved?: number;
+  incidentExpired?: number;
+  incidentPublicBroadcasts?: number;
+  incidentLocalDiscoveries?: number;
+  incidentResponses?: number;
+  incidentRewardsClaimed?: number;
+  incidentContentionFailures?: number;
+  incidentIntentCommits?: number;
+  incidentIntentPreserves?: number;
+  incidentDuplicateReward?: number;
+  incidentIllegalResolution?: number;
+  incidentPostTerminalMutation?: number;
 
   /* --- Phase 3A 玩法统计（事件扫描聚合） --- */
   attackStyleCounts: Record<string, number>;
@@ -557,6 +572,20 @@ function aggregateCell(
     sourceFailuresRemembered: sum((r) => r.sourceFailuresRemembered),
     threatAvoidanceIntents: sum((r) => r.threatAvoidanceIntents),
     apexContestIntents: sum((r) => r.apexContestIntents),
+    incidentScheduled: sum((r) => r.incidentScheduled ?? 0),
+    incidentActivated: sum((r) => r.incidentActivated ?? 0),
+    incidentResolved: sum((r) => r.incidentResolved ?? 0),
+    incidentExpired: sum((r) => r.incidentExpired ?? 0),
+    incidentPublicBroadcasts: sum((r) => r.incidentPublicBroadcasts ?? 0),
+    incidentLocalDiscoveries: sum((r) => r.incidentLocalDiscoveries ?? 0),
+    incidentResponses: sum((r) => r.incidentResponses ?? 0),
+    incidentRewardsClaimed: sum((r) => r.incidentRewardsClaimed ?? 0),
+    incidentContentionFailures: sum((r) => r.incidentContentionFailures ?? 0),
+    incidentIntentCommits: sum((r) => r.incidentIntentCommits ?? 0),
+    incidentIntentPreserves: sum((r) => r.incidentIntentPreserves ?? 0),
+    incidentDuplicateReward: sum((r) => r.incidentDuplicateReward ?? 0),
+    incidentIllegalResolution: sum((r) => r.incidentIllegalResolution ?? 0),
+    incidentPostTerminalMutation: sum((r) => r.incidentPostTerminalMutation ?? 0),
 
     /* --- Phase 3A 玩法统计聚合 --- */
     attackStyleCounts: mergeCounts((r) => r.attackStyleCounts, results),
@@ -872,6 +901,20 @@ interface BalanceReport {
       sourceFailuresRemembered: number;
       threatAvoidanceIntents: number;
       apexContestIntents: number;
+      incidentScheduled: number;
+      incidentActivated: number;
+      incidentResolved: number;
+      incidentExpired: number;
+      incidentPublicBroadcasts: number;
+      incidentLocalDiscoveries: number;
+      incidentResponses: number;
+      incidentRewardsClaimed: number;
+      incidentContentionFailures: number;
+      incidentIntentCommits: number;
+      incidentIntentPreserves: number;
+      incidentDuplicateReward: number;
+      incidentIllegalResolution: number;
+      incidentPostTerminalMutation: number;
     };
     /** 整体判定 = 引擎健康 && 角色平衡 && Phase 3A 玩法验收（规格 §六） */
     overallPassed: boolean;
@@ -1010,6 +1053,20 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
       sourceFailuresRemembered: sum((c) => c.sourceFailuresRemembered ?? 0),
       threatAvoidanceIntents: sum((c) => c.threatAvoidanceIntents ?? 0),
       apexContestIntents: sum((c) => c.apexContestIntents ?? 0),
+      incidentScheduled: sum((c) => c.incidentScheduled ?? 0),
+      incidentActivated: sum((c) => c.incidentActivated ?? 0),
+      incidentResolved: sum((c) => c.incidentResolved ?? 0),
+      incidentExpired: sum((c) => c.incidentExpired ?? 0),
+      incidentPublicBroadcasts: sum((c) => c.incidentPublicBroadcasts ?? 0),
+      incidentLocalDiscoveries: sum((c) => c.incidentLocalDiscoveries ?? 0),
+      incidentResponses: sum((c) => c.incidentResponses ?? 0),
+      incidentRewardsClaimed: sum((c) => c.incidentRewardsClaimed ?? 0),
+      incidentContentionFailures: sum((c) => c.incidentContentionFailures ?? 0),
+      incidentIntentCommits: sum((c) => c.incidentIntentCommits ?? 0),
+      incidentIntentPreserves: sum((c) => c.incidentIntentPreserves ?? 0),
+      incidentDuplicateReward: sum((c) => c.incidentDuplicateReward ?? 0),
+      incidentIllegalResolution: sum((c) => c.incidentIllegalResolution ?? 0),
+      incidentPostTerminalMutation: sum((c) => c.incidentPostTerminalMutation ?? 0),
 
       /* --- Phase 3A 玩法统计聚合（计数直接求和） --- */
       attackStyleCounts: mergeSummaryCounts(subset, (c) => c.attackStyleCounts),
@@ -1362,6 +1419,21 @@ function buildReport(opts: CliOptions, cells: CellStats[]): BalanceReport {
         sourceFailuresRemembered: all.sourceFailuresRemembered ?? 0,
         threatAvoidanceIntents: all.threatAvoidanceIntents ?? 0,
         apexContestIntents: all.apexContestIntents ?? 0,
+        /* Phase 4T incident observations + correctness sanity */
+        incidentScheduled: all.incidentScheduled ?? 0,
+        incidentActivated: all.incidentActivated ?? 0,
+        incidentResolved: all.incidentResolved ?? 0,
+        incidentExpired: all.incidentExpired ?? 0,
+        incidentPublicBroadcasts: all.incidentPublicBroadcasts ?? 0,
+        incidentLocalDiscoveries: all.incidentLocalDiscoveries ?? 0,
+        incidentResponses: all.incidentResponses ?? 0,
+        incidentRewardsClaimed: all.incidentRewardsClaimed ?? 0,
+        incidentContentionFailures: all.incidentContentionFailures ?? 0,
+        incidentIntentCommits: all.incidentIntentCommits ?? 0,
+        incidentIntentPreserves: all.incidentIntentPreserves ?? 0,
+        incidentDuplicateReward: all.incidentDuplicateReward ?? 0,
+        incidentIllegalResolution: all.incidentIllegalResolution ?? 0,
+        incidentPostTerminalMutation: all.incidentPostTerminalMutation ?? 0,
       },
       overallPassed: engineHealthy && characterBalancePassed && phase3aPassed,
       /** Phase 3A-1：CI 门槛（100 局规模无关项） */
@@ -1728,6 +1800,24 @@ function renderMarkdown(report: BalanceReport): string {
   L.push(`| remembered source failures | ${cognition.sourceFailuresRemembered} |`);
   L.push(`| threat-avoidance intents | ${cognition.threatAvoidanceIntents} |`);
   L.push(`| Apex-contest intents | ${cognition.apexContestIntents} |`);
+  L.push('');
+
+  // ---- Phase 4T incident sanity ----
+  L.push('## Phase 4T incident sanity');
+  L.push('');
+  L.push('| 指标 | 值 |');
+  L.push('| --- | ---: |');
+  L.push(`| incident scheduled / activated | ${cognition.incidentScheduled} / ${cognition.incidentActivated} |`);
+  L.push(`| incident resolved / expired | ${cognition.incidentResolved} / ${cognition.incidentExpired} |`);
+  L.push(`| incident public broadcasts | ${cognition.incidentPublicBroadcasts} |`);
+  L.push(`| incident local discoveries | ${cognition.incidentLocalDiscoveries} |`);
+  L.push(`| incident responses | ${cognition.incidentResponses} |`);
+  L.push(`| incident rewards claimed | ${cognition.incidentRewardsClaimed} |`);
+  L.push(`| incident contention failures | ${cognition.incidentContentionFailures} |`);
+  L.push(`| incident intent commits / preserves | ${cognition.incidentIntentCommits} / ${cognition.incidentIntentPreserves} |`);
+  L.push(`| duplicateIncidentReward (must be 0) | ${cognition.incidentDuplicateReward} |`);
+  L.push(`| illegalIncidentResolution (must be 0) | ${cognition.incidentIllegalResolution} |`);
+  L.push(`| postTerminalIncidentMutation (must be 0) | ${cognition.incidentPostTerminalMutation} |`);
   L.push('');
 
   // ---- 全局摘要 ----

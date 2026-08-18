@@ -1,10 +1,10 @@
 # 存档独立验收报告（Phase 3）
 
 - 版本：0.5.0
-- 生成时间：2026-08-14T20:20:15.148Z
+- 生成时间：2026-08-18T04:40:19.119Z
 - 对照组：1 个正常存档
-- 损坏用例：119 个
-- 通过：119 / 119
+- 损坏用例：132 个
+- 通过：132 / 132
 - 构造失败：0 个（P3-P2：任意一个即整轮 FAIL）
 
 - 正常存档被接受：PASS
@@ -132,6 +132,19 @@
 | 117 | StrategicIntent Apex target 不是 Apex | 拒绝 | 拒绝 | ✓ | 角色 n1 的 contest_apex target 非法 |
 | 118 | StrategicIntent committedAt 来自未来 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 strategicIntent.committedAt 非法 |
 | 119 | observation action 与 target 字段组合非法 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory.entries[4] 的 action/target 字段不相容 |
+| 120 | incident runtime 引用未知定义 | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage.incidentId 与 key 不一致 |
+| 121 | incident 未来 startedAt | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 在 ACTIVE 状态下 startedAt 必须为不晚于当前时间的整数 |
+| 122 | incident expiresAt 早于 startedAt | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 在 ACTIVE 状态下 startedAt 必须为不晚于当前时间的整数 |
+| 123 | ACTIVE incident 携带 resolvedAt | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 在 ACTIVE 状态下 startedAt 必须为不晚于当前时间的整数 |
+| 124 | RESOLVED incident 缺少 resolvedAt | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 在 RESOLVED 状态下必须携带合法 resolvedAt |
+| 125 | SCHEDULED incident 携带 resolvedAt | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 在 SCHEDULED 状态下不得携带 startedAt/expiresAt/resolvedAt |
+| 126 | incident rewardClaimedCount 为负 | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage.rewardClaimedCount 非法 |
+| 127 | incident resolvedByActorId 指向不存在角色 | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage.resolvedByActorId 引用了不存在的角色 |
+| 128 | incident RESOLVED 仍保留可领取 reward | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 在 RESOLVED 状态下不得保留可领取 reward |
+| 129 | incident 隐藏 runtime snapshot 字段 | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 含有关键字段缺失或隐藏 runtime snapshot 字段 |
+| 130 | incident memory 指向未知事件 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory.entries[4].incidentId 非法 |
+| 131 | incident memory 的 PUBLIC_EVENT 指向 LOCAL 事件 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory.entries[3] 的 PUBLIC_EVENT 记忆引用了 LOCAL_DISCOVERY 事件 |
+| 132 | incident memory 的 zone 与定义不符 | 拒绝 | 拒绝 | ✓ | 角色 n1 的 knowledgeMemory.entries[4].zoneId 与 incident 定义的 zone 不一致 |
 
 **结论：PASS（全部损坏存档均被拒绝，且无用例构造失败）**
 

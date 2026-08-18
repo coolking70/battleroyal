@@ -24,6 +24,7 @@ export type ObservationAction =
   | 'SEARCH'
   | 'SEARCH_LANDMARK'
   | 'INTERACT_LANDMARK'
+  | 'RESOLVE_INCIDENT'
   | 'ATTACK'
   | 'FLEE'
   | 'CRAFT'
@@ -89,6 +90,12 @@ export type ActorObservation = ObservationBase & (
     goalType: 'craft' | 'research' | 'extraction' | 'apex';
     progress: 'started' | 'progressed' | 'completed';
   }
+  | {
+    kind: 'incident_observed';
+    incidentId: string;
+    zoneId: string;
+    observedState: 'active' | 'resolved' | 'expired';
+  }
 );
 
 export type ActorMemoryEntry = ActorObservation & { key: string };
@@ -116,7 +123,8 @@ export type StrategicIntentType =
   | 'contest_apex'
   | 'pursue_extraction'
   | 'pursue_research'
-  | 'recover';
+  | 'recover'
+  | 'respond_to_incident';
 
 export type StrategicIntentReason =
   | 'GEAR_GROWTH'
@@ -129,7 +137,8 @@ export type StrategicIntentReason =
   | 'FORMAL_EXTRACTION_GOAL'
   | 'FORMAL_RESEARCH_GOAL'
   | 'LOW_HP'
-  | 'LOW_STAMINA';
+  | 'LOW_STAMINA'
+  | 'KNOWN_INCIDENT_OPPORTUNITY';
 
 export interface StrategicIntent {
   type: StrategicIntentType;

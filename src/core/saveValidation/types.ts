@@ -79,6 +79,10 @@ const EVENT_TYPE_TABLE: Record<GameEventType, true> = {
   EXTRACTION_COMPLETED: true,
   RESEARCH_COMPLETED: true,
   GAME_ENDED: true,
+  INCIDENT_ACTIVATED: true,
+  INCIDENT_RESOLVED: true,
+  INCIDENT_EXPIRED: true,
+  INCIDENT_CLAIMED: true,
 };
 
 export const EVENT_TYPE_SET = new Set<string>(Object.keys(EVENT_TYPE_TABLE));
