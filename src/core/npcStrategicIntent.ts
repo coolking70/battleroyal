@@ -4,10 +4,13 @@ import { currentWorldSourcesForActor } from './worldSources';
 import { latestPublicApex, recentHighThreat, THREAT_MEMORY_FRESH_TURNS } from './npcKnowledge';
 import { latestKnownActiveIncident } from './incidentVisibility';
 import { tryGetIncidentDef } from '../data/incidents';
+import { getZoneDistance } from './craftGuide';
+import { nextZoneTowardUnrestricted } from './accessChains';
 import type {
   ActorMemoryEntry,
   Combatant,
   GameState,
+  Personality,
   StrategicIntent,
   StrategicIntentLifecycle,
   StrategicIntentReason,
@@ -45,12 +48,148 @@ function readyForApex(actor: Combatant): boolean {
     && (armorDefenseOf(actor) >= 5 || actor.level >= 3);
 }
 
-function recentHuntTarget(actor: Combatant, now: number): Extract<ActorMemoryEntry, { kind: 'actor_sighting' }> | null {
+/* ------------------------------------------------------------------ */
+/* Phase 4U — human-like competition                                   */
+/* ------------------------------------------------------------------ */
+
+/** Pursue stale last-known information only within a bounded multi-hop radius. */
+const HUNT_MAX_ZONE_DISTANCE = 4;
+/** Give up a hunt after this many turns without a re-sighting. */
+const HUNT_PURSUIT_TTL_TURNS = 8;
+
+type SightingEntry = Extract<ActorMemoryEntry, { kind: 'actor_sighting' }>;
+
+/** Personality-shaped preference over coarse remembered threat levels. */
+const HUNT_THREAT_PREFERENCE: Record<Personality, Record<'low' | 'medium' | 'high', number>> = {
+  aggressive: { low: 0.55, medium: 0.85, high: 1.0 },
+  opportunist: { low: 1.0, medium: 0.7, high: 0.15 },
+  cautious: { low: 0.8, medium: 0.3, high: 0 },
+  collector: { low: 0.6, medium: 0.25, high: 0 },
+  random: { low: 0.6, medium: 0.6, high: 0.6 },
+};
+
+const HUNT_THRESHOLD: Record<Personality, number> = {
+  aggressive: 0.35,
+  opportunist: 0.5,
+  cautious: 0.72,
+  collector: 0.78,
+  random: 0.5,
+};
+
+/** Deterministic pseudo-jitter for the random personality (seeded by stable ids). */
+function huntJitter(seed: string, actorId: string, subjectId: string): number {
+  let hash = 0;
+  const source = `${seed}:${actorId}:${subjectId}`;
+  for (let index = 0; index < source.length; index += 1) {
+    hash = (hash * 31 + source.charCodeAt(index)) % 1000;
+  }
+  return (hash % 21 - 10) / 100; // -0.10 .. +0.10
+}
+
+/** Own-state combat readiness (never the target's live runtime). */
+function huntReadiness(actor: Combatant): number {
+  const hp = Math.min(1, actor.hp / actor.maxHp);
+  const stamina = Math.min(1, actor.stamina / actor.maxStamina);
+  const weapon = Math.min(1, weaponAttackOf(actor) / 12);
+  return hp * 0.5 + stamina * 0.2 + weapon * 0.3;
+}
+
+function targetKnownDead(actor: Combatant, subjectId: string): boolean {
+  return actor.knowledgeMemory.entries.some((entry) =>
+    entry.kind === 'public_match' && entry.eventType === 'CHARACTER_DIED' && entry.subjectActorId === subjectId);
+}
+
+/**
+ * Deterministic last-known hunt scoring: freshness, topology distance to the
+ * STALE last-known zone, coarse remembered threat, own readiness and
+ * personality. A sighting at the actor's own zone is not a pursuit (local
+ * combat handles it), and unreachable/too-stale targets are not pursued.
+ * Reachability uses the public topology plus the public restriction state —
+ * never the target's live runtime.
+ */
+function scoreHuntSighting(
+  state: GameState,
+  actor: Combatant,
+  sighting: SightingEntry,
+  now: number,
+): number | null {
+  if (sighting.threat === 'unknown') return null;
+  if (targetKnownDead(actor, sighting.subjectActorId)) return null;
+  const distance = getZoneDistance(actor.currentZoneId, sighting.zoneId);
+  if (distance === 0) return null; // already at the last-known zone
+  if (!Number.isFinite(distance) || distance > HUNT_MAX_ZONE_DISTANCE) return null;
+  if (nextZoneTowardUnrestricted(state, actor.currentZoneId, sighting.zoneId) === null) return null;
+  const freshness = 1 - (now - sighting.observedAt) / THREAT_MEMORY_FRESH_TURNS;
+  const proximity = 1 - (distance - 1) / HUNT_MAX_ZONE_DISTANCE;
+  const threatPreference = HUNT_THREAT_PREFERENCE[actor.personality][sighting.threat];
+  if (threatPreference <= 0) return null;
+  let score = freshness * 0.35 + proximity * 0.25 + threatPreference * 0.2 + huntReadiness(actor) * 0.2;
+  if (actor.personality === 'random') score += huntJitter(state.seed, actor.id, sighting.subjectActorId);
+  return score;
+}
+
+/** Best deterministic hunt candidate from the actor's own sighting memory. */
+function chooseHuntTarget(state: GameState, actor: Combatant, now: number): SightingEntry | null {
+  const threshold = HUNT_THRESHOLD[actor.personality];
+  // A committed hunt is preferred over near-equal candidates: without a new
+  // observation or a legal invalidation the target must not flip-flop.
+  const preferred = actor.strategicIntent?.type === 'hunt_known_target'
+    ? actor.strategicIntent.targetId
+    : null;
+  let best: SightingEntry | null = null;
+  let bestScore = threshold;
+  for (const entry of actor.knowledgeMemory.entries) {
+    if (entry.kind !== 'actor_sighting') continue;
+    if (now - entry.observedAt > THREAT_MEMORY_FRESH_TURNS) continue;
+    // Human-like damping: whoever just beat this actor and made it flee is
+    // not re-pursued for a while, regardless of personality.
+    if (recentlyFledFrom(actor, entry, now)) continue;
+    let score = scoreHuntSighting(state, actor, entry, now);
+    if (score === null) continue;
+    if (preferred !== null && entry.subjectActorId === preferred) score += 0.05;
+    if (score > bestScore
+      || (score === bestScore && best !== null && entry.subjectActorId.localeCompare(best.subjectActorId) < 0)) {
+      best = entry;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+/** The newest own sighting memory of a specific subject (or null). */
+function latestSightingOf(actor: Combatant, subjectId: string): SightingEntry | null {
   return actor.knowledgeMemory.entries
-    .filter((entry): entry is Extract<ActorMemoryEntry, { kind: 'actor_sighting' }> =>
-      entry.kind === 'actor_sighting' && entry.threat !== 'unknown'
-      && now - entry.observedAt <= THREAT_MEMORY_FRESH_TURNS)
-    .sort((a, b) => b.observedAt - a.observedAt || a.subjectActorId.localeCompare(b.subjectActorId))[0] ?? null;
+    .filter((entry): entry is SightingEntry =>
+      entry.kind === 'actor_sighting' && entry.subjectActorId === subjectId)
+    .sort((a, b) => b.observedAt - a.observedAt)[0] ?? null;
+}
+
+/** The strongest coarse threat this actor remembers (recently) in a zone. */
+function rememberedThreatAtZone(actor: Combatant, zoneId: string, now: number): 'low' | 'medium' | 'high' | null {
+  let strongest: 'low' | 'medium' | 'high' | null = null;
+  for (const entry of actor.knowledgeMemory.entries) {
+    if (entry.kind !== 'actor_sighting' || entry.zoneId !== zoneId) continue;
+    if (entry.threat === 'unknown' || now - entry.observedAt > THREAT_MEMORY_FRESH_TURNS) continue;
+    if (entry.threat === 'high') return 'high';
+    if (entry.threat === 'medium' || strongest === null) strongest = entry.threat;
+  }
+  return strongest;
+}
+
+/** Does the actor yield a remembered opportunity because of a remembered threat? */
+function yieldsOpportunityToThreat(
+  actor: Combatant,
+  zoneId: string,
+  highValueResource: boolean,
+  now: number,
+): boolean {
+  const threat = rememberedThreatAtZone(actor, zoneId, now);
+  if (threat !== 'high') return false;
+  if (actor.personality === 'cautious') return true;
+  // Collectors contest only for high-value finite resources; a mere overlay /
+  // access window is not worth a remembered high threat.
+  if (actor.personality === 'collector') return !highValueResource;
+  return false;
 }
 
 function recentlyFledFrom(actor: Combatant, sighting: Extract<ActorMemoryEntry, { kind: 'actor_sighting' }>, now: number): boolean {
@@ -61,7 +200,7 @@ function recentlyFledFrom(actor: Combatant, sighting: Extract<ActorMemoryEntry, 
 }
 
 /** A known active incident is a coarse opportunity preference, filtered by personality. */
-function incidentDesiredIntent(actor: Combatant): DesiredIntent | null {
+function incidentDesiredIntent(state: GameState, actor: Combatant): DesiredIntent | null {
   const latest = latestKnownActiveIncident(actor);
   if (!latest) return null;
   const def = tryGetIncidentDef(latest.incidentId);
@@ -69,6 +208,11 @@ function incidentDesiredIntent(actor: Combatant): DesiredIntent | null {
   // Personality preference is a coarse gate only (deterministic; no tuning).
   const preference = def.personalityPreference?.[actor.personality] ?? 1;
   if (preference < 0.5) return null;
+  // Competition gating: a remembered high threat at the opportunity zone may
+  // make the actor yield (cautious always; collector unless the reward is a
+  // finite high-value pool). Decision uses only the actor's own memory.
+  const highValue = def.effect.kind === 'reward_pool' || def.effect.kind === 'reward_with_hazard';
+  if (yieldsOpportunityToThreat(actor, def.zoneId, highValue, state.time)) return null;
   return { type: 'respond_to_incident', reason: 'KNOWN_INCIDENT_OPPORTUNITY', targetId: def.zoneId };
 }
 
@@ -88,23 +232,29 @@ export function deriveStrategicIntent(state: GameState, actor: Combatant): Desir
 
   const apex = latestActiveApex(actor);
   if (apex) {
-    return readyForApex(actor)
-      ? { type: 'contest_apex', reason: 'APEX_PUBLIC_AND_READY', targetId: apex.wildDefId }
-      : { type: 'gear_up', reason: 'APEX_PUBLIC_NOT_READY', targetId: null };
+    // Competition gating: a cautious NPC yields the Apex opportunity when it
+    // remembers a high threat there (own memory only, never live runtime).
+    const yieldsApex = yieldsOpportunityToThreat(actor, apex.zoneId, false, state.time);
+    if (readyForApex(actor) && !yieldsApex) {
+      return { type: 'contest_apex', reason: 'APEX_PUBLIC_AND_READY', targetId: apex.wildDefId };
+    }
+    return { type: 'gear_up', reason: 'APEX_PUBLIC_NOT_READY', targetId: null };
   }
 
   const threat = recentHighThreat(actor, state.time);
   if (threat && actor.personality === 'cautious' && recentlyFledFrom(actor, threat, state.time)) {
     return { type: 'avoid_threat', reason: 'RECENT_HIGH_THREAT', targetId: threat.zoneId };
   }
-  const hunt = recentHuntTarget(actor, state.time);
-  if (hunt && actor.personality === 'aggressive') {
+  // Phase 4U: deterministic last-known hunt for every personality (scores
+  // decide who actually pursues; aggressive/opportunist naturally qualify most).
+  const hunt = chooseHuntTarget(state, actor, state.time);
+  if (hunt) {
     return { type: 'hunt_known_target', reason: 'KNOWN_TARGET', targetId: hunt.subjectActorId };
   }
 
   // Phase 4T: a known incident is a coarse opportunity below formal goals and
   // threat/hunt priorities, but above the generic gear-up/explore fallback.
-  const incident = incidentDesiredIntent(actor);
+  const incident = incidentDesiredIntent(state, actor);
   if (incident) return incident;
 
   const plan = actor.plannedRecipeId ? buildCraftPlan(state, actor, actor.plannedRecipeId) : null;
@@ -166,6 +316,34 @@ export function maintainStrategicIntent(state: GameState, actor: Combatant): Str
   if (!desired) return { lifecycle: 'PRESERVE', intent: actor.strategicIntent };
   const current = actor.strategicIntent;
   if (!current) return { lifecycle: 'COMMIT', intent: commitIntent(state, actor, desired) };
+
+  // Phase 4U-AF1: lifecycle guards for a live hunt intent. Both read only the
+  // actor's own backing sighting (never the target's live runtime):
+  //   — unreachable: the last-known zone is restricted or cut off behind the
+  //     restriction wall, so the hunt can never succeed → give up now.
+  //   — TTL: the backing sighting is too old without a legal re-sighting.
+  //     The age clock is the sighting's observedAt, so a re-sighting refreshes
+  //     it naturally. Giving up consciously discards the stale sighting so the
+  //     same pursuit cannot be instantly re-committed.
+  if (current.type === 'hunt_known_target' && typeof current.targetId === 'string') {
+    const huntTargetId = current.targetId;
+    const latestSighting = latestSightingOf(actor, huntTargetId);
+    let routeNull = false;
+    let expired = false;
+    if (latestSighting) {
+      routeNull = latestSighting.zoneId !== actor.currentZoneId
+        && nextZoneTowardUnrestricted(state, actor.currentZoneId, latestSighting.zoneId) === null;
+      expired = desired.type === 'hunt_known_target' && desired.targetId === huntTargetId
+        && state.time - latestSighting.observedAt > HUNT_PURSUIT_TTL_TURNS;
+    }
+    if (latestSighting === null || routeNull || expired) {
+      actor.knowledgeMemory.entries = actor.knowledgeMemory.entries
+        .filter((entry) => !(entry.kind === 'actor_sighting' && entry.subjectActorId === huntTargetId));
+      state.stats.strategicIntentCompletions = (state.stats.strategicIntentCompletions ?? 0) + 1;
+      actor.strategicIntent = null;
+      return { lifecycle: 'COMPLETE', intent: null };
+    }
+  }
 
   if (sameIntent(current, desired)) {
     state.stats.strategicIntentPreserves = (state.stats.strategicIntentPreserves ?? 0) + 1;

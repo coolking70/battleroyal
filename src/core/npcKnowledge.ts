@@ -92,6 +92,14 @@ export function rememberActorObservation(
       && actor.strategicIntent.targetId === evicted.zoneId) {
       actor.strategicIntent = null;
     }
+    // Phase 4U: a persisted hunt intent must likewise stay backed by the
+    // actor's own last sighting of the target. Evicting that sighting ends
+    // the pursuit (stale information may no longer be recalled at all).
+    if (evicted && evicted.kind === 'actor_sighting'
+      && actor.strategicIntent?.type === 'hunt_known_target'
+      && actor.strategicIntent.targetId === evicted.subjectActorId) {
+      actor.strategicIntent = null;
+    }
   }
   if (entry.kind === 'source_status' && entry.state !== 'available'
     && (!previous || previous.kind !== 'source_status' || previous.state !== entry.state)) {
@@ -224,6 +232,17 @@ export function observePublicGameEvent(state: GameState, event: GameEvent): void
         observedAt: state.time, provenance: 'PUBLIC_EVENT',
       });
     } else if (event.type === 'CHARACTER_DIED' || event.type === 'VICTORY_DECLARED' || event.type === 'ZONE_RESTRICTED') {
+      // Phase 4U: a publicly confirmed death legally ends any pursuit of that
+      // target — the actor learned, through the public feed, that its hunt
+      // can never succeed.
+      if (event.type === 'CHARACTER_DIED' && event.targetId) {
+        for (const actor of Object.values(state.characters)) {
+          if (actor.strategicIntent?.type === 'hunt_known_target'
+            && actor.strategicIntent.targetId === event.targetId) {
+            actor.strategicIntent = null;
+          }
+        }
+      }
       rememberActorObservation(state, actor, {
         kind: 'public_match', eventType: event.type,
         subjectActorId: event.type === 'CHARACTER_DIED' ? event.targetId : null,

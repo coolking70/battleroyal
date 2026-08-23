@@ -38,7 +38,7 @@ describe('Phase 4J-1 标准自动玩家装备修复', () => {
   it.each([
     ['aggressive', 'AF3-J-aggressive-0', 'fighter'],
     ['cautious', 'AF3-J-cautious-0', 'scout'],
-    ['collector', 'AF3-J-collector-1', 'scout'],
+    ['collector', 'AF3-J-collector-3', 'scout'],
     ['opportunist', 'AF3-J-opportunist-0', 'engineer'],
     // Keep a deterministic random route that reaches the shared EQUIP action
     // after the Phase 4P world-content expansion.

@@ -303,6 +303,34 @@ export function nextZoneToward(from: string, to: string): string | null {
   return null;
 }
 
+/**
+ * Phase 4U-AF1: state-aware BFS next hop that skips restricted zones.
+ * Uses only the public zone topology plus the publicly broadcast restriction
+ * state; returns null when the target zone is restricted or fully unreachable
+ * behind the restriction wall.
+ */
+export function nextZoneTowardUnrestricted(state: GameState, from: string, to: string): string | null {
+  if (from === to) return null;
+  if (state.zones[to]?.status === 'restricted') return null;
+  const seen = new Set([from]);
+  const queue: Array<{ zoneId: string; first: string }> = [];
+  for (const adjacent of getZoneDef(from).adjacent.slice().sort()) {
+    if (state.zones[adjacent]?.status === 'restricted') continue;
+    queue.push({ zoneId: adjacent, first: adjacent });
+  }
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (current.zoneId === to) return current.first;
+    if (seen.has(current.zoneId)) continue;
+    seen.add(current.zoneId);
+    for (const adjacent of getZoneDef(current.zoneId).adjacent.slice().sort()) {
+      if (seen.has(adjacent) || state.zones[adjacent]?.status === 'restricted') continue;
+      queue.push({ zoneId: adjacent, first: current.first });
+    }
+  }
+  return null;
+}
+
 export function syncNpcExplorationObjective(
   state: GameState,
   actor: Combatant,
