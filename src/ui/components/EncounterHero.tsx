@@ -17,6 +17,7 @@ import {
 } from '../combatPresentation';
 import { useDrawerFocus } from './useDrawerFocus';
 import type { CombatActionBarView } from '../combatActionsPresentation';
+import type { EncounterPresentationView } from '../encounterPresentation';
 import type { Combatant, EncounterState, WildEnemyInstance } from '../../core/types';
 
 interface EncounterHeroProps {
@@ -28,6 +29,8 @@ interface EncounterHeroProps {
   combat: CombatActionBarView | null;
   /** 已由公开 CHARACTER_DIED 与当前可见地面遗物共同证明存在战利品。 */
   lootAvailable?: boolean;
+  /** 只由 visible legal events 与当前本地遭遇公开状态派生。 */
+  presentation?: EncounterPresentationView | null;
 }
 
 /**
@@ -55,6 +58,7 @@ export function EncounterHero({
   wildEnemy = null,
   combat,
   lootAvailable = false,
+  presentation = null,
 }: EncounterHeroProps): JSX.Element {
   const wildDef = wildEnemy ? getWildEnemy(wildEnemy.defId) : null;
   const resolved = encounter.resolved || !enemy.alive || Boolean(wildEnemy && wildEnemy.status !== 'alive');
@@ -78,9 +82,14 @@ export function EncounterHero({
     ? `${enemy.name} 已经离开该区域，脱离接触。`
     : visibleEncounterLog[visibleEncounterLog.length - 1] ??
       (resolved ? '遭遇已结束。' : '尚未交手，选择一项行动。');
-  const latestFeedback = lootAvailable && resolved && !enemy.alive
+  const fallbackFeedback = lootAvailable && resolved && !enemy.alive
     ? `${baseFeedback} 击杀战利品：该对手遗留了物资，可拾取。`
     : baseFeedback;
+  const latestFeedback = presentation
+    ? presentation.latest.kind === 'loot'
+      ? `${presentation.latest.title}：${presentation.latest.detail}`
+      : `${presentation.latest.title} · ${presentation.latest.detail}`
+    : fallbackFeedback;
   const normalHit = combat?.attacks.find((a) => a.style === 'normal')?.hitPct ?? null;
 
   const [logOpen, setLogOpen] = useState(false);
@@ -92,6 +101,14 @@ export function EncounterHero({
       data-encounter-state={resolved ? 'resolved' : 'active'}
       aria-label={modeMeta.label}
     >
+      {presentation && (
+        <div className="encounter-context" aria-label="遭遇上下文">
+          <span>区域 · {presentation.zoneName}</span>
+          <span>持续 · {presentation.durationTurns} 回合</span>
+          <span>{presentation.initiativeLabel}</span>
+        </div>
+      )}
+
       {/* 敌方立绘：主视觉焦点，居中 */}
       <div className="encounter-hero-portrait" data-visual-state={enemyVisualState}>
         <VisualImage
@@ -131,7 +148,21 @@ export function EncounterHero({
           </>
         ) : <div className="eh-line eh-weapon">武器：{weapon ? getItem(weapon.itemId).name : '徒手'}</div>}
         <div className="eh-status-row">
-          {!wildDef && enemyExposed ? (
+          {presentation && presentation.statuses.length > 0 ? (
+            presentation.statuses.map((status) => (
+              <span
+                className={cx('tag', status.label === 'EXPOSED' ? 'tag-exposed' : 'tag-guard')}
+                data-status-side={status.side}
+                key={status.id}
+              >
+                <span className="combat-cue-icon" aria-hidden="true">
+                  {status.label === 'EXPOSED' ? COMBAT_STATUS_META.exposed.icon : COMBAT_STATUS_META.guard.icon}
+                </span>
+                {status.side === 'player' ? '你' : '敌方'} · {status.label}
+                {status.label === 'EXPOSED' ? ` · ${COMBAT_STATUS_META.exposed.label}` : ` · ${COMBAT_STATUS_META.guard.label}`}
+              </span>
+            ))
+          ) : !wildDef && enemyExposed ? (
             <span className="tag tag-exposed">
               <span className="combat-cue-icon" aria-hidden="true">{COMBAT_STATUS_META.exposed.icon}</span>
               {COMBAT_STATUS_META.exposed.label}
@@ -149,10 +180,34 @@ export function EncounterHero({
         <div className="eh-line eh-player-power">你 攻 {totalAttack(player)} / 防 {totalDefense(player)}</div>
       </div>
 
-      {/* 底部：一行即时反馈 + 战斗记录小入口 */}
+      {presentation && (
+        <ol className="encounter-beat-stack" aria-label="最近关键战斗节拍">
+          {presentation.beats.map((beat, index) => (
+            <li
+              className={cx('encounter-beat', `beat-${beat.kind}`, index === presentation.beats.length - 1 && 'is-latest')}
+              data-beat-kind={beat.kind}
+              data-beat-side={beat.side}
+              data-beat-style={beat.style}
+              key={beat.id}
+            >
+              <span className="encounter-beat-icon" aria-hidden="true">{beat.icon}</span>
+              <span className="encounter-beat-copy">
+                <strong>{beat.title}</strong>
+                <small>{beat.detail}</small>
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {/* 底部：当前视觉焦点 + 战斗记录小入口 */}
       <div className="encounter-hero-bottom">
-        <div className="encounter-hero-feedback" aria-live="polite">
-          <span className="eh-feedback-kicker">即时反馈</span>
+        <div
+          className={cx('encounter-hero-feedback', presentation && `beat-${presentation.latest.kind}`)}
+          data-latest-beat={presentation?.latest.kind}
+          aria-live="polite"
+        >
+          <span className="eh-feedback-kicker">{presentation ? '当前节拍' : '即时反馈'}</span>
           <strong data-corpse-loot-available={lootAvailable ? 'true' : undefined}>{latestFeedback}</strong>
         </div>
         <button

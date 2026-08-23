@@ -29,6 +29,7 @@ import { latestPlayerSearchFeedback } from '../searchPresentation';
 import { getZoneVisual } from '../visualAssets';
 import { wildCombatProfile } from '../../core/wildCombat';
 import { buildCombatActionBar } from '../combatActionsPresentation';
+import { buildEncounterPresentation } from '../encounterPresentation';
 import { zoneStatusMeta } from '../zonePresentation';
 import { warningRemaining, zoneUrgencyMeta } from '../zonePresentation';
 import { latestInstantWorldEvent, sortWorldEvents } from '../worldEventPresentation';
@@ -245,6 +246,21 @@ export function GameScreen({
       );
     return Number(death?.metadata.dropCount ?? 0) > 0;
   }, [encounter, state.events, state.playerId, visibleCorpseGroundItems]);
+  const encounterPresentation = useMemo(
+    () => encounter && enemy
+      ? buildEncounterPresentation({
+          encounter,
+          player,
+          enemy,
+          wildEnemy,
+          currentTime: state.time,
+          zoneName: getZoneDef(encounter.zoneId).name,
+          visibleEvents: visibleEventsForPlayer(state.events, state.playerId),
+          lootAvailable: encounterLootAvailable,
+        })
+      : null,
+    [encounter, enemy, player, wildEnemy, state.time, state.events, state.playerId, encounterLootAvailable],
+  );
   const searchFeedback = useMemo(() => latestPlayerSearchFeedback(state), [state]);
 
   // Phase 4E-1 改进 B：检测"新获得物品使某配方从不可做变为可做"，给出非阻塞提示。
@@ -376,6 +392,7 @@ export function GameScreen({
                 wildEnemy={wildEnemy}
                 combat={combatBar}
                 lootAvailable={encounterLootAvailable}
+                presentation={encounterPresentation}
               />
             )}
           </div>
