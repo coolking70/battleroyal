@@ -18,7 +18,7 @@ import { buildCraftPlan } from './craftPlan';
 import { currentWorldSourcesForActor } from './worldSources';
 import { canSearchLandmark } from './landmarks';
 import { decideNpcAccessAction } from './npcAccessDecide';
-import { nextZoneToward } from './accessChains';
+import { nextZoneToward, nextZoneTowardUnrestricted } from './accessChains';
 import { hasPlannedWildSourceHere, hasRecommendedApexSource, npcSearchWeight, NPC_IDLE_WEIGHTS as IDLE_WEIGHTS } from './npcWildHunt';
 import { wildCombatProfile } from './wildCombat';
 import { npcCombatSkill, npcSurvivalSkill } from './npcSkillDecide';
@@ -344,8 +344,8 @@ export function decideNpcAction(
         entry.kind === 'actor_sighting' && entry.subjectActorId === huntIntentTarget)
       .sort((a, b) => b.observedAt - a.observedAt)[0];
     if (sighting && sighting.zoneId !== npc.currentZoneId) {
-      const hop = nextZoneToward(npc.currentZoneId, sighting.zoneId);
-      if (hop && state.zones[hop]?.status !== 'restricted') {
+      const hop = nextZoneTowardUnrestricted(state, npc.currentZoneId, sighting.zoneId);
+      if (hop) {
         return { kind: 'move', zoneId: hop, reason: `追踪目标最后已知区域（${sighting.zoneId}）的下一跳` };
       }
     }

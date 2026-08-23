@@ -10,6 +10,7 @@ import { getCharacterSkills } from '../src/core/skills';
 import { SeededRandom } from '../src/core/random';
 import { validateSaveData } from '../src/core/saveLoad';
 import { getIncidentDef } from '../src/data/incidents';
+import { pushEvent } from '../src/core/events';
 import type { Combatant, GameState, Personality } from '../src/core/types';
 
 /**
@@ -326,5 +327,123 @@ describe('Phase 4U — human-like NPC competition', () => {
       };
     };
     expect(run()).toEqual(run());
+  });
+});
+
+describe('Phase 4U-AF1 — hunt lifecycle closure', () => {
+
+  it('AF1-1 keeps a random NPC hunt target stable without new observations', () => {
+    const state = createGame({ seed: 'PHASE4U-AF1-1', playerCharacterId: 'scout' });
+    clearLocalNoise(state);
+    dormantIncidents(state);
+    const hunter = npcOf(state, 0);
+    const a = npcOf(state, 1);
+    const b = npcOf(state, 2);
+    primeHunter(hunter, 'random');
+    // Two legal sightings at equal topology distance (school → … → lab/forest
+    // are both 2 hops) with identical coarse threat: near-equal candidates.
+    for (const [subject, zoneId] of [[a, 'lab'], [b, 'forest']] as const) {
+      hunter.currentZoneId = zoneId;
+      subject.currentZoneId = zoneId;
+      refreshZoneOccupants(state);
+      observeActorSighting(state, hunter, subject, 'DIRECT_LOCAL');
+    }
+    hunter.currentZoneId = 'school';
+    isolate(state, [hunter, a, b]);
+    const targets: string[] = [];
+    for (let turn = 0; turn < 6; turn += 1) {
+      state.time += 1;
+      maintainStrategicIntent(state, hunter);
+      const hunt = hunter.strategicIntent;
+      targets.push(hunt?.type === 'hunt_known_target' && typeof hunt.targetId === 'string'
+        ? hunt.targetId
+        : 'none');
+    }
+    expect(new Set(targets).size).toBe(1);
+    expect(targets[0]).not.toBe('none');
+  });
+
+  it('AF1-2 ends a hunt when the last-known zone becomes publicly unreachable', () => {
+    const state = createGame({ seed: 'PHASE4U-AF1-2', playerCharacterId: 'scout' });
+    clearLocalNoise(state);
+    dormantIncidents(state);
+    const hunter = npcOf(state, 0);
+    const target = npcOf(state, 1);
+    primeHunter(hunter, 'aggressive');
+    hunter.currentZoneId = 'lab';
+    target.currentZoneId = 'lab';
+    refreshZoneOccupants(state);
+    observeActorSighting(state, hunter, target, 'DIRECT_LOCAL');
+    hunter.currentZoneId = 'school';
+    isolate(state, [hunter, target]);
+    maintainStrategicIntent(state, hunter);
+    expect(hunter.strategicIntent?.type).toBe('hunt_known_target');
+    // The last-known zone becomes a public restricted zone (public broadcast).
+    target.currentZoneId = 'warehouse'; // vacate lab first (hidden relocation)
+    isolate(state, [hunter, target]);
+    const labZone = state.zones['lab']!;
+    labZone.status = 'restricted';
+    labZone.restrictedAtTime = state.time;
+    pushEvent(state, {
+      type: 'ZONE_RESTRICTED', zoneId: 'lab', importance: 'major',
+      message: '研究所已成为禁区。', metadata: { zoneId: 'lab' },
+    });
+    maintainStrategicIntent(state, hunter);
+    expect(hunter.strategicIntent?.type).not.toBe('hunt_known_target');
+    // The give-up is sticky: no dead-intent re-commitment on later turns.
+    for (let turn = 0; turn < 3; turn += 1) {
+      state.time += 1;
+      maintainStrategicIntent(state, hunter);
+      expect(hunter.strategicIntent?.type).not.toBe('hunt_known_target');
+    }
+    // The hunter never turns toward the target's real (unknown) new zone.
+    const rng = new SeededRandom('PHASE4U-AF1-2');
+    for (let turn = 0; turn < 6 && state.status === 'playing'; turn += 1) {
+      state.time += 1;
+      runNpcTurn(state, hunter, rng);
+      expect(hunter.currentZoneId).not.toBe('warehouse');
+    }
+  });
+
+  it('AF1-3 clocks hunt TTL from the latest backing sighting, refreshed by re-sighting', () => {
+    const state = createGame({ seed: 'PHASE4U-AF1-3', playerCharacterId: 'scout' });
+    clearLocalNoise(state);
+    dormantIncidents(state);
+    const hunter = npcOf(state, 0);
+    const target = npcOf(state, 1);
+    primeHunter(hunter, 'aggressive');
+    hunter.currentZoneId = 'lab';
+    target.currentZoneId = 'lab';
+    refreshZoneOccupants(state);
+    observeActorSighting(state, hunter, target, 'DIRECT_LOCAL');
+    hunter.currentZoneId = 'school';
+    isolate(state, [hunter, target]);
+    // Sighting observedAt = T0, but the hunt is only committed 5 turns later:
+    // a committedAt clock would survive until T0+5+8; the sighting clock must
+    // give up at T0+9.
+    state.time += 5;
+    maintainStrategicIntent(state, hunter);
+    expect(hunter.strategicIntent?.type).toBe('hunt_known_target');
+    state.time += 3; // sighting age 8 — still legal
+    maintainStrategicIntent(state, hunter);
+    expect(hunter.strategicIntent?.type).toBe('hunt_known_target');
+    state.time += 1; // sighting age 9 — TTL exceeded
+    maintainStrategicIntent(state, hunter);
+    expect(hunter.strategicIntent?.type).not.toBe('hunt_known_target');
+    // A legal re-sighting restarts the clock naturally.
+    hunter.currentZoneId = 'hospital';
+    target.currentZoneId = 'hospital';
+    refreshZoneOccupants(state);
+    observeActorSighting(state, hunter, target, 'DIRECT_LOCAL');
+    hunter.currentZoneId = 'school';
+    isolate(state, [hunter, target]);
+    maintainStrategicIntent(state, hunter);
+    expect(hunter.strategicIntent?.type).toBe('hunt_known_target');
+    state.time += 8;
+    maintainStrategicIntent(state, hunter);
+    expect(hunter.strategicIntent?.type).toBe('hunt_known_target');
+    state.time += 1;
+    maintainStrategicIntent(state, hunter);
+    expect(hunter.strategicIntent?.type).not.toBe('hunt_known_target');
   });
 });

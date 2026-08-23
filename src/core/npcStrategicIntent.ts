@@ -5,6 +5,7 @@ import { latestPublicApex, recentHighThreat, THREAT_MEMORY_FRESH_TURNS } from '.
 import { latestKnownActiveIncident } from './incidentVisibility';
 import { tryGetIncidentDef } from '../data/incidents';
 import { getZoneDistance } from './craftGuide';
+import { nextZoneTowardUnrestricted } from './accessChains';
 import type {
   ActorMemoryEntry,
   Combatant,
@@ -75,10 +76,10 @@ const HUNT_THRESHOLD: Record<Personality, number> = {
   random: 0.5,
 };
 
-/** Deterministic pseudo-jitter for the random personality (seeded by ids/time). */
-function huntJitter(actor: Combatant, subjectId: string, now: number): number {
+/** Deterministic pseudo-jitter for the random personality (seeded by stable ids). */
+function huntJitter(seed: string, actorId: string, subjectId: string): number {
   let hash = 0;
-  const source = `${actor.id}:${subjectId}:${now}`;
+  const source = `${seed}:${actorId}:${subjectId}`;
   for (let index = 0; index < source.length; index += 1) {
     hash = (hash * 31 + source.charCodeAt(index)) % 1000;
   }
@@ -103,8 +104,11 @@ function targetKnownDead(actor: Combatant, subjectId: string): boolean {
  * STALE last-known zone, coarse remembered threat, own readiness and
  * personality. A sighting at the actor's own zone is not a pursuit (local
  * combat handles it), and unreachable/too-stale targets are not pursued.
+ * Reachability uses the public topology plus the public restriction state —
+ * never the target's live runtime.
  */
 function scoreHuntSighting(
+  state: GameState,
   actor: Combatant,
   sighting: SightingEntry,
   now: number,
@@ -114,18 +118,24 @@ function scoreHuntSighting(
   const distance = getZoneDistance(actor.currentZoneId, sighting.zoneId);
   if (distance === 0) return null; // already at the last-known zone
   if (!Number.isFinite(distance) || distance > HUNT_MAX_ZONE_DISTANCE) return null;
+  if (nextZoneTowardUnrestricted(state, actor.currentZoneId, sighting.zoneId) === null) return null;
   const freshness = 1 - (now - sighting.observedAt) / THREAT_MEMORY_FRESH_TURNS;
   const proximity = 1 - (distance - 1) / HUNT_MAX_ZONE_DISTANCE;
   const threatPreference = HUNT_THREAT_PREFERENCE[actor.personality][sighting.threat];
   if (threatPreference <= 0) return null;
   let score = freshness * 0.35 + proximity * 0.25 + threatPreference * 0.2 + huntReadiness(actor) * 0.2;
-  if (actor.personality === 'random') score += huntJitter(actor, sighting.subjectActorId, now);
+  if (actor.personality === 'random') score += huntJitter(state.seed, actor.id, sighting.subjectActorId);
   return score;
 }
 
 /** Best deterministic hunt candidate from the actor's own sighting memory. */
-function chooseHuntTarget(actor: Combatant, now: number): SightingEntry | null {
+function chooseHuntTarget(state: GameState, actor: Combatant, now: number): SightingEntry | null {
   const threshold = HUNT_THRESHOLD[actor.personality];
+  // A committed hunt is preferred over near-equal candidates: without a new
+  // observation or a legal invalidation the target must not flip-flop.
+  const preferred = actor.strategicIntent?.type === 'hunt_known_target'
+    ? actor.strategicIntent.targetId
+    : null;
   let best: SightingEntry | null = null;
   let bestScore = threshold;
   for (const entry of actor.knowledgeMemory.entries) {
@@ -134,14 +144,24 @@ function chooseHuntTarget(actor: Combatant, now: number): SightingEntry | null {
     // Human-like damping: whoever just beat this actor and made it flee is
     // not re-pursued for a while, regardless of personality.
     if (recentlyFledFrom(actor, entry, now)) continue;
-    const score = scoreHuntSighting(actor, entry, now);
-    if (score !== null && (score > bestScore
-      || (score === bestScore && best !== null && entry.subjectActorId.localeCompare(best.subjectActorId) < 0))) {
+    let score = scoreHuntSighting(state, actor, entry, now);
+    if (score === null) continue;
+    if (preferred !== null && entry.subjectActorId === preferred) score += 0.05;
+    if (score > bestScore
+      || (score === bestScore && best !== null && entry.subjectActorId.localeCompare(best.subjectActorId) < 0)) {
       best = entry;
       bestScore = score;
     }
   }
   return best;
+}
+
+/** The newest own sighting memory of a specific subject (or null). */
+function latestSightingOf(actor: Combatant, subjectId: string): SightingEntry | null {
+  return actor.knowledgeMemory.entries
+    .filter((entry): entry is SightingEntry =>
+      entry.kind === 'actor_sighting' && entry.subjectActorId === subjectId)
+    .sort((a, b) => b.observedAt - a.observedAt)[0] ?? null;
 }
 
 /** The strongest coarse threat this actor remembers (recently) in a zone. */
@@ -227,7 +247,7 @@ export function deriveStrategicIntent(state: GameState, actor: Combatant): Desir
   }
   // Phase 4U: deterministic last-known hunt for every personality (scores
   // decide who actually pursues; aggressive/opportunist naturally qualify most).
-  const hunt = chooseHuntTarget(actor, state.time);
+  const hunt = chooseHuntTarget(state, actor, state.time);
   if (hunt) {
     return { type: 'hunt_known_target', reason: 'KNOWN_TARGET', targetId: hunt.subjectActorId };
   }
@@ -297,19 +317,32 @@ export function maintainStrategicIntent(state: GameState, actor: Combatant): Str
   const current = actor.strategicIntent;
   if (!current) return { lifecycle: 'COMMIT', intent: commitIntent(state, actor, desired) };
 
-  // Phase 4U: pursuit TTL — a hunt that has not re-sighted its target within a
-  // bounded window is given up even if the stale score still qualifies
-  // (human-like: you stop chasing a ghost). The stale sighting is consciously
-  // discarded with the intent, so the next derivation cannot instantly
-  // re-commit the same pursuit.
-  if (current.type === 'hunt_known_target' && desired.type === 'hunt_known_target'
-    && current.targetId === desired.targetId
-    && state.time - current.committedAt > HUNT_PURSUIT_TTL_TURNS) {
-    actor.knowledgeMemory.entries = actor.knowledgeMemory.entries
-      .filter((entry) => !(entry.kind === 'actor_sighting' && entry.subjectActorId === current.targetId));
-    state.stats.strategicIntentCompletions = (state.stats.strategicIntentCompletions ?? 0) + 1;
-    actor.strategicIntent = null;
-    return { lifecycle: 'COMPLETE', intent: null };
+  // Phase 4U-AF1: lifecycle guards for a live hunt intent. Both read only the
+  // actor's own backing sighting (never the target's live runtime):
+  //   — unreachable: the last-known zone is restricted or cut off behind the
+  //     restriction wall, so the hunt can never succeed → give up now.
+  //   — TTL: the backing sighting is too old without a legal re-sighting.
+  //     The age clock is the sighting's observedAt, so a re-sighting refreshes
+  //     it naturally. Giving up consciously discards the stale sighting so the
+  //     same pursuit cannot be instantly re-committed.
+  if (current.type === 'hunt_known_target' && typeof current.targetId === 'string') {
+    const huntTargetId = current.targetId;
+    const latestSighting = latestSightingOf(actor, huntTargetId);
+    let routeNull = false;
+    let expired = false;
+    if (latestSighting) {
+      routeNull = latestSighting.zoneId !== actor.currentZoneId
+        && nextZoneTowardUnrestricted(state, actor.currentZoneId, latestSighting.zoneId) === null;
+      expired = desired.type === 'hunt_known_target' && desired.targetId === huntTargetId
+        && state.time - latestSighting.observedAt > HUNT_PURSUIT_TTL_TURNS;
+    }
+    if (latestSighting === null || routeNull || expired) {
+      actor.knowledgeMemory.entries = actor.knowledgeMemory.entries
+        .filter((entry) => !(entry.kind === 'actor_sighting' && entry.subjectActorId === huntTargetId));
+      state.stats.strategicIntentCompletions = (state.stats.strategicIntentCompletions ?? 0) + 1;
+      actor.strategicIntent = null;
+      return { lifecycle: 'COMPLETE', intent: null };
+    }
   }
 
   if (sameIntent(current, desired)) {

@@ -98,3 +98,31 @@ main.
 
 LLM integration, human-like expansion beyond competition, balance tuning,
 Phase 4V presentation, save migration.
+
+## AF1 — hunt lifecycle closure
+
+1. **Stable random hunt target** — the random-personality jitter is now keyed
+   by `state.seed + actorId + subjectId` (stable across turns instead of raw
+   `state.time`), and a committed hunt receives a small deterministic
+   preference in `chooseHuntTarget`, so without a new observation or a legal
+   invalidation the target never flips (no A→B→A churn).
+2. **Restricted/unreachable routes end the hunt** — new reusable
+   `nextZoneTowardUnrestricted` (public topology + public restriction state,
+   BFS skipping restricted zones) powers both the decision-level hunt hop and
+   intent lifecycle: when the last-known zone is restricted or cut off, the
+   hunt is legally COMPLETED and the stale sighting is consciously discarded
+   (no dead-intent re-commitment, no tracking of the target's real position).
+   Scoring also refuses to start a hunt that has no unrestricted route.
+3. **TTL semantics** — the give-up clock is now
+   `state.time - latestBackingSighting.observedAt` (was `committedAt`), so a
+   legal re-sighting refreshes the TTL naturally. No new persisted fields.
+
+New regressions: AF1-1 (random target stability across turns without new
+observations), AF1-2 (public restriction ends the committed hunt, sticky,
+never veers toward the hidden real zone), AF1-3 (TTL clocked from the latest
+sighting, distinguishing observedAt from committedAt semantics, refreshed by
+re-sighting).
+
+Verification: typecheck PASS; 1775/1775 tests; build PASS; audit:save PASS;
+audit:deps R1–R4 = 0; 500-game `PHASE4U-AF1` regression 500/500 trustworthy,
+engine PASS, all incident counters 0. Balance observation-only.
