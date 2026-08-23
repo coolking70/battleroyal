@@ -243,7 +243,23 @@ function validateStrategicIntent(ctx: ValidationContext, ownerId: string, charac
   } else if (intent.type === 'avoid_threat') {
     if (typeof target !== 'string' || !zoneIds.has(target)) fail(`角色 ${ownerId} 的 avoid_threat target 非法`);
   } else if (intent.type === 'hunt_known_target') {
-    if (typeof target !== 'string' || !charIds.has(target) || target === ownerId) fail(`角色 ${ownerId} 的 hunt target 非法`);
+    if (typeof target !== 'string' || !charIds.has(target) || target === ownerId) {
+      fail(`角色 ${ownerId} 的 hunt target 非法`);
+    } else {
+      // The intent must be backed by the actor's OWN last sighting of the
+      // target, and the target must not be publicly known (to this actor) to
+      // be dead. Both facts come from the actor's memory — this check never
+      // reads the target's live runtime.
+      const memory = character.knowledgeMemory;
+      const entries = isRecord(memory) && Array.isArray(memory.entries) ? memory.entries : [];
+      const backed = entries.some((entry) => isRecord(entry)
+        && entry.kind === 'actor_sighting' && entry.subjectActorId === target);
+      if (!backed) fail(`角色 ${ownerId} 的 hunt_known_target intent 缺少自身 sighting memory 支撑`);
+      const knownDead = entries.some((entry) => isRecord(entry)
+        && entry.kind === 'public_match' && entry.eventType === 'CHARACTER_DIED'
+        && entry.subjectActorId === target);
+      if (knownDead) fail(`角色 ${ownerId} 的 hunt_known_target 目标已由公开死亡信息确认死亡`);
+    }
   } else if (intent.type === 'contest_apex') {
     const def = typeof target === 'string' ? tryGetWildEnemy(target) : null;
     if (!def || def.tier !== 'apex') fail(`角色 ${ownerId} 的 contest_apex target 非法`);

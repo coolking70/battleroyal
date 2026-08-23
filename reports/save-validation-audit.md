@@ -1,7 +1,7 @@
 # 存档独立验收报告（Phase 3）
 
 - 版本：0.5.0
-- 生成时间：2026-08-18T04:40:19.119Z
+- 生成时间：2026-08-23T09:02:02.381Z
 - 对照组：1 个正常存档
 - 损坏用例：132 个
 - 通过：132 / 132
@@ -137,7 +137,7 @@
 | 122 | incident expiresAt 早于 startedAt | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 在 ACTIVE 状态下 startedAt 必须为不晚于当前时间的整数 |
 | 123 | ACTIVE incident 携带 resolvedAt | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 在 ACTIVE 状态下 startedAt 必须为不晚于当前时间的整数 |
 | 124 | RESOLVED incident 缺少 resolvedAt | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 在 RESOLVED 状态下必须携带合法 resolvedAt |
-| 125 | SCHEDULED incident 携带 resolvedAt | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 在 SCHEDULED 状态下不得携带 startedAt/expiresAt/resolvedAt |
+| 125 | SCHEDULED incident 携带 resolvedAt | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 在 SCHEDULED 状态下 rewardClaimedCount 必须为 0 |
 | 126 | incident rewardClaimedCount 为负 | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage.rewardClaimedCount 非法 |
 | 127 | incident resolvedByActorId 指向不存在角色 | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage.resolvedByActorId 引用了不存在的角色 |
 | 128 | incident RESOLVED 仍保留可领取 reward | 拒绝 | 拒绝 | ✓ | state.incidents.factory_salvage 在 RESOLVED 状态下不得保留可领取 reward |

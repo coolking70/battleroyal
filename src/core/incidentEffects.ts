@@ -141,6 +141,13 @@ export function canResolveIncident(
     return { ok: false, reason: '尚未发现该事件。', cost };
   }
   if (runtime.reward.length === 0) return { ok: false, reason: '事件奖励已经领完。', cost };
+  // The legal-set promise: an action offered as legal must succeed. A full
+  // inventory cannot accept the deterministic next stack, so the interaction
+  // is simply not offered (the same rule the execution path enforces).
+  const next = nextIncidentRewardStack(runtime);
+  if (next && !canAccept(actor, { uid: next.uid, itemId: next.itemId, count: 1 })) {
+    return { ok: false, reason: '背包已满，无法收取事件奖励。', cost };
+  }
   const check = canPayActionCost(actor, 'RESOLVE_INCIDENT');
   return check.ok ? { ok: true, reason: null, cost } : { ok: false, reason: check.reason, cost };
 }

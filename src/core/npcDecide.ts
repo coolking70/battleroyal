@@ -32,7 +32,7 @@ import {
   stanceFor,
 } from './npcStance';
 import type { SeededRandom } from './random';
-import type { AttackStyle, Combatant, GameState } from './types';
+import type { ActorMemoryEntry, AttackStyle, Combatant, GameState } from './types';
 /* ------------------------------------------------------------------ */
 /* 决策结构                                                            */
 /* ------------------------------------------------------------------ */
@@ -327,6 +327,29 @@ export function decideNpcAction(
       return { kind: 'move', zoneId: hop, reason: '前往已知事件区域的下一跳' };
     }
   }
+  // Phase 4U: 追踪 last-known 目标的多跳移动。目的地只来自本人 actor_sighting
+  // 记忆的 zoneId（stale last-known），路线只用公共拓扑；目标真实位置、HP、
+  // 背包等 remote runtime 一概不读。到场后由本地战斗/重新观察接管。
+  // 人味门控：手头有未完成的制作路线时不为追击偏离（aggressive 除外）、
+  // 状态不佳不追、刚被该目标打跑不追。
+  const huntIntentTarget = npc.strategicIntent?.type === 'hunt_known_target'
+    ? npc.strategicIntent.targetId
+    : null;
+  if (huntIntentTarget && canPayActionCost(npc, 'MOVE').ok
+    && (npc.personality === 'aggressive' || !npc.planRecommendedZoneId || npc.planRecommendedZoneId === npc.currentZoneId)
+    && npc.hp / npc.maxHp > 0.45
+    && !fledFromTargetRecently(npc, huntIntentTarget, state.time)) {
+    const sighting = npc.knowledgeMemory.entries
+      .filter((entry): entry is Extract<ActorMemoryEntry, { kind: 'actor_sighting' }> =>
+        entry.kind === 'actor_sighting' && entry.subjectActorId === huntIntentTarget)
+      .sort((a, b) => b.observedAt - a.observedAt)[0];
+    if (sighting && sighting.zoneId !== npc.currentZoneId) {
+      const hop = nextZoneToward(npc.currentZoneId, sighting.zoneId);
+      if (hop && state.zones[hop]?.status !== 'restricted') {
+        return { kind: 'move', zoneId: hop, reason: `追踪目标最后已知区域（${sighting.zoneId}）的下一跳` };
+      }
+    }
+  }
   if (zoneEmpty && hasPlannedWildSourceHere(state, npc, plan) && canSearchNow) {
     return { kind: 'search', reason: '当前区域物资已空，但制作目标需要搜索这里的野外来源' };
   }
@@ -362,3 +385,10 @@ export function decideNpcAction(
 // doesn't need to import combat directly.
 import { estimatePower as estimatePowerFor } from './combat';
 import { getWildEnemy } from '../data/wildEnemies';
+
+/** Phase 4U: did this NPC flee from the given target recently (own memory only)? */
+function fledFromTargetRecently(npc: Combatant, targetId: string, now: number): boolean {
+  return npc.knowledgeMemory.entries.some((entry) =>
+    entry.kind === 'recent_action' && entry.action === 'FLEE' && entry.targetKind === 'actor'
+    && entry.targetId === targetId && now - entry.observedAt <= 10);
+}
