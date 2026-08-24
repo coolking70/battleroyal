@@ -141,6 +141,7 @@ describe('Phase 4A-4.5 derived character visual state', () => {
     const player = getPlayer(state);
     const enemy = allCharacters(state).find((character) => !character.isPlayer)!;
     enemy.characterId = 'fighter';
+    enemy.currentZoneId = player.currentZoneId;
     state.encounter = { enemyId: enemy.id, zoneId: player.currentZoneId, startedAtTime: state.time, log: [], resolved: false };
     setAssetManifest(await manifest());
     act(() => root.render(
@@ -159,6 +160,7 @@ describe('Phase 4A-4.5 derived character visual state', () => {
     const player = getPlayer(state);
     const enemy = allCharacters(state).find((character) => !character.isPlayer)!;
     enemy.characterId = 'fighter';
+    enemy.currentZoneId = player.currentZoneId;
     enemy.hp = 1;
     state.encounter = { enemyId: enemy.id, zoneId: player.currentZoneId, startedAtTime: state.time, log: [], resolved: false };
     setAssetManifest(await manifest());

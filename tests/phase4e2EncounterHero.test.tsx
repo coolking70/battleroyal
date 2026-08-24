@@ -24,7 +24,7 @@ afterEach(() => {
 });
 
 describe('Phase 4E-2：对方逃走的即时反馈', () => {
-  it('敌人离开本次交手区域后，即时反馈明确写出对方已脱离接触', () => {
+  it('敌人离开本次交手区域后，不再用远程 runtime 推断结算反馈', () => {
     const state = newGame('PHASE4E2-OPPONENT-ESCAPE');
     const player = getPlayer(state);
     const enemy = npcs(state)[0]!;
@@ -51,8 +51,8 @@ describe('Phase 4E-2：对方逃走的即时反馈', () => {
     });
 
     const feedback = container.querySelector('.encounter-hero-feedback strong')?.textContent ?? '';
-    expect(feedback).toContain(enemy.name);
-    expect(feedback).toContain('已经离开该区域');
-    expect(feedback).toContain('脱离接触');
+    expect(feedback).toBe('你 命中 敌人，造成 3 点伤害。');
+    expect(container.textContent).toContain('对手已脱离，本次交战状态不再更新');
+    expect(container.textContent).not.toContain('已经离开该区域');
   });
 });

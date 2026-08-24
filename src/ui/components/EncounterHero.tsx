@@ -17,6 +17,10 @@ import {
 } from '../combatPresentation';
 import { useDrawerFocus } from './useDrawerFocus';
 import type { CombatActionBarView } from '../combatActionsPresentation';
+import {
+  contestantOpponentCurrentlyVisible,
+  type EncounterPresentationView,
+} from '../encounterPresentation';
 import type { Combatant, EncounterState, WildEnemyInstance } from '../../core/types';
 
 interface EncounterHeroProps {
@@ -28,6 +32,8 @@ interface EncounterHeroProps {
   combat: CombatActionBarView | null;
   /** 已由公开 CHARACTER_DIED 与当前可见地面遗物共同证明存在战利品。 */
   lootAvailable?: boolean;
+  /** 只由 visible legal events 与当前本地遭遇公开状态派生。 */
+  presentation?: EncounterPresentationView | null;
 }
 
 /**
@@ -55,33 +61,43 @@ export function EncounterHero({
   wildEnemy = null,
   combat,
   lootAvailable = false,
+  presentation = null,
 }: EncounterHeroProps): JSX.Element {
   const wildDef = wildEnemy ? getWildEnemy(wildEnemy.defId) : null;
-  const resolved = encounter.resolved || !enemy.alive || Boolean(wildEnemy && wildEnemy.status !== 'alive');
-  const enemyVisualState = resolveCharacterVisualState(enemy, { activeEncounter: !resolved });
+  const resolved = encounter.resolved || Boolean(wildEnemy && wildEnemy.status !== 'alive');
+  const liveContestantStateVisible = contestantOpponentCurrentlyVisible(encounter, player, enemy);
+  // Wild combat state keeps its established public contract. Contestant runtime is
+  // consulted only while the opponent is still part of this unresolved local fight.
+  const showLiveEnemyState = Boolean(wildDef) || liveContestantStateVisible;
+  const enemyVisualState = showLiveEnemyState
+    ? resolveCharacterVisualState(enemy, { activeEncounter: !resolved })
+    : 'portrait';
   const enemyVisualMeta = combatVisualStateMeta(enemyVisualState);
-  const enemyExposed = hasExposed(enemy);
-  const weapon = getEquippedWeapon(enemy);
+  const enemyExposed = liveContestantStateVisible ? hasExposed(enemy) : false;
+  const weapon = liveContestantStateVisible ? getEquippedWeapon(enemy) : null;
   const modeMeta = combatModeMeta(resolved);
   const enemyClassName = wildDef ? '野外威胁' : getCharacterDef(enemy.characterId).name;
-  // NPC 成功离开遭遇区域时，核心只需把 encounter 标成 resolved；这里把
-  // 玩家已合法知道的“对方已离开本次交手区域”补到即时反馈，不读取 NPC 意图。
-  // 用 encounter.zoneId 判断，避免把玩家自己的转移脱离误报成对方逃走。
-  const opponentLeftArea =
-    resolved && enemy.alive && enemy.currentZoneId !== encounter.zoneId;
   // 4F-2 信息边界：战报只允许呈现战斗事实。4F-1 核心不会写入等级 / 经验，
   // 这里再做展示层兜底，避免未来的非公开成长字段沿战报字符串泄露。
   const visibleEncounterLog = encounter.log.filter(
     (line) => !/(?:等级|经验|\blevel\b|\bexp\b)\s*[:：=]?\s*\d+/i.test(line),
   );
-  const baseFeedback = opponentLeftArea
-    ? `${enemy.name} 已经离开该区域，脱离接触。`
-    : visibleEncounterLog[visibleEncounterLog.length - 1] ??
-      (resolved ? '遭遇已结束。' : '尚未交手，选择一项行动。');
-  const latestFeedback = lootAvailable && resolved && !enemy.alive
+  const baseFeedback = visibleEncounterLog[visibleEncounterLog.length - 1] ??
+    (resolved ? '遭遇已结束。' : '尚未交手，选择一项行动。');
+  const fallbackFeedback = lootAvailable && resolved
     ? `${baseFeedback} 击杀战利品：该对手遗留了物资，可拾取。`
     : baseFeedback;
-  const normalHit = combat?.attacks.find((a) => a.style === 'normal')?.hitPct ?? null;
+  const latestFeedback = presentation
+    ? presentation.latest.kind === 'loot'
+      ? `${presentation.latest.title}：${presentation.latest.detail}`
+      : `${presentation.latest.title} · ${presentation.latest.detail}`
+    : fallbackFeedback;
+  const visibleStatuses = presentation?.statuses.filter(
+    (status) => status.side === 'player' || showLiveEnemyState,
+  ) ?? [];
+  const normalHit = showLiveEnemyState
+    ? combat?.attacks.find((a) => a.style === 'normal')?.hitPct ?? null
+    : null;
 
   const [logOpen, setLogOpen] = useState(false);
   const { triggerRef, closeRef, panelRef } = useDrawerFocus(logOpen, () => setLogOpen(false));
@@ -92,6 +108,14 @@ export function EncounterHero({
       data-encounter-state={resolved ? 'resolved' : 'active'}
       aria-label={modeMeta.label}
     >
+      {presentation && (
+        <div className="encounter-context" aria-label="遭遇上下文">
+          <span>区域 · {presentation.zoneName}</span>
+          <span>持续 · {presentation.durationTurns} 回合</span>
+          <span>{presentation.initiativeLabel}</span>
+        </div>
+      )}
+
       {/* 敌方立绘：主视觉焦点，居中 */}
       <div className="encounter-hero-portrait" data-visual-state={enemyVisualState}>
         <VisualImage
@@ -117,11 +141,17 @@ export function EncounterHero({
           <span className="combat-cue-icon" aria-hidden="true">{enemyVisualMeta.icon}</span>
           <span>{enemyVisualMeta.label}</span>
         </div>
-        <div className="eh-hp">
-          <span>敌方生命状态</span>
-          <Bar value={enemy.hp} max={enemy.maxHp} kind="hp" />
-          <b>{wildDef ? `${enemy.hp} / ${enemy.maxHp} · ${hpDescriptor(enemy)}` : hpDescriptor(enemy)}</b>
-        </div>
+        {showLiveEnemyState ? (
+          <div className="eh-hp">
+            <span>敌方生命状态</span>
+            <Bar value={enemy.hp} max={enemy.maxHp} kind="hp" />
+            <b>{wildDef ? `${enemy.hp} / ${enemy.maxHp} · ${hpDescriptor(enemy)}` : hpDescriptor(enemy)}</b>
+          </div>
+        ) : (
+          <div className="eh-remote-outcome" data-live-opponent-state="hidden">
+            对手已脱离，本次交战状态不再更新
+          </div>
+        )}
         {wildDef ? (
           <>
             <div className="eh-line eh-weapon">威胁：{wildDef.threat} · 行为：{wildDef.behavior}</div>
@@ -129,9 +159,25 @@ export function EncounterHero({
             {wildEnemy?.pendingIntent && <div className="eh-line">⚠ 技能预兆：{WILD_SPECIAL_ABILITIES[wildEnemy.pendingIntent].telegraph}</div>}
             <div className="eh-line">掉落类别：{wildDef.dropCategory}（具体结果需击败后确认）</div>
           </>
-        ) : <div className="eh-line eh-weapon">武器：{weapon ? getItem(weapon.itemId).name : '徒手'}</div>}
+        ) : liveContestantStateVisible ? (
+          <div className="eh-line eh-weapon">武器：{weapon ? getItem(weapon.itemId).name : '徒手'}</div>
+        ) : null}
         <div className="eh-status-row">
-          {!wildDef && enemyExposed ? (
+          {visibleStatuses.length > 0 ? (
+            visibleStatuses.map((status) => (
+              <span
+                className={cx('tag', status.label === 'EXPOSED' ? 'tag-exposed' : 'tag-guard')}
+                data-status-side={status.side}
+                key={status.id}
+              >
+                <span className="combat-cue-icon" aria-hidden="true">
+                  {status.label === 'EXPOSED' ? COMBAT_STATUS_META.exposed.icon : COMBAT_STATUS_META.guard.icon}
+                </span>
+                {status.side === 'player' ? '你' : '敌方'} · {status.label}
+                {status.label === 'EXPOSED' ? ` · ${COMBAT_STATUS_META.exposed.label}` : ` · ${COMBAT_STATUS_META.guard.label}`}
+              </span>
+            ))
+          ) : !wildDef && enemyExposed ? (
             <span className="tag tag-exposed">
               <span className="combat-cue-icon" aria-hidden="true">{COMBAT_STATUS_META.exposed.icon}</span>
               {COMBAT_STATUS_META.exposed.label}
@@ -140,7 +186,7 @@ export function EncounterHero({
             <span className="faint eh-status-empty">未见额外状态</span>
           )}
         </div>
-        {combat && (
+        {combat && showLiveEnemyState && (
           <div className="eh-line eh-shared-rate">
             <span>脱离 {combat.flee.chancePct}%</span>
             {normalHit !== null && <span> · 命中 {normalHit}%</span>}
@@ -149,10 +195,34 @@ export function EncounterHero({
         <div className="eh-line eh-player-power">你 攻 {totalAttack(player)} / 防 {totalDefense(player)}</div>
       </div>
 
-      {/* 底部：一行即时反馈 + 战斗记录小入口 */}
+      {presentation && (
+        <ol className="encounter-beat-stack" aria-label="最近关键战斗节拍">
+          {presentation.beats.map((beat, index) => (
+            <li
+              className={cx('encounter-beat', `beat-${beat.kind}`, index === presentation.beats.length - 1 && 'is-latest')}
+              data-beat-kind={beat.kind}
+              data-beat-side={beat.side}
+              data-beat-style={beat.style}
+              key={beat.id}
+            >
+              <span className="encounter-beat-icon" aria-hidden="true">{beat.icon}</span>
+              <span className="encounter-beat-copy">
+                <strong>{beat.title}</strong>
+                <small>{beat.detail}</small>
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {/* 底部：当前视觉焦点 + 战斗记录小入口 */}
       <div className="encounter-hero-bottom">
-        <div className="encounter-hero-feedback" aria-live="polite">
-          <span className="eh-feedback-kicker">即时反馈</span>
+        <div
+          className={cx('encounter-hero-feedback', presentation && `beat-${presentation.latest.kind}`)}
+          data-latest-beat={presentation?.latest.kind}
+          aria-live="polite"
+        >
+          <span className="eh-feedback-kicker">{presentation ? '当前节拍' : '即时反馈'}</span>
           <strong data-corpse-loot-available={lootAvailable ? 'true' : undefined}>{latestFeedback}</strong>
         </div>
         <button

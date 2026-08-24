@@ -1217,3 +1217,33 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Final local verification: typecheck/build PASS; full Vitest 120 files / 1,753 tests PASS; save audit 132/132; dependency audit 132 files with R1–R4 zero; art doctor/validate/phase4a audit, browser+repository secret scans, dry-run generation (0 API calls, 0 bytes) PASS; production npm audit 0 vulnerabilities; no PNG/manifest/package change.
 - Exact `PHASE4T` regression `reports/phase4t-regression.json/.md`: requested=actual=500, trustworthy=500/500 (100%), regressionGate/engineHealthy true, all engine-health hard counters zero, and incident correctness counters duplicateIncidentReward / illegalIncidentResolution / postTerminalIncidentMutation all zero. Incident observations: 2,000 scheduled, 1,799 activated, 46 resolved, 1,365 expired, 875 public broadcasts, 15,595 local discoveries, 58 responses, 42 rewards claimed, 0 contention failures, 273/767 incident intent commits/preserves. Character balance ratio 4.33 with no zero-win role remains observation-only.
 - Draft PR #27 is OPEN/DRAFT/UNMERGED. Implementation head `9cb9dd9df7dbba3f23f143e3c33ea8d182e85a06` passed CI run `32083012869` / job `95549544736` (`completed/success`). The authoritative final PR head is verified from live PR metadata per the handoff's no-self-referential-commit rule.
+
+## Phase 4V — Encounter & Presentation Depth (2026-08-24)
+
+- Original prompt: deepen the existing EncounterHero presentation from visible legal GameEvents plus current local encounter state, without changing combat rules or leaking private NPC state/exact contestant HP.
+- Created `agent/phase4v-encounter-presentation-depth` from exact base `c952bc1e5b487ac0fe59539bf5f59e3f16a0cb71`.
+- Added a deterministic presentation-only beat projection and wired its latest/recent beats, context, observed GUARD/EXPOSED, Wild telegraph, escape/defeat/loot/resolved feedback into the existing EncounterHero; the existing drawer remains the full log.
+- Added five focused Phase 4V tests for beat semantics, exact-HP privacy, hidden/remote-state isolation, Wild outcome presentation, no blocking continue button, and determinism. Final local gates: typecheck PASS; 123 files / 1,780 tests PASS; build PASS; dependency audit R1–R4 zero.
+- Browser screenshots were inspected for active/resolved desktop and tablet portrait encounters with no new console/page error artifact in the completed paths. Existing phone-landscape action reachability remains a human visual-playtest item. No gameplay/core runtime, save schema, production PNG, dependency, balance, or 500-game regression change was made.
+- TODO: commit/push Draft PR and verify exact-head CI; do not merge, squash, or rebase.
+
+## Phase 4V-AF1 — Resolved contestant runtime boundary (2026-08-24)
+
+- Replaced resolved contestant outcome inference from live opponent `alive` / zone state
+  with visible encounter events and known `EncounterState` facts. A shared short-circuit
+  predicate permits contestant HP, weapon, GUARD, EXPOSED and combat-rate presentation
+  only while both actors remain in the unresolved local encounter; Wild presentation
+  retains its existing public runtime contract.
+- `EncounterHero` now uses a stable portrait/outcome card after contestant resolution or
+  opponent departure and no longer evaluates or renders remote HP, max HP, equipped
+  weapon, GUARD, EXPOSED, or opponent-dependent hit/flee values.
+- Added a resolved twin-state regression whose remote opponents differ in alive/HP/maxHP,
+  zone, weapon, guarding, EXPOSED and inventory while sharing the same player, encounter
+  and visible history. Both the pure view model and rendered player-visible output are
+  identical. Two legacy active-encounter visual fixtures now explicitly co-locate their
+  opponent, matching the production visibility contract.
+- Final local gates: typecheck PASS; 123 files / 1,781 tests PASS; build PASS; dependency
+  audit scanned 133 files with R1–R4 zero. The desktop resolved-state browser screenshot
+  was inspected with the live-state card hidden and no blocking continue button; the
+  existing phone-landscape action-reachability check remains a human playtest item.
+- TODO: push the same Draft PR #29 and verify exact-head CI without merge.

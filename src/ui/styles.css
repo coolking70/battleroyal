@@ -1368,6 +1368,24 @@ input {
   padding: 4px 14px 12px;
 }
 
+.encounter-context {
+  position: absolute;
+  top: 6px;
+  left: 14px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  max-width: min(48%, 330px);
+  padding: 4px 7px;
+  border: 1px solid rgba(122, 148, 165, 0.36);
+  border-radius: 4px;
+  background: rgba(7, 12, 17, 0.76);
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
 /* 敌方立绘：主视觉焦点，水平居中、底部对齐 */
 .encounter-hero-portrait {
   position: absolute;
@@ -1477,6 +1495,15 @@ span.encounter-enemy-visual {
   color: var(--text);
 }
 
+.eh-remote-outcome {
+  margin-top: 6px;
+  padding: 5px 7px;
+  border-left: 2px solid #6fbf95;
+  background: rgba(54, 91, 71, 0.2);
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
 .eh-line {
   margin-top: 4px;
   font-size: 10.5px;
@@ -1498,6 +1525,105 @@ span.encounter-enemy-visual {
 
 .eh-status-empty {
   font-size: 9.5px;
+}
+
+.tag-guard {
+  border-color: rgba(103, 161, 203, 0.62);
+  color: #add8f4;
+  background: rgba(37, 77, 105, 0.38);
+}
+
+/* 最近五个关键节拍留在主遭遇区；完整逐行记录仍由 drawer 承担。 */
+.encounter-beat-stack {
+  position: absolute;
+  top: 38px;
+  bottom: 82px;
+  left: 14px;
+  z-index: 2;
+  width: min(290px, 40%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.encounter-beat {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 4px 7px;
+  border-left: 2px solid #687985;
+  border-radius: 3px;
+  background: rgba(7, 11, 15, 0.78);
+  color: var(--text-dim);
+  opacity: 0.78;
+}
+
+.encounter-beat.is-latest {
+  border-left-width: 4px;
+  background: rgba(10, 16, 21, 0.94);
+  color: var(--text);
+  opacity: 1;
+  animation: encounter-beat-impact 280ms ease-out both;
+}
+
+.encounter-beat-icon {
+  flex: none;
+  width: 18px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.encounter-beat-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.encounter-beat-copy strong {
+  overflow: hidden;
+  font-size: 10.5px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.encounter-beat-copy small {
+  overflow: hidden;
+  font-size: 9px;
+  line-height: 1.25;
+  color: var(--text-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.encounter-beat.beat-hit,
+.encounter-hero-feedback.beat-hit { border-left-color: #d56d62; }
+.encounter-beat.beat-miss,
+.encounter-hero-feedback.beat-miss { border-left-color: #70a9c9; }
+.encounter-beat.beat-guard,
+.encounter-hero-feedback.beat-guard { border-left-color: #6aa5cf; }
+.encounter-beat.beat-exposed,
+.encounter-hero-feedback.beat-exposed { border-left-color: #e0a34c; }
+.encounter-beat.beat-telegraph,
+.encounter-hero-feedback.beat-telegraph { border-left-color: #ef944f; }
+.encounter-beat.beat-escape,
+.encounter-hero-feedback.beat-escape { border-left-color: #79b9d5; }
+.encounter-beat.beat-defeat,
+.encounter-beat.beat-resolved,
+.encounter-hero-feedback.beat-defeat,
+.encounter-hero-feedback.beat-resolved { border-left-color: #6fbf95; }
+.encounter-beat.beat-loot,
+.encounter-hero-feedback.beat-loot { border-left-color: #d9bd64; }
+
+@keyframes encounter-beat-impact {
+  from { transform: translateX(-7px); filter: brightness(1.5); }
+  to { transform: translateX(0); filter: brightness(1); }
 }
 
 /* 底部：一行即时反馈 + 战斗记录小入口 */
@@ -3481,6 +3607,24 @@ span.encounter-enemy-visual {
     grid-column: 1 / -1;
   }
 
+  .encounter-context {
+    top: 106px;
+    left: 10px;
+    max-width: calc(100% - 20px);
+    padding: 3px 6px;
+  }
+
+  .encounter-beat-stack {
+    top: 132px;
+    left: 10px;
+    bottom: 72px;
+    width: min(260px, 60%);
+  }
+
+  .encounter-beat:nth-last-child(n + 4) {
+    display: none;
+  }
+
   .encounter-hero-portrait {
     inset: 104px 0 42px;
   }
@@ -3783,6 +3927,30 @@ span.encounter-enemy-visual {
     padding: 5px 7px 6px;
     font-size: 9.5px;
     line-height: 1.35;
+  }
+
+  .encounter-context {
+    top: 4px;
+    left: 8px;
+    max-width: 34%;
+    padding: 2px 5px;
+    font-size: 8px;
+  }
+
+  .encounter-beat-stack {
+    top: 28px;
+    bottom: 62px;
+    left: 8px;
+    width: min(238px, 35%);
+    gap: 2px;
+  }
+
+  .encounter-beat {
+    padding: 2px 5px;
+  }
+
+  .encounter-beat-copy small {
+    display: none;
   }
 
   .eh-kicker { font-size: 8px; }
