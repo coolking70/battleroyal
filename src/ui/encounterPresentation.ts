@@ -205,6 +205,22 @@ function hasBeat(beats: readonly EncounterPresentationBeat[], kind: EncounterBea
 }
 
 /**
+ * Contestant live combat state is presentation-safe only while both actors are still
+ * inside the unresolved local encounter. The order is intentional: a resolved
+ * encounter returns before consulting the opponent's current (potentially remote) zone.
+ */
+export function contestantOpponentCurrentlyVisible(
+  encounter: EncounterState,
+  player: Combatant,
+  enemy: Combatant,
+): boolean {
+  return encounter.targetKind !== 'wild'
+    && !encounter.resolved
+    && player.currentZoneId === encounter.zoneId
+    && enemy.currentZoneId === encounter.zoneId;
+}
+
+/**
  * Pure, deterministic encounter projection. Callers pass only events already approved by
  * visibleEventsForPlayer(); metadata such as remainingHp is deliberately never projected.
  */
@@ -225,6 +241,7 @@ export function buildEncounterPresentation(input: EncounterPresentationInput): E
     .filter(({ event }) => isRelevantEvent(event, encounter, player.id))
     .sort((a, b) => a.event.time - b.event.time || a.index - b.index);
   const beats = relevant.flatMap(({ event }) => eventBeats(event, player, enemy));
+  const liveContestantStateVisible = contestantOpponentCurrentlyVisible(encounter, player, enemy);
 
   if (!hasBeat(beats, 'start')) {
     beats.unshift({
@@ -250,15 +267,14 @@ export function buildEncounterPresentation(input: EncounterPresentationInput): E
     });
   }
 
-  const opponentDefeated = !enemy.alive || Boolean(wildEnemy && wildEnemy.status !== 'alive');
-  const opponentLeftArea = encounter.resolved && enemy.alive && enemy.currentZoneId !== encounter.zoneId;
-  const playerLeftArea = encounter.resolved && player.alive && player.currentZoneId !== encounter.zoneId;
+  // Contestant outcomes come from player-visible events. Once resolved, never infer an
+  // outcome from the opponent's live runtime (alive/zone/HP/equipment/status can all
+  // continue changing elsewhere). Wild runtime remains public under its existing rules.
+  const opponentDefeated = wildEnemy
+    ? !enemy.alive || wildEnemy.status !== 'alive'
+    : hasBeat(beats, 'defeat');
   if (opponentDefeated && !hasBeat(beats, 'defeat')) {
     beats.push({ id: 'encounter:defeat', time: currentTime, kind: 'defeat', side: 'player', icon: wildEnemy ? '◆' : '†', title: wildEnemy ? '野外目标被击败' : '对手被击杀', detail: `${enemy.name} 已失去战斗能力。` });
-  } else if (opponentLeftArea && !hasBeat(beats, 'escape')) {
-    beats.push({ id: 'encounter:opponent-left', time: currentTime, kind: 'escape', side: 'enemy', icon: '➜', title: '对手逃走', detail: `${enemy.name} 已经离开该区域，脱离接触。` });
-  } else if (playerLeftArea && !hasBeat(beats, 'escape')) {
-    beats.push({ id: 'encounter:player-left', time: currentTime, kind: 'escape', side: 'player', icon: '➜', title: '成功脱离', detail: `你已摆脱 ${enemy.name}。` });
   }
 
   if (encounter.resolved) {
@@ -271,8 +287,10 @@ export function buildEncounterPresentation(input: EncounterPresentationInput): E
   const statuses: EncounterObservedStatus[] = [];
   if (player.guarding) statuses.push({ id: 'player-guard', side: 'player', label: 'GUARD' });
   if (hasExposed(player)) statuses.push({ id: 'player-exposed', side: 'player', label: 'EXPOSED' });
-  if (enemy.guarding) statuses.push({ id: 'enemy-guard', side: 'enemy', label: 'GUARD' });
-  if (hasExposed(enemy)) statuses.push({ id: 'enemy-exposed', side: 'enemy', label: 'EXPOSED' });
+  if (wildEnemy || liveContestantStateVisible) {
+    if (enemy.guarding) statuses.push({ id: 'enemy-guard', side: 'enemy', label: 'GUARD' });
+    if (hasExposed(enemy)) statuses.push({ id: 'enemy-exposed', side: 'enemy', label: 'EXPOSED' });
+  }
 
   const recentBeats = beats.slice(-5);
   const latest = recentBeats[recentBeats.length - 1]!;

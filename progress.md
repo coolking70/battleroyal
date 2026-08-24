@@ -1226,3 +1226,24 @@ Original prompt: 完成附件《区域式大逃杀网页游戏——Phase 3A-2 �
 - Added five focused Phase 4V tests for beat semantics, exact-HP privacy, hidden/remote-state isolation, Wild outcome presentation, no blocking continue button, and determinism. Final local gates: typecheck PASS; 123 files / 1,780 tests PASS; build PASS; dependency audit R1–R4 zero.
 - Browser screenshots were inspected for active/resolved desktop and tablet portrait encounters with no new console/page error artifact in the completed paths. Existing phone-landscape action reachability remains a human visual-playtest item. No gameplay/core runtime, save schema, production PNG, dependency, balance, or 500-game regression change was made.
 - TODO: commit/push Draft PR and verify exact-head CI; do not merge, squash, or rebase.
+
+## Phase 4V-AF1 — Resolved contestant runtime boundary (2026-08-24)
+
+- Replaced resolved contestant outcome inference from live opponent `alive` / zone state
+  with visible encounter events and known `EncounterState` facts. A shared short-circuit
+  predicate permits contestant HP, weapon, GUARD, EXPOSED and combat-rate presentation
+  only while both actors remain in the unresolved local encounter; Wild presentation
+  retains its existing public runtime contract.
+- `EncounterHero` now uses a stable portrait/outcome card after contestant resolution or
+  opponent departure and no longer evaluates or renders remote HP, max HP, equipped
+  weapon, GUARD, EXPOSED, or opponent-dependent hit/flee values.
+- Added a resolved twin-state regression whose remote opponents differ in alive/HP/maxHP,
+  zone, weapon, guarding, EXPOSED and inventory while sharing the same player, encounter
+  and visible history. Both the pure view model and rendered player-visible output are
+  identical. Two legacy active-encounter visual fixtures now explicitly co-locate their
+  opponent, matching the production visibility contract.
+- Final local gates: typecheck PASS; 123 files / 1,781 tests PASS; build PASS; dependency
+  audit scanned 133 files with R1–R4 zero. The desktop resolved-state browser screenshot
+  was inspected with the live-state card hidden and no blocking continue button; the
+  existing phone-landscape action-reachability check remains a human playtest item.
+- TODO: push the same Draft PR #29 and verify exact-head CI without merge.

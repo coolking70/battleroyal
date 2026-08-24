@@ -155,6 +155,89 @@ describe('Phase 4V · encounter presentation beats', () => {
     expect(JSON.stringify(after)).not.toMatch(/ambush|memory|inventory|remote HP|strategicIntent/);
   });
 
+  it('freezes a resolved contestant view after the opponent leaves the local encounter', () => {
+    const state = newGame('PHASE4V-AF1-REMOTE-RUNTIME');
+    const self = player(state);
+    const originalEnemy = npcs(state)[0]!;
+    self.currentZoneId = 'school';
+    const encounter = {
+      enemyId: originalEnemy.id,
+      zoneId: 'school',
+      startedAtTime: 2,
+      log: [],
+      resolved: true,
+    };
+    const visible = visibleEventsForPlayer([
+      event(
+        'confirmed-opponent-escape',
+        'CHARACTER_ESCAPED',
+        originalEnemy.id,
+        self.id,
+        { success: true },
+        '对手成功脱离接触。',
+      ),
+    ], self.id);
+
+    const enemyA = structuredClone(originalEnemy);
+    enemyA.currentZoneId = 'hospital';
+    enemyA.hp = Math.max(1, enemyA.maxHp - 3);
+    enemyA.guarding = false;
+    enemyA.statusEffects = [];
+    enemyA.equipment = [{ uid: 'world-a-weapon', itemId: 'stick', count: 1, durability: 20 }];
+    enemyA.equippedWeaponId = 'world-a-weapon';
+    enemyA.inventory = [{ uid: 'world-a-secret', itemId: 'bandage', count: 4 }];
+
+    const enemyB = structuredClone(originalEnemy);
+    enemyB.currentZoneId = 'factory';
+    enemyB.alive = false;
+    enemyB.maxHp += 40;
+    enemyB.hp = 1;
+    enemyB.guarding = true;
+    enemyB.statusEffects = [{
+      id: 'exposed',
+      remaining: 2,
+      hpPerTick: 0,
+      label: '露出破绽',
+      damageTakenMult: 1.2,
+    }];
+    enemyB.equipment = [{ uid: 'world-b-weapon', itemId: 'stone_axe', count: 1, durability: 22 }];
+    enemyB.equippedWeaponId = 'world-b-weapon';
+    enemyB.inventory = [{ uid: 'world-b-secret', itemId: 'energy_drink', count: 5 }];
+
+    const build = (enemy: typeof enemyA) => buildEncounterPresentation({
+      encounter,
+      player: self,
+      enemy,
+      currentTime: 5,
+      zoneName: '废弃学校',
+      visibleEvents: visible,
+    });
+    const presentationA = build(enemyA);
+    const presentationB = build(enemyB);
+
+    expect(presentationA).toEqual(presentationB);
+
+    act(() => root.render(
+      <EncounterHero encounter={encounter} player={self} enemy={enemyA} combat={null} presentation={presentationA} />,
+    ));
+    const outputA = container.textContent;
+    expect(container.querySelector('.eh-hp')).toBeNull();
+    expect(container.querySelector('.eh-weapon')).toBeNull();
+
+    act(() => root.render(
+      <EncounterHero encounter={encounter} player={self} enemy={enemyB} combat={null} presentation={presentationB} />,
+    ));
+    const outputB = container.textContent;
+
+    expect(outputB).toBe(outputA);
+    expect(outputB).toContain('对手已脱离，本次交战状态不再更新');
+    expect(outputB).toContain('对手成功脱离接触');
+    expect(outputB).not.toMatch(/GUARD|EXPOSED|木棍|石斧|hospital|factory/);
+    expect(container.querySelector('.eh-hp')).toBeNull();
+    expect(container.querySelector('.eh-weapon')).toBeNull();
+    expect(container.querySelector('[data-live-opponent-state="hidden"]')).not.toBeNull();
+  });
+
   it('keeps Wild telegraph public and renders resolved defeat/loot without a blocking continue button', () => {
     const state = newGame('PHASE4V-WILD');
     const self = player(state);

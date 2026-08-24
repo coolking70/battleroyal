@@ -1495,6 +1495,15 @@ span.encounter-enemy-visual {
   color: var(--text);
 }
 
+.eh-remote-outcome {
+  margin-top: 6px;
+  padding: 5px 7px;
+  border-left: 2px solid #6fbf95;
+  background: rgba(54, 91, 71, 0.2);
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
 .eh-line {
   margin-top: 4px;
   font-size: 10.5px;
