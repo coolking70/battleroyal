@@ -34,6 +34,9 @@ interface EncounterHeroProps {
   lootAvailable?: boolean;
   /** 只由 visible legal events 与当前本地遭遇公开状态派生。 */
   presentation?: EncounterPresentationView | null;
+  /** Phase 4W：可选 LLM 角色反应短句（presentation-only，null 时完全隐藏）。 */
+  roleplayLine?: string | null;
+  roleplayPending?: boolean;
 }
 
 /**
@@ -62,6 +65,8 @@ export function EncounterHero({
   combat,
   lootAvailable = false,
   presentation = null,
+  roleplayLine = null,
+  roleplayPending = false,
 }: EncounterHeroProps): JSX.Element {
   const wildDef = wildEnemy ? getWildEnemy(wildEnemy.defId) : null;
   const resolved = encounter.resolved || Boolean(wildEnemy && wildEnemy.status !== 'alive');
@@ -136,6 +141,15 @@ export function EncounterHero({
           <strong>{enemy.name}</strong>
           <span className="eh-class">{enemyClassName}</span>
         </div>
+        {roleplayLine && !wildDef && (
+          <div className="eh-roleplay-line" data-npc-roleplay-line="">
+            <span className="combat-cue-icon" aria-hidden="true">💬</span>
+            {roleplayLine}
+          </div>
+        )}
+        {!roleplayLine && roleplayPending && !wildDef && (
+          <div className="eh-roleplay-line eh-roleplay-pending" aria-hidden="true">…</div>
+        )}
         {/* 复用全站共享的三态语汇（图标 + 文字，颜色只是补充） */}
         <div className={`combat-visual-state state-${enemyVisualState}`}>
           <span className="combat-cue-icon" aria-hidden="true">{enemyVisualMeta.icon}</span>

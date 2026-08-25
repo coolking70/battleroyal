@@ -1,5 +1,7 @@
 # item/bandage/icon
 
+- Category: `item`
+- Strategy: `standard`
 - Hash: `3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb`
 - Model: `agnes-image-2.1-flash`
 - Requested size: 512x512

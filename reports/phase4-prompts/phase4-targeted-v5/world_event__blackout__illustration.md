@@ -1,5 +1,7 @@
 # world_event/blackout/illustration
 
+- Category: `world_event`
+- Strategy: `standard`
 - Hash: `d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843`
 - Model: `agnes-image-2.1-flash`
 - Requested size: 768x432

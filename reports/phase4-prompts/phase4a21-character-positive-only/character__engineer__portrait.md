@@ -1,5 +1,7 @@
 # character/engineer/portrait
 
+- Category: `character`
+- Strategy: `character-positive-only`
 - Hash: `5c64acfc9ced7f90c56332e706a1f286557b7b14a469d8b2b9cbe481f9d378c5`
 - Model: `agnes-image-2.1-flash`
 - Requested size: 768x1024

@@ -1,5 +1,7 @@
 # item/water/icon
 
+- Category: `item`
+- Strategy: `item-positive-only`
 - Hash: `ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38`
 - Model: `agnes-image-2.1-flash`
 - Requested size: 512x512

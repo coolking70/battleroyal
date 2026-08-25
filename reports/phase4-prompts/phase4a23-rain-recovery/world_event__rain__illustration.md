@@ -1,5 +1,7 @@
 # world_event/rain/illustration
 
+- Category: `world_event`
+- Strategy: `environment-positive-only`
 - Hash: `1f97bc209fbbc6fc0debdf6675e3959f0d3c355db28f1ca235b5ef31797a2e2d`
 - Model: `agnes-image-2.1-flash`
 - Requested size: 768x432

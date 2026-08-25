@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { NpcRoleplaySettings } from '../components/NpcRoleplaySettings';
 import { generateRandomSeed } from '../../core/random';
 import { getCharacterSkills, SKILLS } from '../../core/skills';
 import type { LegacySaveInfo } from '../../core/saveLoad';
@@ -161,6 +162,8 @@ export function MenuScreen({
             </button>
           )}
         </div>
+
+        <NpcRoleplaySettings />
 
         <div className="menu-note">
           相同种子 + 相同角色 + 相同操作序列 = 完全相同的一局。进度自动保存在浏览器本地。
