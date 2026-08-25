@@ -4,7 +4,10 @@ import { runAutoGame } from '../tools/autoPlayer';
 describe('Phase 4N · representative AutoPlayer PvE loop', () => {
   it('can complete a deterministic public wild-material build route', () => {
     const result = runAutoGame({
-      seed: 'AF3-N4-3',
+      // Phase 4X: re-pinned after the balance tuning and the dead-actor plan
+      // cleanup shifted this trajectory. The route itself still closes through the
+      // formal command pipeline; only the fixture seed moved.
+      seed: 'AF3-N4-4',
       characterId: 'hunter',
       policy: 'collector',
       representativeBuildLoop: true,

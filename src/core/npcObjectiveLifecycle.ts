@@ -6,6 +6,20 @@ import { buildCraftPlan } from './craftPlan';
 import { worldSourcesForItem } from './worldSources';
 import type { Combatant, ExplorationObjective, GameState } from './types';
 
+/**
+ * Phase 4X: the recommended landmark and the recommended zone are one pair.
+ * Every other writer keeps them in lockstep; restoring only the landmark left
+ * the actor walking toward a zone that no longer held its target, and produced
+ * a state that failed its own save invariant ("推荐地标与推荐区域不一致"),
+ * making the save unloadable. Always set the pair together.
+ */
+function setRecommendedLandmark(actor: Combatant, landmarkId: string | null): void {
+  actor.planRecommendedLandmarkId = landmarkId;
+  if (landmarkId === null) return;
+  const def = tryGetLandmarkDef(landmarkId);
+  if (def) actor.planRecommendedZoneId = def.zoneId;
+}
+
 /** The objective may only point at a static gated landmark on the committed recipe route. */
 export function objectiveBelongsToRecipe(
   state: GameState,
@@ -38,12 +52,12 @@ export function preserveExplorationObjectiveAfterPlan(
       || getItem(recipe.outputItemId).category === 'objective'));
     if (!protectedGoal) {
       actor.explorationObjective = previousObjective;
-      actor.planRecommendedLandmarkId = previousObjective.nextLandmarkId;
+      setRecommendedLandmark(actor, previousObjective.nextLandmarkId);
     }
     return;
   }
   if (actor.plannedRecipeId !== previousRecipeId) return;
   if (!objectiveBelongsToRecipe(state, actor, previousObjective, previousRecipeId)) return;
   actor.explorationObjective = previousObjective;
-  actor.planRecommendedLandmarkId = previousObjective.nextLandmarkId;
+  setRecommendedLandmark(actor, previousObjective.nextLandmarkId);
 }

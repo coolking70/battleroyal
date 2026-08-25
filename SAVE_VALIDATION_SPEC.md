@@ -12,6 +12,8 @@
 ```
 
 - `version` 必须是当前受支持的版本字符串（=== GAME_VERSION）；
+  其他版本一律在校验前被 `loadGame` 拒绝，**不迁移、不删除**，原始内容保留在
+  storage 里供玩家自行处理（同版本迁移见下方「同版本迁移」）；
 - `savedAt` 必须是**有限正数**；
 - `seed` 必须是非空字符串；
 - `time` 必须是非负整数；
@@ -85,6 +87,26 @@ abs(zone.supply - expectedSupply) < 0.000001
 - 有目标时：recipe 必须存在、`planCreatedAt` 为合法时间（≤ state.time）、
   `planReason` 为非空字符串。
 
+### 10b. 计划推荐对（Phase 4X）
+
+`planRecommendedLandmarkId` 与 `planRecommendedZoneId` 是**一对**，必须同进同出：
+
+- `planRecommendedLandmarkId !== null` → 该地标必须存在，且
+  `planRecommendedZoneId === 该地标的 zoneId`；
+- 角色死亡时两者与 `explorationObjective` 一起清空
+  （`vitals.ts`；Phase 4X 之前只清了 zone，导致任何含阵亡者的存档都无法加载）。
+
+### 10c. 地标 exhausted 语义（Phase 4X 修正）
+
+`exhausted` 表示**搜索次数用尽**，**不**表示地标为空：
+
+- `exhausted === true` → `remainingSearches === 0`；
+- `exhausted === true` 时 **允许** `loot` 仍有存货。
+  当 `maxSearches < 初始 loot 数`，或最后一次搜索以致命风险结束而非取得物品时，
+  这是引擎的正常产物，且**有限物资守恒要求这些物品继续被记账**
+  （见 `tests/phase4qAfAcceptanceFix.test.ts` AF-7 / AF-8）。
+  Phase 4X 之前这里要求“exhausted ⇒ loot 为空”，与守恒规则直接冲突。
+
 ## 11. 事件
 
 每个事件：`id` 唯一、`type` 合法、`time` 合法（≤ state.time）、`importance` 合法、
@@ -122,3 +144,18 @@ npm run audit:save
 自动生成一份正常状态 + 60 种损坏状态，输出 `reports/save-validation-audit.{json,md}`，
 每项含 `case / expected / actual / passed / errorMessage`；
 **任何非法存档被接受 → exit code 1**。
+
+
+## 同版本迁移（Phase 4X）
+
+`src/core/saveMigration.ts` 的 `migrateSameVersionSave()` 在 `loadGame` 中于
+**校验之前**执行，只做**可无损重建**的补齐：
+
+| 支持 | 内容 | 为什么安全 |
+|---|---|---|
+| ✅ | 角色缺失 `equippedUtilityId` → `null` | Phase 4M 新增的可选槽位；缺失只可能表示“空” |
+| ✅ | 存档 zone 表恰好等于历史六区 → 补齐当前固定地图 | 只在**完全等于**历史六区时触发，避免把部分损坏的 zone 表“修好”；新区用独立迁移 RNG（`phase4k:<seed>:<zoneId>`）初始化，与 `state.rngState` 隔离，加载后下一条命令仍延续原序列 |
+| ❌ | 其他 GAME_VERSION 的存档 | 4N 之前的存档没有记录有限 Wild 种群已被消耗多少，伪造迁移会静默改变难度 |
+
+迁移不得推进 `state.rngState`，也不得改变加载后第一条命令的结果
+（`tests/phase4xSaveMigration.test.ts` X-S5）。

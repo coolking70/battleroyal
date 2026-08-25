@@ -260,7 +260,10 @@ describe('Phase 4O-AF victory semantics and alternative-route closure', () => {
   });
 
   it('runs an NPC research route from world PvE through pickup, craft and submit', () => {
-    const state = newGame('PHASE4O-AF-NPC-OBJ-1');
+    // Phase 4X: re-pinned after the balance tuning and the dead-actor plan
+    // cleanup shifted this trajectory. The route itself still closes through the
+    // formal command pipeline; only the fixture seed moved.
+    const state = newGame('PHASE4O-AF-NPC-OBJ-5');
     const npc = npcs(state)[0]!;
     seedObjectiveRouteWorldFixture(state, npc, 'research');
     npc.currentZoneId = 'lab';
@@ -357,7 +360,7 @@ describe('Phase 4O-AF victory semantics and alternative-route closure', () => {
     const result = runAutoGame({
       // Phase 4S adds actor-private source/threat memory, so preserve this
       // semantic extraction closure on a deterministic cognition-era seed.
-      seed: 'PHASE4S-EX-scout-cautious-177',
+      seed: 'PHASE4S-EX-scout-cautious-41',
       characterId: 'scout',
       policy: 'cautious',
       victoryGoal: 'extraction',

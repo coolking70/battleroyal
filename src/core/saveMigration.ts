@@ -1,10 +1,23 @@
 /**
- * Historical migration helper retained for pre-release tooling/reference.
+ * Phase 4X — formal same-version save migration.
  *
- * Phase 4N intentionally does not call this helper from save loading: a legacy
- * save cannot reconstruct already-consumed finite wild populations. Compatibility
- * is explicitly DEFERRED UNTIL PRE-RELEASE, so old saves are rejected by the
- * version gate and preserved for the user to delete manually.
+ * SUPPORTED (safely reconstructible, no history invented):
+ *   - `equippedUtilityId` absent on a character → null. Phase 4M added one
+ *     optional utility slot without bumping GAME_VERSION; an absent slot
+ *     unambiguously means "empty", so this is lossless.
+ *   - Fixed-map zone states that did not exist yet. Only applied when the
+ *     save carries EXACTLY the historical six-zone map, so a partially
+ *     corrupted zone table is never "repaired" into a plausible-looking one.
+ *     New zones are seeded from a migration-only RNG
+ *     (`phase4k:<seed>:<zoneId>`) that is isolated from `state.rngState`,
+ *     so the next command continues the original sequence bit-for-bit.
+ *
+ * DELIBERATELY UNSUPPORTED (cannot be reconstructed — never faked):
+ *   - Anything from a different GAME_VERSION. In particular pre-4N saves
+ *     have no record of which finite wild population was already consumed,
+ *     and inventing one would silently change the run's difficulty. Those
+ *     saves are rejected by the version gate in loadGame, left untouched in
+ *     storage, and surfaced to the player for a manual decision.
  */
 
 import { generateZoneLoot, initZoneLoot } from './zoneLoot';
@@ -40,10 +53,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * 给同版本的六区存档补齐当前固定地图区域。
- * 返回原对象引用是安全的：loadGame 传入的是刚刚 JSON.parse 的临时对象。
+ * Migrate a same-version save in place and return it.
+ *
+ * Returning the original reference is safe: loadGame passes the object it
+ * just produced from JSON.parse, which nothing else observes. A save that
+ * needs no migration is returned untouched.
  */
-export function migrateMissingZoneStates(raw: unknown): unknown {
+export function migrateSameVersionSave(raw: unknown): unknown {
   if (!isRecord(raw) || !isRecord(raw.state) || !isRecord(raw.state.zones)) return raw;
 
   const zones = raw.state.zones;

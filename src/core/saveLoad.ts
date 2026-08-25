@@ -10,6 +10,7 @@ import type { GameState } from './types';
  */
 
 import { validateSaveData } from './saveValidation';
+import { migrateSameVersionSave } from './saveMigration';
 
 export { validateSaveData, type ValidationReport } from './saveValidation';
 
@@ -143,7 +144,16 @@ export function loadGame(): LoadResult {
     };
   }
 
-  const report = validateSaveData(parsed);
+  // Phase 4X: formal same-version migration runs BEFORE validation. It only
+  // rebuilds fields that are reconstructible without inventing history —
+  // an absent optional utility slot (empty) and fixed-map zone states that
+  // simply did not exist when the save was written. The migration RNG is
+  // isolated from state.rngState, so the next command continues the original
+  // sequence unchanged. Anything not safely reconstructible is NOT migrated;
+  // it falls through to validation and is rejected with the save preserved.
+  const migrated = migrateSameVersionSave(parsed);
+
+  const report = validateSaveData(migrated);
   if (!report.ok) {
     return {
       ok: false,
@@ -151,7 +161,7 @@ export function loadGame(): LoadResult {
       error: `存档校验未通过：${report.errors[0] ?? '结构不完整'}`,
     };
   }
-  const data = parsed as SaveData;
+  const data = migrated as SaveData;
   if (data.version !== GAME_VERSION) {
     return {
       ok: false,
