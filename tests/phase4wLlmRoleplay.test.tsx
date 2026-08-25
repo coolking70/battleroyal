@@ -8,7 +8,7 @@
  * whether the provider succeeds, fails, hangs or leaks nothing.
  */
 
-import { act } from 'react';
+import { StrictMode, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 
 (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -24,7 +24,12 @@ import {
   contextFromEncounterBeat,
   contextFromLocalIncidentEvent,
 } from '../src/ui/npcLlm/context';
-import { createMockNpcRoleplayProvider, sanitizeNpcLine } from '../src/ui/npcLlm/provider';
+import {
+  createMockNpcRoleplayProvider,
+  isNpcRoleplayConfigUsable,
+  providerFromConfig,
+  sanitizeNpcLine,
+} from '../src/ui/npcLlm/provider';
 import { createOpenAiCompatibleProvider } from '../src/ui/npcLlm/openAiCompatibleProvider';
 import { npcRoleplaySettings, useNpcRoleplayLine } from '../src/ui/npcLlm/roleplay';
 import type { NpcRoleplayConfig, NpcRoleplayContext, NpcRoleplayProvider } from '../src/ui/npcLlm/types';
@@ -118,6 +123,37 @@ function makeProbe(provider: NpcRoleplayProvider | null) {
   }
   root = createRoot(container!);
   return api;
+}
+
+/**
+ * AF1-1 probe rendered inside a REAL <StrictMode> tree, so React double-invokes
+ * effect setup → cleanup → setup exactly as it does in src/main.tsx.
+ */
+function makeStrictProbe(provider: NpcRoleplayProvider | null) {
+  let output = { line: null as string | null, pending: false };
+  let renders = 0;
+  let currentBeatId: string | null = null;
+  let currentContext: NpcRoleplayContext | null = null;
+  function Probe(): JSX.Element {
+    const state = useNpcRoleplayLine(provider, currentBeatId, currentContext);
+    output = state;
+    renders += 1;
+    return <div>{state.line ?? ''}</div>;
+  }
+  root = createRoot(container!);
+  return {
+    set(beatId: string | null, context: NpcRoleplayContext | null): void {
+      currentBeatId = beatId;
+      currentContext = context;
+      act(() => root!.render(<StrictMode><Probe /></StrictMode>));
+    },
+    get(): { line: string | null; pending: boolean } {
+      return output;
+    },
+    renderCount(): number {
+      return renders;
+    },
+  };
 }
 
 async function flushAsync(): Promise<void> {
@@ -315,6 +351,164 @@ describe('Phase 4W — optional LLM NPC roleplay layer', () => {
     const runB = scriptedRun('PHASE4W-W9', () => { providerB.generateNpcLine({ npcName: 'n', zoneName: 'z', trigger: 'npc_guard', beatTitle: 'GUARD', tone: '难以捉摸', language: 'zh-CN' }, new AbortController().signal).catch(() => undefined); });
     await flushAsync();
     expect(JSON.stringify(runA)).toBe(JSON.stringify(runB));
+  });
+
+  /* ---------------------------------------------------------------- */
+  /* AF1-1 — React StrictMode request lifecycle                        */
+  /* ---------------------------------------------------------------- */
+
+  it('AF1-1a StrictMode: a working provider still resolves — never stuck pending', async () => {
+    const calls: NpcRoleplayContext[] = [];
+    // delayMs makes the provider genuinely abortable, so the StrictMode
+    // cleanup really does cancel the first attempt (an instant provider would
+    // have already resolved and would hide the bug).
+    const mock = createMockNpcRoleplayProvider({ respond: () => '你走错地方了。', calls, delayMs: 30 });
+    const { state } = encounterFixture('PHASE4W-AF1A');
+    const target = latestEnemyBeatContext(state)!;
+    const probe = makeStrictProbe(mock);
+    probe.set(target.beatId, target.context);
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 120)); });
+    // Before the fix the StrictMode remount suppressed the retry of the
+    // aborted first attempt and the hook stayed pending forever.
+    expect(probe.get().line).toBe('你走错地方了。');
+    expect(probe.get().pending).toBe(false);
+    expect(container!.textContent).toContain('你走错地方了。');
+  });
+
+  it('AF1-1b a cleanup-aborted request does not block a legitimate retry of the same key', async () => {
+    const calls: NpcRoleplayContext[] = [];
+    // Slow enough that the StrictMode cleanup aborts the first attempt.
+    const mock = createMockNpcRoleplayProvider({ respond: () => '再靠近一步试试。', calls, delayMs: 30 });
+    const { state } = encounterFixture('PHASE4W-AF1B');
+    const target = latestEnemyBeatContext(state)!;
+    const probe = makeStrictProbe(mock);
+    probe.set(target.beatId, target.context);
+    // StrictMode issued setup → cleanup(abort) → setup: the second attempt for
+    // the SAME semantic key must have been allowed to start.
+    expect(calls.length).toBe(2);
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 120)); });
+    expect(probe.get().line).toBe('再靠近一步试试。');
+    expect(probe.get().pending).toBe(false);
+    // The aborted attempt's rejection never wrote null over the live line.
+    await flushAsync();
+    expect(probe.get().line).toBe('再靠近一步试试。');
+  });
+
+  it('AF1-1c StrictMode: a stale response never bleeds into the new encounter', async () => {
+    const { state } = encounterFixture('PHASE4W-AF1C');
+    const first = latestEnemyBeatContext(state)!;
+    const slow = createMockNpcRoleplayProvider({
+      respond: (context) => (context.trigger === 'encounter_start' ? '旧遭遇的台词。' : '新遭遇的台词。'),
+      delayMs: 120,
+    });
+    const probe = makeStrictProbe(slow);
+    probe.set(first.beatId, first.context);
+    const second = {
+      beatId: 'af1c-new-encounter',
+      context: { ...first.context, npcName: '另一个对手', beatTitle: '敌方命中', trigger: 'npc_attack_hit' } as NpcRoleplayContext,
+    };
+    probe.set(second.beatId, second.context);
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 320)); });
+    expect(probe.get().line).toBe('新遭遇的台词。');
+    expect(container!.textContent).not.toContain('旧遭遇的台词。');
+    // And a later null target clears rather than resurrecting anything.
+    probe.set(null, null);
+    await flushAsync();
+    expect(probe.get().line).toBeNull();
+  });
+
+  it('AF1-1d one valid beat never produces a request storm, even under repeated re-render', async () => {
+    const calls: NpcRoleplayContext[] = [];
+    const mock = createMockNpcRoleplayProvider({ respond: () => '安静点，别乱动。', calls });
+    const { state } = encounterFixture('PHASE4W-AF1D');
+    const target = latestEnemyBeatContext(state)!;
+    const probe = makeStrictProbe(mock);
+    probe.set(target.beatId, target.context);
+    await flushAsync();
+    const afterFirst = calls.length;
+    // StrictMode costs at most one extra attempt for the aborted setup.
+    expect(afterFirst).toBeLessThanOrEqual(2);
+    // Re-rendering the same semantic key many times (fresh context objects
+    // with an identical fingerprint) must add zero further calls.
+    for (let index = 0; index < 12; index += 1) {
+      probe.set(target.beatId, { ...target.context });
+      await flushAsync();
+    }
+    expect(calls.length).toBe(afterFirst);
+    expect(probe.get().line).toBe('安静点，别乱动。');
+    expect(probe.renderCount()).toBeGreaterThan(0);
+  });
+
+  /* ---------------------------------------------------------------- */
+  /* AF1-2 — no API key ⇒ zero network calls                           */
+  /* ---------------------------------------------------------------- */
+
+  it('AF1-2a provider resolution is null for disabled / blank endpoint / blank model / blank key', () => {
+    const base: NpcRoleplayConfig = {
+      enabled: true,
+      endpoint: 'https://llm.example.test/v1',
+      model: 'test-model',
+      apiKey: 'sk-AF1-KEY',
+    };
+    const resolve = (config: NpcRoleplayConfig): NpcRoleplayProvider | null =>
+      providerFromConfig(config, createOpenAiCompatibleProvider);
+    expect(resolve(base)).not.toBeNull();
+    expect(resolve({ ...base, enabled: false })).toBeNull();
+    expect(resolve({ ...base, endpoint: '' })).toBeNull();
+    expect(resolve({ ...base, endpoint: '   ' })).toBeNull();
+    expect(resolve({ ...base, model: '' })).toBeNull();
+    expect(resolve({ ...base, model: '  \t ' })).toBeNull();
+    expect(resolve({ ...base, apiKey: undefined })).toBeNull();
+    expect(resolve({ ...base, apiKey: '' })).toBeNull();
+    expect(resolve({ ...base, apiKey: '   ' })).toBeNull();
+    expect(providerFromConfig(null, createOpenAiCompatibleProvider)).toBeNull();
+    // Same rule set is what the settings panel and the provider itself use.
+    expect(isNpcRoleplayConfigUsable({ ...base, apiKey: '   ' })).toBe(false);
+    expect(isNpcRoleplayConfigUsable(base)).toBe(true);
+  });
+
+  it('AF1-2b enabled + endpoint + model but no API key ⇒ 0 fetch, presentation and GameState intact', async () => {
+    const { state } = encounterFixture('PHASE4W-AF12B');
+    const before = JSON.stringify(state);
+    const target = latestEnemyBeatContext(state)!;
+    const fetchCalls: string[] = [];
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      fetchCalls.push(String(input));
+      return new Response('{}', { status: 200 });
+    }) as typeof fetch;
+    try {
+      for (const apiKey of [undefined, '', '   ']) {
+        npcRoleplaySettings.reset();
+        npcRoleplaySettings.set({
+          enabled: true,
+          endpoint: 'https://llm.example.test/v1',
+          model: 'test-model',
+          apiKey,
+        });
+        const provider = providerFromConfig(npcRoleplaySettings.get(), createOpenAiCompatibleProvider);
+        expect(provider).toBeNull();
+        const probe = makeStrictProbe(provider);
+        probe.set(target.beatId, target.context);
+        await flushAsync();
+        expect(probe.get().line).toBeNull();
+        expect(probe.get().pending).toBe(false);
+        act(() => { root!.unmount(); });
+        root = null;
+      }
+      expect(fetchCalls.length).toBe(0);
+      // Even a directly constructed provider refuses to hit the network.
+      const raw = createOpenAiCompatibleProvider({
+        enabled: true, endpoint: 'https://llm.example.test/v1', model: 'test-model', apiKey: '   ',
+      });
+      await expect(raw.generateNpcLine(target.context, new AbortController().signal)).rejects.toThrow();
+      expect(fetchCalls.length).toBe(0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+    // The existing Phase 4V presentation is unchanged and so is GameState.
+    expect(latestEnemyBeatContext(state)!.context).toEqual(target.context);
+    expect(JSON.stringify(state)).toBe(before);
   });
 });
 

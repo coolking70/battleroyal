@@ -72,12 +72,31 @@ export function createMockNpcRoleplayProvider(options: MockProviderOptions): Npc
   };
 }
 
+/**
+ * The single source of truth for "may this config talk to a backend at all".
+ * Every consumer (GameScreen, providerFromConfig, the remote provider itself)
+ * goes through this, so there is exactly one rule set and no path that can
+ * issue an unauthenticated request.
+ *
+ * Silent (false) when: disabled, blank endpoint, blank model, or a missing /
+ * empty / whitespace-only API key. In every one of those cases the layer must
+ * make ZERO fetches and ZERO provider calls.
+ */
+export function isNpcRoleplayConfigUsable(
+  config: NpcRoleplayConfig | null | undefined,
+): config is NpcRoleplayConfig {
+  if (!config || !config.enabled) return false;
+  if (typeof config.endpoint !== 'string' || config.endpoint.trim().length === 0) return false;
+  if (typeof config.model !== 'string' || config.model.trim().length === 0) return false;
+  if (typeof config.apiKey !== 'string' || config.apiKey.trim().length === 0) return false;
+  return true;
+}
+
 /** Resolve a provider from user config. Null when the layer must stay silent. */
 export function providerFromConfig(
-  config: NpcRoleplayConfig | null,
+  config: NpcRoleplayConfig | null | undefined,
   dynamic: (config: NpcRoleplayConfig) => NpcRoleplayProvider | null,
 ): NpcRoleplayProvider | null {
-  if (!config || !config.enabled) return null;
-  if (!config.endpoint || !config.model) return null;
+  if (!isNpcRoleplayConfigUsable(config)) return null;
   return dynamic(config);
 }

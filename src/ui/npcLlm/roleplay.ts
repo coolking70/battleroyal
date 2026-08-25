@@ -17,52 +17,93 @@ export interface NpcRoleplayLineState {
   pending: boolean;
 }
 
+/**
+ * One request attempt. The record is the request identity used by every
+ * guard: only the attempt that is still `requestRef.current` may write state,
+ * so a response belonging to an older beat / NPC / encounter can never be
+ * displayed. `cancelled` marks an attempt torn down by effect cleanup — such
+ * an attempt never lands, so the same semantic key must be allowed to start
+ * again (React StrictMode double-invokes setup → cleanup → setup).
+ */
+interface NpcRoleplayRequestRecord {
+  key: NpcRoleplayRequestKey;
+  settled: boolean;
+  cancelled: boolean;
+  /** Restarts already spent on this key after cleanup cancellations. */
+  restarts: number;
+}
+
+/**
+ * Upper bound on cleanup-driven restarts of one semantic key. StrictMode
+ * needs exactly one; the cap keeps a pathological re-render loop from turning
+ * a single visible beat into an unbounded request storm.
+ */
+const MAX_CANCELLED_RESTARTS = 2;
+
+function sameRequestKey(a: NpcRoleplayRequestKey, b: NpcRoleplayRequestKey): boolean {
+  return a.beatId === b.beatId && a.fingerprint === b.fingerprint;
+}
+
 export function useNpcRoleplayLine(
   provider: NpcRoleplayProvider | null,
   beatId: string | null,
   context: NpcRoleplayContext | null,
 ): NpcRoleplayLineState {
   const [state, setState] = useState<NpcRoleplayLineState>({ line: null, pending: false });
-  const activeKeyRef = useRef<NpcRoleplayRequestKey | null>(null);
+  const requestRef = useRef<NpcRoleplayRequestRecord | null>(null);
 
   useEffect(() => {
     // No provider / no visible enemy beat → nothing, immediately.
     if (!provider || !beatId || !context) {
-      activeKeyRef.current = null;
+      requestRef.current = null;
       setState((previous) => (previous.line === null && !previous.pending
         ? previous
         : { line: null, pending: false }));
       return;
     }
     const key = requestKeyOf(beatId, context);
-    // Same visible moment already handled (or in flight) → no duplicate call.
-    if (activeKeyRef.current !== null && activeKeyRef.current.fingerprint === key.fingerprint
-      && activeKeyRef.current.beatId === key.beatId) {
+    const previous = requestRef.current;
+    const isSameKey = previous !== null && sameRequestKey(previous.key, key);
+    if (isSameKey && !previous.cancelled) {
+      // Same visible moment already in flight or already answered → no
+      // duplicate call, and the displayed line is kept as-is.
       return;
     }
-    activeKeyRef.current = key;
+    if (isSameKey && previous.restarts >= MAX_CANCELLED_RESTARTS) {
+      // Storm guard: refuse to keep re-issuing the very same beat.
+      return;
+    }
+    const record: NpcRoleplayRequestRecord = {
+      key,
+      settled: false,
+      cancelled: false,
+      restarts: isSameKey ? previous.restarts + 1 : 0,
+    };
+    requestRef.current = record;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), NPC_ROLEPLAY_TIMEOUT_MS);
+    /** Only the live, non-cancelled attempt may display. */
+    const isLive = (): boolean => requestRef.current === record && !record.cancelled;
     setState({ line: null, pending: true });
     provider
       .generateNpcLine(context, controller.signal)
       .then((line) => {
         clearTimeout(timer);
-        // Stale guard: only the still-active visible moment may display.
-        if (activeKeyRef.current?.beatId === key.beatId
-          && activeKeyRef.current.fingerprint === key.fingerprint) {
-          setState({ line, pending: false });
-        }
+        record.settled = true;
+        if (isLive()) setState({ line, pending: false });
       })
       .catch(() => {
         clearTimeout(timer);
-        if (activeKeyRef.current?.beatId === key.beatId
-          && activeKeyRef.current.fingerprint === key.fingerprint) {
-          setState({ line: null, pending: false });
-        }
+        record.settled = true;
+        if (isLive()) setState({ line: null, pending: false });
       });
     return () => {
       clearTimeout(timer);
+      if (!record.settled) {
+        // Torn down before landing: this attempt is void, so the same
+        // semantic key is free to be requested again on the next setup.
+        record.cancelled = true;
+      }
       controller.abort();
     };
   }, [provider, beatId, context]);

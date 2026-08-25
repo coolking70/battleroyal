@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { npcRoleplaySettings } from '../npcLlm/roleplay';
+import { isNpcRoleplayConfigUsable } from '../npcLlm/provider';
 
 /**
  * Phase 4W — experimental "LLM NPC Roleplay" settings (menu screen).
@@ -50,6 +51,11 @@ export function NpcRoleplaySettings(): JSX.Element | null {
       <p className="npc-roleplay-note">
         仅影响战斗演出文案，不影响任何游戏规则。密钥只保存在当前页面内存，刷新后需重新输入。
       </p>
+      {config.enabled && !isNpcRoleplayConfigUsable(config) ? (
+        <p className="npc-roleplay-note" data-npc-roleplay-incomplete="">
+          Endpoint、Model、API Key 三项缺一不可；未填全时不会发起任何请求。
+        </p>
+      ) : null}
       <label className="npc-roleplay-field">
         <span>OpenAI 兼容 Endpoint</span>
         <input

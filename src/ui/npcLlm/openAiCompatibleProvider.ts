@@ -1,4 +1,4 @@
-import { sanitizeNpcLine } from './provider';
+import { isNpcRoleplayConfigUsable, sanitizeNpcLine } from './provider';
 import type {
   NpcRoleplayConfig,
   NpcRoleplayContext,
@@ -50,12 +50,19 @@ export function createOpenAiCompatibleProvider(config: NpcRoleplayConfig): NpcRo
   return {
     id: 'openai-compatible',
     async generateNpcLine(context: NpcRoleplayContext, signal: AbortSignal): Promise<string> {
+      // Defence in depth: an unusable config (disabled / blank endpoint /
+      // blank model / missing-or-blank API key) must never reach the network,
+      // even if this provider was constructed directly. Same rule set as the
+      // resolver, so there is no second source of truth.
+      if (!isNpcRoleplayConfigUsable(config)) {
+        throw new Error('roleplay provider not configured');
+      }
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         signal,
         headers: {
           'Content-Type': 'application/json',
-          ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}),
+          Authorization: `Bearer ${config.apiKey}`,
         },
         body: JSON.stringify({
           model: config.model,

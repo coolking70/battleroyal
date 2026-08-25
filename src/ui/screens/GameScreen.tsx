@@ -33,6 +33,7 @@ import { buildEncounterPresentation } from '../encounterPresentation';
 import { contextFromEncounterBeat, contextFromLocalIncidentEvent } from '../npcLlm/context';
 import type { NpcRoleplayContext } from '../npcLlm/types';
 import { createOpenAiCompatibleProvider } from '../npcLlm/openAiCompatibleProvider';
+import { providerFromConfig } from '../npcLlm/provider';
 import { npcRoleplaySettings, useNpcRoleplayLine } from '../npcLlm/roleplay';
 import { zoneStatusMeta } from '../zonePresentation';
 import { warningRemaining, zoneUrgencyMeta } from '../zonePresentation';
@@ -272,10 +273,12 @@ export function GameScreen({
   // 敌方 beat / 本地事件触发，异步返回绑定 beat+fingerprint，过期即丢弃。
   const [roleplayConfig, setRoleplayConfig] = useState(npcRoleplaySettings.get());
   useEffect(() => npcRoleplaySettings.subscribe(setRoleplayConfig), []);
-  const roleplayProvider = useMemo(() => {
-    if (!roleplayConfig.enabled || !roleplayConfig.endpoint || !roleplayConfig.model) return null;
-    return createOpenAiCompatibleProvider(roleplayConfig);
-  }, [roleplayConfig]);
+  // 唯一的 provider 解析入口：OFF / endpoint 空 / model 空 / apiKey 缺失或空白
+  // 一律返回 null（0 次 fetch、0 次 provider 调用），不与 providerFromConfig 分叉。
+  const roleplayProvider = useMemo(
+    () => providerFromConfig(roleplayConfig, createOpenAiCompatibleProvider),
+    [roleplayConfig],
+  );
   const roleplayTarget = useMemo((): { beatId: string; context: NpcRoleplayContext } | null => {
     if (encounter && enemy && encounterPresentation && !wildEnemy) {
       const zoneName = getZoneDef(encounter.zoneId).name;
