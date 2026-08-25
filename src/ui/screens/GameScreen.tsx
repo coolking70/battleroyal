@@ -30,6 +30,10 @@ import { getZoneVisual } from '../visualAssets';
 import { wildCombatProfile } from '../../core/wildCombat';
 import { buildCombatActionBar } from '../combatActionsPresentation';
 import { buildEncounterPresentation } from '../encounterPresentation';
+import { contextFromEncounterBeat, contextFromLocalIncidentEvent } from '../npcLlm/context';
+import type { NpcRoleplayContext } from '../npcLlm/types';
+import { createOpenAiCompatibleProvider } from '../npcLlm/openAiCompatibleProvider';
+import { npcRoleplaySettings, useNpcRoleplayLine } from '../npcLlm/roleplay';
 import { zoneStatusMeta } from '../zonePresentation';
 import { warningRemaining, zoneUrgencyMeta } from '../zonePresentation';
 import { latestInstantWorldEvent, sortWorldEvents } from '../worldEventPresentation';
@@ -263,6 +267,46 @@ export function GameScreen({
   );
   const searchFeedback = useMemo(() => latestPlayerSearchFeedback(state), [state]);
 
+  // Phase 4W：可选 LLM 角色反应（presentation-only）。OFF / 未配置时 provider
+  // 为 null（0 次远程调用），游戏行为与主线完全一致；请求只由玩家当前可见的
+  // 敌方 beat / 本地事件触发，异步返回绑定 beat+fingerprint，过期即丢弃。
+  const [roleplayConfig, setRoleplayConfig] = useState(npcRoleplaySettings.get());
+  useEffect(() => npcRoleplaySettings.subscribe(setRoleplayConfig), []);
+  const roleplayProvider = useMemo(() => {
+    if (!roleplayConfig.enabled || !roleplayConfig.endpoint || !roleplayConfig.model) return null;
+    return createOpenAiCompatibleProvider(roleplayConfig);
+  }, [roleplayConfig]);
+  const roleplayTarget = useMemo((): { beatId: string; context: NpcRoleplayContext } | null => {
+    if (encounter && enemy && encounterPresentation && !wildEnemy) {
+      const zoneName = getZoneDef(encounter.zoneId).name;
+      for (const beat of encounterPresentation.beats.slice().reverse()) {
+        const context = contextFromEncounterBeat({
+          npcName: enemy.name, zoneName, personality: enemy.personality, beat,
+        });
+        if (context) return { beatId: beat.id, context };
+      }
+      return null;
+    }
+    // 非遭遇态：本地可见的事件争夺（玩家同区的公开 INCIDENT_CLAIMED）。
+    const zoneName = getZoneDef(player.currentZoneId).name;
+    for (const event of visibleEventsForPlayer(state.events, state.playerId).slice().reverse()) {
+      if (event.type !== 'INCIDENT_CLAIMED' || !event.actorId) continue;
+      const actor = state.characters[event.actorId];
+      if (!actor || actor.isPlayer) continue;
+      const context = contextFromLocalIncidentEvent({
+        npcName: actor.name, zoneName, personality: actor.personality,
+        event, playerZoneId: player.currentZoneId,
+      });
+      if (context) return { beatId: event.id, context };
+    }
+    return null;
+  }, [encounter, enemy, encounterPresentation, wildEnemy, state.events, state.playerId, state.characters, player.currentZoneId]);
+  const roleplayLineState = useNpcRoleplayLine(
+    roleplayProvider,
+    roleplayTarget?.beatId ?? null,
+    roleplayTarget?.context ?? null,
+  );
+
   // Phase 4E-1 改进 B：检测"新获得物品使某配方从不可做变为可做"，给出非阻塞提示。
   // 用 ref 维护上一帧快照，每次状态变化后调用纯函数 detectCraftableHint。
   const [hintRecipeId, setHintRecipeId] = useState<string | null>(null);
@@ -393,6 +437,8 @@ export function GameScreen({
                 combat={combatBar}
                 lootAvailable={encounterLootAvailable}
                 presentation={encounterPresentation}
+                roleplayLine={roleplayLineState.line}
+                roleplayPending={roleplayLineState.pending}
               />
             )}
           </div>

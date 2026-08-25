@@ -4952,3 +4952,51 @@ span.encounter-enemy-visual {
     gap: 2px;
   }
 }
+
+/* Phase 4W：实验性 LLM NPC 角色反应（presentation-only） */
+.eh-roleplay-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-dim, #9aa3b2);
+  font-style: italic;
+}
+.eh-roleplay-pending {
+  opacity: 0.5;
+  letter-spacing: 2px;
+}
+.npc-roleplay-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border, #2a3140);
+  border-radius: 10px;
+  font-size: 12px;
+  text-align: left;
+}
+.npc-roleplay-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.npc-roleplay-note {
+  margin: 0;
+  opacity: 0.75;
+}
+.npc-roleplay-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.npc-roleplay-field input {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border, #2a3140);
+  background: transparent;
+  color: inherit;
+}

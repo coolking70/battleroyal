@@ -1,5 +1,7 @@
 # character/medic/portrait
 
+- Category: `character`
+- Strategy: `character-positive-only`
 - Hash: `e695bb4147a76077bf69c5385e5eb684a41a8f010b4e66d07428b0b86b3dc3e3`
 - Model: `agnes-image-2.1-flash`
 - Requested size: 768x1024

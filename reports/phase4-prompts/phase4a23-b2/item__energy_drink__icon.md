@@ -1,5 +1,7 @@
 # item/energy_drink/icon
 
+- Category: `item`
+- Strategy: `item-positive-only`
 - Hash: `795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b`
 - Model: `agnes-image-2.1-flash`
 - Requested size: 512x512

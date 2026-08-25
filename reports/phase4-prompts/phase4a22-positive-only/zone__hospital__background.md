@@ -1,5 +1,7 @@
 # zone/hospital/background
 
+- Category: `zone`
+- Strategy: `environment-positive-only`
 - Hash: `1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5`
 - Model: `agnes-image-2.1-flash`
 - Requested size: 1536x864

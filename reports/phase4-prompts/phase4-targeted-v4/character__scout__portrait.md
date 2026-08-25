@@ -1,5 +1,7 @@
 # character/scout/portrait
 
+- Category: `character`
+- Strategy: `standard`
 - Hash: `2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd`
 - Model: `agnes-image-2.1-flash`
 - Requested size: 768x1024

@@ -1,0 +1,229 @@
+{
+  "mode": "dry-run",
+  "provider": "agnes",
+  "requested": 36,
+  "cacheHits": 0,
+  "apiCalls": 0,
+  "successful": 0,
+  "failed": 0,
+  "retryCount": 0,
+  "totalBytes": 0,
+  "tasks": [
+    {
+      "taskId": "character/scout/portrait",
+      "hash": "2cad771df6a1017996e2aa3ef3f1dabc03b0fcb9756c3a005ed86006128093fd",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "character/scout/injured",
+      "hash": "ccb0f5d7e17d097f94e60a5109b898f9fc4bbcaf4ac82b74bb296a31f29c1b51",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "character/scout/combat",
+      "hash": "7d6a0e3f19a49a379627cb4f99effb12140355d92d53fde74f934c0f27ec7e01",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "character/fighter/portrait",
+      "hash": "6917b687fbe72cbe903939d57fc2de6e871a5a1afe0c4c7ee72b6554b8cc1e2f",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "character/fighter/injured",
+      "hash": "bdfbd88d5ad6b746586decb62227b5f4d92676dbded3ac16c624a1efc7d3e61e",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "character/engineer/portrait",
+      "hash": "5c64acfc9ced7f90c56332e706a1f286557b7b14a469d8b2b9cbe481f9d378c5",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "character/engineer/injured",
+      "hash": "a696243e0873e7e44e352c27721a25e6ff558b5027482beffe89ca95792352d5",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "character/medic/portrait",
+      "hash": "e695bb4147a76077bf69c5385e5eb684a41a8f010b4e66d07428b0b86b3dc3e3",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "character/medic/injured",
+      "hash": "804ea57b335ffd9b0f8557d3ce81e72e8b6071038aa396c8a244b7f97c8d8154",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "character/fighter/combat",
+      "hash": "e0add26bee2964f26a21df410662eed4500598b866b69eb53ab3b345980b2d7f",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "character/engineer/combat",
+      "hash": "771016954288f55552af415eaf25071a66d7906a1cf8a998997b4d1310f4509e",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "character/medic/combat",
+      "hash": "46b13f1437678d9e0da8fe127513514fa965acb72a4b530e22e8d0feedad01c8",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "zone/school/background",
+      "hash": "c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "zone/hospital/background",
+      "hash": "1d7b9c89ce95e5738c4b43d7c1828d5df806ba58b07d7e919a357728def475b5",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "zone/residential/background",
+      "hash": "9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "zone/factory/background",
+      "hash": "94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "zone/forest/background",
+      "hash": "2126353261005efb99059bd7ab230408ab9aa1b3214732f6b20ebd3715951430",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "zone/lab/background",
+      "hash": "16eb9bc6cff58880933a81eda9a837678201c672e509656f051d67551f97476e",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "item/wood/icon",
+      "hash": "88c4f10fdf7fb7267746ff391c3e5598df8bf5c08e4a4703fb1a8daeca1d0b56",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "item/iron/icon",
+      "hash": "d8aa7a6d3643de2ae2bdc3b7c363fbec6f72524eebf69a6ef043a55d3595f68c",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "item/bandage/icon",
+      "hash": "3e4d2edadc1b0cd8e2664be2224e1effa663c8fc01d61a170e5f7e4b6c9a09bb",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "item/medkit/icon",
+      "hash": "0dfff56c8ca9bf019696e60d866b7c151cce7bd2f53d85c2c5c7638a452a3c78",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "item/energy_drink/icon",
+      "hash": "795b221c9804c89f4c9a8098475710d5e95df99d2a83f1f2b6adfe242a5de38b",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "item/stone_axe/icon",
+      "hash": "07749b21843468547d12600a18a8add393e10f983dd3440e7ac528a641ec1d96",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "item/iron_pipe/icon",
+      "hash": "8d857fea4bd00318942cba3df985a1f7cc014978d9978c6a6acdfe126231c920",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "item/simple_bow/icon",
+      "hash": "07db9c7697913d9ac8c24c09b255e6f9d72b54b1ed2df6369ae999a74eea028d",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "item/simple_armor/icon",
+      "hash": "e7fb2c86d17c42d4745d3019ab3f188d13591b66dfe46244882cdd6bc2e695e5",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "item/plate_armor/icon",
+      "hash": "865f8fc5cdcad4eb81aba4a2e712afb47f0b6c11be75455408c5f7cfcafc0af5",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "item/water/icon",
+      "hash": "ea7b7ad47701d18974fe8a5f74f7f8ad29112345573ab570e08c355339c2fa38",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "item/battery/icon",
+      "hash": "1d7473b3470be8f86f43c2b76f21911cc2055153b7d09fa323acf901c42d5ee6",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "world_event/blackout/illustration",
+      "hash": "d813c5525288a419335cee2975ce1736f1cd5b49499ae9b05f71ad6a22130843",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "world_event/rain/illustration",
+      "hash": "1f97bc209fbbc6fc0debdf6675e3959f0d3c355db28f1ca235b5ef31797a2e2d",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "world_event/emergency_broadcast/illustration",
+      "hash": "07eed3b78bbf16ae30572b61987dcc498a58e446f421508150b291edcac23787",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "world_event/medical_alert/illustration",
+      "hash": "7950c827639922568f0a6f3949145ec60eb812734f847783dc7f3a1e4172c0c1",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "world_event/research_anomaly/illustration",
+      "hash": "f5a2bc2592f94510aac588abf30d5435ff6ab8d0fafe0cb3d0e2617df89c18e5",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    },
+    {
+      "taskId": "world_event/citywide_unrest/illustration",
+      "hash": "1c239f17af048a803cebca4ab7e186bcee5cf05843b508531e6c313390a46bde",
+      "source": "dry-run",
+      "status": "API REQUIRED"
+    }
+  ]
+}

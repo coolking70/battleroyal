@@ -1,5 +1,7 @@
 # character/fighter/portrait
 
+- Category: `character`
+- Strategy: `character-positive-only`
 - Hash: `6917b687fbe72cbe903939d57fc2de6e871a5a1afe0c4c7ee72b6554b8cc1e2f`
 - Model: `agnes-image-2.1-flash`
 - Requested size: 768x1024

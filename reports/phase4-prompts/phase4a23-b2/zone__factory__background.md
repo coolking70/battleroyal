@@ -1,5 +1,7 @@
 # zone/factory/background
 
+- Category: `zone`
+- Strategy: `environment-positive-only`
 - Hash: `94dc02aa8fef45c1ba2dee0259029e31a3a0f1cd6093417243b9f1c55b9089a4`
 - Model: `agnes-image-2.1-flash`
 - Requested size: 1536x864

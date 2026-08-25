@@ -1,5 +1,7 @@
 # zone/residential/background
 
+- Category: `zone`
+- Strategy: `environment-positive-only`
 - Hash: `9c5600f64c97a4dbdfb163e93550a86759c57b46a4201e973ae38c72f49f1f84`
 - Model: `agnes-image-2.1-flash`
 - Requested size: 1536x864

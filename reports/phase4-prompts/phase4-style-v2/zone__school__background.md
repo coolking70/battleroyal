@@ -1,5 +1,7 @@
 # zone/school/background
 
+- Category: `zone`
+- Strategy: `standard`
 - Hash: `c475891838381390cf9e837cbf3745971c3e834d95650e5ec98ed8bb29e053c7`
 - Model: `agnes-image-2.1-flash`
 - Requested size: 1536x864
