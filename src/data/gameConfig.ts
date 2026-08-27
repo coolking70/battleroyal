@@ -335,8 +335,13 @@ export const GAME_CONFIG = {
   /* --- 被动数值 --- */
   /** 搏击：近战额外伤害（Phase 2A-1 从 2 削弱到 1） */
   brawlerMeleeBonus: 1,
-  /** 搏击：逃跑成功率惩罚（Step 9 调优：从 0.15 降到 0.10，减少斗士被缠住的概率以收敛胜率比） */
-  brawlerFleePenalty: 0.1,
+  /** 搏击：逃跑成功率惩罚（Step 9：0.15→0.10；Phase 4X-AF1：0.10→0.05，见下）
+   *
+   * Phase 4X-AF1：斗士对 ±1 防御极度敏感（防御 5 时是全阵容最低胜率，
+   * 防御 6 时立刻变成最高），说明防御这一档太粗。改用斗士**专属**且更细的
+   * 旋钮：它是全阵容唯一带逃跑惩罚的角色，而 FLEE 是对局中最高频命令，
+   * 这个惩罚会在每一次接敌中复利放大。 */
+  brawlerFleePenalty: 0.05,
   /** 锐目：搜索空手概率倍率（Phase 2A-1 从 0.5 加强到 0.4） */
   keenEyeNothingMultiplier: 0.4,
   /** 锐目：遭遇发现率加成（Phase 2A-1 新增） */
@@ -359,8 +364,12 @@ export const GAME_CONFIG = {
   resourcefulMaterialBias: 1.6,
   /** 猎人：已知目标远程命中加成 */
   trackerKnownRangedHitMult: 1.08,
-  /** 陷阱师：防御姿态反击概率加成 */
-  trapsetterCounterBonus: 0.2,
+  /** 陷阱师：防御姿态反击概率加成（Phase 4X-AF1：0.20→0.15）
+   *
+   * 陷阱师在 AF1 各轮矩阵中持续位于榜首区（防御 7 + 防御姿态反击，
+   * 两者都奖励同一条主导路线）。这里收细的是**被动**而不是它的招牌防御值，
+   * 以保留角色身份。 */
+  trapsetterCounterBonus: 0.15,
 
   /* --- 世界事件（Phase 3A Step 6，取代 Phase 3 的动态事件） --- */
   /**

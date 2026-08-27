@@ -51,6 +51,12 @@ jobs:
       - name: Tracked repository secret scan
         run: npm run art:security:repo
 
+      # Phase 4X: the scripted-playthrough closure is part of the release gate
+      # (npm run release:check) and is cheap, so CI runs it too. It proves the
+      # engine can be driven end to end for every character in the roster.
+      - name: Scripted playthroughs
+        run: npm run scripted:playthroughs
+
       - name: Art generation dry run
         run: npm run art:generate -- --dry-run --report-name ci-art-dry-run-report
 

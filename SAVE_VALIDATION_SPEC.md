@@ -12,6 +12,8 @@
 ```
 
 - `version` 必须是当前受支持的版本字符串（=== GAME_VERSION）；
+  其他版本一律在校验前被 `loadGame` 拒绝，**不迁移、不删除**，原始内容保留在
+  storage 里供玩家自行处理（同版本迁移见下方「同版本迁移」）；
 - `savedAt` 必须是**有限正数**；
 - `seed` 必须是非空字符串；
 - `time` 必须是非负整数；
@@ -85,6 +87,26 @@ abs(zone.supply - expectedSupply) < 0.000001
 - 有目标时：recipe 必须存在、`planCreatedAt` 为合法时间（≤ state.time）、
   `planReason` 为非空字符串。
 
+### 10b. 计划推荐对（Phase 4X）
+
+`planRecommendedLandmarkId` 与 `planRecommendedZoneId` 是**一对**，必须同进同出：
+
+- `planRecommendedLandmarkId !== null` → 该地标必须存在，且
+  `planRecommendedZoneId === 该地标的 zoneId`；
+- 角色死亡时两者与 `explorationObjective` 一起清空
+  （`vitals.ts`；Phase 4X 之前只清了 zone，导致任何含阵亡者的存档都无法加载）。
+
+### 10c. 地标 exhausted 语义（Phase 4X 修正）
+
+`exhausted` 表示**搜索次数用尽**，**不**表示地标为空：
+
+- `exhausted === true` → `remainingSearches === 0`；
+- `exhausted === true` 时 **允许** `loot` 仍有存货。
+  当 `maxSearches < 初始 loot 数`，或最后一次搜索以致命风险结束而非取得物品时，
+  这是引擎的正常产物，且**有限物资守恒要求这些物品继续被记账**
+  （见 `tests/phase4qAfAcceptanceFix.test.ts` AF-7 / AF-8）。
+  Phase 4X 之前这里要求“exhausted ⇒ loot 为空”，与守恒规则直接冲突。
+
 ## 11. 事件
 
 每个事件：`id` 唯一、`type` 合法、`time` 合法（≤ state.time）、`importance` 合法、
@@ -122,3 +144,31 @@ npm run audit:save
 自动生成一份正常状态 + 60 种损坏状态，输出 `reports/save-validation-audit.{json,md}`，
 每项含 `case / expected / actual / passed / errorMessage`；
 **任何非法存档被接受 → exit code 1**。
+
+
+## 同版本迁移（Phase 4X / 4X-AF1）
+
+`src/core/saveMigration.ts` 的 `migrateSameVersionSave()` 在 `loadGame` 中于
+**校验之前**执行。下表就是**实际支持边界**，每一项都由
+`tests/phase4xSaveMigration.test.ts` 端到端证明
+（storage → `loadGame()` → migration → validation → 下一条 `executeCommand`）。
+
+### SUPPORTED（当前 GAME_VERSION **且** 当前 schema）
+
+| 场景 | 处理 | 为什么安全 | 用例 |
+|---|---|---|---|
+| 角色缺失 `equippedUtilityId` | 补 `null` | Phase 4M 新增的**可选**槽位，缺失只可能表示“空” | X-S3 |
+| zone **表**仍为精确历史六区，其余子系统已是当前 schema 且引用完整地图 | 补齐缺失的固定地图区域 | 新区用独立迁移 RNG（`phase4k:<seed>:<zoneId>`）初始化，与 `state.rngState` 隔离；只在**完全等于**历史六区时触发，避免把部分损坏的 zone 表“修好” | X-S4 |
+
+### UNSUPPORTED（拒绝加载，**原 storage 逐字节保留**，不删除、不静默重置）
+
+| 场景 | 为什么不能迁移 | 用例 |
+|---|---|---|
+| 其他 `GAME_VERSION` | 版本闸在迁移之前拒绝 | X-S7 / X-S8 |
+| **真正的旧 schema 存档**（pre-4K / pre-4N / pre-4Q）：完全没有 `wildEnemies` / `landmarks` / `incidents` / 角色 `knowledgeMemory` | 有限 Wild 种群**已被消耗多少**、哪些 incident 已经发生、每个角色**观测到过什么**，都无法从这类存档推导；伪造会静默改变这一局的难度与信息边界 | X-S4c |
+| zone 表只是**部分**缺失（非精确六区） | 补齐等于凭空造出一个看似合理的世界 | X-S4b |
+
+一句话：**zone 表被截断是可修的；缺失的子系统历史不可修。**
+
+迁移不得推进 `state.rngState`，也不得改变加载后第一条命令的结果（X-S5）；
+不需要迁移的存档原样返回（X-S6）。

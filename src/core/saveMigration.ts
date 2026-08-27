@@ -1,10 +1,35 @@
 /**
- * Historical migration helper retained for pre-release tooling/reference.
+ * Phase 4X / 4X-AF1 — formal same-version save migration.
  *
- * Phase 4N intentionally does not call this helper from save loading: a legacy
- * save cannot reconstruct already-consumed finite wild populations. Compatibility
- * is explicitly DEFERRED UNTIL PRE-RELEASE, so old saves are rejected by the
- * version gate and preserved for the user to delete manually.
+ * The support boundary below is exactly what `tests/phase4xSaveMigration.test.ts`
+ * proves end to end (storage → loadGame → migrate → validate → next command).
+ * Nothing here reconstructs history it cannot derive.
+ *
+ * SUPPORTED — current GAME_VERSION *and* current schema, with one of:
+ *   1. `equippedUtilityId` absent on a character → null. Phase 4M added this
+ *      optional slot without bumping GAME_VERSION; absence can only mean
+ *      "empty", so the backfill is lossless.
+ *   2. The zone TABLE is still exactly the historical six-zone map while the
+ *      rest of the save already carries current-schema state for the full
+ *      fixed map. The missing zone states are rebuilt from a migration-only
+ *      RNG (`phase4k:<seed>:<zoneId>`) that is isolated from `state.rngState`,
+ *      so the next command continues the original sequence bit-for-bit.
+ *      The rebuild fires ONLY on an exact six-zone match, so a partially
+ *      corrupted zone table is never "repaired" into a plausible-looking one.
+ *
+ * UNSUPPORTED — rejected by `loadGame`, storage left byte-for-byte intact:
+ *   - Any other GAME_VERSION (version gate, before migration runs).
+ *   - Genuine pre-4K / pre-4N / pre-4Q historical *schema* saves. Those lack
+ *     `wildEnemies`, `landmarks`, `incidents` and per-actor knowledge memory
+ *     entirely. Which finite wild population was already consumed, which
+ *     incidents already fired, and what each actor had observed are NOT
+ *     derivable from such a save, and inventing them would silently change
+ *     the run. This migration therefore does not touch them at all: the save
+ *     falls through to validation, is refused, and is preserved for the
+ *     player to keep or clear manually.
+ *
+ * In other words: a truncated zone table is repairable; missing subsystem
+ * history is not.
  */
 
 import { generateZoneLoot, initZoneLoot } from './zoneLoot';
@@ -40,10 +65,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * 给同版本的六区存档补齐当前固定地图区域。
- * 返回原对象引用是安全的：loadGame 传入的是刚刚 JSON.parse 的临时对象。
+ * Migrate a same-version save in place and return it.
+ *
+ * Returning the original reference is safe: loadGame passes the object it
+ * just produced from JSON.parse, which nothing else observes. A save that
+ * needs no migration is returned untouched.
  */
-export function migrateMissingZoneStates(raw: unknown): unknown {
+export function migrateSameVersionSave(raw: unknown): unknown {
   if (!isRecord(raw) || !isRecord(raw.state) || !isRecord(raw.state.zones)) return raw;
 
   const zones = raw.state.zones;

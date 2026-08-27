@@ -112,6 +112,17 @@ const RUNS: Array<{
   { seed: 'FIN2-0-f', characterId: 'fighter', goal: 'r_stick', policy: 'cautious' }, // 进入 finale 并获胜
   { seed: 'SPT-15', characterId: 'engineer', goal: 'r_simple_bow', policy: 'opportunist' },
   { seed: 'SPT-16', characterId: 'medic', goal: 'r_stun_rod', policy: 'collector' },
+  // Phase 4X：补齐 Phase 4L 起扩充的 4 名角色。此前这张表停留在 Phase 3 的
+  // 4 角色阵容，一半可选角色从未被脚本化对局驱动过。每个新角色各两局，
+  // 覆盖不同策略与不同制作目标（生存 / 拾荒 / 远程 / 防御四条代表路线）。
+  { seed: 'SPT-4X-1', characterId: 'survivor', goal: 'r_bandage', policy: 'cautious' },
+  { seed: 'SPT-4X-2', characterId: 'survivor', goal: 'r_simple_armor', policy: 'collector' },
+  { seed: 'SPT-4X-3', characterId: 'scavenger', goal: 'r_stone_axe', policy: 'collector' },
+  { seed: 'SPT-4X-4', characterId: 'scavenger', goal: 'r_cloth_armor', policy: 'opportunist' },
+  { seed: 'SPT-4X-5', characterId: 'hunter', goal: 'r_simple_bow', policy: 'aggressive' },
+  { seed: 'SPT-4X-6', characterId: 'hunter', goal: 'r_iron_pipe', policy: 'random' },
+  { seed: 'SPT-4X-7', characterId: 'trapper', goal: 'r_plate_armor', policy: 'cautious' },
+  { seed: 'SPT-4X-8', characterId: 'trapper', goal: 'r_stun_rod', policy: 'aggressive' },
 ];
 
 function sameType(a: Command, b: Command): boolean {

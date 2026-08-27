@@ -8,6 +8,9 @@ dist/
 # 本地开发工具产生的记录（非项目代码）
 .workbuddy/
 
+# 本地 git worktree（开发者机器上的临时检出，绝不入库）
+.worktrees/
+
 # 编辑器 / 系统
 .DS_Store
 .idea/
@@ -36,3 +39,6 @@ output/
 # Playwright 证据输出（不入库）
 test-results/
 playwright-report/
+
+# Phase 4X 中间调参轮次的完整 JSON（保留 .md 摘要即可，避免入库巨型生成文件）
+reports/p4x-tune*.json

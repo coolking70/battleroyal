@@ -33,7 +33,13 @@ export function validateLandmarkState(ctx: ValidationContext): void {
     for (const key of ['remainingSearches', 'maxSearches', 'charges', 'maxCharges']) if (!isFiniteNumber(raw[key]) || !Number.isInteger(raw[key]) || (raw[key] as number) < 0) fail(`地标 ${def.id} 的 ${key} 必须为非负整数`);
     if (isFiniteNumber(raw.remainingSearches) && isFiniteNumber(raw.maxSearches) && raw.remainingSearches > raw.maxSearches) fail(`地标 ${def.id} remainingSearches 超过 maxSearches`);
     if (isFiniteNumber(raw.charges) && isFiniteNumber(raw.maxCharges) && raw.charges > raw.maxCharges) fail(`地标 ${def.id} charges 超过 maxCharges`);
-    if (raw.exhausted === true && (raw.remainingSearches !== 0 || (Array.isArray(raw.loot) && raw.loot.length > 0))) fail(`地标 ${def.id} 标记 exhausted 但仍有资源`);
+    // Phase 4X: "exhausted" means the search budget is spent, NOT that the
+    // landmark is empty. A landmark whose maxSearches is smaller than its loot
+    // list, or whose last search ended in a fatal risk instead of a recovery,
+    // legitimately stays exhausted while still holding stacks — and finite-item
+    // conservation REQUIRES those stacks to remain accounted for (see the
+    // Phase 4Q-AF fatal-risk acceptance). Only the search budget is invariant.
+    if (raw.exhausted === true && raw.remainingSearches !== 0) fail(`地标 ${def.id} 标记 exhausted 但仍有剩余搜索次数`);
     if (raw.locked === true && raw.activated === true) fail(`地标 ${def.id} 不能同时 locked 与 activated`);
     if (raw.disabled === true && raw.repaired === true) fail(`地标 ${def.id} 不能同时 disabled 与 repaired`);
     if (raw.activated === true && raw.discovered !== true) fail(`地标 ${def.id} activated 但未 discovered`);

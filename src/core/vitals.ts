@@ -150,6 +150,13 @@ export function killCharacter(
   victim.planProgress = 0;
   victim.planNoProgressTurns = 0;
   victim.planRecommendedZoneId = null;
+  // Phase 4X: the landmark recommendation and the exploration objective are
+  // part of the same plan and must be cleared with it. Leaving the landmark
+  // set while the zone was nulled left every dead actor violating the save
+  // invariant "推荐地标与推荐区域一致", which made any save containing a dead
+  // contestant fail validation and become unloadable. Dead actors do not plan.
+  victim.planRecommendedLandmarkId = null;
+  victim.explorationObjective = null;
   victim.lastReplanReason = null;
 
   if (killerId) {

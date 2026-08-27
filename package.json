@@ -16,6 +16,7 @@
     "audit:save": "tsx tools/auditSaveValidation.ts",
     "scripted:playthroughs": "tsx tools/scriptedPlaythroughs.ts",
     "audit:deps": "tsx tools/auditDependencies.ts",
+    "release:check": "npm run typecheck && npm test && npm run build && npm run audit:save && npm run audit:deps && npm run scripted:playthroughs && npm run art:doctor -- --offline && npm run art:validate && npm run art:audit:phase4a && npm run art:security:browser && npm run art:security:repo",
     "art:doctor": "tsx tools/art/cli.ts doctor",
     "art:prompt": "tsx tools/art/cli.ts prompt",
     "art:prompt-audit": "tsx tools/art/cli.ts prompt-audit",
