@@ -38,10 +38,10 @@ describe('Phase 4J-1 标准自动玩家装备修复', () => {
   it.each([
     ['aggressive', 'AF3-J-aggressive-0', 'fighter'],
     ['cautious', 'AF3-J-cautious-0', 'scout'],
-    // Phase 4X: re-pinned from -3 to -0 after the Phase 4X balance tuning
-    // shifted this seed's trajectory. EQUIP remains reachable in 25/40 seeds
-    // for this cell, so the assertion still measures ordinary play.
-    ['collector', 'AF3-J-collector-0', 'scout'],
+    // Re-pinned as the balance tuning shifted trajectories (Phase 4X: -3→-0;
+    // Phase 4X-AF1: -0→-1). EQUIP stays reachable in 19/40 seeds for this
+    // cell, so the assertion still measures ordinary play.
+    ['collector', 'AF3-J-collector-1', 'scout'],
     ['opportunist', 'AF3-J-opportunist-0', 'engineer'],
     // Keep a deterministic random route that reaches the shared EQUIP action
     // after the Phase 4P world-content expansion.

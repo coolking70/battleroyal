@@ -146,16 +146,29 @@ npm run audit:save
 **任何非法存档被接受 → exit code 1**。
 
 
-## 同版本迁移（Phase 4X）
+## 同版本迁移（Phase 4X / 4X-AF1）
 
 `src/core/saveMigration.ts` 的 `migrateSameVersionSave()` 在 `loadGame` 中于
-**校验之前**执行，只做**可无损重建**的补齐：
+**校验之前**执行。下表就是**实际支持边界**，每一项都由
+`tests/phase4xSaveMigration.test.ts` 端到端证明
+（storage → `loadGame()` → migration → validation → 下一条 `executeCommand`）。
 
-| 支持 | 内容 | 为什么安全 |
+### SUPPORTED（当前 GAME_VERSION **且** 当前 schema）
+
+| 场景 | 处理 | 为什么安全 | 用例 |
+|---|---|---|---|
+| 角色缺失 `equippedUtilityId` | 补 `null` | Phase 4M 新增的**可选**槽位，缺失只可能表示“空” | X-S3 |
+| zone **表**仍为精确历史六区，其余子系统已是当前 schema 且引用完整地图 | 补齐缺失的固定地图区域 | 新区用独立迁移 RNG（`phase4k:<seed>:<zoneId>`）初始化，与 `state.rngState` 隔离；只在**完全等于**历史六区时触发，避免把部分损坏的 zone 表“修好” | X-S4 |
+
+### UNSUPPORTED（拒绝加载，**原 storage 逐字节保留**，不删除、不静默重置）
+
+| 场景 | 为什么不能迁移 | 用例 |
 |---|---|---|
-| ✅ | 角色缺失 `equippedUtilityId` → `null` | Phase 4M 新增的可选槽位；缺失只可能表示“空” |
-| ✅ | 存档 zone 表恰好等于历史六区 → 补齐当前固定地图 | 只在**完全等于**历史六区时触发，避免把部分损坏的 zone 表“修好”；新区用独立迁移 RNG（`phase4k:<seed>:<zoneId>`）初始化，与 `state.rngState` 隔离，加载后下一条命令仍延续原序列 |
-| ❌ | 其他 GAME_VERSION 的存档 | 4N 之前的存档没有记录有限 Wild 种群已被消耗多少，伪造迁移会静默改变难度 |
+| 其他 `GAME_VERSION` | 版本闸在迁移之前拒绝 | X-S7 / X-S8 |
+| **真正的旧 schema 存档**（pre-4K / pre-4N / pre-4Q）：完全没有 `wildEnemies` / `landmarks` / `incidents` / 角色 `knowledgeMemory` | 有限 Wild 种群**已被消耗多少**、哪些 incident 已经发生、每个角色**观测到过什么**，都无法从这类存档推导；伪造会静默改变这一局的难度与信息边界 | X-S4c |
+| zone 表只是**部分**缺失（非精确六区） | 补齐等于凭空造出一个看似合理的世界 | X-S4b |
 
-迁移不得推进 `state.rngState`，也不得改变加载后第一条命令的结果
-（`tests/phase4xSaveMigration.test.ts` X-S5）。
+一句话：**zone 表被截断是可修的；缺失的子系统历史不可修。**
+
+迁移不得推进 `state.rngState`，也不得改变加载后第一条命令的结果（X-S5）；
+不需要迁移的存档原样返回（X-S6）。

@@ -1,23 +1,35 @@
 /**
- * Phase 4X — formal same-version save migration.
+ * Phase 4X / 4X-AF1 — formal same-version save migration.
  *
- * SUPPORTED (safely reconstructible, no history invented):
- *   - `equippedUtilityId` absent on a character → null. Phase 4M added one
- *     optional utility slot without bumping GAME_VERSION; an absent slot
- *     unambiguously means "empty", so this is lossless.
- *   - Fixed-map zone states that did not exist yet. Only applied when the
- *     save carries EXACTLY the historical six-zone map, so a partially
- *     corrupted zone table is never "repaired" into a plausible-looking one.
- *     New zones are seeded from a migration-only RNG
- *     (`phase4k:<seed>:<zoneId>`) that is isolated from `state.rngState`,
- *     so the next command continues the original sequence bit-for-bit.
+ * The support boundary below is exactly what `tests/phase4xSaveMigration.test.ts`
+ * proves end to end (storage → loadGame → migrate → validate → next command).
+ * Nothing here reconstructs history it cannot derive.
  *
- * DELIBERATELY UNSUPPORTED (cannot be reconstructed — never faked):
- *   - Anything from a different GAME_VERSION. In particular pre-4N saves
- *     have no record of which finite wild population was already consumed,
- *     and inventing one would silently change the run's difficulty. Those
- *     saves are rejected by the version gate in loadGame, left untouched in
- *     storage, and surfaced to the player for a manual decision.
+ * SUPPORTED — current GAME_VERSION *and* current schema, with one of:
+ *   1. `equippedUtilityId` absent on a character → null. Phase 4M added this
+ *      optional slot without bumping GAME_VERSION; absence can only mean
+ *      "empty", so the backfill is lossless.
+ *   2. The zone TABLE is still exactly the historical six-zone map while the
+ *      rest of the save already carries current-schema state for the full
+ *      fixed map. The missing zone states are rebuilt from a migration-only
+ *      RNG (`phase4k:<seed>:<zoneId>`) that is isolated from `state.rngState`,
+ *      so the next command continues the original sequence bit-for-bit.
+ *      The rebuild fires ONLY on an exact six-zone match, so a partially
+ *      corrupted zone table is never "repaired" into a plausible-looking one.
+ *
+ * UNSUPPORTED — rejected by `loadGame`, storage left byte-for-byte intact:
+ *   - Any other GAME_VERSION (version gate, before migration runs).
+ *   - Genuine pre-4K / pre-4N / pre-4Q historical *schema* saves. Those lack
+ *     `wildEnemies`, `landmarks`, `incidents` and per-actor knowledge memory
+ *     entirely. Which finite wild population was already consumed, which
+ *     incidents already fired, and what each actor had observed are NOT
+ *     derivable from such a save, and inventing them would silently change
+ *     the run. This migration therefore does not touch them at all: the save
+ *     falls through to validation, is refused, and is preserved for the
+ *     player to keep or clear manually.
+ *
+ * In other words: a truncated zone table is repairable; missing subsystem
+ * history is not.
  */
 
 import { generateZoneLoot, initZoneLoot } from './zoneLoot';

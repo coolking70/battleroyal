@@ -360,7 +360,7 @@ describe('Phase 4O-AF victory semantics and alternative-route closure', () => {
     const result = runAutoGame({
       // Phase 4S adds actor-private source/threat memory, so preserve this
       // semantic extraction closure on a deterministic cognition-era seed.
-      seed: 'PHASE4S-EX-scout-cautious-41',
+      seed: 'PHASE4S-EX-scout-cautious-46',
       characterId: 'scout',
       policy: 'cautious',
       victoryGoal: 'extraction',

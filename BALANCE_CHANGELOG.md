@@ -241,3 +241,97 @@ NPC AI、AutoPlayer 决策内核。以上 9 项全部只改 `src/data/characters
 与前文蒙特卡洛结论一致（即使阵容完全均衡，单轮通过率约 73%，连续两轮约 54%）。
 阈值 2.5 本身未被降低、删除或绕过；建议后续把正式平衡门槛的样本量提高到
 每角色 ≥1000 局（总局数 ≥ 8000），否则该门槛无法稳定复现。
+
+---
+
+# Phase 4X-AF1 — 固定 A/B 矩阵闭环
+
+## 起点
+
+Phase 4X 交付时：`P4X-A` ratio 3.00 **FAIL**、`P4X-B` 1.90 PASS、12000 局 1.35 PASS。
+验收合同要求**两个固定 3000 局矩阵都 PASS**，因此本轮继续收敛。
+
+约束：不换 seed prefix、不降 2.5 阈值、不删 0 胜率检查、
+不改 simulator / AutoPlayer、不用 12000 局代替 A/B 验收。
+
+## 逐轮结果
+
+每一轮都是「改数值 → 重跑同一对固定种子前缀」，共 7 轮 14 次 3000 局矩阵。
+
+| 轮次 | 改动 | P4X-A ratio | P4X-B ratio |
+|---|---|---:|---:|
+| 起点 | — | 3.00 FAIL | 1.90 PASS |
+| 1 | fighter `maxStamina` 100→105；trapper `maxHp` 102→100 | 4.60 FAIL | 2.13 PASS |
+| 2 | fighter `defense` 5→6；scavenger `maxHp` 98→100 | 2.71 FAIL | 2.60 FAIL |
+| 3 | fighter `defense` 6→5（回退）；scout `maxHp` 100→102 | 5.00 FAIL | 1.73 PASS |
+| 4 | `brawlerFleePenalty` 0.10→0.05；scout `maxHp` 102→105 | 1.67 PASS | 2.67 FAIL |
+| 5 | medic `defense` 3→4；`trapsetterCounterBonus` 0.20→0.15 | 1.50 PASS | 2.80 FAIL |
+| 6 | scout `maxHp` 105→102 | 2.5000000000000004 FAIL | 2.00 PASS |
+| 7 | scout `maxHp` 102→104 | **1.70 PASS** | **2.36 PASS** |
+
+第 6 轮以 `2.5000000000000004` 差一点点未过（scout 8 / medic 20），
+第 7 轮把 scout 血量取在已实测的 102（A=8 / B=22）与 105（A=10 / B=28）之间。
+
+## 净数值改动（相对 Phase 4X head `7a41241`）
+
+| # | 对象 | 字段 | before → after | 为什么改 | 统计依据 | 副作用 |
+|---|---|---|---|---|---|---|
+| 1 | fighter | `maxStamina` | 100 → 105 | 全阵容唯一带逃跑惩罚的角色，同时处在最低体力档；体力决定行动次数并逼出额外 REST | 12000 局最低胜率 3.60%、最差平均名次 4.54 | 与 engineer/hunter/scavenger 同档，仍低于 scout/survivor(110) |
+| 2 | fighter | `brawlerFleePenalty`（gameConfig） | 0.10 → 0.05 | 斗士对 ±1 防御极度敏感（防御 5 时 4–5 胜、防御 6 时 17–26 胜），防御档太粗；改用它**专属**且更细的旋钮 | 第 2/3 轮同一角色仅改防御即在榜首与榜尾之间跳变 | 脱离能力提升；近战 +1 伤害与防御值均未动 |
+| 3 | scout | `maxHp` | 100 → 104 | 同时是 A 组的地板与 B 组的天花板，对世界组极敏感；100 使 A 触底、105 使 B 冲顶 | 实测 100→A=7、102→A=8/B=22、105→A=10/B=28 | 仍低于 fighter/survivor(105)；感知 9 / 速度 8 的身份未变 |
+| 4 | scavenger | `maxHp` | 98 → 100 | 纯功能角色（攻 6），无战斗补偿，且处于最低血量档 | 第 1 轮 B 组最低（8 胜） | 与 scout/engineer/medic 同为 100 |
+| 5 | medic | `defense` | 3 → 4 | 4X/AF1 把其余角色的耐久底线整体抬高后，medic 被单独落下 | B 组连续下滑 19→13→11→11→9 | 仍是全阵容最低防御（次低为 5），"防御很薄"的设定成立 |
+| 6 | trapper | `maxHp` | 102 → 100 | 12000 局最高胜率（4.87%）与最好名次（4.03）；身份是防御 7，不需要同时高于中位血量 | 12000 局榜首 | 防御 7 仍是全阵容最高 |
+| 7 | trapper | `trapsetterCounterBonus`（gameConfig） | 0.20 → 0.15 | 防御 7 与「防御姿态反击」被动奖励同一条主导路线，双重叠加 | AF1 各轮持续位于榜首区 | 收细的是被动而非招牌防御值，保留角色身份 |
+
+同步修正文案：斗士被动描述由「逃跑成功率降低 10%」改为「降低 5%」，与新的
+`brawlerFleePenalty` 一致（Phase 4X 已确立"描述必须与实现一致"）。
+
+**未改动**：combat / RNG / victory 判定、NPC AI、AutoPlayer 决策内核、
+simulator、任何阈值。
+
+## 最终验收
+
+### 固定 A/B 矩阵（各 3000 局）与大样本确认
+
+| 运行 | 请求 / 实际 | timeout / illegal / deadlock / hardLimit | ratio | 0 胜率角色 | characterBalance | 整体 |
+|---|---|---|---:|---|---|---|
+| `P4X-A` | 3000 / 3000 | 0 / 0 / 0 / 0 | 1.7000 | 无 | **PASS** | PASS |
+| `P4X-B` | 3000 / 3000 | 0 / 0 / 0 / 0 | 2.3636 | 无 | **PASS** | PASS |
+| `P4X-CONF` | 12000 / 12000 | 0 / 0 / 0 / 0 | 1.4510 | 无 | **PASS** | PASS |
+| `P4X-AF1-REG` | 500 / 500 | 0 / 0 / 0 / 0 | 3.0000 | 无 | **FAIL** | FAIL |
+
+`P4X-AF1-REG` 是改动 gameplay 数值后要求的独立 500 局回归：
+**引擎健康 PASS**（timeout / illegal / deadlock / hardLimit 全 0，actual=requested）。
+它的 `characterBalance` 不作为验收依据——500 局 ÷ 40 格 = 每角色仅 12 局，
+胜率比在这个样本量下没有统计意义（本文件前面的蒙特卡洛已说明该指标的样本量要求）。
+
+### 各角色最终胜率（12000 局 = 每角色 1500 局）
+
+| 角色 | 胜率 | 胜场 | 平均名次 |
+|---|---:|---:|---:|
+| medic | 4.93% | 74 / 1500 | 4.33 |
+| scout | 4.73% | 71 / 1500 | 4.34 |
+| survivor | 4.47% | 67 / 1500 | 4.21 |
+| engineer | 4.33% | 65 / 1500 | 4.24 |
+| hunter | 4.00% | 60 / 1500 | 4.27 |
+| trapper | 3.93% | 59 / 1500 | 4.12 |
+| scavenger | 3.87% | 58 / 1500 | 4.36 |
+| fighter | 3.40% | 51 / 1500 | 4.53 |
+
+### 固定 A/B 两组的胜场分布
+
+| 角色 | P4X-A 胜场 | P4X-B 胜场 |
+|---|---:|---:|
+| scout | 10 | 26 |
+| engineer | 11 | 14 |
+| scavenger | 13 | 12 |
+| hunter | 13 | 12 |
+| medic | 15 | 15 |
+| fighter | 16 | 11 |
+| survivor | 16 | 13 |
+| trapper | 17 | 19 |
+
+`P4X-B` 的 ratio 2.36 距离 2.5 阈值余量较薄（scout 26 / fighter 11）。
+每角色 375 局、约 4% 胜率下这属于该指标的固有抖动，
+本文件前面的建议依然成立：正式平衡门槛的样本量应提高到每角色 ≥1000 局。

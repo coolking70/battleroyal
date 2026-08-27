@@ -30,19 +30,31 @@ seed, character, time and PASS/FAIL per item.
 | A4 | A corrupted save produces a readable error, never a blank screen or a crash | Set the save key to `{ not json`, reload | |
 | A5 | Finishing a match and then reloading never resurrects the finished run as "resumable" | Play to a loss, reload | |
 
-### B. Balance feel (Phase 4X changed 9 character stats)
+### B. Balance feel (Phase 4X + 4X-AF1 changed character numbers)
 
 The tuning is statistically justified (see `BALANCE_CHANGELOG.md`), but "does
-it feel right" is a human judgement.
+it feel right" is a human judgement. Net changes vs. the pre-4X roster:
+
+| 角色 | 改动 |
+|---|---|
+| 侦察员 scout | `maxHp` 95 → 104, `defense` 4 → 5 |
+| 斗士 fighter | `perception` 4 → 6, `speed` 5 → 6, `maxStamina` 100 → 105, 逃跑惩罚 10% → 5% |
+| 工程师 engineer | `defense` 5 → 6 |
+| 医学生 medic | `defense` 3 → 4 |
+| 生存专家 survivor | `maxStamina` 115 → 110 |
+| 拾荒者 scavenger | `defense` 4 → 5, `maxHp` 98 → 100 |
+| 猎人 hunter | `defense` 4 → 5 |
+| 陷阱师 trapper | `defense` 8 → 7, `maxHp` 102 → 100, 反击加成 0.20 → 0.15 |
 
 | # | Item | PASS/FAIL |
 |---|---|---|
-| B1 | 陷阱师 still feels like the tankiest character after `defense 8 → 7` | |
+| B1 | 陷阱师 still reads as the tankiest character (defense 7, still highest) despite the HP and counter-bonus trims | |
 | B2 | 生存专家 still feels like the endurance character after `maxStamina 115 → 110` | |
-| B3 | 猎人 / 拾荒者 / 侦察员 (`defense 4 → 5`) feel less like they evaporate, without feeling tanky | |
-| B4 | 斗士 (`speed 5 → 6`, `perception 4 → 6`) still reads as the slow bruiser, not a scout | |
-| B5 | 工程师 (`defense 5 → 6`) still reads as a crafter, not a frontliner | |
-| B6 | The three corrected passive descriptions now match what the player observes in play (斗士 +1 dmg / −10% flee, 侦察员 empty-search to 40%, 医学生 +60% healing) | |
+| B3 | 猎人 / 拾荒者 / 侦察员 feel less like they evaporate, without feeling tanky | |
+| B4 | 斗士 still reads as the slow bruiser, not a scout — and the halved flee penalty does not make it feel slippery | |
+| B5 | 工程师 still reads as a crafter, not a frontliner | |
+| B6 | 医学生 still reads as "防御很薄" at defense 4 (still the roster's lowest) | |
+| B7 | The corrected passive descriptions match what the player observes: 斗士 +1 dmg / −5% flee, 侦察员 empty-search to 40%, 医学生 +60% healing | |
 
 ### C. Release-candidate first impressions
 

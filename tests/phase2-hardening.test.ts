@@ -174,7 +174,11 @@ describe('第二阶段硬化 · 存档深度校验', () => {
 
 describe('第二阶段硬化 · 死亡与状态一致性', () => {
   it('持续伤害必须触发死亡结算（当前缺陷：DoT 只把 hp 压到 0）', () => {
-    const state = newGame();
+    // Phase 4X-AF1: this assertion needs the remaining NPC field to resolve
+    // to a single survivor after the player is eliminated. That happens on 48 of
+    // 60 sampled seeds; BR-DEMO-001 is now one of the 12 that reach the time
+    // limit as a draw, so pin a seed that exercises the intended path.
+    const state = newGame('BR-DEMO-002');
     const p = player(state);
     p.statusEffects.push({
       id: 'test_poison',

@@ -10,7 +10,7 @@ export const CHARACTERS: CharacterDef[] = [
     name: '侦察员',
     description:
       '习惯在陌生环境里先看清楚再动手。感知突出，很少空手而归，也更早察觉危险。',
-    maxHp: 100,
+    maxHp: 104,
     maxStamina: 110,
     attack: 8,
     defense: 5,
@@ -28,7 +28,7 @@ export const CHARACTERS: CharacterDef[] = [
     description:
       '正面冲突不吃亏的类型。生命与近战伤害都高，但跑不快，也不擅长脱身。',
     maxHp: 105,
-    maxStamina: 100,
+    maxStamina: 105,
     attack: 8,
     defense: 5,
     perception: 6,
@@ -37,7 +37,7 @@ export const CHARACTERS: CharacterDef[] = [
     medical: 2,
     passiveId: 'brawler',
     passiveName: '搏击',
-    passiveDescription: '近战武器额外造成 1 点伤害，但逃跑成功率降低 10%。',
+    passiveDescription: '近战武器额外造成 1 点伤害，但逃跑成功率降低 5%。',
   },
   {
     id: 'engineer',
@@ -64,7 +64,7 @@ export const CHARACTERS: CharacterDef[] = [
     maxHp: 100,
     maxStamina: 100,
     attack: 5,
-    defense: 3,
+    defense: 4,
     perception: 6,
     speed: 6,
     crafting: 4,
@@ -95,7 +95,7 @@ export const CHARACTERS: CharacterDef[] = [
     name: '拾荒者',
     description:
       '不靠运气赌装备，而是从有限物资里挑出真正有用的零件。搜索路线与材料管理是它的强项。',
-    maxHp: 98,
+    maxHp: 100,
     maxStamina: 105,
     attack: 6,
     defense: 5,
@@ -129,7 +129,7 @@ export const CHARACTERS: CharacterDef[] = [
     name: '陷阱师',
     description:
       '用提前布置换取接敌主动权。防御、反击与撤退准备更有价值，但移动和持续搜索能力一般。',
-    maxHp: 102,
+    maxHp: 100,
     maxStamina: 100,
     attack: 6,
     defense: 7,

@@ -214,26 +214,77 @@ describe('Phase 4X — save / migration closure', () => {
     expect(continued.state.time).toBeGreaterThanOrEqual(loaded.data.state.time);
   });
 
-  it('X-S4 migratable legacy map: the exact six-zone table is rebuilt to the full fixed map', () => {
-    const state = newGame('P4X-S4');
+  /**
+   * Build a save whose ONLY gap is the historical six-zone table: characters
+   * are confined to a legacy zone, wild instances outside the six are dropped
+   * with their zone back-references, and every other subsystem (landmarks,
+   * incidents, apex, knowledge) is left exactly as the current schema wrote
+   * it. That is precisely the shape saveMigration.ts declares SUPPORTED.
+   */
+  function writeSixZoneSave(state: GameState): void {
     expect(saveGame(state).ok).toBe(true);
     const raw = storedSave();
-    const zones = (raw.state as Record<string, unknown>).zones as Record<string, unknown>;
+    const inner = raw.state as Record<string, unknown>;
+    const zones = inner.zones as Record<string, Record<string, unknown>>;
+    const characters = inner.characters as Record<string, Record<string, unknown>>;
     const legacy = new Set<string>(LEGACY_ZONE_IDS);
-    for (const zoneId of Object.keys(zones)) {
-      if (!legacy.has(zoneId)) delete zones[zoneId];
-    }
-    expect(Object.keys(zones).length).toBe(LEGACY_ZONE_IDS.length);
+    const home = LEGACY_ZONE_IDS[0]!;
 
-    const migrated = migrateSameVersionSave(raw) as Record<string, unknown>;
-    const migratedZones = (migrated.state as Record<string, unknown>).zones as Record<string, Record<string, unknown>>;
-    // Every current zone exists again, and the rebuilt ones are initialised
-    // (not empty shells) so the fixed map is complete.
-    for (const zoneId of ZONE_IDS) {
-      expect(migratedZones[zoneId]).toBeTruthy();
-      expect(migratedZones[zoneId]!.id).toBe(zoneId);
-      expect(Array.isArray(migratedZones[zoneId]!.loot)).toBe(true);
+    for (const character of Object.values(characters)) character.currentZoneId = home;
+    const wild = (inner.wildEnemies ?? {}) as Record<string, Record<string, unknown>>;
+    const removedWild = new Set<string>();
+    for (const uid of Object.keys(wild)) {
+      if (!legacy.has(String(wild[uid]!.zoneId))) { removedWild.add(uid); delete wild[uid]; }
     }
+    // A save written when those zones did not exist could not carry events
+    // about them either, so drop the history that references them.
+    inner.events = (inner.events as Array<Record<string, unknown>>).filter((event) => {
+      const blob = JSON.stringify(event);
+      if (!legacy.has(String(event.zoneId ?? LEGACY_ZONE_IDS[0]))) return false;
+      for (const uid of removedWild) if (blob.includes(uid)) return false;
+      return true;
+    });
+    for (const zoneId of Object.keys(zones)) {
+      zones[zoneId]!.aliveCharacterIds = zoneId === home ? Object.keys(characters) : [];
+      zones[zoneId]!.wildEnemyIds = Object.values(wild)
+        .filter((enemy) => enemy.zoneId === zoneId)
+        .map((enemy) => enemy.uid);
+    }
+    // No live encounter can survive relocating every actor into one zone.
+    inner.encounter = null;
+    inner.pendingPickup = null;
+    for (const zoneId of ZONE_IDS) if (!legacy.has(zoneId)) delete zones[zoneId];
+    expect(Object.keys(zones).length).toBe(LEGACY_ZONE_IDS.length);
+    writeSave(raw);
+  }
+
+  it('X-S4 SUPPORTED six-zone table: storage → loadGame → migrate → validate → continue', () => {
+    const state = advance(newGame('P4X-S4'), 4, 'P4X-S4');
+    expect(state.time).toBeGreaterThan(0);
+    writeSixZoneSave(state);
+
+    // End to end through the real loader — not a direct migrate() call.
+    const loaded = loadGame();
+    expect(loaded.ok, loaded.ok ? '' : loaded.error).toBe(true);
+    if (!loaded.ok) return;
+
+    // The full fixed map is back, and the rebuilt zones are initialised.
+    for (const zoneId of ZONE_IDS) {
+      const zone = loaded.data.state.zones[zoneId];
+      expect(zone, zoneId).toBeTruthy();
+      expect(zone!.id).toBe(zoneId);
+      expect(Array.isArray(zone!.loot)).toBe(true);
+    }
+    // RNG continuity: migration must not have advanced the sequence.
+    expect(loaded.data.state.rngState).toBe(state.rngState);
+    expect(loaded.data.state.time).toBe(state.time);
+
+    // …and the migrated save is genuinely playable.
+    const command = nextCommand(loaded.data.state);
+    expect(command).not.toBeNull();
+    const continued = executeCommand(loaded.data.state, command!);
+    expect(continued.ok).toBe(true);
+    expect(continued.state.time).toBeGreaterThanOrEqual(loaded.data.state.time);
   });
 
   it('X-S4b the zone rebuild refuses to "repair" a partially corrupted zone table', () => {
@@ -242,8 +293,7 @@ describe('Phase 4X — save / migration closure', () => {
     const raw = storedSave();
     const zones = (raw.state as Record<string, unknown>).zones as Record<string, unknown>;
     // Not the exact historical map — just one zone missing. Rebuilding here
-    // would invent a plausible-looking world, so migration must not fire and
-    // validation must reject.
+    // would invent a plausible-looking world, so migration must not fire.
     delete zones[ZONE_IDS[0]!];
     const before = Object.keys(zones).length;
     const migrated = migrateSameVersionSave(raw) as Record<string, unknown>;
@@ -251,6 +301,42 @@ describe('Phase 4X — save / migration closure', () => {
     writeSave(raw);
     expect(loadGame().ok).toBe(false);
     expect(hasAnySave()).toBe(true);
+  });
+
+  it('X-S4c UNSUPPORTED genuine historical schema: refused, storage preserved, never faked', () => {
+    const state = advance(newGame('P4X-S4c'), 3, 'P4X-S4c');
+    writeSixZoneSave(state);
+    const raw = storedSave();
+    const inner = raw.state as Record<string, unknown>;
+    // A real pre-4K/4N/4Q save has none of these subsystems at all. Their
+    // content (consumed wild population, incident history, what each actor
+    // observed) is NOT derivable, so migration must not invent it.
+    for (const key of ['wildEnemies', 'landmarks', 'incidents']) delete inner[key];
+    for (const character of Object.values(inner.characters as Record<string, Record<string, unknown>>)) {
+      delete character.knowledgeMemory;
+      delete character.strategicIntent;
+    }
+    writeSave(raw);
+    const preserved = storage.getItem(SAVE_KEY)!;
+
+    const loaded = loadGame();
+    expect(loaded.ok).toBe(false);
+    if (loaded.ok) return;
+    // Refused…
+    expect(loaded.error).toContain('存档校验未通过');
+    // …storage byte-for-byte intact, nothing auto-deleted or reset…
+    expect(storage.getItem(SAVE_KEY)).toBe(preserved);
+    expect(hasAnySave()).toBe(true);
+    // …and the migration did not fabricate any of the missing subsystems.
+    const afterMigration = migrateSameVersionSave(JSON.parse(preserved)) as Record<string, unknown>;
+    const migratedInner = afterMigration.state as Record<string, unknown>;
+    for (const key of ['wildEnemies', 'landmarks', 'incidents']) {
+      expect(migratedInner[key], key).toBeUndefined();
+    }
+    for (const character of Object.values(migratedInner.characters as Record<string, Record<string, unknown>>)) {
+      expect(character.knowledgeMemory).toBeUndefined();
+      expect(character.strategicIntent).toBeUndefined();
+    }
   });
 
   it('X-S5 migration is RNG-neutral: it never advances state.rngState or the next result', () => {
